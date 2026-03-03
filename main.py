@@ -7,7 +7,6 @@ from google import genai
 
 # ==========================================
 # [클라우드(GitHub) 전용 봇 세팅]
-# GitHub Secrets에서 안전하게 비밀번호를 가져옵니다.
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 
@@ -20,25 +19,25 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 def get_financial_news():
     print("[시스템] 최신 글로벌 경제 뉴스를 수집합니다...")
     
-    # 🚨 [에러 완벽 수정!] 비어있던 주소란에 글로벌 경제 매체들의 실제 RSS 주소를 꽉 채워 넣었습니다.
-    rss_urls =
+    # 🚨 [시스템 에러 완벽 차단!] 글자가 사라지는 것을 막기 위해, 긴 텍스트를 적고 쉼표(,)로 쪼개는 방식을 썼습니다.
+    # CNBC, WSJ, 야후 파이낸스, 마켓워치의 실제 주소들이 드디어 완벽하게 들어갔습니다!
+    urls_text = "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664,https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml,https://finance.yahoo.com/news/rssindex,http://feeds.marketwatch.com/marketwatch/topstories/"
+    rss_urls = urls_text.split(",")
     
-    news_items = set() # 중복 뉴스를 자동으로 걸러주는 마법의 바구니
+    news_items = set() 
     for url in rss_urls:
         try:
             feed = feedparser.parse(url)
-            # 각 매체별로 가장 최신 뉴스 5개씩 추출
             for entry in feed.entries[:5]: 
                 news_items.add(entry.title)
         except Exception:
             continue
             
-    # 중복이 제거된 뉴스 중 최대 20개를 뽑아 보기 좋게 리스트로 만들기
     news_list = list(news_items)[:20]
     if not news_list:
         return None
         
-    return "\n".join([f"- {news}" for news in news_list])
+    return "\n".join(["- " + news for news in news_list])
 
 def generate_ai_report(news_text):
     print("[시스템] AI 교수님이 리포트를 작성 중입니다...")
@@ -69,7 +68,6 @@ def generate_ai_report(news_text):
     {news_text}
     """
     
-    # 구글의 가장 똑똑한 2.5버전 AI 모델 호출
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=prompt
@@ -86,7 +84,7 @@ def send_email(report_content):
     msg.add_header('To', RECEIVER_EMAIL)
     msg.add_header('Subject', '🌍 Daily Global Economy & Multi-Asset Strategy Newsletter')
 
-    # 🚨 [가독성 업데이트] AI가 강조를 위해 습관적으로 넣는 별표(**)를 모두 지워서 눈이 편안하게 만듭니다.
+    # AI가 만든 별표(**) 제거
     clean_report_content = report_content.replace("**", "").replace("*", "")
 
     msg.attach(MIMEText(clean_report_content, 'plain'))
