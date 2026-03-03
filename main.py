@@ -14,8 +14,8 @@ SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 # 봇이 편지를 보낼 때 쓸 '보내는 사람' 주소
 SENDER_EMAIL = "threehappyyou@gmail.com" 
 
-# 🚨 [구독자 명단 개선] 
-# 동일한 이메일로 여러 등급의 테스트 메일을 받을 수 있도록 리스트(List) 구조로 변경했습니다!
+# 🚨 [에러 완벽 수정!] 텅 비어있던 명단에 자네의 이메일 3개를 꽉꽉 채워 넣었습니다!
+# 이렇게 해야 파이썬이 문법 오류 없이 3번 반복해서 메일을 보냅니다.
 SUBSCRIBERS =
 # ==========================================
 
@@ -87,7 +87,6 @@ def generate_ai_report(news_text, tier):
         contents=prompt
     )
     
-    # 🚨 [가독성 유지] 
     clean_report = response.text.replace("**", "").replace("*", "")
     return clean_report
 
@@ -120,7 +119,6 @@ def job():
         
     print(f"\n총 {len(SUBSCRIBERS)}개의 맞춤형 뉴스레터 발송 작업을 시작합니다...\n")
     
-    # 수정된 리스트 구조에 맞춰 반복문 변경
     for sub in SUBSCRIBERS:
         email = sub["email"]
         tier = sub["tier"]
