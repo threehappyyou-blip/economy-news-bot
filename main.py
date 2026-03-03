@@ -7,10 +7,10 @@ from google import genai
 
 # ==========================================
 # [클라우드(GitHub) 전용 봇 세팅]
+# GitHub Secrets에서 안전하게 비밀번호를 가져옵니다.
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 
-# 아래 이메일을 자네의 이메일로 변경하게나
 SENDER_EMAIL = "threehappyyou@gmail.com"
 RECEIVER_EMAIL = "threehappyyou@gmail.com"
 # ==========================================
@@ -20,19 +20,20 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 def get_financial_news():
     print("[시스템] 최신 글로벌 경제 뉴스를 수집합니다...")
     
-    # 🚨 [수정 완료] 자네가 요청한 주요 매체들의 실제 RSS 주소들을 꽉 채워 넣었네!
-    # (블룸버그, FT 등은 유료화로 인해 RSS를 막아두어, 가장 공신력 있는 무료 매체들로 엄선했네)
+    # 🚨 [수정 완료] 드디어 꽉꽉 채워 넣은 주요 경제 매체 뉴스 주소들!
     rss_urls =
     
-    news_items = set() # 중복 뉴스를 자동으로 걸러주는 마법의 바구니네
+    news_items = set() # 중복 뉴스를 자동으로 걸러주는 자료형(set)
     for url in rss_urls:
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:5]: # 각 매체별로 가장 최신 뉴스 5개씩 추출
+            # 각 매체별로 가장 최신 뉴스 5개씩 추출
+            for entry in feed.entries[:5]: 
                 news_items.add(entry.title)
         except Exception:
             continue
             
+    # 중복이 제거된 뉴스 중 최대 20개를 뽑아 깔끔한 텍스트로 만들기
     news_list = list(news_items)[:20]
     if not news_list:
         return None
@@ -84,7 +85,7 @@ def send_email(report_content):
     msg.add_header('To', RECEIVER_EMAIL)
     msg.add_header('Subject', '🌍 Daily Global Economy & Multi-Asset Strategy Newsletter')
 
-    # 🚨 [가독성 업데이트] AI가 습관적으로 붙이는 별표(**, *)를 모두 지워서 눈이 편안한 텍스트로 만드네!
+    # 🚨 [가독성 업데이트] AI가 습관적으로 넣는 별표(**)를 모두 지워서 눈이 편안한 텍스트로 만듭니다.
     clean_report_content = report_content.replace("**", "").replace("*", "")
 
     msg.attach(MIMEText(clean_report_content, 'plain'))
