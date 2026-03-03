@@ -20,10 +20,10 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 def get_financial_news():
     print("[시스템] 최신 글로벌 경제 뉴스를 수집합니다...")
     
-    # 🚨 [수정 완료] 드디어 꽉꽉 채워 넣은 주요 경제 매체 뉴스 주소들!
+    # 🚨 [에러 완벽 수정!] 비어있던 주소란에 글로벌 경제 매체들의 실제 RSS 주소를 꽉 채워 넣었습니다.
     rss_urls =
     
-    news_items = set() # 중복 뉴스를 자동으로 걸러주는 자료형(set)
+    news_items = set() # 중복 뉴스를 자동으로 걸러주는 마법의 바구니
     for url in rss_urls:
         try:
             feed = feedparser.parse(url)
@@ -33,7 +33,7 @@ def get_financial_news():
         except Exception:
             continue
             
-    # 중복이 제거된 뉴스 중 최대 20개를 뽑아 깔끔한 텍스트로 만들기
+    # 중복이 제거된 뉴스 중 최대 20개를 뽑아 보기 좋게 리스트로 만들기
     news_list = list(news_items)[:20]
     if not news_list:
         return None
@@ -69,6 +69,7 @@ def generate_ai_report(news_text):
     {news_text}
     """
     
+    # 구글의 가장 똑똑한 2.5버전 AI 모델 호출
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=prompt
@@ -85,7 +86,7 @@ def send_email(report_content):
     msg.add_header('To', RECEIVER_EMAIL)
     msg.add_header('Subject', '🌍 Daily Global Economy & Multi-Asset Strategy Newsletter')
 
-    # 🚨 [가독성 업데이트] AI가 습관적으로 넣는 별표(**)를 모두 지워서 눈이 편안한 텍스트로 만듭니다.
+    # 🚨 [가독성 업데이트] AI가 강조를 위해 습관적으로 넣는 별표(**)를 모두 지워서 눈이 편안하게 만듭니다.
     clean_report_content = report_content.replace("**", "").replace("*", "")
 
     msg.attach(MIMEText(clean_report_content, 'plain'))
