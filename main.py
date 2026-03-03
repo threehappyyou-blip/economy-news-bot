@@ -12,8 +12,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
 SENDER_EMAIL = "threehappyyou@gmail.com" 
 
-# 🚨 [시스템 버그 원천 차단!]
-# 텍스트 시스템이 괄호를 지우는 것을 막기 위해, 순수 문자열과 list(), dict() 함수만 사용했습니다.
+# [구독자 명단 및 등급]
+# 차후 웹사이트 DB(회원가입 정보)와 연결될 핵심 부분입니다.
 raw_subs = "threehappyyou@gmail.com/Basic,threehappyyou@gmail.com/Premium,threehappyyou@gmail.com/Royal Premium"
 SUBSCRIBERS = list()
 for sub_info in raw_subs.split(","):
@@ -24,9 +24,7 @@ for sub_info in raw_subs.split(","):
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def get_financial_news():
-    print("[시스템] 글로벌 주요 경제 매체의 최신 뉴스를 수집합니다...")
-    
-    # 🚨 주소 부분도 괄호 버그를 피하기 위해 안전하게 변경했습니다.
+    print("[시스템] 주요 매체(CNBC, WSJ, Yahoo, MarketWatch)의 최신 뉴스를 수집합니다...")
     raw_urls = "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664,https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml,https://finance.yahoo.com/news/rssindex,http://feeds.marketwatch.com/marketwatch/topstories/"
     rss_urls = raw_urls.split(",")
     
@@ -46,22 +44,42 @@ def get_financial_news():
     return "\n".join(list("- " + news for news in news_list))
 
 def generate_ai_report(news_text, tier):
-    print("[시스템] AI 교수님들이 " + tier + " 등급 구독자를 위한 리포트를 토론 중입니다...")
+    print(f"[시스템] AI가 '{tier}' 등급에 맞춘 다각도 분석 리포트를 생성 중입니다...")
     
+    # 🚨 [핵심 업그레이드] 교수/학자 단어를 배제하고, 분석 관점(Perspective)들의 토론으로 설정
     if tier == "Basic":
-        panel_desc = "A panel of 7 top-tier Economics professors from elite US universities (e.g., Harvard, MIT, Chicago). They hold diverse economic views (Classical, Keynesian, etc.)."
+        panel_desc = "Top-tier macroeconomic and fundamental market analysis perspectives."
     elif tier == "Premium":
-        panel_desc = "A panel of 14 top-tier professors: 7 in Economics and 7 in Psychology (e.g., Stanford, Yale). They combine macroeconomic theory with human psychology and cognitive biases (e.g., loss aversion)."
-    else:
-        panel_desc = "A panel of 21 top-tier professors: 7 in Economics, 7 in Psychology, and 7 in Humanities, Geography, and Philosophy. They analyze news combining macroeconomics, behavioral psychology, geopolitical geography, and historical/philosophical context (e.g., Adam Smith, David Ricardo)."
+        panel_desc = "A combination of top-tier macroeconomic analysis AND behavioral psychology perspectives (analyzing market sentiment, loss aversion, herd behavior)."
+    else: # Royal Premium
+        panel_desc = "A comprehensive synthesis of macroeconomic analysis, behavioral psychology, geopolitical geography, and humanities/philosophical perspectives."
 
-    prompt = "You are an AI simulating the following expert panel:\n" + panel_desc + "\n\nRule 1: The professors are engaging in a respectful, fact-based debate. They may hold different perspectives based on their academic expertise, but they never insult each other or deceive the audience with false information.\nRule 2: Based on the provided real-time financial news, analyze the geopolitical, political, and economic correlations.\nRule 3: Write the final output as a cohesive, highly insightful newsletter for investors in English. Do not provide 1:1 personalized investment advice.\nRule 4: Do not use markdown bolding excessively. Write in a clean, highly readable text format.\n\nStructure of the Newsletter:\n[Part 1: Executive Economic Insights]\n- 3-bullet point TL;DR of the most critical news and market drivers.\n\n[Part 2: Market Analysis through Humanities & Psychology]\n- Synthesize the discussion among the professors based on their specific academic fields. Highlight how their different viewpoints intersect to explain the current market.\n\n[Part 3: Comprehensive Economic Analysis & Investment Precautions]\n- Based on the debate, provide broad tactical asset allocation thoughts (e.g., Equities, Commodities, Future Tech).\n\nDisclaimer: This report is for informational and educational purposes only. All investment responsibilities lie with the investor.\n\nToday's Real-Time News:\n" + news_text
+    prompt = "You are an advanced AI simulating a panel discussion among " + panel_desc + "\n\n"
+    prompt += "Strict Rule 1: DO NOT use the words 'professor', 'economist', or 'expert' in your response. Frame the text as a deep analytical report.\n"
+    prompt += "Strict Rule 2: Deliver the hard FACTS from the news first, before diving into any analysis or theories.\n"
+    prompt += "Strict Rule 3: Simulate a respectful, multi-angled debate based on different analytical models. If a topic is an ongoing event (e.g., geopolitical conflicts), highlight what new information has emerged and how it updates previous assumptions.\n"
+    prompt += "Strict Rule 4: Do not use markdown bolding (**) or asterisks. Write in a clean, professional, and highly readable plain text format.\n\n"
+    
+    prompt += "Structure of the Newsletter:\n"
+    prompt += "\n"
+    prompt += "- Summarize the core facts of today's news clearly and objectively. What exactly happened?\n\n"
+    
+    prompt += "[Part 2: Multidisciplinary Market Analysis]\n"
+    prompt += "- Analyze the facts based on the tier's designated perspectives (" + tier + " level).\n"
+    prompt += "- Explore how macroeconomic principles, human psychology, and geopolitical/philosophical contexts intertwine to shape potential market movements.\n\n"
+    
+    prompt += "\n"
+    prompt += "- Based on the preceding analysis, provide strategic ideas on asset allocation (Stocks, Hard Assets, Future Tech, etc.). Explain the 'why' behind defensive or aggressive positioning.\n\n"
+    
+    prompt += "Disclaimer: This report is for informational and educational purposes only. All investment responsibilities lie with the investor.\n\n"
+    prompt += "Today's Real-Time News:\n" + news_text
     
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt
     )
     
+    # 별표 및 마크다운 완벽 제거
     clean_report = response.text.replace("**", "").replace("*", "")
     return clean_report
 
@@ -98,7 +116,7 @@ def job():
         
         report = generate_ai_report(news, tier)
         send_email(report, email, tier)
-        time.sleep(5) 
+        time.sleep(5) # 구글 API 과부하 방지
 
 if __name__ == "__main__":
     job()
