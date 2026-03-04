@@ -2,10 +2,12 @@ import os
 import sys
 import traceback
 
+# --- [시스템 진단 시작] ---
 print("=======================================")
-print(" 🚀 경제 뉴스 봇 시스템 점검을 시작합니다 🚀")
+print(" 🚀 경제 뉴스 봇 시스템 가동 시작 🚀")
 print("=======================================")
 
+# 1. 라이브러리 로드 점검
 try:
     import feedparser
     import time
@@ -16,21 +18,24 @@ try:
     from datetime import datetime, timedelta
     import pytz
     from google import genai
-    print("✅ 라이브러리 로드: 성공 (requirements.txt 정상)")
+    print("✅ 필수 라이브러리(도구) 로드 완료")
 except ImportError as e:
-    print(f"❌ 라이브러리 로드: 실패 ({e})")
+    print(f"❌ [치명적 에러] 도구를 찾을 수 없습니다: {e}")
+    print("👉 해결법: requirements.txt 파일에 'google-genai', 'feedparser' 등이 있는지 확인하세요.")
     sys.exit(1)
 
-# --- [보안 키 점검 (가장 중요!)] ---
+# 2. 보안 키 로드 점검
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 SENDER_EMAIL = os.environ.get("MY_EMAIL") or "threehappyyou@gmail.com"
 
-print(f"🔑 API KEY 연결 상태: {'✅ 정상' if GEMINI_API_KEY else '❌ 실패 (yml 파일 env 설정 또는 Secrets 확인)'}")
-print(f"📧 지메일 비밀번호 연결 상태: {'✅ 정상' if GMAIL_APP_PASSWORD else '❌ 실패 (yml 파일 env 설정 또는 Secrets 확인)'}")
+# 보안상 키 값 자체는 출력하지 않고, 존재 여부만 O/X로 표시
+print(f"🔑 API 키 확인: {'⭕ 있음' if GEMINI_API_KEY else '❌ 없음 (GitHub Secrets 확인 필요)'}")
+print(f"📧 앱 비밀번호 확인: {'⭕ 있음' if GMAIL_APP_PASSWORD else '❌ 없음 (GitHub Secrets 확인 필요)'}")
 
 if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
-    print("\n⚠️ [시스템 강제 종료] 키 값이 없어서 더 이상 진행할 수 없습니다.")
+    print("\n⛔ [시스템 중단] 보안 키가 없어서 봇을 실행할 수 없습니다.")
+    print("👉 해결법: .yml 파일의 'env:' 부분 들여쓰기가 맞는지, GitHub Secrets에 오타가 없는지 확인하세요.")
     sys.exit(1)
 
 # ---------------------------------------------
@@ -51,8 +56,7 @@ RSS_FEEDS = {
 }
 
 def clean_text(text):
-    if not text:
-        return "Insight generation paused."
+    if not text: return "Content generation failed."
     text = re.sub(r'\*+', '', text)
     text = re.sub(r'#+', '', text)
     text = re.sub(r'-{2,}', '', text)
@@ -61,6 +65,7 @@ def clean_text(text):
 def get_latest_news(count=15):
     news_list = []
     seen_titles = set()
+    print("📡 뉴스 데이터 수집 중...")
     for source, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
@@ -71,6 +76,7 @@ def get_latest_news(count=15):
                 if len(news_list) >= 30: break
         except Exception:
             continue
+    print(f"✅ 총 {len(news_list)}개의 최신 뉴스 확보")
     return news_list[:count]
 
 def analyze_with_gemini(news_items, level):
@@ -80,21 +86,18 @@ def analyze_with_gemini(news_items, level):
         selected_news = news_items[:news_count]
         
         prompt = f"""
-        [Goal] Write a warm, encouraging economic newsletter in English to help regular people find financial peace and happiness.
-        [Tone] Friendly, empathetic, and extremely simple. Treat the reader like a dear friend. Absolutely NO academic jargon.
-        [Subscription Level] {level}
+        [Goal] Write a warm, encouraging economic newsletter in English.
+        [Tone] Friendly, empathetic, and simple. No jargon.
+        [Level] {level}
+        [News] {chr(10).join(selected_news)}
         
-        [Instructions based on Level]
-        - If Basic: Summarize {news_count} news stories very simply. Add a short "Easy Economic Term of the Day".
-        - If Premium: Summarize {news_count} news stories. Add a "Why It Matters" section that gently explains human psychology behind events.
-        - If Royal: Summarize {news_count} news stories. Add a "Big Picture" section explaining the long-term historical context as an easy story.
-
-        [Mandatory Rules]
-        1. Plain text ONLY. No markdown symbols (**, ##).
-        2. Always include at the bottom: "Disclaimer: This email is for informational purposes only. All investment decisions and responsibilities are your own."
-
-        [News]
-        {chr(10).join(selected_news)}
+        Instructions:
+        - Basic: Summarize {news_count} news simply + Easy Term of Day.
+        - Premium: Summarize + Why It Matters (Psychology).
+        - Royal: Summarize + Big Picture (History/Future).
+        
+        * Plain text only. No markdown.
+        * Disclaimer: Information only. Investment decisions are your own.
         """
         
         response = client.models.generate_content(
@@ -102,10 +105,9 @@ def analyze_with_gemini(news_items, level):
             contents=prompt
         )
         return clean_text(response.text)
-        
     except Exception as e:
-        print(f"⚠️ [AI 에러] {level} 레벨 생성 실패: {e}")
-        return f"Hello! We are currently upgrading our system. Here are today's headlines:\n\n{chr(10).join(selected_news)}\n\nDisclaimer: This email is for informational purposes only. All investment decisions are your own."
+        print(f"⚠️ [AI 생성 오류] {e}")
+        return f"AI System Update in progress. Here are the headlines:\n\n{chr(10).join(selected_news)}\n\nDisclaimer: Info only."
 
 def send_email(receiver_email, subject, content):
     try:
@@ -120,34 +122,31 @@ def send_email(receiver_email, subject, content):
             server.send_message(msg)
         return True
     except Exception as e:
-        print(f"❌ [메일 발송 에러] 전송 실패: {e}")
+        print(f"❌ [이메일 전송 실패] {e}")
         return False
 
 if __name__ == "__main__":
     try:
-        print("\n[작업 1] 뉴스 수집 중...")
         all_news = get_latest_news(20)
-        
-        if not all_news:
-            all_news = ["Global markets are quiet. Focus on long-term happiness."]
+        if not all_news: all_news = ["Global markets quiet today."]
 
-        print(f"\n[작업 2] {len(TEST_RECIPIENTS)}명에게 메일 발송 시작...")
+        print(f"\n📨 총 {len(TEST_RECIPIENTS)}통의 이메일 발송을 시작합니다...")
         
         for i, user in enumerate(TEST_RECIPIENTS):
-            print(f"  -> [{i+1}/5] {user['level']} 레벨 리포트 작성 중...")
+            print(f"  [{i+1}/5] {user['level']} 레벨 생성 중...", end=" ")
             report = analyze_with_gemini(all_news, user['level'])
             
             subject = f"🌍 Your Path to Financial Freedom ({user['level']} Edition)"
-            success = send_email(user['email'], subject, report)
+            if send_email(user['email'], subject, report):
+                print("✅ 전송 완료")
+            else:
+                print("❌ 전송 실패")
             
-            if success:
-                print(f"     ✅ 전송 성공: {user['email']}")
-                
-            time.sleep(10) # API 휴식
+            time.sleep(5) # 구글 서버 보호를 위한 대기
 
-        print("\n🎉 모든 작업이 안전하게 완료되었습니다!")
+        print("\n🎉 모든 작업이 완료되었습니다!")
         
     except Exception as e:
-        print(f"\n❌ [치명적 시스템 에러 발생]")
+        print("\n❌ 알 수 없는 시스템 에러 발생")
         traceback.print_exc()
         sys.exit(1)
