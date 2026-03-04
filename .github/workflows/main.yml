@@ -2,21 +2,18 @@ name: Daily Economy News Bot
 
 on:
   schedule:
-    # 깃허브는 영국 시간(UTC)을 씁니다. 미국 동부(EST) 09:00는 영국 시간 14:00 입니다.
-    - cron: '0 14 * * *' 
-    # 미국 동부(EST) 18:00는 영국 시간 23:00 입니다.
-    - cron: '0 23 * * *' 
-  workflow_dispatch: # 수동으로도 실행할 수 있게 해주는 마법의 버튼
+    - cron: '0 14,23 * * *'
+  workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
       - name: 내 코드 가져오기
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 파이썬 설치하기
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -28,5 +25,6 @@ jobs:
       - name: 봇 실행하고 메일 보내기!
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
         run: python main.py
