@@ -1,135 +1,152 @@
 import os
-import smtplib
 import feedparser
-import time
+import yfinance as yf
+from google import genai
+from google.genai import types
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from google import genai
+from datetime import datetime, timedelta
+import pytz
+import re
+import time
 
-# ==========================================
-# [클라우드(GitHub) 전용 봇 세팅]
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-SENDER_PASSWORD = os.environ.get("SENDER_PASSWORD")
-SENDER_EMAIL = "threehappyyou@gmail.com" 
+# --- [설정 및 보안] ---
+# GitHub Secrets에서 가져오거나 직접 입력 (로컬 테스트용)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or "자네의_API_키"
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD") or "자네의_앱_비밀번호"
+SENDER_EMAIL = os.environ.get("MY_EMAIL") or "threehappyyou@gmail.com"
 
-# 구독자 명단 5명 세팅 (테스트용)
-raw_subs = "threehappyyou@gmail.com/Basic,threehappyyou@gmail.com/Basic,threehappyyou@gmail.com/Premium,threehappyyou@gmail.com/Premium,threehappyyou@gmail.com/Royal Premium"
-SUBSCRIBERS = list()
-for sub_info in raw_subs.split(","):
-    e_mail, e_tier = sub_info.split("/")
-    SUBSCRIBERS.append(dict(email=e_mail, tier=e_tier))
-# ==========================================
+# 테스트용 수신자 설정 (모두 자네의 실제 메일로 고정하여 에러 방지)
+TEST_RECIPIENTS = [
+    {"email": "threehappyyou@gmail.com", "level": "Basic"},
+    {"email": "threehappyyou@gmail.com", "level": "Basic"},
+    {"email": "threehappyyou@gmail.com", "level": "Premium"},
+    {"email": "threehappyyou@gmail.com", "level": "Premium"},
+    {"email": "threehappyyou@gmail.com", "level": "Royal"}
+]
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+# 뉴스 소스 (9대 글로벌 매체)
+RSS_FEEDS = {
+    "CNBC": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=401&id=10000664",
+    "Yahoo Finance": "https://finance.yahoo.com/rss/topstories",
+    "MarketWatch": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+    "WSJ": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
+    "Fortune": "https://fortune.com/feed",
+    "Forbes": "https://www.forbes.com/innovation/feed2/",
+    "Business Insider": "https://feeds.businessinsider.com/custom/all",
+    "Investors Daily": "https://www.investors.com/feed",
+    "Financial Times": "https://www.ft.com/?format=rss"
+}
 
-def get_financial_news():
-    print("[시스템] 주요 매체의 최신 뉴스를 수집합니다...")
-    raw_urls = "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664,https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml,https://finance.yahoo.com/news/rssindex,http://feeds.marketwatch.com/marketwatch/topstories/"
-    rss_urls = raw_urls.split(",")
+# --- [기능 함수] ---
+
+def clean_text(text):
+    """지저분한 특수기호 제거 및 가독성 개선"""
+    text = re.sub(r'\*+', '', text)  # ** 제거
+    text = re.sub(r'#+', '', text)   # ## 제거
+    text = re.sub(r'-{2,}', '', text) # --- 제거
+    return text.strip()
+
+def get_latest_news(count=10):
+    """RSS 피드에서 최신 뉴스 수집 (중복 및 시간 필터링)"""
+    news_list = []
+    seen_titles = set()
+    et_tz = pytz.timezone('US/Eastern')
+    now = datetime.now(et_tz)
     
-    news_items = set() 
-    for url in rss_urls:
-        try:
-            feed = feedparser.parse(url)
-            for entry in feed.entries[:10]: 
-                news_items.add(entry.title)
-        except Exception:
-            continue
+    for source, url in RSS_FEEDS.items():
+        feed = feedparser.parse(url)
+        for entry in feed.entries:
+            if entry.title in seen_titles: continue
             
-    news_list = list(news_items)[:25]
-    if not news_list:
-        return None
-        
-    return "\n".join(list("- " + news for news in news_list))
+            # 최근 12시간 이내 뉴스만
+            published = getattr(entry, 'published_parsed', None)
+            if published:
+                pub_dt = datetime.fromtimestamp(time.mktime(published), pytz.UTC).astimezone(et_tz)
+                if now - pub_dt > timedelta(hours=12): continue
+            
+            news_list.append(f"[{source}] {entry.title}: {entry.summary if 'summary' in entry else entry.link}")
+            seen_titles.add(entry.title)
+            if len(news_list) >= 30: break # 최대 30개 수집 후 선택
+            
+    return news_list[:count]
 
-def generate_ai_report(news_text, tier):
-    print("[시스템] AI가 " + tier + " 등급 독자를 위한 영문 리포트를 작성 중입니다...")
+def analyze_with_gemini(news_items, level):
+    """구독 등급별 페르소나 토론 및 리포트 생성"""
+    client = genai.Client(api_key=GEMINI_API_KEY)
     
-    # 🚨 [핵심 업그레이드] 등급별 뉴스 개수 및 '참여 교수진의 수와 분야'를 명확히 분기!
-    if tier == "Basic":
-        news_count = "3"
-        panel_desc = "a panel of 7 top-tier Economics professors from elite universities"
-        depth_instruction = "Focus on the objective facts of the events."
-    elif tier == "Premium":
-        news_count = "5"
-        panel_desc = "a panel of 14 top-tier professors (7 in Economics, 7 in Psychology)"
-        depth_instruction = "Go beyond facts. Analyze the 'WHY' behind the events, combining economic principles with human psychological biases (e.g., loss aversion, herd behavior)."
-    else: # Royal Premium
-        news_count = "10"
-        panel_desc = "a panel of 21 top-tier professors (7 in Economics, 7 in Psychology, 7 in Humanities, Geography, and Philosophy)"
-        depth_instruction = "Provide the ultimate deep dive. Analyze the 'WHY' by intertwining macroeconomic theory, behavioral psychology, geopolitical geography, and historical/philosophical contexts."
+    # 등급별 설정
+    news_count = 3 if level == "Basic" else (5 if level == "Premium" else 10)
+    selected_news = news_items[:news_count]
+    
+    prompt = f"""
+    [Goal] Create a warm, inspiring, and easy-to-understand economic newsletter in English for everyday people seeking financial freedom.
+    [Tone] Friendly, encouraging, and clear. Avoid complex jargon or 'executive' language.
+    [Subscription Level] {level}
+    
+    [Instructions]
+    1. Introduction: Start with a warm greeting and a message of hope.
+    2. Fact Delivery: Present the top {news_count} essential global news stories clearly.
+    3. The 'WHY' Analysis:
+       - If Basic: Focus on very simple explanations of economic terms used in the news.
+       - If Premium: Analyze the 'Why' using economic and psychological insights (7 experts perspective). Explain human emotions behind the market.
+       - If Royal: Deep dive using 21 experts' perspectives (Economics, Psychology, Humanities, Geography, Philosophy). Explain global power shifts and long-term history.
+    4. Conclusion: A supportive closing message.
+    5. LEGAL DISCLAIMER: You MUST include this exactly: "Disclaimer: This report is for informational purposes only. All financial decisions and responsibilities belong to the individual. Please consult a professional for specific advice."
 
-    # AI 프롬프트 (최종 글로벌 영어 버전)
-    prompt = "You are an advanced AI simulating an intense, fact-based debate among " + panel_desc + ".\n"
-    prompt += "Your ultimate goal is to translate the profound insights from this academic debate into a warm, accessible newsletter to help ordinary people around the world achieve financial freedom and peace of mind.\n\n"
+    [News Items to Analyze]
+    {chr(10).join(selected_news)}
+
+    Write strictly in English. Do NOT use any symbols like **, ##, or --. Make it look like a clean, professional letter.
+    """
     
-    prompt += "\n"
-    prompt += "1. The final output MUST be written entirely in English.\n"
-    prompt += "2. DO NOT use the words 'professor', 'economist', 'expert', or 'executive' in your response. Speak directly to the reader as a friendly, insightful financial guide.\n"
-    prompt += "3. Select exactly " + news_count + " most important news items from the provided raw text. " + depth_instruction + "\n"
-    prompt += "4. Explain all complex financial jargon in very simple terms so anyone can understand.\n"
-    prompt += "5. Do not use markdown bolding (**) or asterisks. Write in a clean, highly readable plain text format.\n"
-    prompt += "6. LEGAL GUARDRAILS - Act strictly as a one-way informational channel. Do NOT provide direct buy/sell recommendations for specific stocks.\n\n"
-    
-    prompt += "Structure of the Newsletter:\n"
-    prompt += "\n"
-    prompt += "- Summarize the core facts of the " + news_count + " selected news items clearly. What exactly happened?\n\n"
-    
-    prompt += "\n"
-    prompt += "- Based on the panel's internal debate, analyze the news according to your tier's required depth.\n"
-    prompt += "- Explain the 'WHY' behind the news.\n"
-    prompt += "- If there are ongoing events (like geopolitical conflicts or strikes), analyze how the newly added information updates the previous situation and impacts daily life.\n\n"
-    
-    prompt += "[Part 3: Ideas for Financial Freedom]\n"
-    prompt += "- Provide broad tactical asset allocation ideas (e.g., Defensive vs. Aggressive positioning, Hard Assets, Tech trends) to help everyday people manage risk comfortably.\n\n"
-    
-    prompt += "Disclaimer: This report is purely for informational and educational purposes. It does not constitute personalized financial advice. All investment decisions and legal responsibilities lie entirely with the individual investor.\n\n"
-    
-    prompt += "Today's Real-Time News:\n" + news_text
-    
-    # 구글 최신 2.5-flash 모델 호출
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
+        config=types.GenerateContentConfig(system_instruction="You are a kind mentor helping people reach financial freedom through easy insights."),
         contents=prompt
     )
     
-    clean_report = response.text.replace("**", "").replace("*", "")
-    return clean_report
+    return clean_text(response.text)
 
-def send_email(report_content, to_email, tier):
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-
-    msg = MIMEMultipart()
-    msg.add_header("From", SENDER_EMAIL)
-    msg.add_header("To", to_email)
-    msg.add_header("Subject", "Daily Global Economy Newsletter: " + tier + " Insight")
-
-    msg.attach(MIMEText(report_content, "plain"))
-
+def send_email(receiver_email, subject, content):
+    """이메일 전송 (예외 처리 강화)"""
     try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print("🎉 [성공] " + to_email + " 님에게 " + tier + " 등급 메일 발송 완료!")
-    except Exception as e:
-        print("❌ [실패] 메일 발송 실패: " + str(e))
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = receiver_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(content, 'plain'))
 
-def job():
-    news = get_financial_news()
-    if not news:
-        print("수집된 뉴스가 없습니다.")
-        return
-        
-    for sub in SUBSCRIBERS:
-        email = sub.get("email")
-        tier = sub.get("tier")
-        
-        report = generate_ai_report(news, tier)
-        send_email(report, email, tier)
-        time.sleep(5) 
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
+            server.send_message(msg)
+        print(f"✅ Success: Email sent to {receiver_email}")
+    except Exception as e:
+        print(f"❌ Failed: Could not send email to {receiver_email}. Error: {e}")
+
+# --- [메인 실행부] ---
 
 if __name__ == "__main__":
-    job()
+    print("1. Harvesting global news...")
+    all_news = get_latest_news(30)
+    
+    if not all_news:
+        print("⚠️ No fresh news found. Check RSS feeds.")
+        all_news = ["Global markets are currently stabilizing with focus on upcoming inflation data."]
+
+    print(f"2. Generating and sending {len(TEST_RECIPIENTS)} test reports...")
+    
+    for i, user in enumerate(TEST_RECIPIENTS):
+        print(f"   [{i+1}/5] Processing {user['level']} level for {user['email']}...")
+        try:
+            report = analyze_with_gemini(all_news, user['level'])
+            subject = f"🌍 Your Daily {user['level']} Insight for Financial Freedom"
+            send_email(user['email'], subject, report)
+            # 서버 과부하 방지 및 안정성을 위해 3초 대기
+            time.sleep(3)
+        except Exception as e:
+            print(f"   ⚠️ Error processing user {i+1}: {e}")
+            continue
+
+    print("\n🎉 All tasks completed!")
