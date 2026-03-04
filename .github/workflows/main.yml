@@ -2,8 +2,8 @@ name: Daily Economy News Bot
 
 on:
   schedule:
-    - cron: '0 14,23 * * *'
-  workflow_dispatch:
+    - cron: '0 14,23 * * *'  # 매일 아침 9시, 저녁 6시 (한국 시간 기준 밤 11시, 아침 8시)
+  workflow_dispatch:          # 수동 실행 버튼
 
 jobs:
   run-bot:
@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 봇 실행하고 메일 보내기!
+      - name: 봇 실행하고 메일 보내기
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
