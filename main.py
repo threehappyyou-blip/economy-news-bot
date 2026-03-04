@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 
-# 1. 라이브러리 로드 방어 (여기서 에러가 나면 requirements.txt 문제임)
 try:
     import feedparser
     import time
@@ -15,15 +14,19 @@ try:
     from google import genai
 except ImportError as e:
     print(f"❌ [초기화 에러] 필수 라이브러리가 없습니다: {e}")
-    print("GitHub의 requirements.txt 파일에 'google-genai', 'feedparser', 'pytz'가 정확히 있는지 확인하세요.")
     sys.exit(1)
 
-# --- [설정 및 보안] ---
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or "자네의_API_키"
-GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD") or "자네의_앱_비밀번호"
+# --- [설정 및 보안 점검] ---
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 SENDER_EMAIL = os.environ.get("MY_EMAIL") or "threehappyyou@gmail.com"
 
-# 행복과 편안함을 전달할 테스트 수신자 5명 세팅
+# GitHub Secrets 연동이 안 되어있으면 헷갈리지 않게 즉시 에러 발생
+if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
+    print("❌ [보안 에러] API 키 또는 지메일 앱 비밀번호가 깃허브에서 전달되지 않았습니다!")
+    print("해결법: 1. GitHub Secrets에 값을 넣었는지 확인. 2. .yml 파일 env: 부분 확인.")
+    sys.exit(1) # 강제로 빨간불(Exit code 1)을 띄워서 실패를 알림
+
 TEST_RECIPIENTS = [
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
@@ -40,9 +43,7 @@ RSS_FEEDS = {
     "Financial Times": "https://www.ft.com/?format=rss"
 }
 
-# --- [기능 함수] ---
 def clean_text(text):
-    """특수기호를 제거하여 편안한 읽기 경험 제공"""
     if not text:
         return "Insight generation paused."
     text = re.sub(r'\*+', '', text)
@@ -51,7 +52,6 @@ def clean_text(text):
     return text.strip()
 
 def get_latest_news(count=15):
-    """뉴스 수집"""
     news_list = []
     seen_titles = set()
     et_tz = pytz.timezone('US/Eastern')
@@ -70,11 +70,8 @@ def get_latest_news(count=15):
     return news_list[:count]
 
 def analyze_with_gemini(news_items, level):
-    """AI 분석 (에러 완벽 방어)"""
     try:
-        # API 키가 없으면 여기서 즉시 에러가 발생하여 아래 except로 빠짐
         client = genai.Client(api_key=GEMINI_API_KEY)
-        
         news_count = 3 if level == "Basic" else (5 if level == "Premium" else 10)
         selected_news = news_items[:news_count]
         
@@ -90,7 +87,7 @@ def analyze_with_gemini(news_items, level):
 
         [Mandatory Rules]
         1. Plain text ONLY. No markdown symbols (**, ##).
-        2. Always include at the bottom: "Disclaimer: This email is for informational purposes only. All investment decisions are your own."
+        2. Always include at the bottom: "Disclaimer: This email is for informational purposes only. All investment decisions and responsibilities are your own."
 
         [News]
         {chr(10).join(selected_news)}
@@ -103,11 +100,10 @@ def analyze_with_gemini(news_items, level):
         return clean_text(response.text)
         
     except Exception as e:
-        print(f"⚠️ [AI 생성 에러] {level} 레벨 생성 실패: {e}")
-        return f"Hello! We are currently upgrading our system to bring you better insights. Here are today's headlines:\n\n{chr(10).join(selected_news)}\n\nDisclaimer: This email is for informational purposes only."
+        print(f"⚠️ [AI 에러] {level} 레벨 생성 실패: {e}")
+        return f"Hello! We are currently upgrading our system. Here are today's headlines:\n\n{chr(10).join(selected_news)}\n\nDisclaimer: This email is for informational purposes only. All investment decisions are your own."
 
 def send_email(receiver_email, subject, content):
-    """이메일 발송"""
     try:
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
@@ -123,7 +119,6 @@ def send_email(receiver_email, subject, content):
         print(f"❌ [메일 발송 에러] {receiver_email}로 전송 실패: {e}")
         return False
 
-# --- [메인 실행부] ---
 if __name__ == "__main__":
     try:
         print("1. Gathering global news...")
@@ -144,12 +139,11 @@ if __name__ == "__main__":
             if success:
                 print(f"   ✅ Sent successfully to {user['email']}")
                 
-            # 과부하 방지를 위한 10초 대기
             time.sleep(10)
 
         print("\n🎉 All processes finished safely!")
         
     except Exception as e:
         print(f"\n❌ [치명적 시스템 에러 발생]")
-        traceback.print_exc() # 에러의 상세 원인을 액션 로그에 출력
+        traceback.print_exc()
         sys.exit(1)
