@@ -2,12 +2,10 @@ import os
 import sys
 import traceback
 
-# --- [시스템 진단 시작] ---
 print("=======================================")
 print(" 🚀 경제 뉴스 봇 시스템 가동 시작 🚀")
 print("=======================================")
 
-# 1. 라이브러리 로드 점검
 try:
     import feedparser
     import time
@@ -18,28 +16,21 @@ try:
     from datetime import datetime, timedelta
     import pytz
     from google import genai
-    print("✅ 필수 라이브러리(도구) 로드 완료")
+    print("✅ 필수 라이브러리 로드 완료")
 except ImportError as e:
     print(f"❌ [치명적 에러] 도구를 찾을 수 없습니다: {e}")
-    print("👉 해결법: requirements.txt 파일에 'google-genai', 'feedparser' 등이 있는지 확인하세요.")
     sys.exit(1)
 
-# 2. 보안 키 로드 점검
+# --- [보안 키 점검] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 SENDER_EMAIL = os.environ.get("MY_EMAIL") or "threehappyyou@gmail.com"
 
-# 보안상 키 값 자체는 출력하지 않고, 존재 여부만 O/X로 표시
-print(f"🔑 API 키 확인: {'⭕ 있음' if GEMINI_API_KEY else '❌ 없음 (GitHub Secrets 확인 필요)'}")
-print(f"📧 앱 비밀번호 확인: {'⭕ 있음' if GMAIL_APP_PASSWORD else '❌ 없음 (GitHub Secrets 확인 필요)'}")
-
 if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
-    print("\n⛔ [시스템 중단] 보안 키가 없어서 봇을 실행할 수 없습니다.")
-    print("👉 해결법: .yml 파일의 'env:' 부분 들여쓰기가 맞는지, GitHub Secrets에 오타가 없는지 확인하세요.")
+    print("\n⛔ [시스템 중단] 보안 키가 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
-# ---------------------------------------------
-
+# 테스트 수신자 5명
 TEST_RECIPIENTS = [
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
@@ -80,10 +71,11 @@ def get_latest_news(count=15):
     return news_list[:count]
 
 def analyze_with_gemini(news_items, level):
+    news_count = 3 if level == "Basic" else (5 if level == "Premium" else 10)
+    selected_news = news_items[:news_count]
+    
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
-        news_count = 3 if level == "Basic" else (5 if level == "Premium" else 10)
-        selected_news = news_items[:news_count]
         
         prompt = f"""
         [Goal] Write a warm, encouraging economic newsletter in English.
@@ -105,9 +97,14 @@ def analyze_with_gemini(news_items, level):
             contents=prompt
         )
         return clean_text(response.text)
+    
     except Exception as e:
-        print(f"⚠️ [AI 생성 오류] {e}")
-        return f"AI System Update in progress. Here are the headlines:\n\n{chr(10).join(selected_news)}\n\nDisclaimer: Info only."
+        # [핵심 수정] 에러가 나면 숨기지 않고 이메일 본문에 에러 내용을 그대로 적어서 보냅니다.
+        print(f"⚠️ [AI 생성 오류 발생] {e}")
+        error_report = f"⚠️ AI Analysis Failed due to the following error:\n\n[ERROR DETAILS]:\n{str(e)}\n\n"
+        error_report += f"If the error says '429', it means the API is too busy. If it says 'API key not valid', check your Google AI Studio key.\n\n"
+        error_report += f"Here are the raw headlines for now:\n{chr(10).join(selected_news)}"
+        return error_report
 
 def send_email(receiver_email, subject, content):
     try:
@@ -142,7 +139,8 @@ if __name__ == "__main__":
             else:
                 print("❌ 전송 실패")
             
-            time.sleep(5) # 구글 서버 보호를 위한 대기
+            # [핵심 수정] 과부하를 막기 위해 휴식 시간을 15초로 대폭 늘렸습니다.
+            time.sleep(15) 
 
         print("\n🎉 모든 작업이 완료되었습니다!")
         
