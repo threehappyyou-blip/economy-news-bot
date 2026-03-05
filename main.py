@@ -21,16 +21,18 @@ except ImportError as e:
     print(f"❌ [치명적 에러] 도구를 찾을 수 없습니다: {e}")
     sys.exit(1)
 
-# --- [보안 키 점검] ---
+# --- [보안 키 및 이메일 설정] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+
+# 👉 보내는 사람: 앱 비밀번호를 성공적으로 연동한 제미나이 프로 계정
 SENDER_EMAIL = "zubikcape@gmail.com"
 
 if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
     print("\n⛔ [시스템 중단] 보안 키가 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
-# 테스트 수신자 5명
+# 👉 받는 사람: 제자님의 원래 메일함 (5통 모두 이곳으로 전송)
 TEST_RECIPIENTS = [
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
@@ -92,17 +94,16 @@ def analyze_with_gemini(news_items, level):
         * Disclaimer: Information only. Investment decisions are your own.
         """
         
+        # 👉 [핵심] 404 에러를 내뿜던 Pro를 빼고, 가장 빠르고 안정적인 1.5-flash로 복구!
         response = client.models.generate_content(
-            model="gemini-1.5-pro",
+            model="gemini-1.5-flash",
             contents=prompt
         )
         return clean_text(response.text)
     
     except Exception as e:
-        # [핵심 수정] 에러가 나면 숨기지 않고 이메일 본문에 에러 내용을 그대로 적어서 보냅니다.
         print(f"⚠️ [AI 생성 오류 발생] {e}")
         error_report = f"⚠️ AI Analysis Failed due to the following error:\n\n[ERROR DETAILS]:\n{str(e)}\n\n"
-        error_report += f"If the error says '429', it means the API is too busy. If it says 'API key not valid', check your Google AI Studio key.\n\n"
         error_report += f"Here are the raw headlines for now:\n{chr(10).join(selected_news)}"
         return error_report
 
@@ -139,8 +140,8 @@ if __name__ == "__main__":
             else:
                 print("❌ 전송 실패")
             
-            # [핵심 수정] 과부하를 막기 위해 휴식 시간을 15초로 대폭 늘렸습니다.
-            time.sleep(30) 
+            # 안정적인 발송을 위해 15초 대기
+            time.sleep(15) 
 
         print("\n🎉 모든 작업이 완료되었습니다!")
         
@@ -148,4 +149,3 @@ if __name__ == "__main__":
         print("\n❌ 알 수 없는 시스템 에러 발생")
         traceback.print_exc()
         sys.exit(1)
-
