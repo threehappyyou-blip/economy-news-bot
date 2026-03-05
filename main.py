@@ -24,7 +24,7 @@ except ImportError as e:
 # --- [보안 키 점검] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
-SENDER_EMAIL = os.environ.get("MY_EMAIL") or "threehappyyou@gmail.com"
+SENDER_EMAIL = "zubikcape@gmail.com"
 
 if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
     print("\n⛔ [시스템 중단] 보안 키가 없습니다. GitHub Secrets를 확인하세요.")
@@ -93,7 +93,7 @@ def analyze_with_gemini(news_items, level):
         """
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-pro",
             contents=prompt
         )
         return clean_text(response.text)
@@ -140,7 +140,7 @@ if __name__ == "__main__":
                 print("❌ 전송 실패")
             
             # [핵심 수정] 과부하를 막기 위해 휴식 시간을 15초로 대폭 늘렸습니다.
-            time.sleep(15) 
+            time.sleep(30) 
 
         print("\n🎉 모든 작업이 완료되었습니다!")
         
@@ -148,3 +148,4 @@ if __name__ == "__main__":
         print("\n❌ 알 수 없는 시스템 에러 발생")
         traceback.print_exc()
         sys.exit(1)
+
