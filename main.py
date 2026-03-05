@@ -25,14 +25,14 @@ except ImportError as e:
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 
-# 👉 보내는 사람: 앱 비밀번호를 성공적으로 연동한 제미나이 프로 계정
+# 👉 보내는 사람: 앱 비밀번호를 발급받은 제미나이 프로 계정
 SENDER_EMAIL = "zubikcape@gmail.com"
 
 if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
     print("\n⛔ [시스템 중단] 보안 키가 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
-# 👉 받는 사람: 제자님의 원래 메일함 (5통 모두 이곳으로 전송)
+# 👉 받는 사람: 제자님의 원래 메일함 (5통 모두 이곳으로 전송되게 세팅 완료)
 TEST_RECIPIENTS = [
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
     {"email": "threehappyyou@gmail.com", "level": "Basic"},
@@ -94,9 +94,9 @@ def analyze_with_gemini(news_items, level):
         * Disclaimer: Information only. Investment decisions are your own.
         """
         
-        # 👉 [핵심] 404 에러를 내뿜던 Pro를 빼고, 가장 빠르고 안정적인 1.5-flash로 복구!
+        # 👉 [핵심 해결책] 404 에러와 429 에러를 모두 돌파하는 구글 최신 '2.5-flash' 모델!
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         return clean_text(response.text)
@@ -140,8 +140,8 @@ if __name__ == "__main__":
             else:
                 print("❌ 전송 실패")
             
-            # 안정적인 발송을 위해 15초 대기
-            time.sleep(15) 
+            # 서버 과부하를 막기 위해 20초 대기 (매우 중요)
+            time.sleep(20) 
 
         print("\n🎉 모든 작업이 완료되었습니다!")
         
