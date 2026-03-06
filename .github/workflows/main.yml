@@ -1,10 +1,9 @@
-name: Daily Economy News Bot
+name: 1 Hour Auto Ghost Poster
 
 on:
   schedule:
-    - cron: '0 21 * * *'    # 한국 시간 아침 6시 (UTC 21시)
-    - cron: '0 9 * * *'     # 한국 시간 저녁 6시 (UTC 09시)
-  workflow_dispatch:        # 수동 실행 버튼
+    - cron: '0 * * * *'  # 👈 매 1시간 정각마다 실행하라는 마법의 주문입니다!
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -18,16 +17,14 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: 필요한 라이브러리 설치
+      - name: 필요한 부품 설치하기
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 봇 실행하고 메일 보내기
-        # ▼▼▼ 이 부분이 핵심입니다! 비밀번호를 파이썬에게 건네주는 코드 ▼▼▼
+      - name: 봇 실행하고 Ghost에 포스팅하기
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          MY_EMAIL: ${{ secrets.MY_EMAIL }}
-        # ▲▲▲ 위 3줄의 들여쓰기가 run: 명령보다 안쪽으로 들어가 있어야 합니다. ▲▲▲
+          GHOST_API_URL: ${{ secrets.GHOST_API_URL }}
+          GHOST_ADMIN_API_KEY: ${{ secrets.GHOST_ADMIN_API_KEY }}
         run: python main.py
