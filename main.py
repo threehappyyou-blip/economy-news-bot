@@ -1,151 +1,165 @@
 import os
 import sys
 import traceback
+import time
+import requests
+import jwt
+from datetime import datetime
+import feedparser
+import pytz
+from google import genai
 
 print("=======================================")
-print(" 🚀 경제 뉴스 봇 시스템 가동 시작 🚀")
+print(" 🚀 Ghost 카테고리별 자동 포스팅 봇 가동 🚀")
 print("=======================================")
 
-try:
-    import feedparser
-    import time
-    import re
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-    from datetime import datetime, timedelta
-    import pytz
-    from google import genai
-    print("✅ 필수 라이브러리 로드 완료")
-except ImportError as e:
-    print(f"❌ [치명적 에러] 도구를 찾을 수 없습니다: {e}")
-    sys.exit(1)
-
-# --- [보안 키 및 이메일 설정] ---
+# --- [보안 키 점검] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+GHOST_API_URL = os.environ.get("GHOST_API_URL")
+GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
-# 👉 보내는 사람: 앱 비밀번호를 발급받은 제미나이 프로 계정
-SENDER_EMAIL = "zubikcape@gmail.com"
-
-if not GEMINI_API_KEY or not GMAIL_APP_PASSWORD:
-    print("\n⛔ [시스템 중단] 보안 키가 없습니다. GitHub Secrets를 확인하세요.")
+if not all():
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
     sys.exit(1)
 
-# 👉 받는 사람: 제자님의 원래 메일함 (5통 모두 이곳으로 전송되게 세팅 완료)
-TEST_RECIPIENTS = [
-    {"email": "threehappyyou@gmail.com", "level": "Basic"},
-    {"email": "threehappyyou@gmail.com", "level": "Basic"},
-    {"email": "threehappyyou@gmail.com", "level": "Premium"},
-    {"email": "threehappyyou@gmail.com", "level": "Premium"},
-    {"email": "threehappyyou@gmail.com", "level": "Royal"}
-]
+# URL 끝의 슬래시 제거하여 통신 에러 방지
+GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-RSS_FEEDS = {
-    "CNBC": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=401&id=10000664",
-    "Yahoo Finance": "https://finance.yahoo.com/rss/topstories",
-    "WSJ": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
-    "Forbes": "https://www.forbes.com/innovation/feed2/"
+# 🚨 [카테고리별 글로벌 뉴스 소스 세팅]
+# 제자님이 만든 5개의 방에 맞게, 뉴스 수집 사이트도 5개로 완벽하게 나눴습니다!
+CATEGORIES = {
+    "Economy":,
+    "Politics": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"],
+    "Tech": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"],
+    "Health": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"],
+    "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
 }
 
-def clean_text(text):
-    if not text: return "Content generation failed."
-    text = re.sub(r'\*+', '', text)
-    text = re.sub(r'#+', '', text)
-    text = re.sub(r'-{2,}', '', text)
-    return text.strip()
-
-def get_latest_news(count=15):
-    news_list = []
+def get_category_news(urls, count=5):
+    news_list =
     seen_titles = set()
-    print("📡 뉴스 데이터 수집 중...")
-    for source, url in RSS_FEEDS.items():
+    for url in urls:
         try:
             feed = feedparser.parse(url)
             for entry in feed.entries:
                 if entry.title in seen_titles: continue
-                news_list.append(f"[{source}] {entry.title}")
+                news_list.append(f"- {entry.title}: {entry.summary if 'summary' in entry else ''}")
                 seen_titles.add(entry.title)
-                if len(news_list) >= 30: break
+                if len(news_list) >= 15: break
         except Exception:
             continue
-    print(f"✅ 총 {len(news_list)}개의 최신 뉴스 확보")
     return news_list[:count]
 
-def analyze_with_gemini(news_items, level):
-    news_count = 3 if level == "Basic" else (5 if level == "Premium" else 10)
-    selected_news = news_items[:news_count]
-    
+def analyze_with_gemini(news_items, category):
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
+        selected_news = "\n".join(news_items)
         
+        # 🚨 [8명 전문가 맞춤형 프롬프트] 카테고리(Economy, Health 등)에 따라 전문가들의 포커스가 바뀝니다.
         prompt = f"""
-        [Goal] Write a warm, encouraging economic newsletter in English.
-        [Tone] Friendly, empathetic, and simple. No jargon.
-        [Level] {level}
-        [News] {chr(10).join(selected_news)}
+        [Goal] Write a highly insightful, warm, and easy-to-understand blog post in English for the '{category}' section of our website.
+        [Persona] A panel of 8 top-tier experts (Economics, Psychology, Tech, Humanities, Politics, Healthcare, Energy, Philosophy) debating and synthesizing ideas to help everyday people achieve financial freedom and peace of mind.
+        The current category is '{category}'. The 8 experts should heavily focus their debate on how these '{category}' news items impact everyday life, human psychology, and long-term financial well-being.
+
+       
+        1. Format the entire response in clean HTML tags (like <h2>, <p>, <ul>, <li>, <strong>) so it looks beautiful on a Ghost website.
+        2. Do NOT use markdown symbols like ** or #. Use HTML only.
+        3. Do NOT include ```html at the beginning or end.
+
+       
+        <h2>The Big Picture</h2>
+        <p>(A friendly, 3-sentence summary of today's {category} news vibe and why it matters to regular people. Write in a warm, 'Milk Road' friendly tone.)</p>
         
-        Instructions:
-        - Basic: Summarize {news_count} news simply + Easy Term of Day.
-        - Premium: Summarize + Why It Matters (Psychology).
-        - Royal: Summarize + Big Picture (History/Future).
+        <h2>Top Drivers & Expert Insights</h2>
+        <ul>
+            <li><strong>(News Headline 1):</strong> (Explain the FACT simply. Then, add the 8-expert panel's psychological/philosophical 'WHY' behind it.)</li>
+            <li><strong>(News Headline 2):</strong> (FACT + Expert 'WHY')</li>
+            <li><strong>(News Headline 3):</strong> (FACT + Expert 'WHY')</li>
+        </ul>
         
-        * Plain text only. No markdown.
-        * Disclaimer: Information only. Investment decisions are your own.
+        <h2>Today's Happy Insight</h2>
+        <p>(Provide a comforting, actionable takeaway or mindset tip related to {category} to help readers feel safe and smart about their future.)</p>
+        
+        <p><em>Disclaimer: This article is for informational and educational purposes only. All decisions are your own.</em></p>
+
+       
+        {selected_news}
         """
         
-        # 👉 [핵심 해결책] 404 에러와 429 에러를 모두 돌파하는 구글 최신 '2.5-flash' 모델!
+        # 429 에러 없는 안정적인 최신 2.5-flash 모델 사용
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt
         )
-        return clean_text(response.text)
-    
+        
+        # 웹사이트에 예쁘게 올라가도록 잔여 코드 블록 기호 제거
+        clean_html = response.text.replace("```html", "").replace("```", "").strip()
+        return clean_html
     except Exception as e:
-        print(f"⚠️ [AI 생성 오류 발생] {e}")
-        error_report = f"⚠️ AI Analysis Failed due to the following error:\n\n[ERROR DETAILS]:\n{str(e)}\n\n"
-        error_report += f"Here are the raw headlines for now:\n{chr(10).join(selected_news)}"
-        return error_report
+        print(f"⚠️ [AI 에러] {category} 분석 실패: {e}")
+        return None
 
-def send_email(receiver_email, subject, content):
+def generate_ghost_token():
+    """Ghost API 인증을 위한 1회용 마스터 출입증 생성"""
+    id, secret = GHOST_ADMIN_API_KEY.split(':')
+    iat = int(datetime.now().timestamp())
+    header = {'alg': 'HS256', 'typ': 'JWT', 'kid': id}
+    payload = {'iat': iat, 'exp': iat + 5 * 60, 'aud': '/admin/'}
+    return jwt.encode(payload, bytes.fromhex(secret), algorithm='HS256', headers=header)
+
+def publish_to_ghost(title, html_content, category):
+    print(f"📝 Ghost 웹사이트의 '{category}' 카테고리로 글을 발행합니다...")
     try:
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = receiver_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(content, 'plain'))
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(SENDER_EMAIL, GMAIL_APP_PASSWORD)
-            server.send_message(msg)
-        return True
+        token = generate_ghost_token()
+        headers = {
+            'Authorization': f'Ghost {token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # 🚨 [카테고리 꽂아넣기] tags에 카테고리 이름을 넣어, 제자님이 만든 상단 메뉴에 정확히 들어가게 합니다.
+        post_data = {
+            "posts": [{
+                "title": title,
+                "html": html_content,
+                "status": "published",
+                "tags": [{"name": category}] 
+            }]
+        }
+        
+        url = f"{GHOST_API_URL}/ghost/api/admin/posts/?source=html"
+        response = requests.post(url, json=post_data, headers=headers)
+        
+        if response.status_code in :
+            print(f"🎉 [성공] '{category}' 카테고리에 글 발행 완료!")
+        else:
+            print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ [이메일 전송 실패] {e}")
-        return False
+        print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
 
 if __name__ == "__main__":
     try:
-        all_news = get_latest_news(20)
-        if not all_news: all_news = ["Global markets quiet today."]
-
-        print(f"\n📨 총 {len(TEST_RECIPIENTS)}통의 이메일 발송을 시작합니다...")
+        today_str = datetime.now().strftime("%Y-%m-%d %H:00")
         
-        for i, user in enumerate(TEST_RECIPIENTS):
-            print(f"  [{i+1}/5] {user['level']} 레벨 생성 중...", end=" ")
-            report = analyze_with_gemini(all_news, user['level'])
+        # 5개의 카테고리를 순서대로 돌면서 뉴스를 수집하고, 분석하고, 웹사이트에 발행합니다.
+        for category, urls in CATEGORIES.items():
+            print(f"\n--- [{category}] 카테고리 작업 시작 ---")
             
-            subject = f"🌍 Your Path to Financial Freedom ({user['level']} Edition)"
-            if send_email(user['email'], subject, report):
-                print("✅ 전송 완료")
-            else:
-                print("❌ 전송 실패")
+            news = get_category_news(urls, 5)
+            if not news:
+                print(f"⚠️ {category} 뉴스가 없어 건너뜁니다.")
+                continue
+                
+            report_html = analyze_with_gemini(news, category)
             
-            # 서버 과부하를 막기 위해 20초 대기 (매우 중요)
-            time.sleep(20) 
+            if report_html:
+                post_title = f"[{category}] Daily Insight & Warm Thoughts - {today_str}"
+                publish_to_ghost(post_title, report_html, category)
+                
+            time.sleep(15) # 구글 서버 과부하 방지용 휴식
 
-        print("\n🎉 모든 작업이 완료되었습니다!")
+        print("\n🎉 5개 카테고리 자동 발행이 모두 완료되었습니다!")
         
     except Exception as e:
-        print("\n❌ 알 수 없는 시스템 에러 발생")
+        print("\n❌ 시스템 에러 발생")
         traceback.print_exc()
         sys.exit(1)
