@@ -6,7 +6,6 @@ import requests
 import jwt
 from datetime import datetime
 import feedparser
-import pytz
 from google import genai
 
 print("=======================================")
@@ -24,25 +23,25 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [카테고리 완벽 복구] Tech 이름표 누락 에러를 수정하고, 5개의 방을 완벽하게 세팅했습니다.
+# 🚨 카테고리 5개의 뉴스 출처를 튜플(Tuple)로 단단하게 묶어 에러를 방지했습니다.
 CATEGORIES = {
-    "Economy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"],
-    "Politics": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"],
-    "Tech": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"],
-    "Health": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"],
-    "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
+    "Economy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"),
+    "Politics": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",),
+    "Tech": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",),
+    "Health": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",),
+    "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
 }
 
 def get_category_news(urls, count=30):
-    # 🚨 30개의 뉴스를 넉넉하게 쓸어 담아 AI에게 넘겨줍니다.
-    news_list =
+    # 🚨 [수정 완료] 빈칸으로 에러가 났던 부분을 list() 함수로 꽉 채웠습니다!
+    news_list = list()
     seen_titles = set()
     for url in urls:
         try:
             feed = feedparser.parse(url)
             for entry in feed.entries:
                 if entry.title in seen_titles: continue
-                news_list.append(f"- {entry.title}: {entry.summary if 'summary' in entry else ''}")
+                news_list.append("- " + str(entry.title) + ": " + str(entry.summary if 'summary' in entry else ''))
                 seen_titles.add(entry.title)
                 if len(news_list) >= 30: break
         except Exception:
@@ -54,22 +53,21 @@ def analyze_with_gemini(news_items, category):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [핵심 프롬프트] 마스터 PM이 30개 중 '가장 중요한 3개'를 엄선하고, 13명의 전문가가 토론하게 만듭니다.
+        # 마스터 PM이 30개 중 '가장 중요한 3개'를 엄선하고 13명의 전문가가 토론하게 만듭니다.
         prompt = f"""
         [Goal] Write a highly insightful, warm, and easy-to-understand blog post in English for the '{category}' section of our Ghost website.
         [Persona] You are simulating a panel of 13 top-tier experts (Master PM, Economists, Psychologists, Historians, Philosophers, Senior Editor, Art Director, Fact-checker, Legal, Ghost UI Expert).
         
-        [Phase 1: Intelligent Curation by Master PM]
+        Phase 1: Intelligent Curation by Master PM
         - Look at the raw news items provided below (up to 30 items).
         - As the Master PM, select ONLY the top 3 most critical news stories that will have the biggest impact on everyday people's financial freedom and psychology. Ignore repetitive or trivial news.
         
-       
+        Phase 2: Panel Debate and Drafting
         - Using ONLY those 3 selected news items, write the final blog post.
         - The experts debate the 'WHY' (behavioral psychology, history, macroeconomics).
         - The Senior Editor writes the final post in a warm, easy, 'neighborhood friend' tone (Milk Road style). No academic jargon.
         - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown symbols like **. Do NOT include ```html.
         
-       
         <h2>The Big Picture</h2>
         <p>(3-sentence warm summary of today's {category} news and why it matters to regular people.)</p>
         
@@ -85,7 +83,7 @@ def analyze_with_gemini(news_items, category):
         
         <p><em>Disclaimer: This article is for informational and educational purposes only. All decisions are your own.</em></p>
 
-       
+        Raw News to Analyze:
         {selected_news}
         """
         
@@ -125,7 +123,7 @@ def publish_to_ghost(title, html_content, category):
         url = f"{GHOST_API_URL}/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code in :
+        if response.status_code in (200, 201):
             print(f"🎉 [성공] '{category}' 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
