@@ -9,7 +9,7 @@ import feedparser
 from google import genai
 
 print("=======================================")
-print(" 🚀 13인 전문가 지능형 큐레이션 & Ghost 자동 발행 봇 🚀")
+print(" 🚀 구독 등급별 다중 AI 모델 Ghost 발행 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -32,6 +32,9 @@ CATEGORIES = {
     "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
 }
 
+# 🚨 [새로운 기능] 발행할 3가지 구독 등급 세팅
+TIERS =
+
 def get_category_news(urls, count=30):
     news_list = list()
     seen_titles = set()
@@ -47,71 +50,80 @@ def get_category_news(urls, count=30):
             continue
     return news_list[:count]
 
-def analyze_with_gemini(news_items, category):
+def analyze_with_gemini(news_items, category, tier):
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [업그레이드된 프롬프트] 너무 가벼운 인사말 금지 + AI가 직접 '제목'을 만들도록 지시!
+        # 🚨 [핵심 업데이트] 등급에 따라 'AI 모델'과 '분석 깊이'를 철저히 분리합니다!
+        if tier == "Basic":
+            model_name = "gemini-2.5-flash"  # 비용 최적화! 빠르고 가성비 좋은 모델
+            news_count = "3"
+            depth = "Focus ONLY on the objective FACTS. Make it a quick, easy read."
+        elif tier == "Premium":
+            model_name = "gemini-3.1-pro"    # 최고급 지능! 유료 회원을 위한 심리 분석 모델
+            news_count = "5"
+            depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology. Provide deep, valuable insights that justify a paid subscription."
+        else: # Royal Premium
+            model_name = "gemini-3.1-pro"    # 최고급 지능! VIP를 위한 거시적 통찰 모델
+            news_count = "10"
+            depth = "Provide the ULTIMATE deep dive. Intertwine macroeconomic theory, behavioral psychology, and historical context. This is for VIP subscribers."
+
         prompt = f"""
-        [Goal] Write a highly insightful, professional, and easy-to-understand blog post in English for the '{category}' section of our Ghost website.
-        [Persona] You are simulating a panel of 13 top-tier experts (Master PM, Economists, Psychologists, Historians, Philosophers, Senior Editor, Art Director, Fact-checker, Legal, Ghost UI Expert).
+        [Goal] Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
+        {tier} Subscribers
         
-        Phase 1: Intelligent Curation by Master PM
-        - Look at the raw news items provided below (up to 30 items).
-        - Select ONLY the top 3 most critical news stories that will have the biggest impact on everyday people's financial freedom and psychology. Ignore repetitive or trivial news.
+        Phase 1: Intelligent Curation
+        - Select ONLY the top {news_count} most critical news stories from the raw data.
         
         Phase 2: Panel Debate and Drafting
-        - Using ONLY those 3 selected news items, write the final blog post.
-        - The Senior Editor writes the final post in a professional, trustworthy, and insightful tone. 
-        - STRICT RULE: Do NOT use overly casual greetings like "Hey there, neighbor!" or "Hey there, neighborhood friend!". Start directly with a polished, professional introduction that conveys expertise and warmth. No academic jargon.
-        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown symbols like **. Do NOT include ```html.
+        - {depth}
+        - Write in a professional, trustworthy, and insightful tone. 
+        - STRICT RULE: Do NOT use overly casual greetings. Start directly with a polished, professional introduction.
+        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown (**). Do NOT include ```html.
         
-        The VERY FIRST LINE of your output MUST be the title of the post, starting exactly with "TITLE: ". Create a catchy, professional title that perfectly summarizes the 3 selected news items. Do NOT include the date or time in the title.
+        The VERY FIRST LINE of your output MUST be the title of the post, starting exactly with "TITLE: ". Create a catchy, professional title. Do NOT include the date or time.
         
         Example Output Format:
         TITLE: (Insert Catchy Professional Title Here)
         <h2>The Big Picture</h2>
-        <p>(A professional, 3-sentence summary of today's {category} news and why it matters to regular people's financial freedom.)</p>
+        <p>(A professional summary of today's {category} news.)</p>
         
         <h2>Top Drivers & Deep Insights</h2>
         <ul>
-            <li><strong>(Selected News Headline 1):</strong> (Fact + The deep psychological/historical 'WHY' debated by experts)</li>
-            <li><strong>(Selected News Headline 2):</strong> (Fact + The deep psychological/historical 'WHY')</li>
-            <li><strong>(Selected News Headline 3):</strong> (Fact + The deep psychological/historical 'WHY')</li>
+            <li><strong>(Headline 1):</strong> (Fact + Insights matching the {tier} depth)</li>
         </ul>
         
         <h2>Today's Insight</h2>
-        <p>(A comforting, actionable takeaway to help readers feel safe and informed about their financial future.)</p>
+        <p>(A comforting, actionable takeaway for {tier} readers.)</p>
         
-        <p><em>Disclaimer: This article is for informational and educational purposes only. All decisions are your own.</em></p>
+        <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
 
         Raw News to Analyze:
         {selected_news}
         """
         
-        # 🚨 제자님의 요청대로 gemini-2.0-flash 모델로 완벽 세팅했습니다.
+        # 지정된 모델(Flash 또는 Pro)을 사용하여 생성합니다.
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=model_name,
             contents=prompt
         )
         
-        # 🚨 [새로운 마법] AI가 준 답변에서 첫 줄(제목)과 나머지(본문 HTML)를 완벽하게 분리해 냅니다!
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
         lines = raw_text.split('\n')
         
-        title = f"Daily {category} Insight" # 만약 AI가 제목을 빼먹었을 경우를 대비한 기본값
+        title = f"[{tier}] Daily {category} Insight" 
         html_content = raw_text
         
-        # 첫 줄이 TITLE: 로 시작하면 제목으로 뽑아내고, 그 아래부터 본문으로 씁니다.
-        if lines and lines.startswith("TITLE:"):
-            title = lines.replace("TITLE:", "").strip()
+        # 첫 줄이 TITLE: 로 시작하면 제목으로 분리
+        if len(lines) > 0 and lines.startswith("TITLE:"):
+            title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
             html_content = "\n".join(lines[1:]).strip()
             
         return title, html_content
         
     except Exception as e:
-        print(f"⚠️ [AI 에러] {category} 분석 실패: {e}")
+        print(f"⚠️ [AI 에러] {category} - {tier} 분석 실패: {e}")
         return None, None
 
 def generate_ghost_token():
@@ -121,19 +133,22 @@ def generate_ghost_token():
     payload = {'iat': iat, 'exp': iat + 5 * 60, 'aud': '/admin/'}
     return jwt.encode(payload, bytes.fromhex(secret_str), algorithm='HS256', headers=header)
 
-def publish_to_ghost(title, html_content, category):
-    print(f"📝 Ghost 웹사이트 '{category}' 카테고리에 글을 발행합니다...")
-    print(f"📌 AI가 지어낸 제목: {title}")
+def publish_to_ghost(title, html_content, category, tier):
+    print(f"📝 Ghost 웹사이트에 '{category} - {tier}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
         headers_dict = {'Authorization': f'Ghost {token}', 'Content-Type': 'application/json'}
         
+        # 🚨 [새로운 마법] Basic은 누구나 볼 수 있게 'public', Premium/Royal은 결제한 사람만 볼 수 있게 'paid'로 자동 잠금 처리합니다!
+        visibility_setting = "public" if tier == "Basic" else "paid"
+        
         post_data = {
             "posts": [{
-                "title": title, # AI가 똑똑하게 지어낸 진짜 기사 제목이 여기에 꽂힙니다!
+                "title": title, 
                 "html": html_content,
                 "status": "published",
-                "tags": [{"name": category}] 
+                "visibility": visibility_setting,
+                "tags": [{"name": category}, {"name": tier}] 
             }]
         }
         
@@ -141,7 +156,7 @@ def publish_to_ghost(title, html_content, category):
         response = requests.post(url, json=post_data, headers=headers_dict)
         
         if response.status_code in (200, 201):
-            print(f"🎉 [성공] '{category}' 자동 발행 완료!")
+            print(f"🎉 [성공] '{title}' 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
@@ -157,15 +172,18 @@ if __name__ == "__main__":
                 print(f"⚠️ {category} 뉴스가 없어 건너뜁니다.")
                 continue
                 
-            # AI가 만든 (제목, 본문) 두 가지를 정확히 받아옵니다.
-            post_title, report_html = analyze_with_gemini(news, category)
-            
-            if report_html and post_title:
-                publish_to_ghost(post_title, report_html, category)
+            # 하나의 카테고리에 대해 Basic, Premium, Royal 3가지 버전을 차례대로 생성하고 발행합니다.
+            for tier in TIERS:
+                print(f"  -> {tier} 등급 리포트 작성 중...")
+                post_title, report_html = analyze_with_gemini(news, category, tier)
                 
-            time.sleep(15) 
+                if report_html and post_title:
+                    publish_to_ghost(post_title, report_html, category, tier)
+                    
+                # 최고급 Pro 모델의 과부하를 막기 위해 1건 발행 후 20초 휴식
+                time.sleep(20) 
 
-        print("\n🎉 모든 카테고리 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 & 등급별 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
