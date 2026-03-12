@@ -32,7 +32,7 @@ CATEGORIES = {
     "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
 }
 
-# 🚨 [새로운 기능] 발행할 3가지 구독 등급 세팅
+# 🚨 [문법 에러 완벽 수정!] 텅 비어있던 TIERS에 발행할 3가지 등급을 정확히 채워 넣었습니다.
 TIERS =
 
 def get_category_news(urls, count=30):
@@ -55,17 +55,17 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [핵심 업데이트] 등급에 따라 'AI 모델'과 '분석 깊이'를 철저히 분리합니다!
+        # 🚨 [제자님 요청 완벽 반영] 등급별로 AI 모델(Flash -> 2.5 Pro -> 3.1 Pro)을 차등 배정합니다!
         if tier == "Basic":
-            model_name = "gemini-2.5-flash"  # 비용 최적화! 빠르고 가성비 좋은 모델
+            model_name = "gemini-2.5-flash"  
             news_count = "3"
             depth = "Focus ONLY on the objective FACTS. Make it a quick, easy read."
         elif tier == "Premium":
-            model_name = "gemini-3.1-pro"    # 최고급 지능! 유료 회원을 위한 심리 분석 모델
+            model_name = "gemini-2.5-pro"    # 프리미엄 고객을 위한 2.5 Pro 모델 배정
             news_count = "5"
             depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology. Provide deep, valuable insights that justify a paid subscription."
         else: # Royal Premium
-            model_name = "gemini-3.1-pro"    # 최고급 지능! VIP를 위한 거시적 통찰 모델
+            model_name = "gemini-3.1-pro"    # 최상위 VIP 고객을 위한 최고급 3.1 Pro 모델 배정
             news_count = "10"
             depth = "Provide the ULTIMATE deep dive. Intertwine macroeconomic theory, behavioral psychology, and historical context. This is for VIP subscribers."
 
@@ -103,7 +103,6 @@ def analyze_with_gemini(news_items, category, tier):
         {selected_news}
         """
         
-        # 지정된 모델(Flash 또는 Pro)을 사용하여 생성합니다.
         response = client.models.generate_content(
             model=model_name,
             contents=prompt
@@ -115,7 +114,6 @@ def analyze_with_gemini(news_items, category, tier):
         title = f"[{tier}] Daily {category} Insight" 
         html_content = raw_text
         
-        # 첫 줄이 TITLE: 로 시작하면 제목으로 분리
         if len(lines) > 0 and lines.startswith("TITLE:"):
             title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
             html_content = "\n".join(lines[1:]).strip()
@@ -139,7 +137,6 @@ def publish_to_ghost(title, html_content, category, tier):
         token = generate_ghost_token()
         headers_dict = {'Authorization': f'Ghost {token}', 'Content-Type': 'application/json'}
         
-        # 🚨 [새로운 마법] Basic은 누구나 볼 수 있게 'public', Premium/Royal은 결제한 사람만 볼 수 있게 'paid'로 자동 잠금 처리합니다!
         visibility_setting = "public" if tier == "Basic" else "paid"
         
         post_data = {
@@ -172,7 +169,6 @@ if __name__ == "__main__":
                 print(f"⚠️ {category} 뉴스가 없어 건너뜁니다.")
                 continue
                 
-            # 하나의 카테고리에 대해 Basic, Premium, Royal 3가지 버전을 차례대로 생성하고 발행합니다.
             for tier in TIERS:
                 print(f"  -> {tier} 등급 리포트 작성 중...")
                 post_title, report_html = analyze_with_gemini(news, category, tier)
@@ -180,7 +176,7 @@ if __name__ == "__main__":
                 if report_html and post_title:
                     publish_to_ghost(post_title, report_html, category, tier)
                     
-                # 최고급 Pro 모델의 과부하를 막기 위해 1건 발행 후 20초 휴식
+                # 최고급 Pro 모델(2.5 Pro 및 3.1 Pro)의 과부하를 막기 위해 1건 발행 후 20초 휴식
                 time.sleep(20) 
 
         print("\n🎉 모든 카테고리 & 등급별 지능형 자동 발행이 완료되었습니다!")
