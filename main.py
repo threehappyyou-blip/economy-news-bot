@@ -25,17 +25,18 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 # URL 끝의 슬래시 제거하여 통신 에러 방지
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [카테고리별 글로벌 뉴스 소스 세팅]
-# 시스템이 글자를 지우지 못하도록 안전한 방식으로 주소를 할당했습니다.
-CATEGORIES = dict()
-CATEGORIES["Economy"] = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"]
-CATEGORIES["Politics"] = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"]
-CATEGORIES = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"]
-CATEGORIES["Health"] = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"]
-CATEGORIES["Energy"] = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
+# 🚨 [카테고리 완벽 복구!] 
+# 오타가 날 수 없도록 안전하게 하나의 중괄호 딕셔너리로 묶었습니다.
+# 제자님이 만든 5개의 방(Tech 포함)이 완벽하게 세팅되었습니다.
+CATEGORIES = {
+    "Economy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"],
+    "Politics": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"],
+    "Tech": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"],
+    "Health": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"],
+    "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
+}
 
 def get_category_news(urls, count=5):
-    # 🚨 [에러 완벽 수정!] 대괄호가 사라지는 버그를 막기 위해 list() 함수를 사용했습니다.
     news_list = list()
     seen_titles = set()
     for url in urls:
@@ -104,16 +105,15 @@ def publish_to_ghost(title, html_content, category):
     print(f"📝 Ghost 웹사이트의 '{category}' 카테고리로 글을 발행합니다...")
     try:
         token = generate_ghost_token()
-        headers = dict(Authorization=f'Ghost {token}', Content_Type='application/json')
+        # 🚨 [숨은 버그 완벽 수정] Ghost 통신 헤더(headers) 에러를 방지하도록 코드를 단단하게 고쳤습니다.
+        headers_dict = {'Authorization': f'Ghost {token}', 'Content-Type': 'application/json'}
         
-        # 🚨 구조적 안정성을 위해 딕셔너리 포맷을 명확히 설정했습니다.
         tag_dict = dict(name=category)
         post_dict = dict(title=title, html=html_content, status="published", tags=[tag_dict])
         post_data = dict(posts=[post_dict])
         
         url = f"{GHOST_API_URL}/ghost/api/admin/posts/?source=html"
-        headers = 'application/json'
-        response = requests.post(url, json=post_data, headers=headers)
+        response = requests.post(url, json=post_data, headers=headers_dict)
         
         if response.status_code == 200 or response.status_code == 201:
             print(f"🎉 [성공] '{category}' 카테고리에 글 발행 완료!")
