@@ -55,6 +55,7 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
+        # 🚨 [모델 에러 완벽 해결] 404 에러를 내던 3.1-pro를 빼고, 검증된 2.5-pro로 유료 등급을 통일했습니다!
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
@@ -64,7 +65,7 @@ def analyze_with_gemini(news_items, category, tier):
             news_count = "5"
             depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology. Provide deep, valuable insights that justify a paid subscription."
         else: # Royal Premium
-            model_name = "gemini-3.1-pro"    
+            model_name = "gemini-2.5-pro"    
             news_count = "10"
             depth = "Provide the ULTIMATE deep dive. Intertwine macroeconomic theory, behavioral psychology, and historical context. This is for VIP subscribers."
 
@@ -108,17 +109,19 @@ def analyze_with_gemini(news_items, category, tier):
         )
         
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
-        lines = raw_text.split('\n')
         
-        title = f"[{tier}] Daily {category} Insight" 
-        html_content = raw_text
+        # 🚨 [문법 에러 완벽 해결] 대괄호()를 쓰지 않고 파이썬의 pop()과 문자열 내장 함수를 써서 무적 코드로 만들었습니다!
+        title_text = "Daily " + category + " Insight" 
+        html_text = raw_text
         
-        # 🚨 [숨은 버그 완벽 수정] 첫 번째 줄을 뜻하는 lines을 명확하게 지정하여 에러를 원천 차단했습니다!
-        if len(lines) > 0 and lines.startswith("TITLE:"):
-            title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
-            html_content = "\n".join(lines[1:]).strip()
+        if raw_text.startswith("TITLE:"):
+            text_parts = raw_text.split('\n', 1)
+            extracted_title = text_parts.pop(0)
+            title_text = "[" + tier + "] " + extracted_title.replace("TITLE:", "").strip()
+            if text_parts:
+                html_text = text_parts.pop(0).strip()
             
-        return title, html_content
+        return title_text, html_text
         
     except Exception as e:
         print(f"⚠️ [AI 에러] {category} - {tier} 분석 실패: {e}")
@@ -176,7 +179,7 @@ if __name__ == "__main__":
                 if report_html and post_title:
                     publish_to_ghost(post_title, report_html, category, tier)
                     
-                # 최고급 Pro 모델(2.5 Pro 및 3.1 Pro)의 과부하를 막기 위해 1건 발행 후 20초 휴식 (필수)
+                # 🚨 AI 모델 과부하를 넉넉하게 막기 위해 발행 후 20초씩 휴식합니다!
                 time.sleep(20) 
 
         print("\n🎉 모든 카테고리 & 등급별 지능형 자동 발행이 완료되었습니다!")
