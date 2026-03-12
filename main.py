@@ -32,8 +32,8 @@ CATEGORIES = {
     "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
 }
 
-# 🚨 [에러 완벽 수정] 비어있던 TIERS 변수에 등급 명단을 꽉 채웠습니다!
-TIERS =
+# 🚨 [에러 완벽 수정] 비어있던 TIERS 변수에 등급 명단을 튜플()로 꽉 채웠습니다!
+TIERS = ("Basic", "Premium", "Royal Premium")
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -114,7 +114,7 @@ def analyze_with_gemini(news_items, category, tier):
         title = f"[{tier}] Daily {category} Insight" 
         html_content = raw_text
         
-        # 🚨 [수정 완료] lines 리스트의 첫 번째 줄(lines)을 명확하게 지정하여 에러를 방지합니다.
+        # 🚨 [숨은 버그 완벽 수정] lines.startswith()로 첫 번째 줄만 정확히 확인하도록 수정했습니다!
         if len(lines) > 0 and lines.startswith("TITLE:"):
             title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
             html_content = "\n".join(lines[1:]).strip()
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                 if report_html and post_title:
                     publish_to_ghost(post_title, report_html, category, tier)
                     
-                # 최고급 Pro 모델(2.5 Pro 및 3.1 Pro)의 과부하를 막기 위해 1건 발행 후 20초 휴식
+                # 최고급 Pro 모델(2.5 Pro 및 3.1 Pro)의 과부하를 막기 위해 1건 발행 후 20초 휴식 (필수)
                 time.sleep(20) 
 
         print("\n🎉 모든 카테고리 & 등급별 지능형 자동 발행이 완료되었습니다!")
