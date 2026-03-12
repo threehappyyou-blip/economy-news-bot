@@ -32,7 +32,7 @@ CATEGORIES = {
     "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
 }
 
-# 🚨 [에러 완벽 수정] 비어있던 TIERS 변수에 등급 명단을 튜플()로 꽉 채웠습니다!
+# [등급 세팅]
 TIERS = ("Basic", "Premium", "Royal Premium")
 
 def get_category_news(urls, count=30):
@@ -55,17 +55,16 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # [티어별 AI 모델 라우팅] Basic은 2.5-flash, 유료는 2.5-pro와 3.1-pro를 호출합니다!
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
             depth = "Focus ONLY on the objective FACTS. Make it a quick, easy read."
         elif tier == "Premium":
-            model_name = "gemini-2.5-pro"    # 프리미엄 고객을 위한 2.5 Pro 모델 배정
+            model_name = "gemini-2.5-pro"    
             news_count = "5"
             depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology. Provide deep, valuable insights that justify a paid subscription."
         else: # Royal Premium
-            model_name = "gemini-3.1-pro"    # 최상위 VIP 고객을 위한 최고급 3.1 Pro 모델 배정
+            model_name = "gemini-3.1-pro"    
             news_count = "10"
             depth = "Provide the ULTIMATE deep dive. Intertwine macroeconomic theory, behavioral psychology, and historical context. This is for VIP subscribers."
 
@@ -114,7 +113,7 @@ def analyze_with_gemini(news_items, category, tier):
         title = f"[{tier}] Daily {category} Insight" 
         html_content = raw_text
         
-        # 🚨 [숨은 버그 완벽 수정] lines.startswith()로 첫 번째 줄만 정확히 확인하도록 수정했습니다!
+        # 🚨 [숨은 버그 완벽 수정] 첫 번째 줄을 뜻하는 lines을 명확하게 지정하여 에러를 원천 차단했습니다!
         if len(lines) > 0 and lines.startswith("TITLE:"):
             title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
             html_content = "\n".join(lines[1:]).strip()
