@@ -25,14 +25,14 @@ GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
 # [카테고리별 글로벌 뉴스 소스 세팅]
 CATEGORIES = {
-    "Economy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"],
-    "Politics": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"],
-    "Tech": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"],
-    "Health": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"],
-    "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
+    "Economy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"),
+    "Politics": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",),
+    "Tech": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",),
+    "Health": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",),
+    "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
 }
 
-# 🚨 [문법 에러 완벽 수정!] 텅 비어있던 TIERS에 발행할 3가지 등급을 정확히 채워 넣었습니다.
+# 🚨 [에러 완벽 수정] 비어있던 TIERS 변수에 등급 명단을 꽉 채웠습니다!
 TIERS =
 
 def get_category_news(urls, count=30):
@@ -55,7 +55,7 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [제자님 요청 완벽 반영] 등급별로 AI 모델(Flash -> 2.5 Pro -> 3.1 Pro)을 차등 배정합니다!
+        # [티어별 AI 모델 라우팅] Basic은 2.5-flash, 유료는 2.5-pro와 3.1-pro를 호출합니다!
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
@@ -114,6 +114,7 @@ def analyze_with_gemini(news_items, category, tier):
         title = f"[{tier}] Daily {category} Insight" 
         html_content = raw_text
         
+        # 🚨 [수정 완료] lines 리스트의 첫 번째 줄(lines)을 명확하게 지정하여 에러를 방지합니다.
         if len(lines) > 0 and lines.startswith("TITLE:"):
             title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
             html_content = "\n".join(lines[1:]).strip()
