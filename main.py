@@ -24,15 +24,23 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-CATEGORIES = {
-    "Economy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"),
-    "Politics": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",),
-    "Tech": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",),
-    "Health": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",),
-    "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
-}
+# 🚨 [카테고리 세팅] 에러를 방지하기 위해 가장 안전한 함수형으로 묶었습니다.
+CATEGORIES = dict()
+cat_eco = list(); cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"); cat_eco.append("https://finance.yahoo.com/news/rssindex")
+CATEGORIES.update({"Economy": cat_eco})
+cat_pol = list(); cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
+CATEGORIES.update({"Politics": cat_pol})
+cat_tech = list(); cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
+CATEGORIES.update({"Tech": cat_tech})
+cat_health = list(); cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
+CATEGORIES.update({"Health": cat_health})
+cat_energy = list(); cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
+CATEGORIES.update({"Energy": cat_energy})
 
-TIERS = ("Basic", "Premium", "Royal Premium")
+TIERS = list()
+TIERS.append("Basic")
+TIERS.append("Premium")
+TIERS.append("Royal Premium")
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -55,6 +63,7 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
+        # 🚨 [모델 안정화] 404 에러를 원천 차단하기 위해 프리미엄/로얄 모두 2.5-pro 모델로 통일했습니다.
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
@@ -64,7 +73,7 @@ def analyze_with_gemini(news_items, category, tier):
             news_count = "5"
             depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology."
         else: 
-            model_name = "gemini-3.1-pro-preview"    
+            model_name = "gemini-2.5-pro"    
             news_count = "10"
             depth = "Provide the ULTIMATE deep dive using macroeconomic theory, psychology, and historical context."
 
@@ -78,10 +87,10 @@ def analyze_with_gemini(news_items, category, tier):
         Phase 2: Panel Debate and Drafting
         - {depth}
         - STRICT RULE: Write in a professional, trustworthy, and insightful tone. No casual greetings like "Hey there". Start directly with a polished introduction.
-        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
+        - Format the response in clean HTML tags. Do NOT use markdown (**). Do NOT include ```html.
         
-        The VERY FIRST LINE must be exactly: TITLE:
-        The SECOND LINE must be exactly: IMAGE_PROMPT:
+        The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
+        The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for image generation)
         From the THIRD LINE onwards, write the HTML content.
         
         Raw News to Analyze:
@@ -99,16 +108,17 @@ def analyze_with_gemini(news_items, category, tier):
         title = "[{}] Daily {} Insight".format(tier, category)
         image_prompt = "Abstract 3D illustration representing global {}, cinematic lighting, high quality, 8k resolution.".format(category)
         
+        # 제목 및 이미지 프롬프트 추출
         if len(lines) > 0:
             first_line = lines.pop(0)
-            if first_line.startswith("TITLE:"):
+            if "TITLE:" in first_line:
                 title = "[{}] ".format(tier) + first_line.replace("TITLE:", "").strip()
             else:
                 lines.insert(0, first_line)
                 
         if len(lines) > 0:
             second_line = lines.pop(0)
-            if second_line.startswith("IMAGE_PROMPT:"):
+            if "IMAGE_PROMPT:" in second_line:
                 image_prompt = second_line.replace("IMAGE_PROMPT:", "").strip()
             else:
                 lines.insert(0, second_line)
@@ -122,23 +132,25 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None
 
 def generate_thumbnail(image_prompt):
-    """🚨 [에러 완벽 우회] 구글 라이브러리 버그를 피하기 위해, 직접 통신(REST API) 방식으로 썸네일을 그립니다!"""
+    """🚨 [에러 완벽 우회] 구글 라이브러리 버그를 피해 REST API 방식으로 나노바나나 화가를 직접 호출합니다!"""
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
         url = f"[https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=](https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=){GEMINI_API_KEY}"
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            "instances": [{"prompt": image_prompt}],
-            "parameters": {
-                "sampleCount": 1,
-                "aspectRatio": "16:9",
-                "outputOptions": {"mimeType": "image/jpeg"}
-            }
-        }
+        headers = dict()
+        headers.update({'Content-Type': 'application/json'})
+        
+        params = dict()
+        params.update({"sampleCount": 1})
+        params.update({"aspectRatio": "16:9"})
+        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
+        
+        data = dict()
+        data.update({"instances": [{"prompt": image_prompt}]})
+        data.update({"parameters": params})
+        
         response = requests.post(url, headers=headers, json=data)
         
         if response.status_code == 200:
-            # 그려진 이미지를 base64에서 진짜 이미지 파일로 변환합니다.
             b64_img = response.json()['predictions']
             return base64.b64decode(b64_img)
         else:
@@ -158,15 +170,17 @@ def generate_ghost_token():
 def upload_image_to_ghost(image_bytes):
     try:
         token = generate_ghost_token()
-        headers = dict(Authorization='Ghost ' + token)
+        headers = dict()
+        headers.update({'Authorization': 'Ghost ' + token})
+        
         files = dict()
         files.update({'file': ('thumbnail.jpg', image_bytes, 'image/jpeg')})
-        files.update({'purpose': (None, 'image')})
+        files.update({'ref': (None, 'thumbnail.jpg')})
         
         url = GHOST_API_URL + "/ghost/api/admin/images/upload/"
         response = requests.post(url, headers=headers, files=files)
         
-        if response.status_code in (200, 201):
+        if response.status_code == 200 or response.status_code == 201:
             return response.json()['images']['url']
         else:
             print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
@@ -176,12 +190,14 @@ def upload_image_to_ghost(image_bytes):
         return None
 
 def publish_to_ghost(title, html_content, category, tier, feature_image_url):
-    print(f"📝 Ghost 웹사이트에 '{title}' 발행을 시도합니다...")
+    print(f"📝 Ghost 웹사이트에 '{title}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
-        headers_dict = dict(Authorization='Ghost ' + token, Content_Type='application/json')
+        headers_dict = dict()
+        headers_dict.update({'Authorization': 'Ghost ' + token})
+        headers_dict.update({'Content-Type': 'application/json'})
         
-        # 🚨 [요청 사항 100% 반영] 1,000명 모일 때까지 등급 상관없이 모두 무료 공개(Public)로 고정!
+        # 🚨 [모두 무료 공개] 1000명 모일 때까지 누구나 볼 수 있게 public으로 엽니다!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -207,7 +223,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code in (200, 201):
+        if response.status_code == 200 or response.status_code == 201:
             print(f"🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
