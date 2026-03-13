@@ -7,9 +7,10 @@ import jwt
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
-print(" 🚀 구독 등급별 다중 AI 모델 Ghost 발행 봇 🚀")
+print(" 🚀 13인 전문가 + 나노바나나 썸네일 자동 발행 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -18,40 +19,22 @@ GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
     sys.exit(1)
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [에러 완벽 차단 1] 오타가 발생할 수 없도록 update() 함수로 카테고리를 강철처럼 묶었습니다.
-CATEGORIES = dict()
+# [카테고리 세팅]
+CATEGORIES = {
+    "Economy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"),
+    "Politics": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",),
+    "Tech": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",),
+    "Health": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",),
+    "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
+}
 
-cat_eco = list()
-cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
-cat_eco.append("https://finance.yahoo.com/news/rssindex")
-CATEGORIES.update({"Economy": cat_eco})
-
-cat_pol = list()
-cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
-CATEGORIES.update({"Politics": cat_pol})
-
-cat_tech = list()
-cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
-CATEGORIES.update({"Tech": cat_tech})
-
-cat_health = list()
-cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
-CATEGORIES.update({"Health": cat_health})
-
-cat_energy = list()
-cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
-CATEGORIES.update({"Energy": cat_energy})
-
-# 등급 세팅
-TIERS = list()
-TIERS.append("Basic")
-TIERS.append("Premium")
-TIERS.append("Royal Premium")
+# [등급 세팅]
+TIERS = ("Basic", "Premium", "Royal Premium")
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -61,9 +44,7 @@ def get_category_news(urls, count=30):
             feed = feedparser.parse(url)
             for entry in feed.entries:
                 if entry.title in seen_titles: continue
-                # 기사 요약이 없을 경우를 대비한 안전망
-                summary_text = getattr(entry, 'summary', '')
-                news_list.append("- " + str(entry.title) + ": " + str(summary_text))
+                news_list.append("- " + str(entry.title) + ": " + str(entry.summary if 'summary' in entry else ''))
                 seen_titles.add(entry.title)
                 if len(news_list) >= 30: break
         except Exception:
@@ -78,15 +59,15 @@ def analyze_with_gemini(news_items, category, tier):
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
-            depth = "Focus ONLY on the objective FACTS. Make it a quick, easy read."
+            depth = "Focus ONLY on the objective FACTS."
         elif tier == "Premium":
             model_name = "gemini-2.5-pro"    
             news_count = "5"
-            depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology. Provide deep, valuable insights that justify a paid subscription."
+            depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology."
         else: # Royal Premium
             model_name = "gemini-3.1-pro-preview"    
             news_count = "10"
-            depth = "Provide the ULTIMATE deep dive. Intertwine macroeconomic theory, behavioral psychology, and historical context. This is for VIP subscribers."
+            depth = "Provide the ULTIMATE deep dive. Intertwine macroeconomic theory, behavioral psychology, and historical context."
 
         prompt = f"""
         [Goal] Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
@@ -97,27 +78,13 @@ def analyze_with_gemini(news_items, category, tier):
         
         Phase 2: Panel Debate and Drafting
         - {depth}
-        - Write in a professional, trustworthy, and insightful tone. 
-        - STRICT RULE: Do NOT use overly casual greetings. Start directly with a polished, professional introduction.
-        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown (**). Do NOT include ```html.
+        - Write in a professional, trustworthy, and insightful tone. No casual greetings like "Hey there".
+        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
         
-        The VERY FIRST LINE of your output MUST be the title of the post, starting exactly with "TITLE: ". Create a catchy, professional title. Do NOT include the date or time.
+        The VERY FIRST LINE of your output MUST be exactly: TITLE:
+        The SECOND LINE MUST be exactly: IMAGE_PROMPT:
+        From the THIRD LINE onwards, write the HTML content.
         
-        Example Output Format:
-        TITLE: (Insert Catchy Professional Title Here)
-        <h2>The Big Picture</h2>
-        <p>(A professional summary of today's {category} news.)</p>
-        
-        <h2>Top Drivers & Deep Insights</h2>
-        <ul>
-            <li><strong>(Headline 1):</strong> (Fact + Insights matching the {tier} depth)</li>
-        </ul>
-        
-        <h2>Today's Insight</h2>
-        <p>(A comforting, actionable takeaway for {tier} readers.)</p>
-        
-        <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
-
         Raw News to Analyze:
         {selected_news}
         """
@@ -130,67 +97,103 @@ def analyze_with_gemini(news_items, category, tier):
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
         lines = raw_text.split('\n')
         
-        title = "[{}] Daily {} Insight".format(tier, category)
+        title = f"[{tier}] Daily {category} Insight" 
+        image_prompt = f"Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution."
         html_content = raw_text
         
-        # 🚨 [에러 완벽 차단 2] pop(0) 함수를 사용하여 첫 번째 줄(제목)만 아주 안전하게 빼냈습니다!
-        if len(lines) > 0:
-            first_line = lines.pop(0)
-            if first_line.startswith("TITLE:"):
-                title = "[{}] ".format(tier) + first_line.replace("TITLE:", "").strip()
-                html_content = "\n".join(lines).strip()
-            else:
-                lines.insert(0, first_line)
-                html_content = "\n".join(lines).strip()
+        # 🚨 [제목과 이미지 프롬프트 추출]
+        if len(lines) > 0 and lines.startswith("TITLE:"):
+            title_line = lines.pop(0)
+            title = f"[{tier}] " + title_line.replace("TITLE:", "").strip()
             
-        return title, html_content
+        if len(lines) > 0 and lines.startswith("IMAGE_PROMPT:"):
+            img_line = lines.pop(0)
+            image_prompt = img_line.replace("IMAGE_PROMPT:", "").strip()
+            
+        html_content = "\n".join(lines).strip()
+            
+        return title, image_prompt, html_content
         
     except Exception as e:
         print(f"⚠️ [AI 에러] {category} - {tier} 분석 실패: {e}")
-        return None, None
+        return None, None, None
+
+def generate_thumbnail(image_prompt):
+    """구글 최신 이미지 AI 모델을 호출하여 썸네일을 그립니다."""
+    print(f"🎨 나노바나나 AI가 썸네일을 그리는 중입니다... ")
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        # 구글의 최신 이미지 생성 모델
+        response = client.models.generate_images(
+            model='imagen-3.0-generate-002',
+            prompt=image_prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                output_mime_type="image/jpeg",
+                aspect_ratio="16:9" 
+            )
+        )
+        return response.generated_images.image.image_bytes
+    except Exception as e:
+        print(f"⚠️ [이미지 생성 에러]: {e}")
+        return None
 
 def generate_ghost_token():
     id_str, secret_str = GHOST_ADMIN_API_KEY.split(':')
     iat = int(datetime.now().timestamp())
-    header = dict(alg='HS256', typ='JWT', kid=id_str)
-    payload = dict(iat=iat, exp=iat + 5 * 60, aud='/admin/')
+    header = {'alg': 'HS256', 'typ': 'JWT', 'kid': id_str}
+    payload = {'iat': iat, 'exp': iat + 5 * 60, 'aud': '/admin/'}
     return jwt.encode(payload, bytes.fromhex(secret_str), algorithm='HS256', headers=header)
 
-def publish_to_ghost(title, html_content, category, tier):
+def upload_image_to_ghost(image_bytes):
+    """생성된 이미지를 Ghost 사이트에 업로드하고 URL을 받아옵니다."""
+    try:
+        token = generate_ghost_token()
+        # 🚨 [주의] 파일 업로드 시에는 Content-Type을 지정하면 에러가 납니다. (requests가 알아서 처리함)
+        headers = {'Authorization': f'Ghost {token}'}
+        files = {
+            'file': ('thumbnail.jpg', image_bytes, 'image/jpeg'),
+            'purpose': (None, 'image')
+        }
+        url = f"{GHOST_API_URL}/ghost/api/admin/images/upload/"
+        response = requests.post(url, headers=headers, files=files)
+        
+        if response.status_code in (200, 201):
+            return response.json()['images']['url']
+        else:
+            print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"❌ [이미지 서버 통신 에러] {e}")
+        return None
+
+def publish_to_ghost(title, html_content, category, tier, feature_image_url):
     print(f"📝 Ghost 웹사이트에 '{category} - {tier}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
+        headers_dict = {'Authorization': f'Ghost {token}', 'Content-Type': 'application/json'}
         
-        headers_dict = dict()
-        headers_dict.update({'Authorization': 'Ghost ' + token})
-        headers_dict.update({'Content-Type': 'application/json'})
+        # 🚨 [제자님 요청 100% 반영] 1,000명이 모일 때까지 모든 글을 무료(public)로 오픈합니다!
+        visibility_setting = "public" 
         
-        visibility_setting = "public" if tier == "Basic" else "paid"
+        post_dict = {
+            "title": title, 
+            "html": html_content,
+            "status": "published",
+            "visibility": visibility_setting,
+            "tags": [{"name": category}, {"name": tier}] 
+        }
         
-        tag_dict = dict(name=category)
-        tier_dict = dict(name=tier)
+        # 🚨 썸네일 이미지가 성공적으로 만들어졌다면, 기사 대표 이미지로 꽂아 넣습니다.
+        if feature_image_url:
+            post_dict["feature_image"] = feature_image_url
+            
+        post_data = {"posts": [post_dict]}
         
-        tags_list = list()
-        tags_list.append(tag_dict)
-        tags_list.append(tier_dict)
-        
-        post_dict = dict()
-        post_dict.update({"title": title})
-        post_dict.update({"html": html_content})
-        post_dict.update({"status": "published"})
-        post_dict.update({"visibility": visibility_setting})
-        post_dict.update({"tags": tags_list})
-        
-        posts_list = list()
-        posts_list.append(post_dict)
-        
-        post_data = dict()
-        post_data.update({"posts": posts_list})
-        
-        url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
+        url = f"{GHOST_API_URL}/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code == 200 or response.status_code == 201:
+        if response.status_code in (200, 201):
             print(f"🎉 [성공] '{title}' 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
@@ -204,20 +207,25 @@ if __name__ == "__main__":
             
             news = get_category_news(urls, count=30)
             if not news:
-                print(f"⚠️ {category} 뉴스가 없어 건너뜁니다.")
                 continue
                 
             for tier in TIERS:
                 print(f"  -> {tier} 등급 리포트 작성 중...")
-                post_title, report_html = analyze_with_gemini(news, category, tier)
+                post_title, img_prompt, report_html = analyze_with_gemini(news, category, tier)
                 
                 if report_html and post_title:
-                    publish_to_ghost(post_title, report_html, category, tier)
+                    # 🚨 텍스트 작성이 끝나면 그림을 그리고, 사이트에 올립니다.
+                    feature_image_url = None
+                    if img_prompt:
+                        image_bytes = generate_thumbnail(img_prompt)
+                        if image_bytes:
+                            feature_image_url = upload_image_to_ghost(image_bytes)
+                            
+                    publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 최고급 Pro 모델(2.5 Pro 및 3.1 Pro)의 과부하를 막기 위해 1건 발행 후 20초 휴식
-                time.sleep(20) 
+                time.sleep(20) # 과부하 방지 20초 휴식
 
-        print("\n🎉 모든 카테고리 & 등급별 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
