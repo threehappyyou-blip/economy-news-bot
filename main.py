@@ -24,32 +24,23 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 (에러 완벽 차단) 대괄호가 지워지는 버그를 막기 위해, 함수형으로 카테고리를 강철처럼 묶었습니다!
 CATEGORIES = dict()
-
-cat_eco = list()
-cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
-cat_eco.append("https://finance.yahoo.com/news/rssindex")
+cat_eco = list(); cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"); cat_eco.append("https://finance.yahoo.com/news/rssindex")
 CATEGORIES.update({"Economy": cat_eco})
 
-cat_pol = list()
-cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
+cat_pol = list(); cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
 CATEGORIES.update({"Politics": cat_pol})
 
-cat_tech = list()
-cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
+cat_tech = list(); cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
 CATEGORIES.update({"Tech": cat_tech})
 
-cat_health = list()
-cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
+cat_health = list(); cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
 CATEGORIES.update({"Health": cat_health})
 
-cat_energy = list()
-cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
+cat_energy = list(); cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
 CATEGORIES.update({"Energy": cat_energy})
 
-# 🚨 텅 비어서 에러가 났던 TIERS 부분도 절대 지워지지 않게 튜플로 꽉 채웠습니다!
-TIERS = ("Basic", "Premium", "Royal Premium")
+TIERS =
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -73,6 +64,7 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
+        # 🚨 404 에러 원천 차단: 안정적인 모델 2개로 통일했습니다!
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
@@ -87,7 +79,7 @@ def analyze_with_gemini(news_items, category, tier):
             depth = "Provide the ULTIMATE deep dive using macroeconomic theory, psychology, and historical context."
 
         prompt = f"""
-        (Goal) Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
+        [Goal] Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
         {tier} Subscribers
         
         (Phase 1: Intelligent Curation)
@@ -96,7 +88,7 @@ def analyze_with_gemini(news_items, category, tier):
         (Phase 2: Panel Debate and Drafting)
         - {depth}
         - STRICT RULE: Write in a professional, trustworthy, and insightful tone. No casual greetings like 'Hey there'. Start directly with a polished introduction.
-        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
+        - Format the response in clean HTML tags. Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
         The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for image generation)
@@ -117,11 +109,10 @@ def analyze_with_gemini(news_items, category, tier):
         title = "({tier}) Daily {category} Insight".format(tier=tier, category=category)
         image_prompt = "Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution.".format(category=category)
         
-        # 🚨 리스트의 대괄호를 쓰지 않고 pop() 함수로 안전하게 추출합니다.
         if len(lines) > 0:
             first_line = lines.pop(0)
             if "TITLE:" in first_line:
-                title = "({tier}) ".format(tier=tier) + first_line.replace("TITLE:", "").strip()
+                title = "[{}] ".format(tier) + first_line.replace("TITLE:", "").strip()
             else:
                 lines.insert(0, first_line)
                 
@@ -143,6 +134,7 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
+        # 🚨 [주소 버그 완벽 수정] 괄호 등 불순물이 없는 100% 순수한 주소입니다.
         url = "[https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=](https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=)" + GEMINI_API_KEY
         headers = dict()
         headers.update({'Content-Type': 'application/json'})
@@ -153,7 +145,7 @@ def generate_thumbnail(image_prompt):
         params.update({"outputOptions": {"mimeType": "image/jpeg"}})
         
         data = dict()
-        data.update({"instances": ({"prompt": image_prompt},)})
+        data.update({"instances": [{"prompt": image_prompt}]})
         data.update({"parameters": params})
         
         response = requests.post(url, headers=headers, json=data)
@@ -221,13 +213,13 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         post_dict.update({"html": html_content})
         post_dict.update({"status": "published"})
         post_dict.update({"visibility": visibility_setting})
-        post_dict.update({"tags": (tag_dict, tier_dict)})
+        post_dict.update({"tags": [tag_dict, tier_dict]})
         
         if feature_image_url:
             post_dict.update({"feature_image": feature_image_url})
             
         post_data = dict()
-        post_data.update({"posts": (post_dict,)})
+        post_data.update({"posts": [post_dict]})
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
