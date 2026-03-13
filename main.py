@@ -23,36 +23,35 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [에러 완벽 차단 1] 괄호가 지워지는 버그를 막기 위해, 가장 안전한 방식으로 카테고리를 세팅했습니다!
+# 🚨 [에러 완벽 차단 1] 오타가 발생할 수 없도록 update() 함수로 카테고리를 강철처럼 묶었습니다.
 CATEGORIES = dict()
 
 cat_eco = list()
 cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
 cat_eco.append("https://finance.yahoo.com/news/rssindex")
-CATEGORIES["Economy"] = cat_eco
+CATEGORIES.update({"Economy": cat_eco})
 
 cat_pol = list()
 cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
-CATEGORIES["Politics"] = cat_pol
+CATEGORIES.update({"Politics": cat_pol})
 
 cat_tech = list()
 cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
-CATEGORIES = cat_tech
+CATEGORIES.update({"Tech": cat_tech})
 
 cat_health = list()
 cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
-CATEGORIES["Health"] = cat_health
+CATEGORIES.update({"Health": cat_health})
 
 cat_energy = list()
 cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
-CATEGORIES["Energy"] = cat_energy
+CATEGORIES.update({"Energy": cat_energy})
 
-# 🚨 [에러 완벽 차단 2] 텅 비어서 에러가 났던 TIERS 부분도 절대 지워지지 않게 꽉 채웠습니다!
+# 등급 세팅
 TIERS = list()
 TIERS.append("Basic")
 TIERS.append("Premium")
 TIERS.append("Royal Premium")
-
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -62,7 +61,9 @@ def get_category_news(urls, count=30):
             feed = feedparser.parse(url)
             for entry in feed.entries:
                 if entry.title in seen_titles: continue
-                news_list.append("- " + str(entry.title) + ": " + str(entry.summary if 'summary' in entry else ''))
+                # 기사 요약이 없을 경우를 대비한 안전망
+                summary_text = getattr(entry, 'summary', '')
+                news_list.append("- " + str(entry.title) + ": " + str(summary_text))
                 seen_titles.add(entry.title)
                 if len(news_list) >= 30: break
         except Exception:
@@ -129,13 +130,18 @@ def analyze_with_gemini(news_items, category, tier):
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
         lines = raw_text.split('\n')
         
-        title = f"[{tier}] Daily {category} Insight" 
+        title = "[{}] Daily {} Insight".format(tier, category)
         html_content = raw_text
         
-        # 🚨 [제목 추출 에러 완벽 해결] lines 바구니의 '첫 번째 줄(lines)'을 정확히 가리키도록 수정했습니다!
-        if len(lines) > 0 and lines.startswith("TITLE:"):
-            title = f"[{tier}] " + lines.replace("TITLE:", "").strip()
-            html_content = "\n".join(lines[1:]).strip()
+        # 🚨 [에러 완벽 차단 2] pop(0) 함수를 사용하여 첫 번째 줄(제목)만 아주 안전하게 빼냈습니다!
+        if len(lines) > 0:
+            first_line = lines.pop(0)
+            if first_line.startswith("TITLE:"):
+                title = "[{}] ".format(tier) + first_line.replace("TITLE:", "").strip()
+                html_content = "\n".join(lines).strip()
+            else:
+                lines.insert(0, first_line)
+                html_content = "\n".join(lines).strip()
             
         return title, html_content
         
@@ -154,19 +160,37 @@ def publish_to_ghost(title, html_content, category, tier):
     print(f"📝 Ghost 웹사이트에 '{category} - {tier}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
-        headers_dict = dict(Authorization='Ghost ' + token, Content_Type='application/json')
+        
+        headers_dict = dict()
+        headers_dict.update({'Authorization': 'Ghost ' + token})
+        headers_dict.update({'Content-Type': 'application/json'})
         
         visibility_setting = "public" if tier == "Basic" else "paid"
         
         tag_dict = dict(name=category)
         tier_dict = dict(name=tier)
-        post_dict = dict(title=title, html=html_content, status="published", visibility=visibility_setting, tags=[tag_dict, tier_dict])
-        post_data = dict(posts=[post_dict])
+        
+        tags_list = list()
+        tags_list.append(tag_dict)
+        tags_list.append(tier_dict)
+        
+        post_dict = dict()
+        post_dict.update({"title": title})
+        post_dict.update({"html": html_content})
+        post_dict.update({"status": "published"})
+        post_dict.update({"visibility": visibility_setting})
+        post_dict.update({"tags": tags_list})
+        
+        posts_list = list()
+        posts_list.append(post_dict)
+        
+        post_data = dict()
+        post_data.update({"posts": posts_list})
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code in (200, 201):
+        if response.status_code == 200 or response.status_code == 201:
             print(f"🎉 [성공] '{title}' 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
@@ -190,6 +214,7 @@ if __name__ == "__main__":
                 if report_html and post_title:
                     publish_to_ghost(post_title, report_html, category, tier)
                     
+                # 최고급 Pro 모델(2.5 Pro 및 3.1 Pro)의 과부하를 막기 위해 1건 발행 후 20초 휴식
                 time.sleep(20) 
 
         print("\n🎉 모든 카테고리 & 등급별 지능형 자동 발행이 완료되었습니다!")
