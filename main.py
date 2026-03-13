@@ -4,10 +4,10 @@ import traceback
 import time
 import requests
 import jwt
+import base64
 from datetime import datetime
 import feedparser
 from google import genai
-from google.genai import types
 
 print("=======================================")
 print(" 🚀 13인 전문가 + 나노바나나 썸네일 자동 발행 봇 🚀")
@@ -24,34 +24,15 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [카테고리 완벽 복구] 텍스트 시스템이 괄호를 지우지 못하게 완벽히 방어했습니다.
-CATEGORIES = dict()
+CATEGORIES = {
+    "Economy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"),
+    "Politics": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",),
+    "Tech": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",),
+    "Health": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",),
+    "Energy": ("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",)
+}
 
-cat_eco = list()
-cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
-cat_eco.append("https://finance.yahoo.com/news/rssindex")
-CATEGORIES.update({"Economy": cat_eco})
-
-cat_pol = list()
-cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
-CATEGORIES.update({"Politics": cat_pol})
-
-cat_tech = list()
-cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
-CATEGORIES.update({"Tech": cat_tech})
-
-cat_health = list()
-cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
-CATEGORIES.update({"Health": cat_health})
-
-cat_energy = list()
-cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
-CATEGORIES.update({"Energy": cat_energy})
-
-TIERS = list()
-TIERS.append("Basic")
-TIERS.append("Premium")
-TIERS.append("Royal Premium")
+TIERS = ("Basic", "Premium", "Royal Premium")
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -82,7 +63,7 @@ def analyze_with_gemini(news_items, category, tier):
             model_name = "gemini-2.5-pro"    
             news_count = "5"
             depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology."
-        else: # Royal Premium
+        else: 
             model_name = "gemini-3.1-pro-preview"    
             news_count = "10"
             depth = "Provide the ULTIMATE deep dive using macroeconomic theory, psychology, and historical context."
@@ -118,7 +99,6 @@ def analyze_with_gemini(news_items, category, tier):
         title = "[{}] Daily {} Insight".format(tier, category)
         image_prompt = "Abstract 3D illustration representing global {}, cinematic lighting, high quality, 8k resolution.".format(category)
         
-        # 🚨 [제목 추출 에러 완벽 수정] pop(0) 함수로 첫 번째 줄만 안전하게 빼냅니다.
         if len(lines) > 0:
             first_line = lines.pop(0)
             if first_line.startswith("TITLE:"):
@@ -126,7 +106,6 @@ def analyze_with_gemini(news_items, category, tier):
             else:
                 lines.insert(0, first_line)
                 
-        # 🚨 [이미지 프롬프트 추출] 썸네일 생성을 위한 영어 명령어 추출
         if len(lines) > 0:
             second_line = lines.pop(0)
             if second_line.startswith("IMAGE_PROMPT:"):
@@ -143,19 +122,28 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None
 
 def generate_thumbnail(image_prompt):
+    """🚨 [에러 완벽 우회] 구글 라이브러리 버그를 피하기 위해, 직접 통신(REST API) 방식으로 썸네일을 그립니다!"""
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_images(
-            model='imagen-3.0-generate-002',
-            prompt=image_prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
-                output_mime_type="image/jpeg",
-                aspect_ratio="16:9" 
-            )
-        )
-        return response.generated_images.image.image_bytes
+        url = f"[https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=](https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=){GEMINI_API_KEY}"
+        headers = {'Content-Type': 'application/json'}
+        data = {
+            "instances": [{"prompt": image_prompt}],
+            "parameters": {
+                "sampleCount": 1,
+                "aspectRatio": "16:9",
+                "outputOptions": {"mimeType": "image/jpeg"}
+            }
+        }
+        response = requests.post(url, headers=headers, json=data)
+        
+        if response.status_code == 200:
+            # 그려진 이미지를 base64에서 진짜 이미지 파일로 변환합니다.
+            b64_img = response.json()['predictions']
+            return base64.b64decode(b64_img)
+        else:
+            print(f"⚠️ [이미지 API 에러]: {response.status_code} - {response.text}")
+            return None
     except Exception as e:
         print(f"⚠️ [이미지 생성 에러]: {e}")
         return None
@@ -170,9 +158,7 @@ def generate_ghost_token():
 def upload_image_to_ghost(image_bytes):
     try:
         token = generate_ghost_token()
-        headers = dict()
-        headers.update({'Authorization': 'Ghost ' + token})
-        
+        headers = dict(Authorization='Ghost ' + token)
         files = dict()
         files.update({'file': ('thumbnail.jpg', image_bytes, 'image/jpeg')})
         files.update({'purpose': (None, 'image')})
@@ -180,7 +166,7 @@ def upload_image_to_ghost(image_bytes):
         url = GHOST_API_URL + "/ghost/api/admin/images/upload/"
         response = requests.post(url, headers=headers, files=files)
         
-        if response.status_code == 200 or response.status_code == 201:
+        if response.status_code in (200, 201):
             return response.json()['images']['url']
         else:
             print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
@@ -190,14 +176,12 @@ def upload_image_to_ghost(image_bytes):
         return None
 
 def publish_to_ghost(title, html_content, category, tier, feature_image_url):
-    print(f"📝 Ghost 웹사이트에 '{category} - {tier}' 글을 발행합니다...")
+    print(f"📝 Ghost 웹사이트에 '{title}' 발행을 시도합니다...")
     try:
         token = generate_ghost_token()
-        headers_dict = dict()
-        headers_dict.update({'Authorization': 'Ghost ' + token})
-        headers_dict.update({'Content-Type': 'application/json'})
+        headers_dict = dict(Authorization='Ghost ' + token, Content_Type='application/json')
         
-        # 🚨 [요청 사항 반영] 초기 구독자 유치를 위해 모든 글을 누구나 볼 수 있게(public) 설정했습니다!
+        # 🚨 [요청 사항 100% 반영] 1,000명 모일 때까지 등급 상관없이 모두 무료 공개(Public)로 고정!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -218,15 +202,13 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
             
         posts_list = list()
         posts_list.append(post_dict)
-        
-        post_data = dict()
-        post_data.update({"posts": posts_list})
+        post_data = dict(posts=posts_list)
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code == 200 or response.status_code == 201:
-            print(f"🎉 [성공] '{title}' 자동 발행 완료!")
+        if response.status_code in (200, 201):
+            print(f"🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
@@ -256,7 +238,7 @@ if __name__ == "__main__":
                     
                 time.sleep(20) 
 
-        print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행 완료!")
+        print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
