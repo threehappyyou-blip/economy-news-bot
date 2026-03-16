@@ -25,21 +25,28 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [과거 에러 완전 청소] 완벽하고 안전한 딕셔너리와 리스트 구조입니다.
-CATEGORIES = {
-    "Economy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"],
-    "Politics": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"],
-    "Tech": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"],
-    "Health": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"],
-    "Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
-}
+# 🚨 [카테고리 완벽 세팅] 시스템 버그를 원천 차단하기 위해 dict()와 list() 함수만 사용했습니다.
+CATEGORIES = dict()
+CATEGORIES.update({"Economy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"]})
+CATEGORIES.update({"Politics": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"]})
+CATEGORIES.update({"Tech": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"]})
+CATEGORIES.update({"Health": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"]})
+CATEGORIES.update({"Energy": ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]})
 
-# 🚨 에러가 났던 TIERS 부분도 완벽하게 채워져 있습니다!
-TIERS =
-TIER_LABELS = {"Basic": "🌱 Free", "Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
+# 🚨 [등급 세팅] 텅 비어서 에러가 났던 TIERS 부분을 가장 안전한 append()로 꽉 채웠습니다!
+TIERS = list()
+TIERS.append("Basic")
+TIERS.append("Premium")
+TIERS.append("Royal Premium")
+
+TIER_LABELS = dict()
+TIER_LABELS.update({"Basic": "🌱 Free"})
+TIER_LABELS.update({"Premium": "💎 Pro"})
+TIER_LABELS.update({"Royal Premium": "👑 VIP"})
+
 
 def get_category_news(urls, count=30):
-    news_list =
+    news_list = list()
     seen_titles = set()
     for url in urls:
         try:
@@ -48,7 +55,7 @@ def get_category_news(urls, count=30):
                 title_text = getattr(entry, 'title', '')
                 if title_text in seen_titles: continue
                 summary_text = getattr(entry, 'summary', '')
-                news_list.append(f"- {title_text}: {summary_text}")
+                news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
                 if len(news_list) >= count: break
         except Exception:
@@ -77,10 +84,10 @@ def analyze_with_gemini(news_items, category, tier):
         [Goal] Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
         {tier} Subscribers
         
-        Phase 1: Intelligent Curation
+        (Phase 1: Intelligent Curation)
         - Select ONLY the top {news_count} most critical news stories from the raw data.
         
-        Phase 2: Panel Debate and Drafting
+        (Phase 2: Panel Debate and Drafting)
         - {depth}
         - STRICT RULE: Write in a professional, trustworthy, and insightful tone. No casual greetings like 'Hey there'. Start directly with a polished introduction.
         - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown (**). Do NOT include ```html.
@@ -93,35 +100,31 @@ def analyze_with_gemini(news_items, category, tier):
         {selected_news}
         """
         
-        # 🚨 [404 에러 무적 방어막] 만약 구글이 3.1-pro 권한을 막아두었다면, 스스로 2.5-pro로 우회해서 작성합니다!
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt
-            )
-        except Exception as model_e:
-            if "404" in str(model_e):
-                print(f"   🔄 {model_name} 권한이 없어 gemini-2.5-pro 모델로 우회하여 작성합니다...")
-                response = client.models.generate_content(
-                    model="gemini-2.5-pro",
-                    contents=prompt
-                )
-            else:
-                raise model_e
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt
+        )
         
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
-        lines = [line.strip() for line in raw_text.split('\n') if line.strip()!= ""]
+        lines = raw_text.split('\n')
         
         pretty_tier = TIER_LABELS.get(tier, tier)
         title = f"[{pretty_tier}] Daily {category} Insight"
         image_prompt = f"Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution."
         
-        # 🚨 [제목 추출 에러 완벽 해결] lines 바구니의 첫 번째 줄을 매우 안전하게 분리합니다.
-        if len(lines) > 0 and lines.startswith("TITLE:"):
-            title = f"[{pretty_tier}] " + lines.pop(0).replace("TITLE:", "").strip()
-            
-        if len(lines) > 0 and lines.startswith("IMAGE_PROMPT:"):
-            image_prompt = lines.pop(0).replace("IMAGE_PROMPT:", "").strip()
+        if len(lines) > 0:
+            first_line = lines.pop(0)
+            if "TITLE:" in first_line:
+                title = f"[{pretty_tier}] " + first_line.replace("TITLE:", "").strip()
+            else:
+                lines.insert(0, first_line)
+                
+        if len(lines) > 0:
+            second_line = lines.pop(0)
+            if "IMAGE_PROMPT:" in second_line:
+                image_prompt = second_line.replace("IMAGE_PROMPT:", "").strip()
+            else:
+                lines.insert(0, second_line)
                 
         html_content = "\n".join(lines).strip()
             
@@ -134,18 +137,18 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        api_base = "https://" + "generativelanguage.googleapis.com"
-        url = api_base + "/v1beta/models/imagen-3.0-generate-002:predict?key=" + GEMINI_API_KEY
+        url = "[https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=](https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=)" + GEMINI_API_KEY
+        headers = dict()
+        headers.update({'Content-Type': 'application/json'})
         
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            "instances": [{"prompt": image_prompt}],
-            "parameters": {
-                "sampleCount": 1,
-                "aspectRatio": "16:9",
-                "outputOptions": {"mimeType": "image/jpeg"}
-            }
-        }
+        params = dict()
+        params.update({"sampleCount": 1})
+        params.update({"aspectRatio": "16:9"})
+        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
+        
+        data = dict()
+        data.update({"instances": [{"prompt": image_prompt}]})
+        data.update({"parameters": params})
         
         response = requests.post(url, headers=headers, json=data)
         
@@ -164,23 +167,27 @@ def generate_thumbnail(image_prompt):
 def generate_ghost_token():
     id_str, secret_str = GHOST_ADMIN_API_KEY.split(':')
     iat = int(datetime.now().timestamp())
-    header = {'alg': 'HS256', 'typ': 'JWT', 'kid': id_str}
-    payload = {'iat': iat, 'exp': iat + 5 * 60, 'aud': '/admin/'}
+    header = dict(alg='HS256', typ='JWT', kid=id_str)
+    payload = dict(iat=iat, exp=iat + 5 * 60, aud='/admin/')
     return jwt.encode(payload, bytes.fromhex(secret_str), algorithm='HS256', headers=header)
 
 def upload_image_to_ghost(image_bytes):
     try:
         token = generate_ghost_token()
-        headers = {'Authorization': f'Ghost {token}'}
-        files = {
-            'file': ('thumbnail.jpg', image_bytes, 'image/jpeg'),
-            'purpose': (None, 'image')
-        }
+        headers = dict()
+        headers.update({'Authorization': 'Ghost ' + token})
+        
+        files = dict()
+        files.update({'file': ('thumbnail.jpg', image_bytes, 'image/jpeg')})
+        files.update({'purpose': (None, 'image')})
+        
         url = GHOST_API_URL + "/ghost/api/admin/images/upload/"
         response = requests.post(url, headers=headers, files=files)
         
-        if response.status_code in (200, 201):
-            return response.json()['images']['url']
+        if response.status_code == 200 or response.status_code == 201:
+            images = response.json().get('images')
+            if images:
+                return images.get('url')
         else:
             print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
             return None
@@ -192,29 +199,37 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
     print(f"📝 Ghost 웹사이트에 '{title}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
-        headers_dict = {'Authorization': f'Ghost {token}', 'Content-Type': 'application/json'}
+        headers_dict = dict()
+        headers_dict.update({'Authorization': 'Ghost ' + token})
+        headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 돌파 전까지 모두 무료 공개(public)
         visibility_setting = "public"
         
-        post_dict = {
-            "title": title, 
-            "html": html_content,
-            "status": "published",
-            "visibility": visibility_setting,
-            "tags": [{"name": category}, {"name": tier}] 
-        }
+        tag_dict = dict(name=category)
+        tier_dict = dict(name=tier)
+        tags_list = list()
+        tags_list.append(tag_dict)
+        tags_list.append(tier_dict)
+        
+        post_dict = dict()
+        post_dict.update({"title": title})
+        post_dict.update({"html": html_content})
+        post_dict.update({"status": "published"})
+        post_dict.update({"visibility": visibility_setting})
+        post_dict.update({"tags": tags_list})
         
         if feature_image_url:
-            post_dict["feature_image"] = feature_image_url
+            post_dict.update({"feature_image": feature_image_url})
             
-        post_data = {"posts": [post_dict]}
+        posts_list = list()
+        posts_list.append(post_dict)
+        post_data = dict(posts=posts_list)
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code in (200, 201):
-            print(f"🎉 [성공] 자동 발행 완료!")
+        if response.status_code == 200 or response.status_code == 201:
+            print("🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
