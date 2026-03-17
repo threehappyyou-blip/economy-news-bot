@@ -8,10 +8,9 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
-from google.genai import types
 
 print("=======================================")
-print(" 🚀 13인 전문가 + 나노바나나 썸네일 + 100% 무료공개 봇 🚀")
+print(" 🚀 40년 경력 분야별 미국 전문가 + 전면 무료(Flash) 테스트 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -20,18 +19,34 @@ GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
     sys.exit(1)
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
+# 🚨 [카테고리 세팅] 과거 에러 방지를 위해 list()와 dict() 함수로 강철처럼 묶어두었습니다.
 CATEGORIES = dict()
-cat_eco = list(); cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"); cat_eco.append("https://" + "finance.yahoo.com/news/rssindex"); CATEGORIES.update({"Economy": cat_eco})
-cat_pol = list(); cat_pol.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"); CATEGORIES.update({"Politics": cat_pol})
-cat_tech = list(); cat_tech.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"); CATEGORIES.update({"Tech": cat_tech})
-cat_health = list(); cat_health.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"); CATEGORIES.update({"Health": cat_health})
-cat_energy = list(); cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"); CATEGORIES.update({"Energy": cat_energy})
+
+cat_eco = list()
+cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
+cat_eco.append("https://" + "finance.yahoo.com/news/rssindex")
+CATEGORIES.update({"Economy": cat_eco})
+
+cat_pol = list()
+cat_pol.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
+CATEGORIES.update({"Politics": cat_pol})
+
+cat_tech = list()
+cat_tech.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
+CATEGORIES.update({"Tech": cat_tech})
+
+cat_health = list()
+cat_health.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
+CATEGORIES.update({"Health": cat_health})
+
+cat_energy = list()
+cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
+CATEGORIES.update({"Energy": cat_energy})
 
 TIERS = list()
 TIERS.append("Basic")
@@ -68,33 +83,61 @@ def analyze_with_gemini(news_items, category, tier):
         # 🚨 [비용 세이브 모드] 썸네일 테스트가 완료될 때까지 모든 등급을 무료(Flash) 모델로 고정합니다.
         model_name = "gemini-2.5-flash"  
         
-        # 분석 깊이는 등급별로 다르게 유지합니다.
+        # 등급별 분석 깊이 유지
         if tier == "Basic":
             news_count = "3"
-            depth = "Focus ONLY on the objective FACTS. Make it a quick, easy read."
+            depth = "Focus strictly on the objective FACTS (What happened). Keep it concise but spark curiosity."
         elif tier == "Premium":
             news_count = "5"
-            depth = "Focus on the 'WHY' behind the facts using behavioral economics and psychology."
+            depth = "Focus on the 'WHY' using Behavioral Economics and Psychology. Explain the irrational market psychology behind the facts."
         else: 
             news_count = "10"
-            depth = "Provide the ULTIMATE deep dive using macroeconomic theory, psychology, and historical context."
+            depth = "Provide the ULTIMATE deep dive. Intertwine Behavioral Psychology with Historical and Philosophical context. Connect current events to past historical cycles."
+
+        # 🚨 [분야별 40년 경력의 미국 현지 전문가 페르소나 동적 할당]
+        if category == "Politics":
+            expert_persona = "a veteran US political expert with over 40 years of experience in Washington D.C. and global geopolitics"
+        elif category == "Tech":
+            expert_persona = "a veteran US technology expert with over 40 years of experience in Silicon Valley and global tech trends"
+        elif category == "Health":
+            expert_persona = "a veteran US healthcare expert with over 40 years of experience in the medical industry and bio-innovation"
+        elif category == "Energy":
+            expert_persona = "a veteran US energy expert with over 40 years of experience in global energy markets and infrastructure"
+        else: # Economy
+            expert_persona = "a veteran US economic expert with over 40 years of experience in Wall Street and global macroeconomics"
 
         prompt = f"""
-        (Goal) Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
-        {tier} Subscribers
+        [Goal] Write a highly insightful, deeply humanized blog post in English for the '{category}' section of the 'Warm Insight' website.
+        {tier} Subscribers who want financial freedom and peace of mind.
         
-        (Phase 1: Intelligent Curation)
-        - Select ONLY the top {news_count} most critical news stories from the raw data.
+        You are {expert_persona}. You are internally simulating a debate among top-tier experts, but YOU are writing the final output based on your 40 years of deep experience.
         
-        (Phase 2: Panel Debate and Drafting)
-        - {depth}
-        - STRICT RULE: Write in a professional, trustworthy, and insightful tone. No casual greetings like 'Hey there'. Start directly with a polished introduction.
-        - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown (**). Do NOT include ```html.
+        1. NEVER use words like 'professor', 'economist', 'expert', or 'executive'.
+        2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I" to build strong emotional rapport.
+        3. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
+        4. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
+        5. If a news story is an ONGOING event, explicitly analyze what NEW information has been added today and how it changes previous assumptions.
+        6. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
-        The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for image generation)
-        From the THIRD LINE onwards, write the HTML content.
+        The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for Nano Banana image generation, e.g., cinematic, 8k, abstract 3D)
+        From the THIRD LINE onwards, write the HTML content:
         
+        <h2>The Big Picture</h2>
+        <p>(A warm, humanized 3-sentence summary of today's {category} news.)</p>
+        
+        <h2>Top Drivers & Deep Insights</h2>
+        <ul>
+            <li><strong>(Headline 1):</strong> (Fact + {depth} + Ongoing event update if applicable)</li>
+        </ul>
+        
+        <h2>Today's Warm Insight</h2>
+        <p>(A comforting, actionable takeaway regarding asset allocation or mindset to help readers feel safe.)</p>
+        
+        <p><strong>P.S.</strong> (Add a very short, relatable, human-like personal thought or anecdote about today's market vibe to build strong emotional rapport.)</p>
+        
+        <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
+
         Raw News to Analyze:
         {selected_news}
         """
@@ -139,7 +182,6 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [주소 버그 완벽 차단] 시스템이 링크를 훼손하지 못하게 분리해서 결합했습니다!
         api_base = "https://" + "generativelanguage.googleapis.com"
         url = api_base + "/v1beta/models/imagen-3.0-generate-002:predict?key=" + GEMINI_API_KEY
         
@@ -210,7 +252,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 🚨 [모두 무료 공개] 1000명 모일 때까지 누구나 볼 수 있게 public으로 엽니다!
+        # 1000명 모일 때까지 모두 무료 공개(Public)!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -237,7 +279,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         response = requests.post(url, json=post_data, headers=headers_dict)
         
         if response.status_code == 200 or response.status_code == 201:
-            print(f"🎉 [성공] 자동 발행 완료!")
+            print("🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
@@ -265,7 +307,7 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                time.sleep(20) # 과부하 방지 20초 휴식
+                time.sleep(15) 
 
         print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
         
