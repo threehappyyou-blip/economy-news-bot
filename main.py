@@ -261,7 +261,9 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
             
         posts_list = list()
         posts_list.append(post_dict)
-        post_data = dict(posts=posts_list)
+        
+        post_data = dict()
+        post_data.update({"posts": posts_list})
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
