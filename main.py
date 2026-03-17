@@ -171,7 +171,9 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        url = "[https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=](https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=)" + GEMINI_API_KEY
+        api_base = "https://" + "generativelanguage.googleapis.com"
+        url = api_base + "/v1beta/models/imagen-3.0-generate-002:predict?key=" + GEMINI_API_KEY
+        
         headers = dict()
         headers.update({'Content-Type': 'application/json'})
         
@@ -243,22 +245,23 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         
         tag_dict = dict(name=category)
         tier_dict = dict(name=tier)
+        tags_list = list()
+        tags_list.append(tag_dict)
+        tags_list.append(tier_dict)
         
         post_dict = dict()
         post_dict.update({"title": title})
         post_dict.update({"html": html_content})
         post_dict.update({"status": "published"})
         post_dict.update({"visibility": visibility_setting})
-        post_dict.update({"tags": [tag_dict, tier_dict]})
+        post_dict.update({"tags": tags_list})
         
         if feature_image_url:
             post_dict.update({"feature_image": feature_image_url})
             
         posts_list = list()
         posts_list.append(post_dict)
-        
-        post_data = dict()
-        post_data.update({"posts": posts_list})
+        post_data = dict(posts=posts_list)
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
@@ -323,8 +326,7 @@ if __name__ == "__main__":
                         if sub.get("tier") == tier:
                             send_email(report_html, sub.get("email"), tier, category, post_title)
                             
-                # 무료(Flash) 모델만 쓰더라도 안정적인 썸네일 생성을 위해 15초 대기
-                time.sleep(15) 
+                time.sleep(20) 
 
         print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
         
