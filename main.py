@@ -8,6 +8,7 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
 print(" 🚀 40년 경력 분야별 미국 전문가 + 전면 무료(Flash) 테스트 봇 🚀")
@@ -17,14 +18,23 @@ print("=======================================")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
+SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
+SENDER_EMAIL = "threehappyyou@gmail.com"
 
-# 🚨 [카테고리 세팅] 과거 에러 방지를 위해 list()와 dict() 함수로 강철처럼 묶어두었습니다.
+# [구독자 5명 세팅]
+raw_subs = "threehappyyou@gmail.com/Basic,threehappyyou@gmail.com/Basic,threehappyyou@gmail.com/Premium,threehappyyou@gmail.com/Premium,threehappyyou@gmail.com/Royal Premium"
+SUBSCRIBERS = list()
+for sub_info in raw_subs.split(","):
+    e_mail, e_tier = sub_info.split("/")
+    SUBSCRIBERS.append(dict(email=e_mail, tier=e_tier))
+
+# [카테고리 세팅] 과거 에러 방지를 위해 list()와 dict() 함수로 강철처럼 묶어두었습니다.
 CATEGORIES = dict()
 
 cat_eco = list()
@@ -182,32 +192,25 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        api_base = "https://" + "generativelanguage.googleapis.com"
-        url = api_base + "/v1beta/models/imagen-3.0-generate-002:predict?key=" + GEMINI_API_KEY
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        # 🚨 [썸네일 에러 완벽 우회] 구글 라이브러리의 generate_content를 활용하여 이미지를 안전하게 호출합니다!
+        response = client.models.generate_content(
+            model='gemini-3.1-flash-image-preview',
+            contents=image_prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(
+                    aspect_ratio="16:9"
+                )
+            )
+        )
         
-        headers = dict()
-        headers.update({'Content-Type': 'application/json'})
-        
-        params = dict()
-        params.update({"sampleCount": 1})
-        params.update({"aspectRatio": "16:9"})
-        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
-        
-        data = dict()
-        data.update({"instances": [{"prompt": image_prompt}]})
-        data.update({"parameters": params})
-        
-        response = requests.post(url, headers=headers, json=data)
-        
-        if response.status_code == 200:
-            predictions = response.json().get('predictions')
-            if predictions:
-                for pred in predictions:
-                    b64_img = pred.get('bytesBase64Encoded', '')
-                    return base64.b64decode(b64_img)
-        else:
-            print(f"⚠️ [이미지 API 에러]: {response.status_code} - {response.text}")
-            return None
+        for part in response.candidates.content.parts:
+            if part.inline_data is not None:
+                return part.inline_data.data
+                
+        print("⚠️ [이미지 생성 실패] 반환된 이미지가 없습니다.")
+        return None
     except Exception as e:
         print(f"⚠️ [이미지 생성 에러]: {e}")
         return None
@@ -285,6 +288,33 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
     except Exception as e:
         print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
 
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
+
+def send_email(report_content, to_email, tier, category, title):
+    if not SENDER_PASSWORD:
+        return
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    
+    msg = MIMEMultipart()
+    msg.add_header("From", SENDER_EMAIL)
+    msg.add_header("To", to_email)
+    msg.add_header("Subject", f"{title}")
+
+    msg.attach(MIMEText(report_content, "html"))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+        print(f"🎉 [성공] {to_email} 님에게 이메일 발송 완료!")
+    except Exception as e:
+        print(f"❌ [실패] 메일 발송 실패: {str(e)}")
+
 if __name__ == "__main__":
     try:
         for category, urls in CATEGORIES.items():
@@ -307,6 +337,11 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
+                    for sub in SUBSCRIBERS:
+                        if sub.get("tier") == tier:
+                            send_email(report_html, sub.get("email"), tier, category, post_title)
+                            
+                # 무료(Flash) 모델만 쓰더라도 안정적인 생성을 위해 15초 대기
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
