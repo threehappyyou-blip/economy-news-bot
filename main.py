@@ -8,7 +8,6 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
-from google.genai import types
 
 print("=======================================")
 print(" 🚀 13인 전문가 + 나노바나나 썸네일 자동 발행 봇 🚀")
@@ -20,12 +19,12 @@ GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ (시스템 중단) API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [카테고리 세팅] 에러를 방지하기 위해 가장 안전한 함수형으로 묶었습니다.
+# 🚨 [카테고리 세팅] 
 CATEGORIES = dict()
 
 cat_eco = list()
@@ -49,11 +48,16 @@ cat_energy = list()
 cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
 CATEGORIES.update({"Energy": cat_energy})
 
-# 🚨 등급 세팅
+# [등급 및 예쁜 이름표 세팅]
 TIERS = list()
 TIERS.append("Basic")
 TIERS.append("Premium")
 TIERS.append("Royal Premium")
+
+TIER_LABELS = dict()
+TIER_LABELS.update({"Basic": "🌱 Free"})
+TIER_LABELS.update({"Premium": "💎 Pro"})
+TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
 def get_category_news(urls, count=30):
     news_list = list()
@@ -77,7 +81,6 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [AI 모델 라우팅] 3.1 Pro 404 에러를 차단하고 2.5 Pro 및 최신 3.1 Preview 명칭으로 정확히 지정!
         if tier == "Basic":
             model_name = "gemini-2.5-flash"  
             news_count = "3"
@@ -92,7 +95,7 @@ def analyze_with_gemini(news_items, category, tier):
             depth = "Provide the ULTIMATE deep dive using macroeconomic theory, psychology, and historical context. This is for VIP subscribers."
 
         prompt = f"""
-        (Goal) Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
+        [Goal] Write a highly insightful, professional blog post in English for the '{category}' section of our Ghost website.
         {tier} Subscribers
         
         (Phase 1: Intelligent Curation)
@@ -100,7 +103,7 @@ def analyze_with_gemini(news_items, category, tier):
         
         (Phase 2: Panel Debate and Drafting)
         - {depth}
-        - STRICT RULE: Write in a professional, trustworthy, and insightful tone. No casual greetings like 'Hey there'. Start directly with a polished introduction.
+        - STRICT RULE: Write in a highly professional, authoritative, yet accessible tone like The Wall Street Journal or The Economist. NEVER use overly casual greetings like 'Hey there'. Start directly with a polished introduction.
         - Format the response in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>) for a Ghost website. Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
@@ -117,52 +120,47 @@ def analyze_with_gemini(news_items, category, tier):
         )
         
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
-        lines = raw_text.split('\n')
+        lines = [line.strip() for line in raw_text.split('\n') if line.strip()!= ""]
         
-        title = "({tier}) Daily {category} Insight".format(tier=tier, category=category)
-        image_prompt = "Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution.".format(category=category)
+        pretty_tier = TIER_LABELS.get(tier, tier)
+        title = "[{}] Daily {} Insight".format(pretty_tier, category)
+        image_prompt = "Abstract 3D illustration representing global {}, cinematic lighting, high quality, 8k resolution.".format(category)
         
-        if len(lines) > 0:
-            first_line = lines.pop(0)
-            if "TITLE:" in first_line:
-                title = "[{}] ".format(tier) + first_line.replace("TITLE:", "").strip()
-            else:
-                lines.insert(0, first_line)
+        if len(lines) > 0 and lines.startswith("TITLE:"):
+            title = "[{}] ".format(pretty_tier) + lines.pop(0).replace("TITLE:", "").strip()
                 
-        if len(lines) > 0:
-            second_line = lines.pop(0)
-            if "IMAGE_PROMPT:" in second_line:
-                image_prompt = second_line.replace("IMAGE_PROMPT:", "").strip()
-            else:
-                lines.insert(0, second_line)
+        if len(lines) > 0 and lines.startswith("IMAGE_PROMPT:"):
+            image_prompt = lines.pop(0).replace("IMAGE_PROMPT:", "").strip()
                 
         html_content = "\n".join(lines).strip()
             
         return title, image_prompt, html_content
         
     except Exception as e:
-        print(f"⚠️ (AI 에러) {category} - {tier} 분석 실패: {e}")
+        print(f"⚠️ [AI 에러] {category} - {tier} 분석 실패: {e}")
         return None, None, None
 
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [가장 중요한 수정] 오류를 내던 주소 방식을 버리고, 구글 공식 파이썬 라이브러리로 이미지를 안전하게 요청합니다!
         client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_images(
+        # 🚨 [썸네일 에러 완벽 해결] 파이썬 버그를 피해, 일반 텍스트 함수로 구글 최신 이미지 모델을 호출합니다!
+        enhanced_prompt = image_prompt + " (Wide 16:9 aspect ratio, landscape orientation, no text)"
+        
+        response = client.models.generate_content(
             model='gemini-3.1-flash-image-preview',
-            prompt=image_prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1,
-                output_mime_type="image/jpeg",
-                aspect_ratio="16:9" 
-            )
+            contents=enhanced_prompt,
         )
-        for generated_image in response.generated_images:
-            return generated_image.image.image_bytes
+        
+        if response.candidates and response.candidates.content.parts:
+            for part in response.candidates.content.parts:
+                if hasattr(part, 'inline_data') and part.inline_data:
+                    return part.inline_data.data
+                    
+        print("⚠️ [이미지 생성 실패] 응답에 이미지가 없습니다.")
         return None
     except Exception as e:
-        print(f"⚠️ (이미지 생성 에러): {e}")
+        print(f"⚠️ [이미지 생성 에러]: {e}")
         return None
 
 def generate_ghost_token():
@@ -191,10 +189,10 @@ def upload_image_to_ghost(image_bytes):
                 for img in images:
                     return img.get('url')
         else:
-            print(f"❌ (이미지 업로드 실패) {response.status_code} - {response.text}")
+            print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
             return None
     except Exception as e:
-        print(f"❌ (이미지 통신 에러) {e}")
+        print(f"❌ [이미지 통신 에러] {e}")
         return None
 
 def publish_to_ghost(title, html_content, category, tier, feature_image_url):
@@ -205,7 +203,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 모일 때까지 모두 무료 공개(Public)!
+        # 🚨 [제자님 요청 100% 반영] 1,000명이 모일 때까지 등급 상관없이 모두 무료 공개(Public)로 고정합니다!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -234,23 +232,23 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         response = requests.post(url, json=post_data, headers=headers_dict)
         
         if response.status_code == 200 or response.status_code == 201:
-            print("🎉 (성공) 자동 발행 완료!")
+            print("🎉 [성공] 자동 발행 완료!")
         else:
-            print(f"❌ (발행 실패) {response.status_code} - {response.text}")
+            print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ (통신 에러) Ghost 서버 연결 실패: {e}")
+        print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
 
 if __name__ == "__main__":
     try:
         for category, urls in CATEGORIES.items():
-            print(f"\n--- ({category}) 지능형 큐레이션 시작 ---")
+            print(f"\n--- [{category}] 지능형 큐레이션 시작 ---")
             
             news = get_category_news(urls, count=30)
             if not news:
                 continue
                 
             for tier in TIERS:
-                print(f"  -> ({tier}) 등급 리포트 및 썸네일 생성 중...")
+                print(f"  -> {tier} 등급 리포트 및 썸네일 생성 중...")
                 post_title, img_prompt, report_html = analyze_with_gemini(news, category, tier)
                 
                 if report_html and post_title:
