@@ -8,15 +8,19 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) 테스트 봇 🚀")
+print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) 썸네일 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
+SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+
+SENDER_EMAIL = "threehappyyou@gmail.com" 
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
     print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
@@ -24,37 +28,33 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [카테고리 세팅] 
-CATEGORIES = {
-    "Economy": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664",
-        "https://finance.yahoo.com/news/rssindex"
-    ],
-    "Politics": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"
-    ],
-    "Tech": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"
-    ],
-    "Health": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"
-    ],
-    "Energy": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"
-    ]
-}
+# 🚨 [구독자 세팅]
+SUBSCRIBERS = list()
+s1 = dict(); s1.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s1)
+s2 = dict(); s2.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s2)
+s3 = dict(); s3.update({"email": "threehappyyou@gmail.com", "tier": "Royal Premium"}); SUBSCRIBERS.append(s3)
 
-# 🚨 [에러 완벽 수정] 텅 비어있던 TIERS 명단에 등급을 완벽하게 채웠습니다.
-TIERS =
+# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 안전한 함수로 모두 묶었습니다.
+CATEGORIES = dict()
+cat_eco = list(); cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"); cat_eco.append("https://" + "finance.yahoo.com/news/rssindex"); CATEGORIES.update({"Economy": cat_eco})
+cat_pol = list(); cat_pol.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"); CATEGORIES.update({"Politics": cat_pol})
+cat_tech = list(); cat_tech.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"); CATEGORIES.update({"Tech": cat_tech})
+cat_health = list(); cat_health.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"); CATEGORIES.update({"Health": cat_health})
+cat_energy = list(); cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"); CATEGORIES.update({"Energy": cat_energy})
 
-TIER_LABELS = {
-    "Basic": "🌱 Free",
-    "Premium": "💎 Pro",
-    "Royal Premium": "👑 VIP"
-}
+# 🚨 [에러 완벽 차단] 텅 비어서 에러가 났던 TIERS 명단에 등급을 완벽하게 채웠습니다!
+TIERS = list()
+TIERS.append("Basic")
+TIERS.append("Premium")
+TIERS.append("Royal Premium")
+
+TIER_LABELS = dict()
+TIER_LABELS.update({"Basic": "🌱 Free"})
+TIER_LABELS.update({"Premium": "💎 Pro"})
+TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
 def get_category_news(urls, count=30):
-    news_list =
+    news_list = list()
     seen_titles = set()
     for url in urls:
         try:
@@ -75,10 +75,9 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [제자님 원칙 100% 반영] 비용 발생 전면 차단! 모든 등급을 무료(Flash) 모델로 고정!
+        # 🚨 [제자님 원칙 100% 반영] 비용 발생 전면 차단! 모든 등급을 무료(Flash) 모델로 고정합니다.
         model_name = "gemini-2.5-flash"  
         
-        # 분석 깊이는 제자님의 기획대로 철저하게 다르게 유지합니다.
         if tier == "Basic":
             news_count = "3"
             depth = "Focus strictly on the objective FACTS (What happened). Keep it concise but spark curiosity."
@@ -89,7 +88,6 @@ def analyze_with_gemini(news_items, category, tier):
             news_count = "10"
             depth = "Use the ultimate 'WHY / THINK / DIFFERENT THINK' framework. First, explain 'WHY' this happened. Second, explain what the masses 'THINK' (herd behavior). Third, provide a 'DIFFERENT THINK' (contrarian, historical, or philosophical perspective) to uncover the true hidden opportunity."
 
-        # [분야별 40년 경력 미국 현지 전문가 페르소나 동적 할당]
         if category == "Politics":
             expert_persona = "a veteran US political expert with over 40 years of experience in Washington D.C. and global geopolitics"
         elif category == "Tech":
@@ -143,17 +141,28 @@ def analyze_with_gemini(news_items, category, tier):
         )
         
         raw_text = response.text.replace("```html", "").replace("```", "").strip()
-        lines = [line.strip() for line in raw_text.split('\n') if line.strip()!= ""]
+        lines = list()
+        for line in raw_text.split('\n'):
+            if line.strip()!= "":
+                lines.append(line.strip())
         
         pretty_tier = TIER_LABELS.get(tier, tier)
-        title = f"[{pretty_tier}] Daily {category} Insight"
-        image_prompt = f"Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution."
+        title = "({tier}) Daily {category} Insight".format(tier=pretty_tier, category=category)
+        image_prompt = "Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution.".format(category=category)
         
-        if len(lines) > 0 and lines.startswith("TITLE:"):
-            title = f"[{pretty_tier}] " + lines.pop(0).replace("TITLE:", "").strip()
+        if len(lines) > 0:
+            first_line = str(lines.pop(0))
+            if "TITLE:" in first_line:
+                title = "[{}] ".format(pretty_tier) + first_line.replace("TITLE:", "").strip()
+            else:
+                lines.insert(0, first_line)
                 
-        if len(lines) > 0 and lines.startswith("IMAGE_PROMPT:"):
-            image_prompt = lines.pop(0).replace("IMAGE_PROMPT:", "").strip()
+        if len(lines) > 0:
+            second_line = str(lines.pop(0))
+            if "IMAGE_PROMPT:" in second_line:
+                image_prompt = second_line.replace("IMAGE_PROMPT:", "").strip()
+            else:
+                lines.insert(0, second_line)
                 
         html_content = "\n".join(lines).strip()
             
@@ -166,18 +175,20 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        api_base = "[https://generativelanguage.googleapis.com](https://generativelanguage.googleapis.com)"
-        url = f"{api_base}/v1beta/models/imagen-3.0-generate-002:predict?key={GEMINI_API_KEY}"
+        api_base = "https://" + "generativelanguage.googleapis.com"
+        url = api_base + "/v1beta/models/imagen-3.0-generate-002:predict?key=" + GEMINI_API_KEY
         
-        headers = {'Content-Type': 'application/json'}
-        data = {
-            "instances": [{"prompt": image_prompt}],
-            "parameters": {
-                "sampleCount": 1,
-                "aspectRatio": "16:9",
-                "outputOptions": {"mimeType": "image/jpeg"}
-            }
-        }
+        headers = dict()
+        headers.update({'Content-Type': 'application/json'})
+        
+        params = dict()
+        params.update({"sampleCount": 1})
+        params.update({"aspectRatio": "16:9"})
+        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
+        
+        data = dict()
+        data.update({"instances": [{"prompt": image_prompt}]})
+        data.update({"parameters": params})
         
         response = requests.post(url, headers=headers, json=data)
         
@@ -197,23 +208,24 @@ def generate_thumbnail(image_prompt):
 def generate_ghost_token():
     id_str, secret_str = GHOST_ADMIN_API_KEY.split(':')
     iat = int(datetime.now().timestamp())
-    header = {'alg': 'HS256', 'typ': 'JWT', 'kid': id_str}
-    payload = {'iat': iat, 'exp': iat + 5 * 60, 'aud': '/admin/'}
+    header = dict(alg='HS256', typ='JWT', kid=id_str)
+    payload = dict(iat=iat, exp=iat + 5 * 60, aud='/admin/')
     return jwt.encode(payload, bytes.fromhex(secret_str), algorithm='HS256', headers=header)
 
 def upload_image_to_ghost(image_bytes):
     try:
         token = generate_ghost_token()
-        headers = {'Authorization': f'Ghost {token}'}
-        files = {
-            'file': ('thumbnail.jpg', image_bytes, 'image/jpeg'),
-            'purpose': (None, 'image')
-        }
+        headers = dict()
+        headers.update({'Authorization': 'Ghost ' + token})
         
-        url = f"{GHOST_API_URL}/ghost/api/admin/images/upload/"
+        files = dict()
+        files.update({'file': ('thumbnail.jpg', image_bytes, 'image/jpeg')})
+        files.update({'purpose': (None, 'image')})
+        
+        url = GHOST_API_URL + "/ghost/api/admin/images/upload/"
         response = requests.post(url, headers=headers, files=files)
         
-        if response.status_code in (200, 201):
+        if response.status_code == 200 or response.status_code == 201:
             images = response.json().get('images')
             if images:
                 for img in images:
@@ -229,32 +241,70 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
     print(f"📝 Ghost 웹사이트에 '{title}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
-        headers_dict = {'Authorization': f'Ghost {token}', 'Content-Type': 'application/json'}
+        headers_dict = dict()
+        headers_dict.update({'Authorization': 'Ghost ' + token})
+        headers_dict.update({'Content-Type': 'application/json'})
         
         visibility_setting = "public"
         
-        post_dict = {
-            "title": title, 
-            "html": html_content,
-            "status": "published",
-            "visibility": visibility_setting,
-            "tags": [{"name": category}, {"name": tier}] 
-        }
+        tag_dict = dict(name=category)
+        tier_dict = dict(name=tier)
+        tags_list = list()
+        tags_list.append(tag_dict)
+        tags_list.append(tier_dict)
+        
+        post_dict = dict()
+        post_dict.update({"title": title})
+        post_dict.update({"html": html_content})
+        post_dict.update({"status": "published"})
+        post_dict.update({"visibility": visibility_setting})
+        post_dict.update({"tags": tags_list})
         
         if feature_image_url:
-            post_dict["feature_image"] = feature_image_url
+            post_dict.update({"feature_image": feature_image_url})
             
-        post_data = {"posts": [post_dict]}
+        posts_list = list()
+        posts_list.append(post_dict)
         
-        url = f"{GHOST_API_URL}/ghost/api/admin/posts/?source=html"
+        post_data = dict()
+        post_data.update({"posts": posts_list})
+        
+        url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
-        if response.status_code in (200, 201):
+        if response.status_code == 200 or response.status_code == 201:
             print("🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
+
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
+
+def send_email(report_content, to_email, tier, category, title):
+    if not SENDER_PASSWORD:
+        return
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    
+    msg = MIMEMultipart()
+    msg.add_header("From", SENDER_EMAIL)
+    msg.add_header("To", to_email)
+    msg.add_header("Subject", str(title))
+
+    msg.attach(MIMEText(report_content, "html"))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+        print(f"🎉 [성공] {to_email} 님에게 이메일 발송 완료!")
+    except Exception as e:
+        print(f"❌ [실패] 메일 발송 실패: {str(e)}")
 
 if __name__ == "__main__":
     try:
@@ -278,7 +328,11 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 🚨 무료(Flash) 모델만 쓰더라도 안정적인 썸네일 생성을 위해 15초 대기
+                    for sub in SUBSCRIBERS:
+                        if sub.get("tier") == tier:
+                            send_email(report_html, sub.get("email"), tier, category, post_title)
+                            
+                # 무료(Flash) 모델만 쓰더라도 안정적인 썸네일 생성을 위해 15초 대기
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
