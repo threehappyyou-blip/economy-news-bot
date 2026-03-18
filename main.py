@@ -8,51 +8,60 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
-from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) 썸네일 봇 🚀")
+print(" 🚀 13인 전문가 + Why/Think/Different Think + 전면 무료(Flash) 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
-SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
-
-SENDER_EMAIL = "threehappyyou@gmail.com" 
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
+    print("\n⛔ (시스템 중단) API 키 또는 Ghost 출입증이 없습니다.")
     sys.exit(1)
 
 GHOST_API_URL = GHOST_API_URL.rstrip('/')
 
-# 🚨 [구독자 세팅]
-SUBSCRIBERS = list()
-s1 = dict(); s1.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s1)
-s2 = dict(); s2.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s2)
-s3 = dict(); s3.update({"email": "threehappyyou@gmail.com", "tier": "Royal Premium"}); SUBSCRIBERS.append(s3)
-
-# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 안전한 함수로 모두 묶었습니다.
+# 🚨 [카테고리 세팅] 에러를 방지하기 위해 가장 안전한 함수형으로 묶었습니다.
 CATEGORIES = dict()
-cat_eco = list(); cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"); cat_eco.append("https://" + "finance.yahoo.com/news/rssindex"); CATEGORIES.update({"Economy": cat_eco})
-cat_pol = list(); cat_pol.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"); CATEGORIES.update({"Politics": cat_pol})
-cat_tech = list(); cat_tech.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"); CATEGORIES.update({"Tech": cat_tech})
-cat_health = list(); cat_health.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"); CATEGORIES.update({"Health": cat_health})
-cat_energy = list(); cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"); CATEGORIES.update({"Energy": cat_energy})
+cat_eco = list()
+cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
+cat_eco.append("https://" + "finance.yahoo.com/news/rssindex")
+CATEGORIES.update({"Economy": cat_eco})
 
-# 🚨 [에러 완벽 차단] 텅 비어서 에러가 났던 TIERS 명단에 등급을 완벽하게 채웠습니다!
-TIERS = list()
-TIERS.append("Basic")
-TIERS.append("Premium")
-TIERS.append("Royal Premium")
+cat_pol = list()
+cat_pol.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
+CATEGORIES.update({"Politics": cat_pol})
+
+cat_tech = list()
+cat_tech.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
+CATEGORIES.update({"Tech": cat_tech})
+
+cat_health = list()
+cat_health.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
+CATEGORIES.update({"Health": cat_health})
+
+cat_energy = list()
+cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
+CATEGORIES.update({"Energy": cat_energy})
+
+# 🚨 [제자님의 훌륭한 전략!] 하나의 뉴스가 중복되지 않도록 Basic 3건, Premium 2건, Royal 1건으로 쪼개서 분배합니다!
+TASKS = list()
+t1 = dict(); t1.update({"tier": "Basic", "count": 3}); TASKS.append(t1)
+t2 = dict(); t2.update({"tier": "Basic", "count": 3}); TASKS.append(t2)
+t3 = dict(); t3.update({"tier": "Basic", "count": 3}); TASKS.append(t3)
+t4 = dict(); t4.update({"tier": "Premium", "count": 5}); TASKS.append(t4)
+t5 = dict(); t5.update({"tier": "Premium", "count": 5}); TASKS.append(t5)
+t6 = dict(); t6.update({"tier": "Royal Premium", "count": 10}); TASKS.append(t6)
 
 TIER_LABELS = dict()
 TIER_LABELS.update({"Basic": "🌱 Free"})
 TIER_LABELS.update({"Premium": "💎 Pro"})
 TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
+# 🚨 [에러 완벽 수정] 파라미터 이름을 count로 정확히 일치시켜 에러를 없앴습니다.
 def get_category_news(urls, count=30):
     news_list = list()
     seen_titles = set()
@@ -68,26 +77,25 @@ def get_category_news(urls, count=30):
                 if len(news_list) >= count: break
         except Exception:
             continue
-    return news_list
+    return news_list[:count]
 
 def analyze_with_gemini(news_items, category, tier):
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [제자님 원칙 100% 반영] 비용 발생 전면 차단! 모든 등급을 무료(Flash) 모델로 고정합니다.
+        # 🚨 [비용 전면 차단 원칙 준수!] 썸네일 테스트가 완료될 때까지 무조건 무료 모델(2.5-flash)만 사용합니다!
         model_name = "gemini-2.5-flash"  
         
+        # 제자님의 "Why / Think / Different Think" 전략 적용
         if tier == "Basic":
-            news_count = "3"
-            depth = "Focus strictly on the objective FACTS (What happened). Keep it concise but spark curiosity."
+            depth = "Focus ONLY on the objective FACTS (What happened). Keep it concise but spark curiosity."
         elif tier == "Premium":
-            news_count = "5"
             depth = "Focus on the 'WHY' using Behavioral Economics and Psychology. Explain the irrational market psychology behind the facts."
         else: 
-            news_count = "10"
             depth = "Use the ultimate 'WHY / THINK / DIFFERENT THINK' framework. First, explain 'WHY' this happened. Second, explain what the masses 'THINK' (herd behavior). Third, provide a 'DIFFERENT THINK' (contrarian, historical, or philosophical perspective) to uncover the true hidden opportunity."
 
+        # 40년 경력의 미국 현지 전문가 자아 부여
         if category == "Politics":
             expert_persona = "a veteran US political expert with over 40 years of experience in Washington D.C. and global geopolitics"
         elif category == "Tech":
@@ -100,8 +108,8 @@ def analyze_with_gemini(news_items, category, tier):
             expert_persona = "a veteran US economic expert with over 40 years of experience in Wall Street and global macroeconomics"
 
         prompt = f"""
-        [Goal] Write a highly insightful, deeply humanized blog post in English for the '{category}' section of the 'Warm Insight' website.
-        {tier} Subscribers who want financial freedom and peace of mind.
+        (Goal) Write a highly insightful, deeply humanized blog post in English for the '{category}' section of the 'Warm Insight' website.
+        Target Audience: {tier} Subscribers looking for financial freedom.
         
         You are {expert_persona}. You are internally simulating a debate among top-tier experts, but YOU are writing the final output based on your 40 years of deep experience.
         
@@ -109,8 +117,7 @@ def analyze_with_gemini(news_items, category, tier):
         2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I" to build strong emotional rapport.
         3. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
         4. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
-        5. If a news story is an ONGOING event, explicitly analyze what NEW information has been added today and how it changes previous assumptions.
-        6. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
+        5. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
         The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for Nano Banana image generation, e.g., cinematic, 8k, abstract 3D)
@@ -121,14 +128,13 @@ def analyze_with_gemini(news_items, category, tier):
         
         <h2>Top Drivers & Deep Insights</h2>
         <ul>
-            <li><strong>(Headline 1):</strong> (Fact + {depth} + Ongoing event update if applicable)</li>
+            <li><strong>(Headline 1):</strong> (Fact + {depth})</li>
         </ul>
         
         <h2>Today's Warm Insight</h2>
-        <p>(A comforting, actionable takeaway regarding asset allocation or mindset to help readers feel safe.)</p>
+        <p>(A comforting, actionable takeaway to help readers feel safe.)</p>
         
-        <p><strong>P.S.</strong> (Add a very short, relatable, human-like personal thought or anecdote about today's market vibe to build strong emotional rapport.)</p>
-        
+        <p><strong>P.S.</strong> (Add a very short, relatable personal thought about today's market vibe.)</p>
         <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
 
         Raw News to Analyze:
@@ -169,7 +175,7 @@ def analyze_with_gemini(news_items, category, tier):
         return title, image_prompt, html_content
         
     except Exception as e:
-        print(f"⚠️ [AI 에러] {category} - {tier} 분석 실패: {e}")
+        print(f"⚠️ (AI 에러) {category} - {tier} 분석 실패: {e}")
         return None, None, None
 
 def generate_thumbnail(image_prompt):
@@ -199,10 +205,10 @@ def generate_thumbnail(image_prompt):
                     b64_img = pred.get('bytesBase64Encoded', '')
                     return base64.b64decode(b64_img)
         else:
-            print(f"⚠️ [이미지 API 에러]: {response.status_code} - {response.text}")
+            print(f"⚠️ (이미지 API 에러): {response.status_code} - {response.text}")
             return None
     except Exception as e:
-        print(f"⚠️ [이미지 생성 에러]: {e}")
+        print(f"⚠️ (이미지 생성 에러): {e}")
         return None
 
 def generate_ghost_token():
@@ -231,10 +237,10 @@ def upload_image_to_ghost(image_bytes):
                 for img in images:
                     return img.get('url')
         else:
-            print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
+            print(f"❌ (이미지 업로드 실패) {response.status_code} - {response.text}")
             return None
     except Exception as e:
-        print(f"❌ [이미지 통신 에러] {e}")
+        print(f"❌ (이미지 통신 에러) {e}")
         return None
 
 def publish_to_ghost(title, html_content, category, tier, feature_image_url):
@@ -245,6 +251,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
+        # 모두 무료 공개 (1000명 모일 때까지 유지)
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -265,59 +272,44 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
             
         posts_list = list()
         posts_list.append(post_dict)
-        
-        post_data = dict()
-        post_data.update({"posts": posts_list})
+        post_data = dict(posts=posts_list)
         
         url = GHOST_API_URL + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
         
         if response.status_code == 200 or response.status_code == 201:
-            print("🎉 [성공] 자동 발행 완료!")
+            print("🎉 (성공) 자동 발행 완료!")
         else:
-            print(f"❌ [발행 실패] {response.status_code} - {response.text}")
+            print(f"❌ (발행 실패) {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
-
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import smtplib
-
-def send_email(report_content, to_email, tier, category, title):
-    if not SENDER_PASSWORD:
-        return
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-    
-    msg = MIMEMultipart()
-    msg.add_header("From", SENDER_EMAIL)
-    msg.add_header("To", to_email)
-    msg.add_header("Subject", str(title))
-
-    msg.attach(MIMEText(report_content, "html"))
-
-    try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print(f"🎉 [성공] {to_email} 님에게 이메일 발송 완료!")
-    except Exception as e:
-        print(f"❌ [실패] 메일 발송 실패: {str(e)}")
+        print(f"❌ (통신 에러) Ghost 서버 연결 실패: {e}")
 
 if __name__ == "__main__":
     try:
         for category, urls in CATEGORIES.items():
-            print(f"\n--- [{category}] 지능형 큐레이션 시작 ---")
+            print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
-            news = get_category_news(urls, count=30)
-            if not news:
+            # 카테고리당 뉴스를 30개 모아옵니다.
+            all_news = get_category_news(urls, count=30)
+            if not all_news or len(all_news) < 3:
+                print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
                 
-            for tier in TIERS:
-                print(f"  -> {tier} 등급 리포트 및 썸네일 생성 중...")
-                post_title, img_prompt, report_html = analyze_with_gemini(news, category, tier)
+            # 🚨 [중복 뉴스 분배 알고리즘] 30개의 뉴스를 각 작업(Basic 3건, Premium 2건, Royal 1건)에 중복 없이 나눠줍니다!
+            for task in TASKS:
+                tier = task.get("tier")
+                req_count = task.get("count")
+                
+                # 남은 뉴스가 부족하면 다음 카테고리로 넘어갑니다.
+                if len(all_news) < req_count:
+                    break
+                
+                target_news = list()
+                for _ in range(req_count):
+                    target_news.append(all_news.pop(0))
+                
+                print(f"  -> ({tier}) 등급 리포트 ({req_count}개 뉴스) 및 썸네일 생성 중...")
+                post_title, img_prompt, report_html = analyze_with_gemini(target_news, category, tier)
                 
                 if report_html and post_title:
                     feature_image_url = None
@@ -328,14 +320,10 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                    for sub in SUBSCRIBERS:
-                        if sub.get("tier") == tier:
-                            send_email(report_html, sub.get("email"), tier, category, post_title)
-                            
-                # 무료(Flash) 모델만 쓰더라도 안정적인 썸네일 생성을 위해 15초 대기
+                # 서버 과부하 방지 (무료 모델이더라도 휴식은 필수입니다)
                 time.sleep(15) 
 
-        print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
