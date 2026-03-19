@@ -8,9 +8,10 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) 테스트 봇 🚀")
+print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) 썸네일 테스트 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -19,13 +20,14 @@ GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
 
-# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
+# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 함수형으로 묶었습니다.
 CATEGORIES = dict()
+
 cat_eco = list()
 cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
 cat_eco.append("https://" + "finance.yahoo.com/news/rssindex")
@@ -47,6 +49,12 @@ cat_energy = list()
 cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
 CATEGORIES.update({"Energy": cat_energy})
 
+# 🚨 [에러 완벽 차단] 텅 비어서 에러가 났던 TIERS 명단에 등급을 가장 안전한 append()로 꽉 채웠습니다!
+TIERS = list()
+TIERS.append("Basic")
+TIERS.append("Premium")
+TIERS.append("Royal Premium")
+
 # 🚨 하나의 뉴스가 중복되지 않도록 Basic 3건, Premium 2건, Royal 1건으로 쪼개서 분배합니다!
 TASKS = list()
 t1 = dict(); t1.update({"tier": "Basic", "count": 3}); TASKS.append(t1)
@@ -61,8 +69,7 @@ TIER_LABELS.update({"Basic": "🌱 Free"})
 TIER_LABELS.update({"Premium": "💎 Pro"})
 TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
-# 🚨 [에러 완벽 수정] 파라미터 이름을 count로 정확히 일치시켜 에러를 없앴습니다.
-def get_category_news(urls, count=30):
+def get_category_news(urls, max_count=30):
     news_list = list()
     seen_titles = set()
     for url in urls:
@@ -74,12 +81,12 @@ def get_category_news(urls, count=30):
                 summary_text = getattr(entry, 'summary', '')
                 news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
-                if len(news_list) >= count: break
+                if len(news_list) >= max_count: break
         except Exception:
             continue
             
     final_news = list()
-    for _ in range(count):
+    for _ in range(max_count):
         if len(news_list) > 0:
             final_news.append(news_list.pop(0))
     return final_news
@@ -89,10 +96,9 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [비용 전면 차단 원칙 준수!] 썸네일 테스트가 완료될 때까지 무조건 무료 모델(2.5-flash)만 사용합니다!
+        # 🚨 [제자님 원칙 100% 반영] 비용 발생 전면 차단! 모든 등급을 무료(Flash) 모델로 고정합니다.
         model_name = "gemini-2.5-flash"  
         
-        # 제자님의 "Why / Think / Different Think" 전략 적용
         if tier == "Basic":
             depth = "Focus ONLY on the objective FACTS (What happened). Keep it concise but spark curiosity."
         elif tier == "Premium":
@@ -100,7 +106,6 @@ def analyze_with_gemini(news_items, category, tier):
         else: 
             depth = "Use the ultimate 'WHY / THINK / DIFFERENT THINK' framework. First, explain 'WHY' this happened. Second, explain what the masses 'THINK' (herd behavior). Third, provide a 'DIFFERENT THINK' (contrarian, historical, or philosophical perspective) to uncover the true hidden opportunity."
 
-        # 40년 경력의 미국 현지 전문가 자아 부여
         if category == "Politics":
             expert_persona = "a veteran US political expert with over 40 years of experience in Washington D.C. and global geopolitics"
         elif category == "Tech":
@@ -129,17 +134,18 @@ def analyze_with_gemini(news_items, category, tier):
         From the THIRD LINE onwards, write the HTML content:
         
         <h2>The Big Picture</h2>
-        <p>(A warm, humanized 3-sentence summary of the news.)</p>
+        <p>(A warm, humanized 3-sentence summary of today's {category} news.)</p>
         
         <h2>Top Drivers & Deep Insights</h2>
         <ul>
-            <li><strong>(Headline 1):</strong> (Fact + {depth})</li>
+            <li><strong>(Headline 1):</strong> (Fact + {depth} + Ongoing event update if applicable)</li>
         </ul>
         
         <h2>Today's Warm Insight</h2>
-        <p>(A comforting, actionable takeaway to help readers feel safe.)</p>
+        <p>(A comforting, actionable takeaway regarding asset allocation or mindset to help readers feel safe.)</p>
         
-        <p><strong>P.S.</strong> (Add a very short, relatable personal thought about today's market vibe.)</p>
+        <p><strong>P.S.</strong> (Add a very short, relatable, human-like personal thought or anecdote about today's market vibe to build strong emotional rapport.)</p>
+        
         <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
 
         Raw News to Analyze:
@@ -186,9 +192,9 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [비용 전면 차단] 이미지 생성 역시 완벽한 무료 모델인 'gemini-2.5-flash-image'로 고정했습니다!
+        # 🚨 [비용 전면 차단] 이미지 생성 역시 무료 할당량이 있는 gemini-3.1-flash-image-preview를 사용합니다!
         api_base = "https://" + "generativelanguage.googleapis.com"
-        url = api_base + "/v1beta/models/gemini-2.5-flash-image:predict?key=" + GEMINI_API_KEY
+        url = api_base + "/v1beta/models/gemini-3.1-flash-image-preview:predict?key=" + str(GEMINI_API_KEY)
         
         headers = dict()
         headers.update({'Content-Type': 'application/json'})
@@ -196,7 +202,7 @@ def generate_thumbnail(image_prompt):
         params = dict()
         params.update({"sampleCount": 1})
         params.update({"aspectRatio": "16:9"})
-        params.update({"outputOptions": dict(mimeType="image/jpeg")})
+        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
         
         instances_list = list()
         instances_list.append(dict(prompt=image_prompt))
@@ -253,13 +259,14 @@ def upload_image_to_ghost(image_bytes):
         return None
 
 def publish_to_ghost(title, html_content, category, tier, feature_image_url):
-    print(f"📝 Ghost 웹사이트 '{category}' 카테고리에 글을 발행합니다...")
+    print(f"📝 Ghost 웹사이트에 '{title}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
         headers_dict = dict()
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
+        # 모두 무료 공개 (1000명 모일 때까지 유지)
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -288,7 +295,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         response = requests.post(url, json=post_data, headers=headers_dict)
         
         if response.status_code == 200 or response.status_code == 201:
-            print(f"🎉 [성공] '{category}' 자동 발행 완료!")
+            print("🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
@@ -297,14 +304,15 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
 if __name__ == "__main__":
     try:
         for category, urls in CATEGORIES.items():
-            print(f"\n--- [{category}] 지능형 큐레이션 시작 ---")
+            print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
-            # 30개의 뉴스를 무더기로 가져와 필터링합니다.
-            all_news = get_category_news(urls, count=30)
+            # 카테고리당 뉴스를 30개 모아옵니다.
+            all_news = get_category_news(urls, max_count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
-                
+            
+            # 🚨 [중복 뉴스 완벽 분배] Basic 3건, Premium 2건, Royal 1건을 중복 없이 쪼개서 발행!
             for task in TASKS:
                 tier = task.get("tier")
                 req_count = task.get("count")
@@ -329,9 +337,10 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
+                # 무료 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
                 time.sleep(15) 
 
-        print("\n🎉 모든 카테고리 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
