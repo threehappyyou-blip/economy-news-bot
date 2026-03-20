@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) + 밈/다이어그램 봇 🚀")
+print(" 🚀 40년 멘토 + 밈/다이어그램 + 전면 무료(Flash) 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -20,13 +20,14 @@ GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
 
 # 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
 CATEGORIES = dict()
+
 cat_eco = list()
 cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
 cat_eco.append("https://" + "finance.yahoo.com/news/rssindex")
@@ -62,7 +63,8 @@ TIER_LABELS.update({"Basic": "🌱 Free"})
 TIER_LABELS.update({"Premium": "💎 Pro"})
 TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
-def get_category_news(urls, max_count=30):
+# 🚨 [에러 완벽 수정] 파라미터 이름을 count로 정확히 일치시켜 에러를 없앴습니다.
+def get_category_news(urls, count=30):
     news_list = list()
     seen_titles = set()
     for url in urls:
@@ -74,12 +76,12 @@ def get_category_news(urls, max_count=30):
                 summary_text = getattr(entry, 'summary', '')
                 news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
-                if len(news_list) >= max_count: break
+                if len(news_list) >= count: break
         except Exception:
             continue
             
     final_news = list()
-    for _ in range(max_count):
+    for _ in range(count):
         if len(news_list) > 0:
             final_news.append(news_list.pop(0))
     return final_news
@@ -112,7 +114,7 @@ def analyze_with_gemini(news_items, category, tier):
         else: 
             expert_persona = "a veteran US economic expert with over 40 years of experience in Wall Street and global macroeconomics"
 
-        # 🚨 [밈 및 다이어그램 추가 지시]
+        # 🚨 [밈 및 다이어그램 추가 지시 완벽 반영]
         prompt = f"""
         [Goal] Write a highly insightful, deeply humanized blog post in English for the '{category}' section of the 'Warm Insight' website.
         Target Audience: {tier} Subscribers looking for financial freedom.
@@ -304,7 +306,7 @@ if __name__ == "__main__":
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
             # 카테고리당 뉴스를 30개 모아옵니다.
-            all_news = get_category_news(urls, max_count=30)
+            all_news = get_category_news(urls, count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
@@ -334,10 +336,10 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 구글 모델 과부하를 막기 위해 기사 1건 발행 후 15초 휴식
+                # 무료(Flash) 모델이더라도 과부하를 막기 위해 15초 대기합니다!
                 time.sleep(15) 
 
-        print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
