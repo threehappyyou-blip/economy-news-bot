@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) 썸네일 테스트 봇 🚀")
+print(" 🚀 40년 경력 미국 전문가 + 전면 무료(Flash) + 밈/다이어그램 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -20,14 +20,13 @@ GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
-    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
+    print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다.")
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
 
-# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 함수형으로 묶었습니다.
+# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
 CATEGORIES = dict()
-
 cat_eco = list()
 cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
 cat_eco.append("https://" + "finance.yahoo.com/news/rssindex")
@@ -48,12 +47,6 @@ CATEGORIES.update({"Health": cat_health})
 cat_energy = list()
 cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
 CATEGORIES.update({"Energy": cat_energy})
-
-# 🚨 [에러 완벽 차단] 텅 비어서 에러가 났던 TIERS 명단에 등급을 가장 안전한 append()로 꽉 채웠습니다!
-TIERS = list()
-TIERS.append("Basic")
-TIERS.append("Premium")
-TIERS.append("Royal Premium")
 
 # 🚨 하나의 뉴스가 중복되지 않도록 Basic 3건, Premium 2건, Royal 1건으로 쪼개서 분배합니다!
 TASKS = list()
@@ -96,9 +89,10 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [제자님 원칙 100% 반영] 비용 발생 전면 차단! 모든 등급을 무료(Flash) 모델로 고정합니다.
+        # 🚨 [비용 전면 차단 원칙 준수!] 모든 등급을 완전히 무료 모델(2.5-flash)로 고정합니다!
         model_name = "gemini-2.5-flash"  
         
+        # 제자님의 "Why / Think / Different Think" 전략 적용
         if tier == "Basic":
             depth = "Focus ONLY on the objective FACTS (What happened). Keep it concise but spark curiosity."
         elif tier == "Premium":
@@ -106,6 +100,7 @@ def analyze_with_gemini(news_items, category, tier):
         else: 
             depth = "Use the ultimate 'WHY / THINK / DIFFERENT THINK' framework. First, explain 'WHY' this happened. Second, explain what the masses 'THINK' (herd behavior). Third, provide a 'DIFFERENT THINK' (contrarian, historical, or philosophical perspective) to uncover the true hidden opportunity."
 
+        # 40년 경력의 미국 현지 전문가 자아 부여
         if category == "Politics":
             expert_persona = "a veteran US political expert with over 40 years of experience in Washington D.C. and global geopolitics"
         elif category == "Tech":
@@ -117,6 +112,7 @@ def analyze_with_gemini(news_items, category, tier):
         else: 
             expert_persona = "a veteran US economic expert with over 40 years of experience in Wall Street and global macroeconomics"
 
+        # 🚨 [밈 및 다이어그램 추가 지시]
         prompt = f"""
         [Goal] Write a highly insightful, deeply humanized blog post in English for the '{category}' section of the 'Warm Insight' website.
         Target Audience: {tier} Subscribers looking for financial freedom.
@@ -125,27 +121,28 @@ def analyze_with_gemini(news_items, category, tier):
         
         1. NEVER use words like 'professor', 'economist', 'expert', or 'executive'.
         2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I" to build strong emotional rapport.
-        3. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
-        4. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
-        5. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
+        3. Explain complex concepts by appropriately mixing in text-based Memes or simple ASCII/HTML Diagrams to eliminate boredom and make it highly engaging. Keep ASCII diagrams simple with clear shapes for readability.
+        4. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
+        5. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
+        6. If a news story is an ONGOING event, explicitly analyze what NEW information has been added today and how it changes previous assumptions.
+        7. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
         The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for Nano Banana image generation, e.g., cinematic, 8k, abstract 3D)
         From the THIRD LINE onwards, write the HTML content:
         
         <h2>The Big Picture</h2>
-        <p>(A warm, humanized 3-sentence summary of today's {category} news.)</p>
+        <p>(A warm, humanized 3-sentence summary of the news.)</p>
         
         <h2>Top Drivers & Deep Insights</h2>
         <ul>
-            <li><strong>(Headline 1):</strong> (Fact + {depth} + Ongoing event update if applicable)</li>
+            <li><strong>(Headline 1):</strong> (Fact + {depth} + Insert a clever text-based Meme or simple Diagram to explain the core concept)</li>
         </ul>
         
         <h2>Today's Warm Insight</h2>
-        <p>(A comforting, actionable takeaway regarding asset allocation or mindset to help readers feel safe.)</p>
+        <p>(A comforting, actionable takeaway to help readers feel safe.)</p>
         
-        <p><strong>P.S.</strong> (Add a very short, relatable, human-like personal thought or anecdote about today's market vibe to build strong emotional rapport.)</p>
-        
+        <p><strong>P.S.</strong> (Add a very short, relatable personal thought about today's market vibe.)</p>
         <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
 
         Raw News to Analyze:
@@ -192,7 +189,7 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [비용 전면 차단] 이미지 생성 역시 무료 할당량이 있는 gemini-3.1-flash-image-preview를 사용합니다!
+        # 🚨 [비용 전면 차단] 이미지 모델도 완전 무료인 'gemini-3.1-flash-image-preview'로 고정!
         api_base = "https://" + "generativelanguage.googleapis.com"
         url = api_base + "/v1beta/models/gemini-3.1-flash-image-preview:predict?key=" + str(GEMINI_API_KEY)
         
@@ -266,7 +263,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 모두 무료 공개 (1000명 모일 때까지 유지)
+        # 1000명 모일 때까지 모두 무료 공개(Public)
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -276,14 +273,14 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         tags_list.append(tier_dict)
         
         post_dict = dict()
-        post_dict.update({"title": str(title)})
-        post_dict.update({"html": str(html_content)})
+        post_dict.update({"title": title})
+        post_dict.update({"html": html_content})
         post_dict.update({"status": "published"})
         post_dict.update({"visibility": visibility_setting})
         post_dict.update({"tags": tags_list})
         
         if feature_image_url:
-            post_dict.update({"feature_image": str(feature_image_url)})
+            post_dict.update({"feature_image": feature_image_url})
             
         posts_list = list()
         posts_list.append(post_dict)
@@ -337,7 +334,7 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 무료 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
+                # 구글 모델 과부하를 막기 위해 기사 1건 발행 후 15초 휴식
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
