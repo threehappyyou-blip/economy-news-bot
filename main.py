@@ -265,7 +265,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 모일 때까지 모두 무료 공개(Public)
+        # 1000명 모일 때까지 모두 무료 공개(Public)!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -336,10 +336,10 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 무료(Flash) 모델이더라도 과부하를 막기 위해 15초 대기합니다!
+                # 무료 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
                 time.sleep(15) 
 
-        print("\n🎉 모든 카테고리 썸네일 및 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
