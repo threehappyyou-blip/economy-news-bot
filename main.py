@@ -8,7 +8,6 @@ import base64
 from datetime import datetime
 import feedparser
 from google import genai
-from google.genai import types
 
 print("=======================================")
 print(" 🚀 40년 멘토 + 밈/다이어그램 + 전면 무료(Flash) 봇 🚀")
@@ -275,6 +274,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
+        # 1000명 모일 때까지 모두 무료 공개(Public)
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -295,9 +295,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
             
         posts_list = list()
         posts_list.append(post_dict)
-        
-        post_data = dict()
-        post_data.update({"posts": posts_list})
+        post_data = dict(posts=posts_list)
         
         url = str(GHOST_API_URL) + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
@@ -341,15 +339,18 @@ if __name__ == "__main__":
         for category, urls in CATEGORIES.items():
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
+            # 카테고리당 뉴스를 30개 모아옵니다.
             all_news = get_category_news(urls, max_count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
             
+            # 🚨 [중복 뉴스 완벽 분배] Basic 3건, Premium 2건, Royal 1건을 중복 없이 쪼개서 발행!
             for task in TASKS:
                 tier = task.get("tier")
                 req_count = task.get("count")
                 
+                # 남은 뉴스가 부족하면 다음 카테고리로 넘어갑니다.
                 if len(all_news) < req_count:
                     break
                 
@@ -373,7 +374,7 @@ if __name__ == "__main__":
                         if sub.get("tier") == tier:
                             send_email(report_html, sub.get("email"), tier, category, post_title)
                             
-                # 무료(Flash) 모델이더라도 과부하를 막기 위해 15초 대기합니다.
+                # 무료(Flash) 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
