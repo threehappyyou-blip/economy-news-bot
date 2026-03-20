@@ -18,23 +18,12 @@ print("=======================================")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
-SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
-
-SENDER_EMAIL = "threehappyyou@gmail.com" 
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
     print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
-
-# 🚨 [구독자 세팅]
-SUBSCRIBERS = list()
-s1 = dict(); s1.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s1)
-s2 = dict(); s2.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s2)
-s3 = dict(); s3.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s3)
-s4 = dict(); s4.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s4)
-s5 = dict(); s5.update({"email": "threehappyyou@gmail.com", "tier": "Royal Premium"}); SUBSCRIBERS.append(s5)
 
 # 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
 CATEGORIES = dict()
@@ -79,7 +68,8 @@ TIER_LABELS.update({"Basic": "🌱 Free"})
 TIER_LABELS.update({"Premium": "💎 Pro"})
 TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
-def get_category_news(urls, max_count=30):
+# 🚨 [에러 완벽 수정] 파라미터 이름을 count로 정확히 일치시켜 에러를 없앴습니다.
+def get_category_news(urls, count=30):
     news_list = list()
     seen_titles = set()
     for url in urls:
@@ -91,12 +81,12 @@ def get_category_news(urls, max_count=30):
                 summary_text = getattr(entry, 'summary', '')
                 news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
-                if len(news_list) >= max_count: break
+                if len(news_list) >= count: break
         except Exception:
             continue
             
     final_news = list()
-    for _ in range(max_count):
+    for _ in range(count):
         if len(news_list) > 0:
             final_news.append(news_list.pop(0))
     return final_news
@@ -138,11 +128,11 @@ def analyze_with_gemini(news_items, category, tier):
         
         1. NEVER use words like 'professor', 'economist', 'expert', or 'executive'.
         2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I" to build strong emotional rapport.
-        3. STRICT RULE: Explain complex concepts by appropriately mixing in clever text-based Memes or simple HTML Diagrams/Tables to eliminate boredom and make it highly engaging. Keep any visual representations simple and clean.
+        3. Explain complex concepts by appropriately mixing in clever text-based Memes or simple ASCII/HTML Diagrams to eliminate boredom and make it highly engaging. Keep ASCII diagrams simple with clear shapes for readability.
         4. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
         5. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
         6. If a news story is an ONGOING event, explicitly analyze what NEW information has been added today and how it changes previous assumptions.
-        7. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>, <table>). Do NOT use markdown (**). Do NOT include ```html.
+        7. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
         The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for Nano Banana image generation, e.g., cinematic, 8k, abstract 3D)
@@ -280,7 +270,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 모일 때까지 모두 무료 공개(Public)
+        # 1000명 모일 때까지 모두 무료 공개(Public)!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -301,7 +291,9 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
             
         posts_list = list()
         posts_list.append(post_dict)
-        post_data = dict(posts=posts_list)
+        
+        post_data = dict()
+        post_data.update({"posts": posts_list})
         
         url = str(GHOST_API_URL) + "/ghost/api/admin/posts/?source=html"
         response = requests.post(url, json=post_data, headers=headers_dict)
@@ -319,7 +311,7 @@ if __name__ == "__main__":
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
             # 카테고리당 뉴스를 30개 모아옵니다.
-            all_news = get_category_news(urls, max_count=30)
+            all_news = get_category_news(urls, count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
@@ -349,7 +341,7 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 무료(Flash) 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
+                # 무료(Flash) 모델이더라도 과부하를 막기 위해 15초 대기합니다.
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
