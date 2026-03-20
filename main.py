@@ -18,12 +18,23 @@ print("=======================================")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
+SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+
+SENDER_EMAIL = "threehappyyou@gmail.com" 
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
     print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
+
+# 🚨 [구독자 세팅]
+SUBSCRIBERS = list()
+s1 = dict(); s1.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s1)
+s2 = dict(); s2.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s2)
+s3 = dict(); s3.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s3)
+s4 = dict(); s4.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s4)
+s5 = dict(); s5.update({"email": "threehappyyou@gmail.com", "tier": "Royal Premium"}); SUBSCRIBERS.append(s5)
 
 # 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
 CATEGORIES = dict()
@@ -63,8 +74,7 @@ TIER_LABELS.update({"Basic": "🌱 Free"})
 TIER_LABELS.update({"Premium": "💎 Pro"})
 TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
-# 🚨 [에러 완벽 수정] 파라미터 이름을 count로 정확히 일치시켜 에러를 없앴습니다.
-def get_category_news(urls, count=30):
+def get_category_news(urls, max_count=30):
     news_list = list()
     seen_titles = set()
     for url in urls:
@@ -76,12 +86,12 @@ def get_category_news(urls, count=30):
                 summary_text = getattr(entry, 'summary', '')
                 news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
-                if len(news_list) >= count: break
+                if len(news_list) >= max_count: break
         except Exception:
             continue
             
     final_news = list()
-    for _ in range(count):
+    for _ in range(max_count):
         if len(news_list) > 0:
             final_news.append(news_list.pop(0))
     return final_news
@@ -265,7 +275,6 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 모일 때까지 모두 무료 공개(Public)!
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -300,23 +309,47 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
     except Exception as e:
         print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
 
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
+
+def send_email(report_content, to_email, tier, category, title):
+    if not SENDER_PASSWORD:
+        return
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    
+    msg = MIMEMultipart()
+    msg.add_header("From", SENDER_EMAIL)
+    msg.add_header("To", to_email)
+    msg.add_header("Subject", str(title))
+
+    msg.attach(MIMEText(report_content, "html"))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+        print(f"🎉 [성공] {to_email} 님에게 이메일 발송 완료!")
+    except Exception as e:
+        print(f"❌ [실패] 메일 발송 실패: {str(e)}")
+
 if __name__ == "__main__":
     try:
         for category, urls in CATEGORIES.items():
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
-            # 카테고리당 뉴스를 30개 모아옵니다.
-            all_news = get_category_news(urls, count=30)
+            all_news = get_category_news(urls, max_count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
             
-            # 🚨 [중복 뉴스 완벽 분배] Basic 3건, Premium 2건, Royal 1건을 중복 없이 쪼개서 발행!
             for task in TASKS:
                 tier = task.get("tier")
                 req_count = task.get("count")
                 
-                # 남은 뉴스가 부족하면 다음 카테고리로 넘어갑니다.
                 if len(all_news) < req_count:
                     break
                 
@@ -336,7 +369,11 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 무료 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
+                    for sub in SUBSCRIBERS:
+                        if sub.get("tier") == tier:
+                            send_email(report_html, sub.get("email"), tier, category, post_title)
+                            
+                # 무료(Flash) 모델이더라도 과부하를 막기 위해 15초 대기합니다.
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
