@@ -4,9 +4,11 @@ import traceback
 import time
 import requests
 import jwt
+import base64
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
 print(" 🚀 40년 멘토 + 밈/다이어그램 + 전면 무료(Flash) 봇 🚀")
@@ -16,12 +18,23 @@ print("=======================================")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
+SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
+
+SENDER_EMAIL = "threehappyyou@gmail.com" 
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
     print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
+
+# 🚨 [구독자 세팅]
+SUBSCRIBERS = list()
+s1 = dict(); s1.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s1)
+s2 = dict(); s2.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s2)
+s3 = dict(); s3.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s3)
+s4 = dict(); s4.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s4)
+s5 = dict(); s5.update({"email": "threehappyyou@gmail.com", "tier": "Royal Premium"}); SUBSCRIBERS.append(s5)
 
 # 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
 CATEGORIES = dict()
@@ -55,6 +68,11 @@ t3 = dict(); t3.update({"tier": "Basic", "count": 3}); TASKS.append(t3)
 t4 = dict(); t4.update({"tier": "Premium", "count": 5}); TASKS.append(t4)
 t5 = dict(); t5.update({"tier": "Premium", "count": 5}); TASKS.append(t5)
 t6 = dict(); t6.update({"tier": "Royal Premium", "count": 10}); TASKS.append(t6)
+
+TIERS = list()
+TIERS.append("Basic")
+TIERS.append("Premium")
+TIERS.append("Royal Premium")
 
 TIER_LABELS = dict()
 TIER_LABELS.update({"Basic": "🌱 Free"})
@@ -120,11 +138,11 @@ def analyze_with_gemini(news_items, category, tier):
         
         1. NEVER use words like 'professor', 'economist', 'expert', or 'executive'.
         2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I" to build strong emotional rapport.
-        3. Explain complex concepts by appropriately mixing in text-based Memes or simple ASCII/HTML Diagrams to eliminate boredom and make it highly engaging. Keep ASCII diagrams simple with clear shapes for readability.
+        3. STRICT RULE: Explain complex concepts by appropriately mixing in clever text-based Memes or simple HTML Diagrams/Tables to eliminate boredom and make it highly engaging. Keep any visual representations simple and clean.
         4. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
         5. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
         6. If a news story is an ONGOING event, explicitly analyze what NEW information has been added today and how it changes previous assumptions.
-        7. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>). Do NOT use markdown (**). Do NOT include ```html.
+        7. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>, <table>). Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
         The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for Nano Banana image generation, e.g., cinematic, 8k, abstract 3D)
@@ -135,7 +153,7 @@ def analyze_with_gemini(news_items, category, tier):
         
         <h2>Top Drivers & Deep Insights</h2>
         <ul>
-            <li><strong>(Headline 1):</strong> (Fact + {depth} + Insert a clever text-based Meme or simple Diagram to explain the core concept)</li>
+            <li><strong>(Headline 1):</strong> (Fact + {depth} + Insert a clever text-based Meme or simple HTML Diagram to explain the core concept)</li>
         </ul>
         
         <h2>Today's Warm Insight</h2>
@@ -161,7 +179,7 @@ def analyze_with_gemini(news_items, category, tier):
         
         pretty_tier = TIER_LABELS.get(tier, tier)
         title = "({tier}) Daily {category} Insight".format(tier=pretty_tier, category=category)
-        image_prompt = "Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 16:9 aspect ratio.".format(category=category)
+        image_prompt = "Abstract 3D illustration representing global {category}, cinematic lighting, high quality, 8k resolution.".format(category=category)
         
         if len(lines) > 0:
             first_line = str(lines.pop(0))
@@ -188,17 +206,36 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [비용 전면 차단 & 에러 해결] 구글 공식 파이썬 SDK를 사용하고 무료 이미지 모델(gemini-2.5-flash-image)로 교체했습니다!
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model='gemini-2.5-flash-image',
-            contents=[image_prompt],
-        )
-        # 생성된 이미지 파일 뽑아내기
-        for part in response.candidates.content.parts:
-            if part.inline_data is not None:
-                return part.inline_data.data
-        return None
+        # 🚨 [비용 전면 차단] 이미지 모델도 완전 무료인 'gemini-3.1-flash-image-preview'로 고정!
+        api_base = "https://" + "generativelanguage.googleapis.com"
+        url = api_base + "/v1beta/models/gemini-3.1-flash-image-preview:predict?key=" + str(GEMINI_API_KEY)
+        
+        headers = dict()
+        headers.update({'Content-Type': 'application/json'})
+        
+        params = dict()
+        params.update({"sampleCount": 1})
+        params.update({"aspectRatio": "16:9"})
+        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
+        
+        instances_list = list()
+        instances_list.append(dict(prompt=image_prompt))
+        
+        data = dict()
+        data.update({"instances": instances_list})
+        data.update({"parameters": params})
+        
+        response = requests.post(url, headers=headers, json=data)
+        
+        if response.status_code == 200:
+            predictions = response.json().get('predictions')
+            if predictions:
+                for pred in predictions:
+                    b64_img = pred.get('bytesBase64Encoded', '')
+                    return base64.b64decode(b64_img)
+        else:
+            print(f"⚠️ [이미지 API 에러]: {response.status_code} - {response.text}")
+            return None
     except Exception as e:
         print(f"⚠️ [이미지 생성 에러]: {e}")
         return None
@@ -243,7 +280,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 돌파 전까지 모두 무료 공개(public)
+        # 1000명 모일 때까지 모두 무료 공개(Public)
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -281,15 +318,18 @@ if __name__ == "__main__":
         for category, urls in CATEGORIES.items():
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
+            # 카테고리당 뉴스를 30개 모아옵니다.
             all_news = get_category_news(urls, max_count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
             
+            # 🚨 [중복 뉴스 완벽 분배] Basic 3건, Premium 2건, Royal 1건을 중복 없이 쪼개서 발행!
             for task in TASKS:
                 tier = task.get("tier")
                 req_count = task.get("count")
                 
+                # 남은 뉴스가 부족하면 다음 카테고리로 넘어갑니다.
                 if len(all_news) < req_count:
                     break
                 
@@ -297,7 +337,7 @@ if __name__ == "__main__":
                 for _ in range(req_count):
                     target_news.append(all_news.pop(0))
                 
-                print(f"  -> ({tier}) 등급 리포트 및 썸네일 생성 중...")
+                print(f"  -> ({tier}) 등급 리포트 ({req_count}개 뉴스) 및 썸네일 생성 중...")
                 post_title, img_prompt, report_html = analyze_with_gemini(target_news, category, tier)
                 
                 if report_html and post_title:
@@ -309,6 +349,7 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
+                # 무료(Flash) 모델이더라도 서버 혼잡도 관리를 위해 15초 대기합니다.
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
