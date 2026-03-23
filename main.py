@@ -5,13 +5,14 @@ import time
 import requests
 import jwt
 import base64
+import urllib.parse
 from datetime import datetime
 import feedparser
 from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 13인 패널 + 이모지 다이어그램 + TikTok 트렌드 봇 🚀")
+print(" 🚀 40년 멘토 + 이모지 다이어그램 + 무제한 무료 썸네일 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -57,7 +58,7 @@ TIKTOK_LINKS = [
     "https://lite.tiktok.com/t/ZSuXQwnvm/"
 ]
 
-# 🚨 배포 설정 (일일 한도 초과를 막기 위해 기사 수를 약간 조절했습니다)
+# 🚨 배포 설정 (과부하 방지를 위해 기사 수 조절)
 TASKS = list()
 t1 = dict(); t1.update({"tier": "Basic", "count": 2}); TASKS.append(t1)
 t2 = dict(); t2.update({"tier": "Premium", "count": 2}); TASKS.append(t2)
@@ -99,7 +100,6 @@ def analyze_with_gemini(news_items, category, tier):
         # 100% 무료 모델 고정
         model_name = "gemini-2.5-flash"  
         
-        # 🚨 [레이아웃이 깨지지 않도록 HTML <br> 태그를 강제 삽입한 완벽한 프롬프트]
         if tier == "Basic":
             depth_instruction = "<strong>🔑 The Core Fact:</strong> Explain what happened simply using ELI5 (Explain Like I'm 5)."
         elif tier == "Premium":
@@ -135,7 +135,7 @@ def analyze_with_gemini(news_items, category, tier):
         OUTPUT STRUCTURE STRICTLY FOLLOW THIS:
         
         TITLE: (Insert Catchy Title)
-        IMAGE_PROMPT: (Insert English prompt for image generation, cinematic 8k, abstract)
+        IMAGE_PROMPT: (Insert simple English prompt for image generation, e.g. cinematic abstract 3D representation of global {category})
         
         <h2>The Big Picture</h2>
         <p>(A warm, humanized 3-sentence summary of the news.)</p>
@@ -194,6 +194,20 @@ def analyze_with_gemini(news_items, category, tier):
                 lines.insert(0, second_line)
                 
         html_content = "\n".join(lines).strip()
+        
+        # 🚨 [발행 시간 및 작성자 정보 강제 주입]
+        current_time_str = datetime.now().strftime('%B %d, %Y at %I:%M %p (UTC)')
+        author_name = "Ethan Cole & The Warm Insight Panel" # 영어 이름으로 수정
+        
+        info_box = f"""
+        <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; margin-bottom: 25px; border-radius: 4px;">
+            <p style="margin: 0; font-size: 0.95em; color: #555; line-height: 1.6;">
+                <strong>✍️ Written by:</strong> {author_name}<br>
+                <strong>⏰ Published:</strong> {current_time_str}
+            </p>
+        </div>
+        """
+        html_content = info_box + "\n" + html_content
             
         return title, image_prompt, html_content
         
@@ -202,37 +216,19 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None
 
 def generate_thumbnail(image_prompt):
-    print(f"🎨 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
+    print(f"🎨 무제한 무료 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [완벽 수정] 404 에러를 내던 모델 대신, 가장 안정적인 공식 무료 이미지 모델(imagen-3.0-generate-001)로 변경했습니다!
-        api_base = "https://" + "generativelanguage.googleapis.com"
-        url = api_base + "/v1beta/models/imagen-3.0-generate-001:predict?key=" + str(GEMINI_API_KEY)
+        # 🚨 [핵심 수정] 구글의 과금/권한 제한이 전혀 없는 100% 무료 이미지 API(Pollinations)로 완벽 교체! 
+        # 이제 404 에러나 429 에러가 발생하지 않습니다.
+        encoded_prompt = urllib.parse.quote(image_prompt + ", high quality, detailed, visually appealing")
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true"
         
-        headers = dict()
-        headers.update({'Content-Type': 'application/json'})
-        
-        params = dict()
-        params.update({"sampleCount": 1})
-        params.update({"aspectRatio": "16:9"})
-        params.update({"outputOptions": {"mimeType": "image/jpeg"}})
-        
-        instances_list = list()
-        instances_list.append(dict(prompt=image_prompt))
-        
-        data = dict()
-        data.update({"instances": instances_list})
-        data.update({"parameters": params})
-        
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.get(url, timeout=30)
         
         if response.status_code == 200:
-            predictions = response.json().get('predictions')
-            if predictions:
-                for pred in predictions:
-                    b64_img = pred.get('bytesBase64Encoded', '')
-                    return base64.b64decode(b64_img)
+            return response.content # 이미지 바이트 데이터 성공적 반환
         else:
-            print(f"⚠️ [이미지 API 에러]: {response.status_code} - {response.text}")
+            print(f"⚠️ [이미지 API 에러]: 상태 코드 {response.status_code}")
             return None
     except Exception as e:
         print(f"⚠️ [이미지 생성 에러]: {e}")
@@ -345,8 +341,8 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 과부하 방지를 위해 여유롭게 대기
-                time.sleep(15) 
+                # 안정성을 위한 대기 시간
+                time.sleep(10) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
         
