@@ -11,10 +11,9 @@ import random
 from datetime import datetime
 import feedparser
 from google import genai
-from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + VIP 타이탄 매뉴얼(디자인 강제) + 무적 썸네일 봇 🚀")
+print(" 🚀 40년 멘토 + VIP 디자인 고정 + 완벽 실행 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -28,8 +27,99 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
 
-# 🚨 [HTML 템플릿 정의] 
-# 복사/붙여넣기 시 들여쓰기(Tab/Space) 에러를 원천 차단하기 위해 글로벌 변수로 분리했습니다.
+# 🚨 [카테고리 세팅]
+CATEGORIES = dict()
+
+cat_eco = list()
+cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
+cat_eco.append("https://finance.yahoo.com/news/rssindex")
+CATEGORIES.update({"Economy": cat_eco})
+
+cat_pol = list()
+cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
+CATEGORIES.update({"Politics": cat_pol})
+
+cat_tech = list()
+cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
+CATEGORIES.update({"Tech": cat_tech})
+
+cat_health = list()
+cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
+CATEGORIES.update({"Health": cat_health})
+
+cat_energy = list()
+cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
+CATEGORIES.update({"Energy": cat_energy})
+
+# 🚨 [TikTok 바이럴 링크]
+TIKTOK_LINKS = (
+    "https://lite.tiktok.com/t/ZSuGXKdsU/\n"
+    "https://lite.tiktok.com/t/ZSu9GYwy5/\n"
+    "https://lite.tiktok.com/t/ZSuxhPSBR/\n"
+    "https://lite.tiktok.com/t/ZSuXQwnvm/"
+)
+
+# 🚨 배포 설정
+TASKS = list()
+TASKS.append({"tier": "Basic", "count": 2})
+TASKS.append({"tier": "Premium", "count": 2})
+TASKS.append({"tier": "Royal Premium", "count": 3})
+
+TIER_LABELS = {"Basic": "🌱 Free", "Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
+
+# 🚨 들여쓰기 에러를 완벽히 차단하기 위해 템플릿을 최상단 텍스트 블록으로 분리했습니다.
+PROMPT_TEMPLATE = """
+[Goal] Write a highly insightful, deeply humanized blog post in ENGLISH for the '[CATEGORY]' section of the 'Warm Insight' website.
+Target Audience: [TIER] Subscribers.
+
+You are [PERSONA].
+
+CRITICAL FORMATTING RULES:
+1. Write ENTIRELY in ENGLISH. NEVER use words like 'professor' or 'expert'.
+2. NEVER use ASCII art with vertical lines or spaces.
+3. For diagrams, MUST use horizontal "Emoji Flows" (e.g., Oil Strain 🛢️ ➡️ Shipping Costs 📈 ➡️ Inflation 💥).
+4. Use <br> tags properly so the text does not look clumped together.
+5. TIKTOK/FINTOK INFLUENCE: Create a 'Viral Social Insights 📱' section based on these vibes:
+[TIKTOK_LINKS]
+
+[VIP_RULES]
+
+OUTPUT STRUCTURE STRICTLY FOLLOW THIS EXACT HTML TEMPLATE. DO NOT OMIT ANY STYLE TAGS:
+
+TITLE: (Insert Catchy Title)
+IMAGE_PROMPT: (Insert simple English prompt for image generation, e.g. cinematic abstract 3D representation of global [CATEGORY])
+EXCERPT: (Write a VERY catchy 1-sentence summary WITHOUT HTML tags.)
+
+<h2>The Big Picture</h2>
+<p>(A warm, humanized 3-sentence summary of the news.)</p>
+
+<h2>Viral Social Insights 📱</h2>
+<p>(Translate the heavy news into a super-engaging TikTok style analogy or text meme.)</p>
+
+<h2>Top Drivers & Deep Insights</h2>
+<ul>
+    <li>
+        <strong style="font-size:1.2em;">(Headline 1)</strong><br><br>
+        [DEPTH_INSTRUCTION]<br><br>
+        <div style="background:#f4f4f4; padding:10px; border-radius:5px;">
+        <strong>💡 Quick Flow:</strong> (Insert your Emoji Flow Diagram here. Example: A ➡️ B ➡️ C)
+        </div>
+    </li>
+</ul>
+
+[VIP_SECTIONS]
+
+<hr style="border: 1px solid #ddd; margin: 40px 0;">
+<h2>Today's Warm Insight</h2>
+<p>(A comforting, actionable takeaway.)</p>
+
+<p><strong>P.S.</strong> (Add a very short, relatable personal thought.)</p>
+<p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
+
+Raw News to Analyze:
+[NEWS_ITEMS]
+"""
+
 VIP_EXTRA_RULES = """
 6. VIP EXCLUSIVE LENGTH & DEPTH: For the VIP sections, act like a Wall Street Quant. Write highly detailed, 3+ long paragraphs analyzing RSI, Moving Averages, and Macro data.
 7. MANDATORY HTML DESIGN RULE: You MUST COPY AND PASTE the EXACT <div style="..."> tags provided for the Titan's Playbook. DO NOT use Markdown lists (* or -). If you use a markdown list, the visual design will break. YOU MUST KEEP ALL INLINE STYLES (background-color, border, etc.) exactly as provided in the template.
@@ -76,49 +166,6 @@ VIP_EXTRA_SECTIONS = """
 </div>
 """
 
-# 🚨 [카테고리 세팅]
-CATEGORIES = dict()
-
-cat_eco = list()
-cat_eco.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
-cat_eco.append("https://" + "finance.yahoo.com/news/rssindex")
-CATEGORIES.update({"Economy": cat_eco})
-
-cat_pol = list()
-cat_pol.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
-CATEGORIES.update({"Politics": cat_pol})
-
-cat_tech = list()
-cat_tech.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
-CATEGORIES.update({"Tech": cat_tech})
-
-cat_health = list()
-cat_health.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
-CATEGORIES.update({"Health": cat_health})
-
-cat_energy = list()
-cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
-CATEGORIES.update({"Energy": cat_energy})
-
-# 🚨 [TikTok 바이럴 링크 세팅]
-TIKTOK_LINKS = [
-    "https://lite.tiktok.com/t/ZSuGXKdsU/",
-    "https://lite.tiktok.com/t/ZSu9GYwy5/",
-    "https://lite.tiktok.com/t/ZSuxhPSBR/",
-    "https://lite.tiktok.com/t/ZSuXQwnvm/"
-]
-
-# 🚨 배포 설정
-TASKS = list()
-t1 = dict(); t1.update({"tier": "Basic", "count": 2}); TASKS.append(t1)
-t2 = dict(); t2.update({"tier": "Premium", "count": 2}); TASKS.append(t2)
-t3 = dict(); t3.update({"tier": "Royal Premium", "count": 3}); TASKS.append(t3)
-
-TIER_LABELS = dict()
-TIER_LABELS.update({"Basic": "🌱 Free"})
-TIER_LABELS.update({"Premium": "💎 Pro"})
-TIER_LABELS.update({"Royal Premium": "👑 VIP"})
-
 def get_category_news(urls, count=20):
     news_list = list()
     seen_titles = set()
@@ -145,12 +192,11 @@ def analyze_with_gemini(news_items, category, tier):
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
-        tiktok_urls_str = "\n".join(TIKTOK_LINKS)
         
         model_name = "gemini-2.5-flash"  
         
-        vip_extra_rules = ""
-        vip_extra_sections = ""
+        vip_rules = ""
+        vip_sections = ""
         
         if tier == "Basic":
             depth_instruction = "<strong>🔑 The Core Fact:</strong> Explain what happened simply using ELI5 (Explain Like I'm 5)."
@@ -158,8 +204,8 @@ def analyze_with_gemini(news_items, category, tier):
             depth_instruction = "<strong>🧐 WHY (The Hidden Reason):</strong> Explain using behavioral economics.<br><br><strong>🐑 THINK (What Masses Think):</strong> Explain the irrational market psychology."
         else: # Royal Premium (VIP)
             depth_instruction = "<strong>🧐 WHY (The Hidden Reason):</strong> Explain the true macroeconomic reason in deep detail.<br><br><strong>🐑 THINK (Herd Behavior):</strong> What the general public wrongly assumes.<br><br><strong>🦅 DIFFERENT THINK (Contrarian View):</strong> The hidden opportunity for true wealth."
-            vip_extra_rules = VIP_EXTRA_RULES
-            vip_extra_sections = VIP_EXTRA_SECTIONS
+            vip_rules = VIP_EXTRA_RULES
+            vip_sections = VIP_EXTRA_SECTIONS
 
         if category == "Politics": expert_persona = "a veteran US political expert"
         elif category == "Tech": expert_persona = "a veteran US technology expert"
@@ -167,54 +213,15 @@ def analyze_with_gemini(news_items, category, tier):
         elif category == "Energy": expert_persona = "a veteran US energy expert"
         else: expert_persona = "a veteran US Wall Street expert"
 
-        prompt = f"""
-        [Goal] Write a highly insightful, deeply humanized blog post in ENGLISH for the '{category}' section of the 'Warm Insight' website.
-        Target Audience: {tier} Subscribers.
-        
-        You are {expert_persona}.
-        
-        CRITICAL FORMATTING RULES:
-        1. Write ENTIRELY in ENGLISH. NEVER use words like 'professor' or 'expert'.
-        2. NEVER use ASCII art with vertical lines or spaces.
-        3. For diagrams, MUST use horizontal "Emoji Flows" (e.g., Oil Strain 🛢️ ➡️ Shipping Costs 📈 ➡️ Inflation 💥).
-        4. Use <br> tags properly so the text does not look clumped together.
-        5. TIKTOK/FINTOK INFLUENCE: Create a 'Viral Social Insights 📱' section based on these vibes: {tiktok_urls_str}.{vip_extra_rules}
-
-        OUTPUT STRUCTURE STRICTLY FOLLOW THIS EXACT HTML TEMPLATE. DO NOT OMIT ANY STYLE TAGS:
-        
-        TITLE: (Insert Catchy Title)
-        IMAGE_PROMPT: (Insert simple English prompt for image generation, e.g. cinematic abstract 3D representation of global {category})
-        EXCERPT: (Write a VERY catchy 1-sentence summary WITHOUT HTML tags.)
-        
-        <h2>The Big Picture</h2>
-        <p>(A warm, humanized 3-sentence summary of the news.)</p>
-        
-        <h2>Viral Social Insights 📱</h2>
-        <p>(Translate the heavy news into a super-engaging TikTok style analogy or text meme.)</p>
-        
-        <h2>Top Drivers & Deep Insights</h2>
-        <ul>
-            <li>
-                <strong style="font-size:1.2em;">(Headline 1)</strong><br><br>
-                {depth_instruction}<br><br>
-                <div style="background:#f4f4f4; padding:10px; border-radius:5px;">
-                <strong>💡 Quick Flow:</strong> (Insert your Emoji Flow Diagram here. Example: A ➡️ B ➡️ C)
-                </div>
-            </li>
-        </ul>
-        
-        {vip_extra_sections}
-        
-        <hr style="border: 1px solid #ddd; margin: 40px 0;">
-        <h2>Today's Warm Insight</h2>
-        <p>(A comforting, actionable takeaway.)</p>
-        
-        <p><strong>P.S.</strong> (Add a very short, relatable personal thought.)</p>
-        <p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
-
-        Raw News to Analyze:
-        {selected_news}
-        """
+        # f-string 오류를 막기 위해 replace로 치환합니다.
+        prompt = PROMPT_TEMPLATE.replace("[CATEGORY]", category)
+        prompt = prompt.replace("[TIER]", tier)
+        prompt = prompt.replace("[PERSONA]", expert_persona)
+        prompt = prompt.replace("[TIKTOK_LINKS]", TIKTOK_LINKS)
+        prompt = prompt.replace("[VIP_RULES]", vip_rules)
+        prompt = prompt.replace("[DEPTH_INSTRUCTION]", depth_instruction)
+        prompt = prompt.replace("[VIP_SECTIONS]", vip_sections)
+        prompt = prompt.replace("[NEWS_ITEMS]", selected_news)
         
         response = client.models.generate_content(
             model=model_name,
