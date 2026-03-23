@@ -11,16 +11,13 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 13인 전문가 + 밈/다이어그램 + 전면 무료(Flash) 봇 🚀")
+print(" 🚀 40년 멘토 + 13인 패널 + 밈/다이어그램 + TikTok 트렌드 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GHOST_API_URL = os.environ.get("GHOST_API_URL")
 GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
-SENDER_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
-
-SENDER_EMAIL = "threehappyyou@gmail.com" 
 
 if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
     print("\n⛔ [시스템 중단] API 키 또는 Ghost 출입증이 없습니다. GitHub Secrets를 확인하세요.")
@@ -28,15 +25,7 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
 
-# 🚨 [구독자 세팅]
-SUBSCRIBERS = list()
-s1 = dict(); s1.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s1)
-s2 = dict(); s2.update({"email": "threehappyyou@gmail.com", "tier": "Basic"}); SUBSCRIBERS.append(s2)
-s3 = dict(); s3.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s3)
-s4 = dict(); s4.update({"email": "threehappyyou@gmail.com", "tier": "Premium"}); SUBSCRIBERS.append(s4)
-s5 = dict(); s5.update({"email": "threehappyyou@gmail.com", "tier": "Royal Premium"}); SUBSCRIBERS.append(s5)
-
-# 🚨 [카테고리 세팅] 텍스트 시스템이 괄호를 지우지 못하게 무적의 코드로 작성했습니다.
+# 🚨 [카테고리 세팅]
 CATEGORIES = dict()
 
 cat_eco = list()
@@ -60,7 +49,15 @@ cat_energy = list()
 cat_energy.append("https://" + "search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
 CATEGORIES.update({"Energy": cat_energy})
 
-# 🚨 하나의 뉴스가 중복되지 않도록 Basic 3건, Premium 2건, Royal 1건으로 쪼개서 분배합니다!
+# 🚨 [TikTok 바이럴 링크 세팅]
+TIKTOK_LINKS = [
+    "https://lite.tiktok.com/t/ZSuGXKdsU/",
+    "https://lite.tiktok.com/t/ZSu9GYwy5/",
+    "https://lite.tiktok.com/t/ZSuxhPSBR/",
+    "https://lite.tiktok.com/t/ZSuXQwnvm/"
+]
+
+# 🚨 하나의 뉴스가 중복되지 않도록 Basic 3건, Premium 2건, Royal 1건으로 쪼개서 분배
 TASKS = list()
 t1 = dict(); t1.update({"tier": "Basic", "count": 3}); TASKS.append(t1)
 t2 = dict(); t2.update({"tier": "Basic", "count": 3}); TASKS.append(t2)
@@ -79,7 +76,7 @@ TIER_LABELS.update({"Basic": "🌱 Free"})
 TIER_LABELS.update({"Premium": "💎 Pro"})
 TIER_LABELS.update({"Royal Premium": "👑 VIP"})
 
-def get_category_news(urls, max_count=30):
+def get_category_news(urls, count=30):
     news_list = list()
     seen_titles = set()
     for url in urls:
@@ -91,12 +88,12 @@ def get_category_news(urls, max_count=30):
                 summary_text = getattr(entry, 'summary', '')
                 news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
-                if len(news_list) >= max_count: break
+                if len(news_list) >= count: break
         except Exception:
             continue
             
     final_news = list()
-    for _ in range(max_count):
+    for _ in range(count):
         if len(news_list) > 0:
             final_news.append(news_list.pop(0))
     return final_news
@@ -105,55 +102,59 @@ def analyze_with_gemini(news_items, category, tier):
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
+        tiktok_urls_str = "\n".join(TIKTOK_LINKS)
         
-        # 🚨 [비용 전면 차단 원칙 준수!] 모든 등급을 완전히 무료 모델(2.5-flash)로 고정합니다!
+        # 🚨 [비용 전면 차단 원칙 준수!] 완전히 무료 모델(2.5-flash)로 100% 고정!
         model_name = "gemini-2.5-flash"  
         
-        # 제자님의 "Why / Think / Different Think" 전략 적용
+        # 🚨 [Why / Think / Different Think 전략 및 틱톡 맞춤 난이도]
         if tier == "Basic":
-            depth = "Focus ONLY on the objective FACTS (What happened). Keep it concise but spark curiosity."
+            depth = "Focus ONLY on the objective FACTS. Keep it concise, punchy, and highly accessible like a trending TikTok video. Use ELI5 (Explain Like I'm 5)."
         elif tier == "Premium":
-            depth = "Focus on the 'WHY' using Behavioral Economics and Psychology. Explain the irrational market psychology behind the facts."
+            depth = "Focus on the 'WHY' using Behavioral Economics and Psychology. Explain the irrational market psychology behind the facts using relatable analogies."
         else: 
-            depth = "Use the ultimate 'WHY / THINK / DIFFERENT THINK' framework. First, explain 'WHY' this happened. Second, explain what the masses 'THINK' (herd behavior). Third, provide a 'DIFFERENT THINK' (contrarian, historical, or philosophical perspective) to uncover the true hidden opportunity."
+            depth = "Use the ultimate 'WHY / THINK / DIFFERENT THINK' framework. First, explain 'WHY' this happened. Second, explain what the masses 'THINK'. Third, provide a 'DIFFERENT THINK' to uncover hidden opportunities."
 
-        # 40년 경력의 미국 현지 전문가 자아 부여
+        # 40년 경력의 현지 전문가 자아
         if category == "Politics":
-            expert_persona = "a veteran US political expert with over 40 years of experience in Washington D.C. and global geopolitics"
+            expert_persona = "a veteran US political expert with over 40 years of experience"
         elif category == "Tech":
-            expert_persona = "a veteran US technology expert with over 40 years of experience in Silicon Valley and global tech trends"
+            expert_persona = "a veteran US technology expert with over 40 years of experience"
         elif category == "Health":
-            expert_persona = "a veteran US healthcare expert with over 40 years of experience in the medical industry and bio-innovation"
+            expert_persona = "a veteran US healthcare expert with over 40 years of experience"
         elif category == "Energy":
-            expert_persona = "a veteran US energy expert with over 40 years of experience in global energy markets and infrastructure"
+            expert_persona = "a veteran US energy expert with over 40 years of experience"
         else: 
-            expert_persona = "a veteran US economic expert with over 40 years of experience in Wall Street and global macroeconomics"
+            expert_persona = "a veteran US economic expert with over 40 years of experience in Wall Street"
 
-        # 🚨 [13인 전문가 패널 토론 + 밈 및 다이어그램 추가 지시 완벽 반영]
+        # 🚨 [13인 전문가 패널 + 밈/다이어그램 + 틱톡 바이럴 지시사항 완벽 반영]
         prompt = f"""
-        [Goal] Write a highly insightful, deeply humanized blog post in English for the '{category}' section of the 'Warm Insight' website.
+        [Goal] Write a highly insightful, deeply humanized blog post in ENGLISH for the '{category}' section of the 'Warm Insight' website.
         Target Audience: {tier} Subscribers looking for financial freedom.
         
-        You are {expert_persona}. You are internally simulating a rigorous debate among 13 top-tier experts (Economists, Psychologists, Historians, Data Scientists, etc.), but YOU are writing the final output based on this collective wisdom and your 40 years of deep experience.
+        You are {expert_persona}. You are internally simulating a rigorous debate among 13 top-tier experts (Economists, Psychologists, Historians, Data Scientists, TikTok Trend Analysts, etc.), but YOU are writing the final output based on this collective wisdom.
         
-        1. NEVER use words like 'professor', 'economist', 'expert', or 'executive'.
-        2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I" to build strong emotional rapport.
-        3. STRICT RULE: Explain complex concepts by appropriately mixing in clever text-based Memes or simple HTML Diagrams/Tables to eliminate boredom and make it highly engaging. Keep any visual representations simple and clean.
-        4. Mix short, punchy sentences with longer, reflective ones to create a natural human rhythm.
-        5. Provide an 'emotional safety net': Comfort the reader's anxiety about market volatility or tech changes.
-        6. If a news story is an ONGOING event, explicitly analyze what NEW information has been added today and how it changes previous assumptions.
-        7. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>, <table>, <blockquote>). Do NOT use markdown (**). Do NOT include ```html.
+        CRITICAL RULES:
+        1. Write ENTIRELY in ENGLISH. NEVER use words like 'professor', 'economist', or 'expert'.
+        2. Humanize the content: Write like a wise, warm, 40-year experienced mentor. Use "We" or "I".
+        3. STRICT RULE: Explain complex concepts by appropriately mixing in clever text-based Memes or simple ASCII/HTML Diagrams to eliminate boredom.
+        4. TIKTOK / SOCIAL MEDIA INFLUENCE: We have provided these trending TikTok links ({tiktok_urls_str}). Even if you cannot watch them, assume they represent the latest bite-sized, engaging financial trends for beginners. You MUST include a dedicated 'Viral Social Insights 📱' section that breaks down complex economic ideas as easily and engagingly as a viral short-form video.
+        5. Provide an 'emotional safety net': Comfort the reader's anxiety.
+        6. Format in clean HTML tags (<h2>, <p>, <ul>, <li>, <strong>, <blockquote>). Do NOT use markdown (**). Do NOT include ```html.
         
         The VERY FIRST LINE must be exactly: TITLE: (Insert Catchy Title)
         The SECOND LINE must be exactly: IMAGE_PROMPT: (Insert English prompt for Nano Banana image generation, e.g., cinematic, 8k, abstract 3D)
-        From the THIRD LINE onwards, write the HTML content:
+        From the THIRD LINE onwards, write the HTML content strictly following this structure:
         
         <h2>The Big Picture</h2>
         <p>(A warm, humanized 3-sentence summary of the news.)</p>
         
+        <h2>Viral Social Insights 📱</h2>
+        <p>(Translate the heavy news into a super-engaging, easy-to-understand concept inspired by modern TikTok/FinTok trends. Use an analogy, a text meme, or an 'Explain Like I'm 5' approach so anyone can understand.)</p>
+        
         <h2>Top Drivers & Deep Insights</h2>
         <ul>
-            <li><strong>(Headline 1):</strong> (Fact + {depth} + Insert a clever text-based Meme or simple HTML Diagram/Table to explain the core concept engagingly)</li>
+            <li><strong>(Headline 1):</strong> (Fact + {depth} + Insert a simple HTML Diagram/Table or text-based meme to explain the core concept)</li>
         </ul>
         
         <h2>Today's Warm Insight</h2>
@@ -206,7 +207,7 @@ def analyze_with_gemini(news_items, category, tier):
 def generate_thumbnail(image_prompt):
     print(f"🎨 나노바나나 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        # 🚨 [비용 전면 차단] 이미지 모델도 완전 무료인 'gemini-3.1-flash-image-preview'로 고정!
+        # 🚨 [비용 전면 차단] 이미지 모델 무료(3.1-flash-image-preview) 고정
         api_base = "https://" + "generativelanguage.googleapis.com"
         url = api_base + "/v1beta/models/gemini-3.1-flash-image-preview:predict?key=" + str(GEMINI_API_KEY)
         
@@ -280,7 +281,6 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url):
         headers_dict.update({'Authorization': 'Ghost ' + token})
         headers_dict.update({'Content-Type': 'application/json'})
         
-        # 1000명 모일 때까지 모두 무료 공개(Public)
         visibility_setting = "public"
         
         tag_dict = dict(name=category)
@@ -320,18 +320,15 @@ if __name__ == "__main__":
         for category, urls in CATEGORIES.items():
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
             
-            # 카테고리당 뉴스를 30개 모아옵니다.
-            all_news = get_category_news(urls, max_count=30)
+            all_news = get_category_news(urls, count=30)
             if not all_news or len(all_news) < 3:
                 print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
             
-            # 🚨 [중복 뉴스 완벽 분배] Basic 3건, Premium 2건, Royal 1건을 중복 없이 쪼개서 발행!
             for task in TASKS:
                 tier = task.get("tier")
                 req_count = task.get("count")
                 
-                # 남은 뉴스가 부족하면 다음 카테고리로 넘어갑니다.
                 if len(all_news) < req_count:
                     break
                 
@@ -351,7 +348,7 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 무료(Flash) 모델이더라도 과부하를 막기 위해 15초 대기합니다.
+                # 과부하 방지
                 time.sleep(15) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
