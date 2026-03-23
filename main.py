@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import traceback
@@ -26,6 +27,54 @@ if not GEMINI_API_KEY or not GHOST_API_URL or not GHOST_ADMIN_API_KEY:
     sys.exit(1)
 
 GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
+
+# 🚨 [HTML 템플릿 정의] 
+# 복사/붙여넣기 시 들여쓰기(Tab/Space) 에러를 원천 차단하기 위해 글로벌 변수로 분리했습니다.
+VIP_EXTRA_RULES = """
+6. VIP EXCLUSIVE LENGTH & DEPTH: For the VIP sections, act like a Wall Street Quant. Write highly detailed, 3+ long paragraphs analyzing RSI, Moving Averages, and Macro data.
+7. MANDATORY HTML DESIGN RULE: You MUST COPY AND PASTE the EXACT <div style="..."> tags provided for the Titan's Playbook. DO NOT use Markdown lists (* or -). If you use a markdown list, the visual design will break. YOU MUST KEEP ALL INLINE STYLES (background-color, border, etc.) exactly as provided in the template.
+"""
+
+VIP_EXTRA_SECTIONS = """
+<hr style="border: 1px solid #ddd; margin: 40px 0;">
+<h2 style="color: #2c3e50; font-size: 1.8em; margin-bottom: 20px;">📈 VIP Exclusive: Deep-Dive Chart & Macro Analysis</h2>
+<div style="background-color: #f8f9fa; border-left: 5px solid #2c3e50; padding: 20px; border-radius: 4px; margin-bottom: 30px;">
+    <p style="font-size: 1.1em; font-weight: bold; color: #333; margin-top: 0;">[Institutional Money Flow & Technical Outlook]</p>
+    <p>(WRITE PARAGRAPH 1 HERE: Deeply analyze RSI, Moving Averages, and current chart patterns. At least 5 sentences.)</p>
+    <p>(WRITE PARAGRAPH 2 HERE: Analyze Macroeconomic data, yield curves, or volume trends related to the news. At least 5 sentences.)</p>
+    <p>(WRITE PARAGRAPH 3 HERE: Conclude with what 'Smart Money' is doing right now based on this data.)</p>
+</div>
+
+<hr style="border: 1px solid #ddd; margin: 40px 0;">
+<h2 style="color: #1a237e; font-size: 1.8em; margin-bottom: 10px;">🛡️ The Titan's Playbook: Master Mindset & Strategy</h2>
+<p style="font-size: 1.1em; color: #555; margin-bottom: 25px;"><em>How the top 1% navigate this specific market condition.</em></p>
+
+<div style="background-color: #fff8e1; border: 1px solid #ffe082; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="color: #f57f17; margin-top: 0; font-size: 1.3em;">1. The Generational Bargain (Fear vs. Greed)</h3>
+    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: Apply this to today's news. Explain if the current market fear is a 'Generational Bargain Sale'. Mention the Fear & Greed Index concept.)</p>
+</div>
+
+<div style="background-color: #e8f5e9; border: 1px solid #a5d6a7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="color: #2e7d32; margin-top: 0; font-size: 1.3em;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
+    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: How to adjust the 60% Stocks, 30% Safe Assets, 10% Cash ratio based on today's events. How should we mechanically rebalance today?)</p>
+</div>
+
+<div style="background-color: #e3f2fd; border: 1px solid #90caf9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="color: #1565c0; margin-top: 0; font-size: 1.3em;">3. The Global Shield (US Dollar & Market)</h3>
+    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: Explain why holding strong US Assets and the Dollar is a crucial safety net right now.)</p>
+</div>
+
+<div style="background-color: #fce4ec; border: 1px solid #f48fb1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+    <h3 style="color: #c2185b; margin-top: 0; font-size: 1.3em;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
+    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: Define exactly when to use 3-part split buying (DCA) and why selling 50% during extreme panic is the ultimate mental defense.)</p>
+</div>
+
+<div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 25px; border-radius: 5px; margin-top: 40px; margin-bottom: 20px;">
+    <h3 style="color: #3f51b5; margin-top: 0; font-size: 1.5em; display: flex; align-items: center;">✅ Today's VIP Action Plan</h3>
+    <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> (Provide 2 highly specific, actionable steps based on the news, utilizing the Titan rules.)</p>
+    <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> (Provide 1 specific mistake to avoid right now, such as panic selling.)</p>
+</div>
+"""
 
 # 🚨 [카테고리 세팅]
 CATEGORIES = dict()
@@ -109,54 +158,8 @@ def analyze_with_gemini(news_items, category, tier):
             depth_instruction = "<strong>🧐 WHY (The Hidden Reason):</strong> Explain using behavioral economics.<br><br><strong>🐑 THINK (What Masses Think):</strong> Explain the irrational market psychology."
         else: # Royal Premium (VIP)
             depth_instruction = "<strong>🧐 WHY (The Hidden Reason):</strong> Explain the true macroeconomic reason in deep detail.<br><br><strong>🐑 THINK (Herd Behavior):</strong> What the general public wrongly assumes.<br><br><strong>🦅 DIFFERENT THINK (Contrarian View):</strong> The hidden opportunity for true wealth."
-            
-            # 🚨 AI가 절대 스타일을 빼먹지 못하도록 아주 강력하게 경고!
-            vip_extra_rules = """
-        6. VIP EXCLUSIVE LENGTH & DEPTH: For the VIP sections, act like a Wall Street Quant. Write highly detailed, 3+ long paragraphs analyzing RSI, Moving Averages, and Macro data.
-        7. MANDATORY HTML DESIGN RULE: You MUST use the EXACT <div style="..."> tags provided for the Titan's Playbook. DO NOT use Markdown lists (* or -). If you use a markdown list, the visual design will break. YOU MUST KEEP ALL INLINE STYLES (background-color, border, etc.) exactly as provided.
-            """
-            
-            # 🚨 각 항목을 리스트가 아닌 독립된 <div style> 블록으로 완전히 분리하여 마크다운 변환을 원천 차단했습니다.
-            vip_extra_sections = """
-        <hr style="border: 1px solid #ddd; margin: 40px 0;">
-        <h2 style="color: #2c3e50; font-size: 1.8em; margin-bottom: 20px;">📈 VIP Exclusive: Deep-Dive Chart & Macro Analysis</h2>
-        <div style="background-color: #f8f9fa; border-left: 5px solid #2c3e50; padding: 20px; border-radius: 4px; margin-bottom: 30px;">
-            <p style="font-size: 1.1em; font-weight: bold; color: #333; margin-top: 0;">[Institutional Money Flow & Technical Outlook]</p>
-            <p>(WRITE PARAGRAPH 1 HERE: Deeply analyze RSI, Moving Averages, and current chart patterns. At least 5 sentences.)</p>
-            <p>(WRITE PARAGRAPH 2 HERE: Analyze Macroeconomic data, yield curves, or volume trends related to the news. At least 5 sentences.)</p>
-            <p>(WRITE PARAGRAPH 3 HERE: Conclude with what 'Smart Money' is doing right now based on this data.)</p>
-        </div>
-
-        <hr style="border: 1px solid #ddd; margin: 40px 0;">
-        <h2 style="color: #1a237e; font-size: 1.8em; margin-bottom: 10px;">🛡️ The Titan's Playbook: Master Mindset & Strategy</h2>
-        <p style="font-size: 1.1em; color: #555; margin-bottom: 25px;"><em>How the top 1% navigate this specific market condition.</em></p>
-        
-        <div style="background-color: #fff8e1; border: 1px solid #ffe082; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="color: #f57f17; margin-top: 0; font-size: 1.3em;">1. The Generational Bargain (Fear vs. Greed)</h3>
-            <p style="margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: Apply this to today's news. Explain if the current market fear is a 'Generational Bargain Sale'. Mention the Fear & Greed Index concept.)</p>
-        </div>
-
-        <div style="background-color: #e8f5e9; border: 1px solid #a5d6a7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="color: #2e7d32; margin-top: 0; font-size: 1.3em;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
-            <p style="margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: How to adjust the 60% Stocks, 30% Safe Assets, 10% Cash ratio based on today's events. How should we mechanically rebalance today?)</p>
-        </div>
-
-        <div style="background-color: #e3f2fd; border: 1px solid #90caf9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="color: #1565c0; margin-top: 0; font-size: 1.3em;">3. The Global Shield (US Dollar & Market)</h3>
-            <p style="margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: Explain why holding strong US Assets and the Dollar is a crucial safety net right now.)</p>
-        </div>
-
-        <div style="background-color: #fce4ec; border: 1px solid #f48fb1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="color: #c2185b; margin-top: 0; font-size: 1.3em;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
-            <p style="margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: Define exactly when to use 3-part split buying (DCA) and why selling 50% during extreme panic is the ultimate mental defense.)</p>
-        </div>
-
-        <div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 25px; border-radius: 5px; margin-top: 40px; margin-bottom: 20px;">
-            <h3 style="color: #3f51b5; margin-top: 0; font-size: 1.5em; display: flex; align-items: center;">✅ Today's VIP Action Plan</h3>
-            <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> (Provide 2 highly specific, actionable steps based on the news, utilizing the Titan rules.)</p>
-            <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> (Provide 1 specific mistake to avoid right now, such as panic selling.)</p>
-        </div>
-            """
+            vip_extra_rules = VIP_EXTRA_RULES
+            vip_extra_sections = VIP_EXTRA_SECTIONS
 
         if category == "Politics": expert_persona = "a veteran US political expert"
         elif category == "Tech": expert_persona = "a veteran US technology expert"
