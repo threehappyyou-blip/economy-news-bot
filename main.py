@@ -6,13 +6,14 @@ import requests
 import jwt
 import base64
 import urllib.parse
+import random
 from datetime import datetime
 import feedparser
 from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 이모지 다이어그램 + 무제한 무료 썸네일 봇 🚀")
+print(" 🚀 40년 멘토 + 이모지 다이어그램 + 무적의 썸네일 방어 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -216,23 +217,44 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None
 
 def generate_thumbnail(image_prompt):
-    print(f"🎨 무제한 무료 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
+    print(f"🎨 무제한 무료 AI 썸네일 생성 시도 중... (프롬프트: {image_prompt})")
+    
+    # 🚨 [1. Pollinations AI (무료 서버) - 최대 3번 재시도 로직 추가]
+    for attempt in range(3):
+        try:
+            # 매번 다른 시드값을 주어 캐시 에러를 피합니다.
+            seed = random.randint(1, 100000)
+            encoded_prompt = urllib.parse.quote(image_prompt + ", highly detailed, cinematic lighting")
+            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}"
+            
+            # 서버가 바쁠 수 있으므로 기다리는 시간(timeout)을 45초로 넉넉하게 줍니다.
+            response = requests.get(url, timeout=45)
+            
+            if response.status_code == 200:
+                print(f"✅ [썸네일 생성 성공] {attempt + 1}번째 시도만에 성공했습니다!")
+                return response.content
+            elif response.status_code == 429:
+                print(f"⏳ [서버 과부하 429] 15초 대기 후 재시도합니다... ({attempt + 1}/3)")
+                time.sleep(15)
+            else:
+                print(f"⚠️ [API 에러 {response.status_code}] 5초 후 재시도합니다... ({attempt + 1}/3)")
+                time.sleep(5)
+        except Exception as e:
+            print(f"⚠️ [통신 지연] 서버가 바쁩니다. 5초 후 재시도... ({attempt + 1}/3) - 에러: {e}")
+            time.sleep(5)
+            
+    # 🚨 [2. 플랜 B: 3번 모두 실패 시 에러 방지용 고품질 대체 랜덤 이미지 투입]
+    print("🔄 [플랜 B 가동] AI 서버 응답 지연으로 대체 이미지를 사용합니다.")
     try:
-        # 🚨 [핵심 수정] 구글의 과금/권한 제한이 전혀 없는 100% 무료 이미지 API(Pollinations)로 완벽 교체! 
-        # 이제 404 에러나 429 에러가 발생하지 않습니다.
-        encoded_prompt = urllib.parse.quote(image_prompt + ", high quality, detailed, visually appealing")
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true"
-        
-        response = requests.get(url, timeout=30)
-        
+        # 무작위 고품질 풍경/추상 이미지를 가져옵니다.
+        fallback_url = f"https://picsum.photos/1280/720?random={random.randint(1, 1000)}"
+        response = requests.get(fallback_url, timeout=20)
         if response.status_code == 200:
-            return response.content # 이미지 바이트 데이터 성공적 반환
-        else:
-            print(f"⚠️ [이미지 API 에러]: 상태 코드 {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"⚠️ [이미지 생성 에러]: {e}")
-        return None
+            return response.content
+    except:
+        pass
+        
+    return None
 
 def generate_ghost_token():
     id_str, secret_str = str(GHOST_ADMIN_API_KEY).split(':')
@@ -341,8 +363,8 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url)
                     
-                # 안정성을 위한 대기 시간
-                time.sleep(10) 
+                # 🚨 [안정성을 위해 대기 시간 30초로 증가] - 봇이 너무 빨라 차단당하는 것을 막습니다.
+                time.sleep(30) 
 
         print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
         
