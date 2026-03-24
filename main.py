@@ -11,9 +11,10 @@ import random
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + VIP 무적 디자인(Ghost Card) + 폰트 고정 봇 🚀")
+print(" 🚀 40년 멘토 + VIP 무적 디자인(유지) + 최신 이미지 SDK 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -57,7 +58,7 @@ TASKS = [
 
 TIER_LABELS = {"Basic": "🌱 Free", "Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
 
-# 🚨 [Ghost 디자인 필터 무력화 + 폰트 18px 강제 고정 템플릿]
+# 🚨 [Ghost 디자인 필터 무력화 + 폰트 18px 강제 고정 템플릿] - 절대 건드리지 않음!
 PROMPT_TEMPLATE = """
 [Goal] Write a highly insightful blog post in ENGLISH for the '[CATEGORY]' section of the 'Warm Insight' website.
 Target Audience: [TIER] Subscribers.
@@ -223,7 +224,6 @@ def analyze_with_gemini(news_items, category, tier):
         current_time_str = datetime.now().strftime('%B %d, %Y at %I:%M %p (UTC)')
         author_name = "Ethan Cole & The Warm Insight Panel"
         
-        # 글 맨 위에 들어가는 작성자/시간 박스도 Ghost Card로 보호합니다.
         info_box = f"""
         <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; margin-bottom: 25px; border-radius: 4px; font-family: sans-serif;">
             <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6;">
@@ -241,32 +241,43 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None, None
 
 def generate_thumbnail(image_prompt):
-    print(f"🎨 공식 구글 고품질 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
-    try:
-        # 구글 공식 고품질 모델(imagen 3)
-        api_base = "https://generativelanguage.googleapis.com"
-        url = api_base + "/v1beta/models/imagen-3.0-generate-001:predict?key=" + str(GEMINI_API_KEY)
-        
-        headers = {'Content-Type': 'application/json'}
-        params = {"sampleCount": 1, "aspectRatio": "16:9", "outputOptions": {"mimeType": "image/jpeg"}}
-        
-        data = {
-            "instances": [{"prompt": image_prompt}],
-            "parameters": params
-        }
-        
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-        
-        if response.status_code == 200:
-            predictions = response.json().get('predictions')
-            if predictions:
-                print("✅ [썸네일 성공] 구글 공식 Imagen 3 썸네일 생성 완료!")
-                return base64.b64decode(predictions[0].get('bytesBase64Encoded', ''))
-        else:
-            print(f"⚠️ [이미지 API 에러 (요금 한도 등)]: {response.status_code}")
-    except Exception as e:
-        print(f"⚠️ [이미지 생성 에러]: {e}")
+    print(f"🎨 구글 공식 고품질 썸네일(Imagen 3) 생성 시도 중... (프롬프트: {image_prompt})")
     
+    # 🚨 [완벽 수정 1] 오류가 나던 구형 REST API 통신망을 버리고, 최신 공식 SDK 방식으로 교체!
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        result = client.models.generate_images(
+            model='imagen-3.0-generate-001',
+            prompt=image_prompt + ", highly detailed, cinematic lighting",
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="16:9",
+                output_mime_type="image/jpeg"
+            )
+        )
+        if result.generated_images:
+            print("✅ [썸네일 성공] 구글 공식 Imagen 3 썸네일 생성 완료!")
+            return result.generated_images[0].image.image_bytes
+    except Exception as e:
+        print(f"⚠️ [구글 이미지 API 오류 - 플랜 B로 넘어갑니다]: {e}")
+
+    # 🚨 [완벽 수정 2] 만약 구글 API가 막히더라도, 절대 썸네일이 비지 않도록 무료 고품질 엔진(Pollinations) 가동!
+    print("🔄 [플랜 B 가동] 보조 AI 엔진으로 썸네일을 생성합니다...")
+    for attempt in range(3):
+        try:
+            seed = random.randint(1, 100000)
+            encoded_prompt = urllib.parse.quote(image_prompt + ", highly detailed, cinematic lighting")
+            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}"
+            response = requests.get(url, timeout=30)
+            
+            if response.status_code == 200:
+                print(f"✅ [플랜 B 성공] 보조 썸네일 생성 완료!")
+                return response.content
+            else:
+                time.sleep(5)
+        except Exception:
+            time.sleep(5)
+            
     return None
 
 def generate_ghost_token():
