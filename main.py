@@ -12,9 +12,10 @@ import re
 from datetime import datetime
 import feedparser
 from google import genai
+from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 표(Table) 위장 디자인 + 외부 시간표시 봇 🚀")
+print(" 🚀 40년 멘토 + 가로스크롤 완벽 제거 + 구글 공식 Imagen 3 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -149,7 +150,6 @@ def analyze_with_gemini(news_items, category, tier):
         response = client.models.generate_content(model=model_name, contents=prompt)
         raw_text = str(response.text)
         
-        # XML 데이터 파싱
         title_raw = extract_tag(raw_text, "TITLE")
         image_prompt = extract_tag(raw_text, "IMAGE_PROMPT") or f"Abstract 3D cinematic rendering of global {category}."
         custom_excerpt = extract_tag(raw_text, "EXCERPT") or "Insightful financial analysis for your future."
@@ -165,25 +165,19 @@ def analyze_with_gemini(news_items, category, tier):
         title = f"[{pretty_tier}] {title_raw}" if title_raw else f"({tier}) Daily {category} Insight"
         
         current_time_str = datetime.now().strftime('%B %d, %Y at %I:%M %p (UTC)')
-        current_time_short = datetime.now().strftime('%I:%M %p') # 시간만 뽑기 (예: 05:20 AM)
+        current_time_short = datetime.now().strftime('%I:%M %p')
         author_name = "Ethan Cole & The Warm Insight Panel"
         
-        # 🚨 [혁신 패치 2] 홈페이지 바깥쪽(Preview)에서도 시간이 보이게 요약문 맨 앞에 텍스트 강제 주입!
         custom_excerpt_with_time = f"⏰ {current_time_short} | {custom_excerpt}"
         
-        # 🚨 [혁신 패치 1] Ghost가 지울 수 없는 <table width="100%"> 위장술 적용
+        # 🚨 [혁신 패치] Table(표) 구조를 완전히 버리고, HTML Card 캡슐 안에서 자동 줄바꿈(word-wrap)이 지원되는 div 박스로 교체!
         html_content = f"""
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; border: none;">
-            <tr>
-                <td style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; border-radius: 4px;">
-                    <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6; font-family: sans-serif;">
-                        <strong>✍️ Written by:</strong> {author_name}<br>
-                        <strong>⏰ Published:</strong> {current_time_str}
-                    </p>
-                </td>
-            </tr>
-        </table>
-        
+        <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; border-radius: 4px; margin-bottom: 25px; word-wrap: break-word;">
+            <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6; font-family: sans-serif;">
+                <strong>✍️ Written by:</strong> {author_name}<br>
+                <strong>⏰ Published:</strong> {current_time_str}
+            </p>
+        </div>
         <p style="font-size: 18px; line-height: 1.6; color: #333;">{summary}</p>
         
         <h2>Viral Social Insights 📱</h2>
@@ -193,13 +187,9 @@ def analyze_with_gemini(news_items, category, tier):
         <strong style="font-size: 22px;">{headline}</strong><br><br>
         <p style="font-size: 18px; line-height: 1.6; color: #333;">{depth}</p>
         
-        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; border: none;">
-            <tr>
-                <td style="border-left: 4px solid #999; background-color: #f4f4f4; padding: 15px;">
-                    <strong style="font-size: 18px;">💡 Quick Flow:</strong> <span style="font-size: 18px;">{flow}</span>
-                </td>
-            </tr>
-        </table>
+        <div style="border-left: 4px solid #999; background-color: #f4f4f4; padding: 15px; margin-top: 15px; border-radius: 4px; word-wrap: break-word;">
+            <strong style="font-size: 18px;">💡 Quick Flow:</strong> <span style="font-size: 18px;">{flow}</span>
+        </div>
         """
 
         if tier == "Royal Premium":
@@ -213,68 +203,44 @@ def analyze_with_gemini(news_items, category, tier):
             vip_do = extract_tag(raw_text, "VIP_DO")
             vip_dont = extract_tag(raw_text, "VIP_DONT")
 
-            # VIP 박스들도 모두 Table 구조로 변경하여 색상과 여백을 사수합니다.
+            # 🚨 VIP 전용 박스 역시 Table을 버리고 HTML Card 캡슐 안에서 자동 줄바꿈되도록 완벽히 수정!
             vip_html = f"""
             <h2 style="color: #2c3e50; font-size: 28px; margin-top: 40px; margin-bottom: 20px;">📈 VIP Exclusive: Deep-Dive Chart & Macro Analysis</h2>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px; border: none;">
-                <tr>
-                    <td style="background-color: #f8f9fa; border-left: 6px solid #2c3e50; padding: 25px; border-radius: 6px;">
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">{vip_c1}</p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">{vip_c2}</p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_c3}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="background-color: #f8f9fa; border-left: 6px solid #2c3e50; padding: 25px; border-radius: 6px; margin-bottom: 40px; word-wrap: break-word;">
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">{vip_c1}</p>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">{vip_c2}</p>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_c3}</p>
+            </div>
 
             <h2 style="color: #1a237e; font-size: 28px; margin-bottom: 10px;">🛡️ The Titan's Playbook: Master Mindset & Strategy</h2>
             <p style="font-size: 18px; color: #555; margin-bottom: 25px;"><em>How the top 1% navigate this specific market condition.</em></p>
 
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: none;">
-                <tr>
-                    <td style="background-color: #fff8e1; border-left: 6px solid #f57f17; padding: 25px; border-radius: 6px;">
-                        <h3 style="color: #f57f17; margin-top: 0; font-size: 22px;">1. The Generational Bargain (Fear vs. Greed)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t1}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="background-color: #fff8e1; border-left: 6px solid #f57f17; padding: 25px; border-radius: 6px; margin-bottom: 20px; word-wrap: break-word;">
+                <h3 style="color: #f57f17; margin-top: 0; font-size: 22px;">1. The Generational Bargain (Fear vs. Greed)</h3>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t1}</p>
+            </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: none;">
-                <tr>
-                    <td style="background-color: #e8f5e9; border-left: 6px solid #2e7d32; padding: 25px; border-radius: 6px;">
-                        <h3 style="color: #2e7d32; margin-top: 0; font-size: 22px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t2}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="background-color: #e8f5e9; border-left: 6px solid #2e7d32; padding: 25px; border-radius: 6px; margin-bottom: 20px; word-wrap: break-word;">
+                <h3 style="color: #2e7d32; margin-top: 0; font-size: 22px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t2}</p>
+            </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: none;">
-                <tr>
-                    <td style="background-color: #e3f2fd; border-left: 6px solid #1565c0; padding: 25px; border-radius: 6px;">
-                        <h3 style="color: #1565c0; margin-top: 0; font-size: 22px;">3. The Global Shield (US Dollar & Market)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t3}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="background-color: #e3f2fd; border-left: 6px solid #1565c0; padding: 25px; border-radius: 6px; margin-bottom: 20px; word-wrap: break-word;">
+                <h3 style="color: #1565c0; margin-top: 0; font-size: 22px;">3. The Global Shield (US Dollar & Market)</h3>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t3}</p>
+            </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: none;">
-                <tr>
-                    <td style="background-color: #fce4ec; border-left: 6px solid #c2185b; padding: 25px; border-radius: 6px;">
-                        <h3 style="color: #c2185b; margin-top: 0; font-size: 22px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t4}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="background-color: #fce4ec; border-left: 6px solid #c2185b; padding: 25px; border-radius: 6px; margin-bottom: 20px; word-wrap: break-word;">
+                <h3 style="color: #c2185b; margin-top: 0; font-size: 22px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t4}</p>
+            </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-top: 40px; margin-bottom: 30px; border: none;">
-                <tr>
-                    <td style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 30px; border-radius: 6px;">
-                        <h3 style="color: #3f51b5; margin-top: 0; font-size: 24px; margin-bottom: 20px;">✅ Today's VIP Action Plan</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> {vip_do}</p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> {vip_dont}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 30px; border-radius: 6px; margin-top: 40px; margin-bottom: 30px; word-wrap: break-word;">
+                <h3 style="color: #3f51b5; margin-top: 0; font-size: 24px; margin-bottom: 20px;">✅ Today's VIP Action Plan</h3>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> {vip_do}</p>
+                <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> {vip_dont}</p>
+            </div>
             """
             html_content += vip_html
             
@@ -294,25 +260,26 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None, None
 
 def generate_thumbnail(image_prompt):
-    print(f"🎨 썸네일 생성 시도 중... (프롬프트: {image_prompt})")
+    print(f"🎨 공식 구글 고품질 썸네일(Imagen 3) 생성 시도 중... (프롬프트: {image_prompt})")
     
-    for attempt in range(3):
-        try:
-            seed = random.randint(1, 1000000)
-            safe_prompt = urllib.parse.quote(image_prompt[:150] + " cinematic, highly detailed, 8k")
-            url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1280&height=720&nologo=true&seed={seed}"
-            response = requests.get(url, timeout=20)
-            
-            content_type = response.headers.get('Content-Type', '')
-            if response.status_code == 200 and 'image' in content_type:
-                print("✅ [썸네일 성공] 고품질 AI 이미지 생성 완료!")
-                return response.content
-            else:
-                time.sleep(3)
-        except Exception:
-            time.sleep(3)
-            
-    print("🔄 [플랜 B 가동] AI 서버 응답 지연으로 안전한 대체 이미지를 삽입합니다.")
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        result = client.models.generate_images(
+            model='imagen-3.0-generate-001',
+            prompt=image_prompt + ", highly detailed, cinematic lighting, 8k resolution",
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="16:9",
+                output_mime_type="image/jpeg"
+            )
+        )
+        if result.generated_images:
+            print("✅ [썸네일 성공] 구글 공식 Imagen 3 썸네일 생성 완료!")
+            return result.generated_images[0].image.image_bytes
+    except Exception as e:
+        print(f"⚠️ [구글 이미지 API 오류 - 플랜 B로 넘어갑니다]: {e}")
+
+    print("🔄 [플랜 B 가동] 안전한 대체 이미지를 삽입합니다.")
     try:
         url = f"https://picsum.photos/seed/{random.randint(1,1000)}/1280/720"
         response = requests.get(url, timeout=10)
