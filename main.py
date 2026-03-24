@@ -13,7 +13,7 @@ import feedparser
 from google import genai
 
 print("=======================================")
-print(" 🚀 40년 멘토 + VIP 디자인 고정 + 완벽 실행 봇 🚀")
+print(" 🚀 40년 멘토 + VIP 무적 디자인(Ghost Card) + 폰트 고정 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -29,26 +29,15 @@ GHOST_API_URL = str(GHOST_API_URL).rstrip('/')
 
 # 🚨 [카테고리 세팅]
 CATEGORIES = dict()
-
-cat_eco = list()
-cat_eco.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
-cat_eco.append("https://finance.yahoo.com/news/rssindex")
+cat_eco = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "https://finance.yahoo.com/news/rssindex"]
 CATEGORIES.update({"Economy": cat_eco})
-
-cat_pol = list()
-cat_pol.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113")
+cat_pol = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113"]
 CATEGORIES.update({"Politics": cat_pol})
-
-cat_tech = list()
-cat_tech.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910")
+cat_tech = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"]
 CATEGORIES.update({"Tech": cat_tech})
-
-cat_health = list()
-cat_health.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108")
+cat_health = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108"]
 CATEGORIES.update({"Health": cat_health})
-
-cat_energy = list()
-cat_energy.append("https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810")
+cat_energy = ["https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810"]
 CATEGORIES.update({"Energy": cat_energy})
 
 # 🚨 [TikTok 바이럴 링크]
@@ -60,114 +49,108 @@ TIKTOK_LINKS = (
 )
 
 # 🚨 배포 설정
-TASKS = list()
-TASKS.append({"tier": "Basic", "count": 2})
-TASKS.append({"tier": "Premium", "count": 2})
-TASKS.append({"tier": "Royal Premium", "count": 3})
+TASKS = [
+    {"tier": "Basic", "count": 2},
+    {"tier": "Premium", "count": 2},
+    {"tier": "Royal Premium", "count": 3}
+]
 
 TIER_LABELS = {"Basic": "🌱 Free", "Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
 
-# 🚨 들여쓰기 에러를 완벽히 차단하기 위해 템플릿을 최상단 텍스트 블록으로 분리했습니다.
+# 🚨 [Ghost 디자인 필터 무력화 + 폰트 18px 강제 고정 템플릿]
 PROMPT_TEMPLATE = """
-[Goal] Write a highly insightful, deeply humanized blog post in ENGLISH for the '[CATEGORY]' section of the 'Warm Insight' website.
+[Goal] Write a highly insightful blog post in ENGLISH for the '[CATEGORY]' section of the 'Warm Insight' website.
 Target Audience: [TIER] Subscribers.
 
 You are [PERSONA].
 
 CRITICAL FORMATTING RULES:
-1. Write ENTIRELY in ENGLISH. NEVER use words like 'professor' or 'expert'.
-2. NEVER use ASCII art with vertical lines or spaces.
-3. For diagrams, MUST use horizontal "Emoji Flows" (e.g., Oil Strain 🛢️ ➡️ Shipping Costs 📈 ➡️ Inflation 💥).
-4. Use <br> tags properly so the text does not look clumped together.
-5. TIKTOK/FINTOK INFLUENCE: Create a 'Viral Social Insights 📱' section based on these vibes:
+1. Write ENTIRELY in ENGLISH. Do not use Markdown (*, -, #) for lists.
+2. For diagrams, MUST use horizontal "Emoji Flows" (e.g., A 📈 ➡️ B 💥).
+3. TIKTOK INFLUENCE: Create a 'Viral Social Insights 📱' section based on these vibes:
 [TIKTOK_LINKS]
 
 [VIP_RULES]
 
-OUTPUT STRUCTURE STRICTLY FOLLOW THIS EXACT HTML TEMPLATE. DO NOT OMIT ANY STYLE TAGS:
+OUTPUT STRUCTURE STRICTLY FOLLOW THIS EXACT HTML TEMPLATE. REPLACE THE INSTRUCTIONAL TEXT IN PARENTHESES WITH YOUR ANALYSIS, BUT DO NOT OMIT OR CHANGE ANY HTML TAGS OR INLINE STYLES:
 
 TITLE: (Insert Catchy Title)
-IMAGE_PROMPT: (Insert simple English prompt for image generation, e.g. cinematic abstract 3D representation of global [CATEGORY])
+IMAGE_PROMPT: (Insert simple English prompt for 3D abstract cinematic image)
 EXCERPT: (Write a VERY catchy 1-sentence summary WITHOUT HTML tags.)
 
-<h2>The Big Picture</h2>
-<p>(A warm, humanized 3-sentence summary of the news.)</p>
+<p style="font-size: 18px; line-height: 1.6; color: #333;">(A warm 3-sentence summary of the news.)</p>
 
 <h2>Viral Social Insights 📱</h2>
-<p>(Translate the heavy news into a super-engaging TikTok style analogy or text meme.)</p>
+<p style="font-size: 18px; line-height: 1.6; color: #333;">(Translate the heavy news into a super-engaging TikTok style analogy.)</p>
 
 <h2>Top Drivers & Deep Insights</h2>
-<ul>
-    <li>
-        <strong style="font-size:1.2em;">(Headline 1)</strong><br><br>
-        [DEPTH_INSTRUCTION]<br><br>
-        <div style="background:#f4f4f4; padding:10px; border-radius:5px;">
-        <strong>💡 Quick Flow:</strong> (Insert your Emoji Flow Diagram here. Example: A ➡️ B ➡️ C)
-        </div>
-    </li>
-</ul>
-
+<div style="font-family: sans-serif;">
+    <strong style="font-size: 22px;">(Headline 1)</strong><br><br>
+    <p style="font-size: 18px; line-height: 1.6; color: #333;">[DEPTH_INSTRUCTION]</p>
+    <div style="border-left: 4px solid #999; background-color: #f4f4f4; padding: 15px; margin-top: 15px;">
+        <strong style="font-size: 18px;">💡 Quick Flow:</strong> <span style="font-size: 18px;">(Insert Emoji Flow Diagram)</span>
+    </div>
+</div>
 [VIP_SECTIONS]
 
-<hr style="border: 1px solid #ddd; margin: 40px 0;">
+<hr>
 <h2>Today's Warm Insight</h2>
-<p>(A comforting, actionable takeaway.)</p>
-
-<p><strong>P.S.</strong> (Add a very short, relatable personal thought.)</p>
-<p><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
+<p style="font-size: 18px; line-height: 1.6; color: #333;">(A comforting, actionable takeaway.)</p>
+<p style="font-size: 18px; line-height: 1.6; color: #333;"><strong>P.S.</strong> (Add a very short personal thought.)</p>
+<p style="font-size: 14px; color: #777;"><em>Disclaimer: This article is for informational purposes only.</em></p>
 
 Raw News to Analyze:
 [NEWS_ITEMS]
 """
 
 VIP_EXTRA_RULES = """
-6. VIP EXCLUSIVE LENGTH & DEPTH: For the VIP sections, act like a Wall Street Quant. Write highly detailed, 3+ long paragraphs analyzing RSI, Moving Averages, and Macro data.
-7. MANDATORY HTML DESIGN RULE: You MUST COPY AND PASTE the EXACT <div style="..."> tags provided for the Titan's Playbook. DO NOT use Markdown lists (* or -). If you use a markdown list, the visual design will break. YOU MUST KEEP ALL INLINE STYLES (background-color, border, etc.) exactly as provided in the template.
+4. VIP EXCLUSIVE: Act like a Wall Street Quant. Write highly detailed, 3+ long paragraphs analyzing RSI, Moving Averages, and Macro data.
+5. MANDATORY DESIGN RULE: You MUST output the EXACT and <div style="..."> tags provided for the Titan's Playbook. KEEP ALL background colors, font sizes (18px), and borders EXACTLY as provided.
 """
 
 VIP_EXTRA_SECTIONS = """
-<hr style="border: 1px solid #ddd; margin: 40px 0;">
-<h2 style="color: #2c3e50; font-size: 1.8em; margin-bottom: 20px;">📈 VIP Exclusive: Deep-Dive Chart & Macro Analysis</h2>
-<div style="background-color: #f8f9fa; border-left: 5px solid #2c3e50; padding: 20px; border-radius: 4px; margin-bottom: 30px;">
-    <p style="font-size: 1.1em; font-weight: bold; color: #333; margin-top: 0;">[Institutional Money Flow & Technical Outlook]</p>
-    <p>(WRITE PARAGRAPH 1 HERE: Deeply analyze RSI, Moving Averages, and current chart patterns. At least 5 sentences.)</p>
-    <p>(WRITE PARAGRAPH 2 HERE: Analyze Macroeconomic data, yield curves, or volume trends related to the news. At least 5 sentences.)</p>
-    <p>(WRITE PARAGRAPH 3 HERE: Conclude with what 'Smart Money' is doing right now based on this data.)</p>
-</div>
+<div style="font-family: sans-serif; margin-top: 40px;">
+    <h2 style="color: #2c3e50; font-size: 28px; margin-bottom: 20px;">📈 VIP Exclusive: Deep-Dive Chart & Macro Analysis</h2>
+    <div style="background-color: #f8f9fa; border-left: 6px solid #2c3e50; padding: 25px; border-radius: 6px; margin-bottom: 40px;">
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">(WRITE PARAGRAPH 1 HERE: Deeply analyze RSI, Moving Averages. At least 5 sentences.)</p>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">(WRITE PARAGRAPH 2 HERE: Analyze Macro data, yield curves. At least 5 sentences.)</p>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">(WRITE PARAGRAPH 3 HERE: Conclude with what 'Smart Money' is doing.)</p>
+    </div>
 
-<hr style="border: 1px solid #ddd; margin: 40px 0;">
-<h2 style="color: #1a237e; font-size: 1.8em; margin-bottom: 10px;">🛡️ The Titan's Playbook: Master Mindset & Strategy</h2>
-<p style="font-size: 1.1em; color: #555; margin-bottom: 25px;"><em>How the top 1% navigate this specific market condition.</em></p>
+    <h2 style="color: #1a237e; font-size: 28px; margin-bottom: 10px;">🛡️ The Titan's Playbook: Master Mindset & Strategy</h2>
+    <p style="font-size: 18px; color: #555; margin-bottom: 25px;"><em>How the top 1% navigate this specific market condition.</em></p>
 
-<div style="background-color: #fff8e1; border: 1px solid #ffe082; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="color: #f57f17; margin-top: 0; font-size: 1.3em;">1. The Generational Bargain (Fear vs. Greed)</h3>
-    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: Apply this to today's news. Explain if the current market fear is a 'Generational Bargain Sale'. Mention the Fear & Greed Index concept.)</p>
-</div>
+    <div style="background-color: #fff8e1; border-left: 6px solid #f57f17; padding: 25px; border-radius: 6px; margin-bottom: 20px;">
+        <h3 style="color: #f57f17; margin-top: 0; font-size: 22px;">1. The Generational Bargain (Fear vs. Greed)</h3>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: Apply this to today's news. Fear & Greed Index.)</p>
+    </div>
 
-<div style="background-color: #e8f5e9; border: 1px solid #a5d6a7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="color: #2e7d32; margin-top: 0; font-size: 1.3em;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
-    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: How to adjust the 60% Stocks, 30% Safe Assets, 10% Cash ratio based on today's events. How should we mechanically rebalance today?)</p>
-</div>
+    <div style="background-color: #e8f5e9; border-left: 6px solid #2e7d32; padding: 25px; border-radius: 6px; margin-bottom: 20px;">
+        <h3 style="color: #2e7d32; margin-top: 0; font-size: 22px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: How to mechanically rebalance 60% Stocks, 30% Safe, 10% Cash today.)</p>
+    </div>
 
-<div style="background-color: #e3f2fd; border: 1px solid #90caf9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="color: #1565c0; margin-top: 0; font-size: 1.3em;">3. The Global Shield (US Dollar & Market)</h3>
-    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: Explain why holding strong US Assets and the Dollar is a crucial safety net right now.)</p>
-</div>
+    <div style="background-color: #e3f2fd; border-left: 6px solid #1565c0; padding: 25px; border-radius: 6px; margin-bottom: 20px;">
+        <h3 style="color: #1565c0; margin-top: 0; font-size: 22px;">3. The Global Shield (US Dollar & Market)</h3>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: Explain why holding US Assets is a crucial safety net right now.)</p>
+    </div>
 
-<div style="background-color: #fce4ec; border: 1px solid #f48fb1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-    <h3 style="color: #c2185b; margin-top: 0; font-size: 1.3em;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
-    <p style="margin-bottom: 0; line-height: 1.6;">(WRITE A FULL DETAILED PARAGRAPH: Define exactly when to use 3-part split buying (DCA) and why selling 50% during extreme panic is the ultimate mental defense.)</p>
-</div>
+    <div style="background-color: #fce4ec; border-left: 6px solid #c2185b; padding: 25px; border-radius: 6px; margin-bottom: 20px;">
+        <h3 style="color: #c2185b; margin-top: 0; font-size: 22px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">(WRITE A FULL DETAILED PARAGRAPH: Define exactly when to use DCA and why selling 50% during panic is key.)</p>
+    </div>
 
-<div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 25px; border-radius: 5px; margin-top: 40px; margin-bottom: 20px;">
-    <h3 style="color: #3f51b5; margin-top: 0; font-size: 1.5em; display: flex; align-items: center;">✅ Today's VIP Action Plan</h3>
-    <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> (Provide 2 highly specific, actionable steps based on the news, utilizing the Titan rules.)</p>
-    <p style="font-size: 1.1em; line-height: 1.6; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> (Provide 1 specific mistake to avoid right now, such as panic selling.)</p>
+    <div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 30px; border-radius: 6px; margin-top: 40px; margin-bottom: 30px;">
+        <h3 style="color: #3f51b5; margin-top: 0; font-size: 24px; margin-bottom: 20px;">✅ Today's VIP Action Plan</h3>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> (Provide 2 highly specific, actionable steps.)</p>
+        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> (Provide 1 specific mistake to avoid.)</p>
+    </div>
 </div>
 """
 
 def get_category_news(urls, count=20):
-    news_list = list()
+    news_list = []
     seen_titles = set()
     for url in urls:
         try:
@@ -179,10 +162,10 @@ def get_category_news(urls, count=20):
                 news_list.append("- " + str(title_text) + ": " + str(summary_text))
                 seen_titles.add(title_text)
                 if len(news_list) >= count: break
-        except Exception:
+        except:
             continue
             
-    final_news = list()
+    final_news = []
     for _ in range(count):
         if len(news_list) > 0:
             final_news.append(news_list.pop(0))
@@ -199,11 +182,11 @@ def analyze_with_gemini(news_items, category, tier):
         vip_sections = ""
         
         if tier == "Basic":
-            depth_instruction = "<strong>🔑 The Core Fact:</strong> Explain what happened simply using ELI5 (Explain Like I'm 5)."
+            depth_instruction = "<strong>🔑 The Core Fact:</strong> Explain what happened simply using ELI5."
         elif tier == "Premium":
             depth_instruction = "<strong>🧐 WHY (The Hidden Reason):</strong> Explain using behavioral economics.<br><br><strong>🐑 THINK (What Masses Think):</strong> Explain the irrational market psychology."
-        else: # Royal Premium (VIP)
-            depth_instruction = "<strong>🧐 WHY (The Hidden Reason):</strong> Explain the true macroeconomic reason in deep detail.<br><br><strong>🐑 THINK (Herd Behavior):</strong> What the general public wrongly assumes.<br><br><strong>🦅 DIFFERENT THINK (Contrarian View):</strong> The hidden opportunity for true wealth."
+        else: # Royal Premium
+            depth_instruction = "<strong>🧐 WHY:</strong> Macroeconomic reason.<br><br><strong>🐑 THINK:</strong> Herd Behavior.<br><br><strong>🦅 DIFFERENT THINK:</strong> Contrarian View."
             vip_rules = VIP_EXTRA_RULES
             vip_sections = VIP_EXTRA_SECTIONS
 
@@ -213,27 +196,15 @@ def analyze_with_gemini(news_items, category, tier):
         elif category == "Energy": expert_persona = "a veteran US energy expert"
         else: expert_persona = "a veteran US Wall Street expert"
 
-        # f-string 오류를 막기 위해 replace로 치환합니다.
-        prompt = PROMPT_TEMPLATE.replace("[CATEGORY]", category)
-        prompt = prompt.replace("[TIER]", tier)
-        prompt = prompt.replace("[PERSONA]", expert_persona)
-        prompt = prompt.replace("[TIKTOK_LINKS]", TIKTOK_LINKS)
-        prompt = prompt.replace("[VIP_RULES]", vip_rules)
-        prompt = prompt.replace("[DEPTH_INSTRUCTION]", depth_instruction)
-        prompt = prompt.replace("[VIP_SECTIONS]", vip_sections)
-        prompt = prompt.replace("[NEWS_ITEMS]", selected_news)
+        prompt = PROMPT_TEMPLATE.replace("[CATEGORY]", category).replace("[TIER]", tier).replace("[PERSONA]", expert_persona).replace("[TIKTOK_LINKS]", TIKTOK_LINKS).replace("[VIP_RULES]", vip_rules).replace("[DEPTH_INSTRUCTION]", depth_instruction).replace("[VIP_SECTIONS]", vip_sections).replace("[NEWS_ITEMS]", selected_news)
         
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt
-        )
-        
+        response = client.models.generate_content(model=model_name, contents=prompt)
         raw_text = str(response.text).replace("```html", "").replace("```", "").strip()
         lines = raw_text.split('\n')
         
         pretty_tier = TIER_LABELS.get(tier, tier)
         title = f"({tier}) Daily {category} Insight"
-        image_prompt = f"Abstract 3D illustration representing global {category}, cinematic lighting."
+        image_prompt = f"Abstract 3D cinematic rendering of global {category}."
         custom_excerpt = "Insightful financial analysis for your future."
         html_lines = []
         
@@ -249,13 +220,13 @@ def analyze_with_gemini(news_items, category, tier):
                 html_lines.append(stripped)
                 
         html_content = "\n".join(html_lines).strip()
-        
         current_time_str = datetime.now().strftime('%B %d, %Y at %I:%M %p (UTC)')
         author_name = "Ethan Cole & The Warm Insight Panel"
         
+        # 글 맨 위에 들어가는 작성자/시간 박스도 Ghost Card로 보호합니다.
         info_box = f"""
-        <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; margin-bottom: 25px; border-radius: 4px;">
-            <p style="margin: 0; font-size: 0.95em; color: #555; line-height: 1.6;">
+        <div style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; margin-bottom: 25px; border-radius: 4px; font-family: sans-serif;">
+            <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6;">
                 <strong>✍️ Written by:</strong> {author_name}<br>
                 <strong>⏰ Published:</strong> {current_time_str}
             </p>
@@ -270,38 +241,32 @@ def analyze_with_gemini(news_items, category, tier):
         return None, None, None, None
 
 def generate_thumbnail(image_prompt):
-    print(f"🎨 무제한 무료 AI 썸네일 생성 시도 중... (프롬프트: {image_prompt})")
-    
-    for attempt in range(3):
-        try:
-            seed = random.randint(1, 100000)
-            encoded_prompt = urllib.parse.quote(image_prompt + ", highly detailed, cinematic lighting")
-            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1280&height=720&nologo=true&seed={seed}"
-            
-            response = requests.get(url, timeout=45)
-            
-            if response.status_code == 200:
-                print(f"✅ [썸네일 생성 성공] {attempt + 1}번째 시도만에 성공했습니다!")
-                return response.content
-            elif response.status_code == 429:
-                print(f"⏳ [서버 과부하 429] 15초 대기 후 재시도합니다... ({attempt + 1}/3)")
-                time.sleep(15)
-            else:
-                print(f"⚠️ [API 에러 {response.status_code}] 5초 후 재시도합니다... ({attempt + 1}/3)")
-                time.sleep(5)
-        except Exception as e:
-            print(f"⚠️ [통신 지연] 서버가 바쁩니다. 5초 후 재시도... ({attempt + 1}/3)")
-            time.sleep(5)
-            
-    print("🔄 [플랜 B 가동] AI 서버 응답 지연으로 대체 이미지를 사용합니다.")
+    print(f"🎨 공식 구글 고품질 AI 썸네일 생성 중... (프롬프트: {image_prompt})")
     try:
-        fallback_url = f"https://picsum.photos/1280/720?random={random.randint(1, 1000)}"
-        response = requests.get(fallback_url, timeout=20)
-        if response.status_code == 200:
-            return response.content
-    except:
-        pass
+        # 구글 공식 고품질 모델(imagen 3)
+        api_base = "https://generativelanguage.googleapis.com"
+        url = api_base + "/v1beta/models/imagen-3.0-generate-001:predict?key=" + str(GEMINI_API_KEY)
         
+        headers = {'Content-Type': 'application/json'}
+        params = {"sampleCount": 1, "aspectRatio": "16:9", "outputOptions": {"mimeType": "image/jpeg"}}
+        
+        data = {
+            "instances": [{"prompt": image_prompt}],
+            "parameters": params
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        
+        if response.status_code == 200:
+            predictions = response.json().get('predictions')
+            if predictions:
+                print("✅ [썸네일 성공] 구글 공식 Imagen 3 썸네일 생성 완료!")
+                return base64.b64decode(predictions[0].get('bytesBase64Encoded', ''))
+        else:
+            print(f"⚠️ [이미지 API 에러 (요금 한도 등)]: {response.status_code}")
+    except Exception as e:
+        print(f"⚠️ [이미지 생성 에러]: {e}")
+    
     return None
 
 def generate_ghost_token():
@@ -314,72 +279,49 @@ def generate_ghost_token():
 def upload_image_to_ghost(image_bytes):
     try:
         token = generate_ghost_token()
-        headers = dict()
-        headers.update({'Authorization': 'Ghost ' + token})
-        
-        files = dict()
-        files.update({'file': ('thumbnail.jpg', image_bytes, 'image/jpeg')})
-        files.update({'purpose': (None, 'image')})
-        
+        headers = {'Authorization': 'Ghost ' + token}
+        files = {
+            'file': ('thumbnail.jpg', image_bytes, 'image/jpeg'),
+            'purpose': (None, 'image')
+        }
         url = str(GHOST_API_URL) + "/ghost/api/admin/images/upload/"
         response = requests.post(url, headers=headers, files=files)
         
-        if response.status_code == 200 or response.status_code == 201:
-            images = response.json().get('images')
-            if images:
-                for img in images:
-                    return img.get('url')
-        else:
-            print(f"❌ [이미지 업로드 실패] {response.status_code} - {response.text}")
-            return None
+        if response.status_code in [200, 201]:
+            return response.json().get('images')[0].get('url')
     except Exception as e:
         print(f"❌ [이미지 통신 에러] {e}")
-        return None
+    return None
 
 def publish_to_ghost(title, html_content, category, tier, feature_image_url, custom_excerpt):
     print(f"📝 Ghost 웹사이트에 '{title}' 글을 발행합니다...")
     try:
         token = generate_ghost_token()
-        headers_dict = dict()
-        headers_dict.update({'Authorization': 'Ghost ' + token})
-        headers_dict.update({'Content-Type': 'application/json'})
+        headers_dict = {
+            'Authorization': 'Ghost ' + token,
+            'Content-Type': 'application/json'
+        }
         
-        visibility_setting = "public"
+        post_dict = {
+            "title": title,
+            "html": html_content,
+            "status": "published",
+            "visibility": "public",
+            "tags": [{"name": category}, {"name": tier}]
+        }
         
-        tag_dict = dict(name=category)
-        tier_dict = dict(name=tier)
-        tags_list = list()
-        tags_list.append(tag_dict)
-        tags_list.append(tier_dict)
-        
-        post_dict = dict()
-        post_dict.update({"title": title})
-        post_dict.update({"html": html_content})
-        post_dict.update({"status": "published"})
-        post_dict.update({"visibility": visibility_setting})
-        post_dict.update({"tags": tags_list})
-        
-        if custom_excerpt:
-            post_dict.update({"custom_excerpt": custom_excerpt})
+        if custom_excerpt: post_dict["custom_excerpt"] = custom_excerpt
+        if feature_image_url: post_dict["feature_image"] = feature_image_url
             
-        if feature_image_url:
-            post_dict.update({"feature_image": feature_image_url})
-            
-        posts_list = list()
-        posts_list.append(post_dict)
-        
-        post_data = dict()
-        post_data.update({"posts": posts_list})
-        
         url = str(GHOST_API_URL) + "/ghost/api/admin/posts/?source=html"
-        response = requests.post(url, json=post_data, headers=headers_dict)
+        response = requests.post(url, json={"posts": [post_dict]}, headers=headers_dict)
         
-        if response.status_code == 200 or response.status_code == 201:
+        if response.status_code in [200, 201]:
             print("🎉 [성공] 자동 발행 완료!")
         else:
             print(f"❌ [발행 실패] {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ [통신 에러] Ghost 서버 연결 실패: {e}")
+        print(f"❌ [통신 에러] {e}")
 
 if __name__ == "__main__":
     try:
@@ -388,19 +330,15 @@ if __name__ == "__main__":
             
             all_news = get_category_news(urls, count=20)
             if not all_news or len(all_news) < 3:
-                print(f"⚠️ {category} 뉴스가 부족하여 건너뜁니다.")
                 continue
             
             for task in TASKS:
                 tier = task.get("tier")
                 req_count = task.get("count")
                 
-                if len(all_news) < req_count:
-                    break
+                if len(all_news) < req_count: break
                 
-                target_news = list()
-                for _ in range(req_count):
-                    target_news.append(all_news.pop(0))
+                target_news = [all_news.pop(0) for _ in range(req_count)]
                 
                 print(f"  -> ({tier}) 등급 리포트 ({req_count}개 뉴스) 및 썸네일 생성 중...")
                 
@@ -415,9 +353,9 @@ if __name__ == "__main__":
                             
                     publish_to_ghost(post_title, report_html, category, tier, feature_image_url, custom_excerpt)
                     
-                time.sleep(30) 
+                time.sleep(20) 
 
-        print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행이 완료되었습니다!")
+        print("\n🎉 모든 카테고리 중복 없는 지능형 자동 발행 완료!")
         
     except Exception as e:
         print("\n❌ 시스템 에러 발생")
