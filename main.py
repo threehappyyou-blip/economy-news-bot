@@ -15,7 +15,7 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 무적의 시각화 그래프(Table 고정) 봇 🚀")
+print(" 🚀 40년 멘토 + 가로스크롤 완벽 박멸 + Ghost 철갑 보호막 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -171,21 +171,14 @@ def analyze_with_gemini(news_items, category, tier):
         
         custom_excerpt_with_time = f"⏰ {current_time_short} | {custom_excerpt}"
         
-        # 🚨 가로 스크롤 방지용 무적 CSS 설정
-        table_style = "width: 100%; border-collapse: collapse; table-layout: fixed; border: none;"
-        
+        # 🚨 테이블 멸종! 박스 사이즈를 강제 고정하는 <div> 구조 적용
         html_content = f"""
-        <table style="{table_style} margin-bottom: 25px;">
-            <tr>
-                <td style="background-color: #f8f9fa; padding: 15px; border-left: 4px solid #f2a900; border-radius: 4px; word-wrap: break-word; white-space: normal;">
-                    <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6; font-family: sans-serif;">
-                        <strong>✍️ Written by:</strong> {author_name}<br>
-                        <strong>⏰ Published:</strong> {current_time_str}
-                    </p>
-                </td>
-            </tr>
-        </table>
-        
+        <div style="background-color: #f8f9fa; padding: 15px 20px; border-left: 4px solid #f2a900; border-radius: 4px; margin-bottom: 25px; box-sizing: border-box; width: 100%;">
+            <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6; font-family: sans-serif; white-space: normal;">
+                <strong>✍️ Written by:</strong> {author_name}<br>
+                <strong>⏰ Published:</strong> {current_time_str}
+            </p>
+        </div>
         <p style="font-size: 18px; line-height: 1.6; color: #333;">{summary}</p>
         
         <h2>Viral Social Insights 📱</h2>
@@ -195,23 +188,16 @@ def analyze_with_gemini(news_items, category, tier):
         <strong style="font-size: 22px;">{headline}</strong><br><br>
         <p style="font-size: 18px; line-height: 1.6; color: #333;">{depth}</p>
         
-        <table style="{table_style} margin-top: 15px;">
-            <tr>
-                <td style="border-left: 4px solid #999; background-color: #f4f4f4; padding: 15px; word-wrap: break-word;">
-                    <strong style="font-size: 18px;">💡 Quick Flow:</strong> <span style="font-size: 18px;">{flow}</span>
-                </td>
-            </tr>
-        </table>
+        <div style="border-left: 4px solid #999; background-color: #f4f4f4; padding: 15px 20px; margin-top: 15px; margin-bottom: 30px; border-radius: 4px; box-sizing: border-box; width: 100%;">
+            <strong style="font-size: 18px; color: #333;">💡 Quick Flow:</strong> <span style="font-size: 18px; color: #333; white-space: normal;">{flow}</span>
+        </div>
         """
 
         if tier == "Royal Premium":
-            # 🚨 차트 데이터 추출 및 수치 보정
             graph_data_raw = extract_tag(raw_text, "GRAPH_DATA")
             parts = [p.strip() for p in graph_data_raw.split('|')]
-            if len(parts) == 6:
-                l1, v1, l2, v2, l3, v3 = parts
-            else:
-                l1, v1, l2, v2, l3, v3 = "Market Volatility", "75", "Recession Risk", "40", "Investor Confidence", "60"
+            if len(parts) == 6: l1, v1, l2, v2, l3, v3 = parts
+            else: l1, v1, l2, v2, l3, v3 = "Market Volatility", "75", "Recession Risk", "40", "Investor Confidence", "60"
             
             try: v1_int = int("".join(filter(str.isdigit, v1)))
             except: v1_int = 50
@@ -220,45 +206,41 @@ def analyze_with_gemini(news_items, category, tier):
             try: v3_int = int("".join(filter(str.isdigit, v3)))
             except: v3_int = 50
 
-            # 📊 가로 스크롤이 없는 Ghost 무적 게이지 차트 (Table 꼼수)
+            # 📊 스크롤 없는 순수 CSS 바 차트
             chart_html = f"""
-            <h3 style="margin-top: 40px; color: #2c3e50; font-size: 20px; margin-bottom: 15px;">📊 Key Market Indicators</h3>
-            
-            <p style="margin-bottom: 5px; font-size: 16px;"><strong>{l1}</strong> <span style="color: #c0392b;">({v1_int}%)</span></p>
-            <table style="{table_style} height: 16px; margin-bottom: 20px;">
-                <tr>
-                    <td style="width: {v1_int}%; background-color: #e74c3c; padding: 0;">&nbsp;</td>
-                    <td style="width: {100 - v1_int}%; background-color: #e9ecef; padding: 0;">&nbsp;</td>
-                </tr>
-            </table>
-
-            <p style="margin-bottom: 5px; font-size: 16px;"><strong>{l2}</strong> <span style="color: #f39c12;">({v2_int}%)</span></p>
-            <table style="{table_style} height: 16px; margin-bottom: 20px;">
-                <tr>
-                    <td style="width: {v2_int}%; background-color: #f1c40f; padding: 0;">&nbsp;</td>
-                    <td style="width: {100 - v2_int}%; background-color: #e9ecef; padding: 0;">&nbsp;</td>
-                </tr>
-            </table>
-
-            <p style="margin-bottom: 5px; font-size: 16px;"><strong>{l3}</strong> <span style="color: #27ae60;">({v3_int}%)</span></p>
-            <table style="{table_style} height: 16px; margin-bottom: 30px;">
-                <tr>
-                    <td style="width: {v3_int}%; background-color: #2ecc71; padding: 0;">&nbsp;</td>
-                    <td style="width: {100 - v3_int}%; background-color: #e9ecef; padding: 0;">&nbsp;</td>
-                </tr>
-            </table>
+            <div style="margin-top: 40px; margin-bottom: 30px; box-sizing: border-box; width: 100%;">
+                <h3 style="color: #2c3e50; font-size: 22px; margin-bottom: 20px; font-family: sans-serif;">📊 Key Market Indicators</h3>
+                <div style="margin-bottom: 15px;">
+                    <p style="margin: 0 0 5px 0; font-size: 16px; font-family: sans-serif;"><strong>{l1}</strong> <span style="color: #c0392b;">({v1_int}%)</span></p>
+                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 16px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: {v1_int}%; background-color: #e74c3c; height: 100%;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="margin: 0 0 5px 0; font-size: 16px; font-family: sans-serif;"><strong>{l2}</strong> <span style="color: #f39c12;">({v2_int}%)</span></p>
+                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 16px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: {v2_int}%; background-color: #f1c40f; height: 100%;"></div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <p style="margin: 0 0 5px 0; font-size: 16px; font-family: sans-serif;"><strong>{l3}</strong> <span style="color: #27ae60;">({v3_int}%)</span></p>
+                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 16px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: {v3_int}%; background-color: #2ecc71; height: 100%;"></div>
+                    </div>
+                </div>
+            </div>
             """
 
-            # ⚖️ 자산배분 바 (Table 꼼수)
+            # ⚖️ 자산배분 플렉스 바
             allocation_html = f"""
-            <table style="{table_style} height: 35px; text-align: center; color: white; font-weight: bold; font-family: sans-serif; margin-bottom: 10px; margin-top: 15px;">
-                <tr>
-                    <td style="width: 60%; background-color: #3498db; padding: 5px 0;">Stocks 60%</td>
-                    <td style="width: 30%; background-color: #2ecc71; padding: 5px 0;">Safe 30%</td>
-                    <td style="width: 10%; background-color: #f1c40f; padding: 5px 0;">Cash 10%</td>
-                </tr>
-            </table>
-            <p style="font-size: 14px; color: #888; margin: 0 0 15px 0; text-align: center; font-style: italic;">* Mechanically rebalance to maintain this absolute ratio.</p>
+            <div style="margin-top: 15px; margin-bottom: 15px; box-sizing: border-box; width: 100%;">
+                <div style="display: flex; width: 100%; height: 35px; border-radius: 6px; overflow: hidden; font-family: sans-serif; box-sizing: border-box;">
+                    <div style="width: 60%; background-color: #3498db; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">Stocks 60%</div>
+                    <div style="width: 30%; background-color: #2ecc71; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">Safe 30%</div>
+                    <div style="width: 10%; background-color: #f1c40f; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">Cash 10%</div>
+                </div>
+                <p style="font-size: 13px; color: #888; margin: 8px 0 0 0; text-align: center; font-style: italic;">* Mechanically rebalance to maintain this absolute ratio.</p>
+            </div>
             """
 
             vip_c1 = extract_tag(raw_text, "VIP_C1")
@@ -271,71 +253,51 @@ def analyze_with_gemini(news_items, category, tier):
             vip_do = extract_tag(raw_text, "VIP_DO")
             vip_dont = extract_tag(raw_text, "VIP_DONT")
 
-            # VIP 본문 (Table 위장술)
+            # 🚨 [핵심] 하나의 거대한 HTML Card 캡슐로 감싸서, 내부 요소들이 절대 스크롤을 만들지 못하게 차단!
             vip_html = f"""
-            {chart_html}
-            
-            <h2 style="color: #2c3e50; font-size: 28px; margin-bottom: 20px;">📈 VIP Exclusive: Deep-Dive Macro Analysis</h2>
-            <table style="{table_style} margin-bottom: 40px;">
-                <tr>
-                    <td style="background-color: #f8f9fa; border-left: 6px solid #2c3e50; padding: 25px; word-wrap: break-word;">
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">{vip_c1}</p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;">{vip_c2}</p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_c3}</p>
-                    </td>
-                </tr>
-            </table>
+            <div style="font-family: sans-serif; width: 100%; box-sizing: border-box; max-width: 100%; overflow-x: hidden;">
 
-            <h2 style="color: #1a237e; font-size: 28px; margin-bottom: 10px;">🛡️ The Titan's Playbook: Master Mindset</h2>
-            <p style="font-size: 18px; color: #555; margin-bottom: 25px;"><em>How the top 1% navigate this specific market condition.</em></p>
+                {chart_html}
 
-            <table style="{table_style} margin-bottom: 20px;">
-                <tr>
-                    <td style="background-color: #fff8e1; border-left: 6px solid #f57f17; padding: 25px; word-wrap: break-word;">
-                        <h3 style="color: #f57f17; margin-top: 0; font-size: 22px;">1. The Generational Bargain (Fear vs. Greed)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t1}</p>
-                    </td>
-                </tr>
-            </table>
+                <h2 style="color: #2c3e50; font-size: 26px; margin-bottom: 20px; line-height: 1.3;">📈 VIP Exclusive: Deep-Dive Macro Analysis</h2>
+                <div style="background-color: #f8f9fa; border-left: 6px solid #2c3e50; padding: 20px; border-radius: 6px; margin-bottom: 40px; box-sizing: border-box; width: 100%;">
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-top: 0; margin-bottom: 15px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal;">{vip_c1}</p>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal;">{vip_c2}</p>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_c3}</p>
+                </div>
 
-            <table style="{table_style} margin-bottom: 20px;">
-                <tr>
-                    <td style="background-color: #e8f5e9; border-left: 6px solid #2e7d32; padding: 25px; word-wrap: break-word;">
-                        <h3 style="color: #2e7d32; margin-top: 0; font-size: 22px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
-                        {allocation_html}
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t2}</p>
-                    </td>
-                </tr>
-            </table>
+                <h2 style="color: #1a237e; font-size: 26px; margin-bottom: 10px; line-height: 1.3;">🛡️ The Titan's Playbook: Master Mindset</h2>
+                <p style="font-size: 17px; color: #555; margin-bottom: 25px; font-style: italic;">How the top 1% navigate this specific market condition.</p>
 
-            <table style="{table_style} margin-bottom: 20px;">
-                <tr>
-                    <td style="background-color: #e3f2fd; border-left: 6px solid #1565c0; padding: 25px; word-wrap: break-word;">
-                        <h3 style="color: #1565c0; margin-top: 0; font-size: 22px;">3. The Global Shield (US Dollar & Market)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t3}</p>
-                    </td>
-                </tr>
-            </table>
+                <div style="background-color: #fff8e1; border-left: 6px solid #f57f17; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                    <h3 style="color: #f57f17; margin-top: 0; font-size: 20px; margin-bottom: 10px;">1. The Generational Bargain (Fear vs. Greed)</h3>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_t1}</p>
+                </div>
 
-            <table style="{table_style} margin-bottom: 20px;">
-                <tr>
-                    <td style="background-color: #fce4ec; border-left: 6px solid #c2185b; padding: 25px; word-wrap: break-word;">
-                        <h3 style="color: #c2185b; margin-top: 0; font-size: 22px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;">{vip_t4}</p>
-                    </td>
-                </tr>
-            </table>
+                <div style="background-color: #e8f5e9; border-left: 6px solid #2e7d32; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                    <h3 style="color: #2e7d32; margin-top: 0; font-size: 20px; margin-bottom: 10px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
+                    {allocation_html}
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; margin-top: 15px; white-space: normal;">{vip_t2}</p>
+                </div>
 
-            <table style="{table_style} margin-top: 40px; margin-bottom: 30px;">
-                <tr>
-                    <td style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 30px; word-wrap: break-word;">
-                        <h3 style="color: #3f51b5; margin-top: 0; font-size: 24px; margin-bottom: 20px;">✅ Today's VIP Action Plan</h3>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px;"><strong>🟢 DO (Immediate Action):</strong> {vip_do}</p>
-                        <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong> {vip_dont}</p>
-                    </td>
-                </tr>
-            </table>
+                <div style="background-color: #e3f2fd; border-left: 6px solid #1565c0; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                    <h3 style="color: #1565c0; margin-top: 0; font-size: 20px; margin-bottom: 10px;">3. The Global Shield (US Dollar & Market)</h3>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_t3}</p>
+                </div>
+
+                <div style="background-color: #fce4ec; border-left: 6px solid #c2185b; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                    <h3 style="color: #c2185b; margin-top: 0; font-size: 20px; margin-bottom: 10px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_t4}</p>
+                </div>
+
+                <div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 25px; border-radius: 6px; margin-top: 40px; margin-bottom: 30px; box-sizing: border-box; width: 100%;">
+                    <h3 style="color: #3f51b5; margin-top: 0; font-size: 22px; margin-bottom: 15px;">✅ Today's VIP Action Plan</h3>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal;"><strong>🟢 DO (Immediate Action):</strong> {vip_do}</p>
+                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;"><strong>🔴 DON'T (Critical Mistakes):</strong> {vip_dont}</p>
+                </div>
+
+            </div>
             """
             html_content += vip_html
             
