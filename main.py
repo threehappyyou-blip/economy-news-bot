@@ -15,7 +15,7 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + WSJ급 프리미엄 디자인 + 스크롤 완벽 박멸 봇 🚀")
+print(" 🚀 40년 멘토 + 단일 캡슐화(무적 디자인) + 스크롤 박멸 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -171,10 +171,13 @@ def analyze_with_gemini(news_items, category, tier):
         
         custom_excerpt_with_time = f"⏰ {current_time_short} | {custom_excerpt}"
         
-        # 🚨 [혁신 패치] 표(Table) 완벽 삭제 + 묵직한 프리미엄(Navy/Gold) 테마 적용
-        html_content = f"""
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1a252c; max-width: 100%; box-sizing: border-box; word-wrap: break-word;">
-            
+        # =========================================================================
+        # 🚨 [최종 혁신 패치] 전체를 단 하나의 HTML 카드로 감싸 Ghost 검열을 완벽 무력화!
+        # =========================================================================
+        html_content = "\n"
+        html_content += f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1a252c; font-size: 18px; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; box-sizing: border-box; width: 100%; max-width: 100%; overflow-x: hidden;">
+
             <div style="border-top: 3px solid #b8974d; border-bottom: 1px solid #e5e7eb; padding: 12px 0; margin-bottom: 30px; box-sizing: border-box; width: 100%;">
                 <p style="margin: 0; font-size: 14px; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px;">
                     <strong style="color: #1a252c;">By {author_name}</strong> &nbsp;|&nbsp; {current_time_str}
@@ -182,7 +185,7 @@ def analyze_with_gemini(news_items, category, tier):
             </div>
             
             <h2 style="font-family: 'Georgia', serif; font-size: 24px; color: #1a252c; margin-top: 0; margin-bottom: 15px;">Executive Summary</h2>
-            <p style="font-size: 18px; line-height: 1.7; color: #374151; margin-bottom: 35px;">{summary}</p>
+            <p style="margin-bottom: 35px; color: #374151;">{summary}</p>
             
             <div style="background-color: #f1f3f5; border-left: 4px solid #8e44ad; padding: 20px; border-radius: 4px; margin-bottom: 40px; box-sizing: border-box; width: 100%;">
                 <h3 style="margin-top: 0; font-size: 18px; color: #1a252c; margin-bottom: 10px;">📱 Viral Social Insights</h3>
@@ -191,7 +194,7 @@ def analyze_with_gemini(news_items, category, tier):
             
             <h2 style="font-family: 'Georgia', serif; font-size: 24px; color: #1a252c; margin-bottom: 15px;">Market Drivers & Insights</h2>
             <strong style="font-size: 20px; color: #1a252c; display: block; margin-bottom: 12px;">{headline}</strong>
-            <p style="font-size: 18px; line-height: 1.7; color: #374151; margin-bottom: 20px;">{depth}</p>
+            <p style="color: #374151; margin-bottom: 20px;">{depth}</p>
             
             <div style="background-color: #ffffff; border: 1px solid #e5e7eb; padding: 15px 20px; border-radius: 4px; margin-bottom: 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box; width: 100%;">
                 <strong style="font-size: 16px; color: #b8974d; text-transform: uppercase; letter-spacing: 0.5px;">💡 Quick Flow:</strong> 
@@ -212,8 +215,8 @@ def analyze_with_gemini(news_items, category, tier):
             try: v3_int = int("".join(filter(str.isdigit, v3)))
             except: v3_int = 50
 
-            # 📊 세련된 프로그레스 바 (가로 스크롤 없음)
-            chart_html = f"""
+            # 📊 스크롤 없는 프로그레스 게이지 바
+            html_content += f"""
             <div style="margin: 40px 0 30px 0; padding: 25px; background-color: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; box-sizing: border-box; width: 100%;">
                 <h3 style="margin-top: 0; color: #1a252c; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 25px;">📊 Key Market Indicators</h3>
                 
@@ -249,18 +252,6 @@ def analyze_with_gemini(news_items, category, tier):
             </div>
             """
 
-            # ⚖️ 고급스러운 자산배분 바
-            allocation_html = f"""
-            <div style="margin: 20px 0; box-sizing: border-box; width: 100%;">
-                <div style="display: flex; width: 100%; height: 26px; border-radius: 4px; overflow: hidden; box-sizing: border-box;">
-                    <div style="width: 60%; background-color: #1a252c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">STOCKS 60%</div>
-                    <div style="width: 30%; background-color: #64748b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">SAFE 30%</div>
-                    <div style="width: 10%; background-color: #b8974d; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">CASH 10%</div>
-                </div>
-                <p style="font-size: 13px; color: #9ca3af; margin: 8px 0 0 0; text-align: center; font-style: italic;">* Mechanically rebalance to maintain this absolute ratio.</p>
-            </div>
-            """
-
             vip_c1 = extract_tag(raw_text, "VIP_C1")
             vip_c2 = extract_tag(raw_text, "VIP_C2")
             vip_c3 = extract_tag(raw_text, "VIP_C3")
@@ -271,17 +262,15 @@ def analyze_with_gemini(news_items, category, tier):
             vip_do = extract_tag(raw_text, "VIP_DO")
             vip_dont = extract_tag(raw_text, "VIP_DONT")
 
-            # VIP 묵직한 본문
-            vip_html = f"""
-            {chart_html}
-            
+            # ⚖️ 고급스러운 자산배분 바 & VIP 섹션
+            html_content += f"""
             <h2 style="font-family: 'Georgia', serif; font-size: 26px; color: #1a252c; margin-bottom: 20px; border-bottom: 2px solid #b8974d; padding-bottom: 8px; display: inline-block;">VIP Exclusive: Macro & Flow Analysis</h2>
             
             <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-left: 4px solid #1a252c; padding: 25px; border-radius: 4px; margin-bottom: 40px; box-sizing: border-box; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
                 <p style="font-size: 16px; color: #b8974d; text-transform: uppercase; font-weight: bold; margin-top: 0; margin-bottom: 15px; letter-spacing: 0.5px;">[Institutional Technical Outlook]</p>
-                <p style="font-size: 18px; line-height: 1.7; color: #374151; margin-bottom: 15px;">{vip_c1}</p>
-                <p style="font-size: 18px; line-height: 1.7; color: #374151; margin-bottom: 15px;">{vip_c2}</p>
-                <p style="font-size: 18px; line-height: 1.7; color: #374151; margin-bottom: 0;">{vip_c3}</p>
+                <p style="margin-bottom: 15px; color: #374151;">{vip_c1}</p>
+                <p style="margin-bottom: 15px; color: #374151;">{vip_c2}</p>
+                <p style="margin-bottom: 0; color: #374151;">{vip_c3}</p>
             </div>
 
             <h2 style="font-family: 'Georgia', serif; font-size: 26px; color: #1a252c; margin-bottom: 10px; border-bottom: 2px solid #b8974d; padding-bottom: 8px; display: inline-block;">The Titan's Playbook</h2>
@@ -289,45 +278,52 @@ def analyze_with_gemini(news_items, category, tier):
 
             <div style="background-color: #f8fafc; border: 1px solid #e5e7eb; padding: 20px 25px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
                 <h3 style="color: #1a252c; margin-top: 0; font-size: 19px; margin-bottom: 10px;">1. The Generational Bargain (Fear vs. Greed)</h3>
-                <p style="font-size: 18px; line-height: 1.7; color: #4b5563; margin-bottom: 0;">{vip_t1}</p>
+                <p style="margin-bottom: 0; color: #4b5563;">{vip_t1}</p>
             </div>
 
             <div style="background-color: #f8fafc; border: 1px solid #e5e7eb; padding: 20px 25px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
                 <h3 style="color: #1a252c; margin-top: 0; font-size: 19px; margin-bottom: 10px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
-                {allocation_html}
-                <p style="font-size: 18px; line-height: 1.7; color: #4b5563; margin-bottom: 0; margin-top: 20px;">{vip_t2}</p>
+                
+                <div style="margin: 20px 0; box-sizing: border-box; width: 100%;">
+                    <div style="display: flex; width: 100%; height: 26px; border-radius: 4px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: 60%; background-color: #1a252c; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">STOCKS 60%</div>
+                        <div style="width: 30%; background-color: #64748b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">SAFE 30%</div>
+                        <div style="width: 10%; background-color: #b8974d; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">CASH 10%</div>
+                    </div>
+                    <p style="font-size: 13px; color: #9ca3af; margin: 8px 0 0 0; text-align: center; font-style: italic;">* Mechanically rebalance to maintain this absolute ratio.</p>
+                </div>
+                
+                <p style="margin-bottom: 0; margin-top: 20px; color: #4b5563;">{vip_t2}</p>
             </div>
 
             <div style="background-color: #f8fafc; border: 1px solid #e5e7eb; padding: 20px 25px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
                 <h3 style="color: #1a252c; margin-top: 0; font-size: 19px; margin-bottom: 10px;">3. The Global Shield (US Dollar & Market)</h3>
-                <p style="font-size: 18px; line-height: 1.7; color: #4b5563; margin-bottom: 0;">{vip_t3}</p>
+                <p style="margin-bottom: 0; color: #4b5563;">{vip_t3}</p>
             </div>
 
             <div style="background-color: #f8fafc; border: 1px solid #e5e7eb; padding: 20px 25px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
                 <h3 style="color: #1a252c; margin-top: 0; font-size: 19px; margin-bottom: 10px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
-                <p style="font-size: 18px; line-height: 1.7; color: #4b5563; margin-bottom: 0;">{vip_t4}</p>
+                <p style="margin-bottom: 0; color: #4b5563;">{vip_t4}</p>
             </div>
 
             <div style="background-color: #1a252c; color: white; padding: 30px; border-radius: 8px; margin-top: 40px; margin-bottom: 30px; box-sizing: border-box; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <h3 style="color: #b8974d; margin-top: 0; font-size: 22px; margin-bottom: 20px; border-bottom: 1px solid #374151; padding-bottom: 10px;">✅ Today's VIP Action Plan</h3>
-                <p style="font-size: 18px; line-height: 1.6; color: #e5e7eb; margin-bottom: 15px;"><strong>🟢 DO (Action):</strong> {vip_do}</p>
-                <p style="font-size: 18px; line-height: 1.6; color: #e5e7eb; margin-bottom: 0;"><strong>🔴 DON'T (Avoid):</strong> {vip_dont}</p>
+                <p style="color: #e5e7eb; margin-bottom: 15px;"><strong>🟢 DO (Action):</strong> {vip_do}</p>
+                <p style="color: #e5e7eb; margin-bottom: 0;"><strong>🔴 DON'T (Avoid):</strong> {vip_dont}</p>
             </div>
             """
-            html_content += vip_html
-            
-        footer_html = f"""
+
+        html_content += f"""
             <hr style="border: 0; height: 1px; background: #e5e7eb; margin: 40px 0;">
             <h2 style="font-family: 'Georgia', serif; font-size: 24px; color: #1a252c; margin-bottom: 15px;">Today's Warm Insight</h2>
-            <p style="font-size: 18px; line-height: 1.7; color: #374151;">{takeaway}</p>
+            <p style="color: #374151;">{takeaway}</p>
             <div style="margin-top: 30px; background-color: #f9fafb; padding: 20px; border-radius: 4px; border-left: 3px solid #b8974d;">
-                <p style="font-size: 17px; line-height: 1.6; color: #4b5563; margin: 0;"><strong>P.S.</strong> {ps}</p>
+                <p style="margin: 0; color: #4b5563;"><strong>P.S.</strong> {ps}</p>
             </div>
             <p style="font-size: 13px; color: #9ca3af; margin-top: 30px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">Disclaimer: This article is for informational purposes only.</p>
         
         </div>
         """
-        html_content += footer_html
             
         return title, image_prompt, html_content, custom_excerpt_with_time
         
