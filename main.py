@@ -122,7 +122,8 @@ def get_category_news(urls, count=20):
     final_news = []
     for _ in range(count):
         if len(news_list) > 0:
-            final_news.append(final_news.pop(0))
+            # 🚨 치명적인 오타 수정 완료! (빈 리스트에서 꺼내지 않도록 수정)
+            final_news.append(news_list.pop(0))
     return final_news
 
 def analyze_with_gemini(news_items, category, tier):
@@ -399,7 +400,6 @@ if __name__ == "__main__":
     try:
         for category, urls in CATEGORIES.items():
             print(f"\n--- [{category}] 지능형 큐레이션 및 분배 시작 ---")
-            # 💡 [안정성 패치] 파서 객체를 리스트로 안전하게 변환
             all_news = get_category_news(urls, count=20)
             if not all_news or len(all_news) < 3: continue
             
