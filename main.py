@@ -15,7 +15,7 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 가로스크롤 완벽 박멸 + Ghost 철갑 보호막 봇 🚀")
+print(" 🚀 40년 멘토 + VIP 프리미엄 렌더링 + 스크롤 완벽 박멸 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -165,32 +165,38 @@ def analyze_with_gemini(news_items, category, tier):
         pretty_tier = TIER_LABELS.get(tier, tier)
         title = f"[{pretty_tier}] {title_raw}" if title_raw else f"({tier}) Daily {category} Insight"
         
+        # 날짜 및 시간 포맷 (한국 사용자도 보기 편한 직관적 포맷)
         current_time_str = datetime.now().strftime('%B %d, %Y at %I:%M %p (UTC)')
         current_time_short = datetime.now().strftime('%I:%M %p')
         author_name = "Ethan Cole & The Warm Insight Panel"
         
+        # 외부(홈페이지) 목록에 시간 표시
         custom_excerpt_with_time = f"⏰ {current_time_short} | {custom_excerpt}"
         
-        # 🚨 테이블 멸종! 박스 사이즈를 강제 고정하는 <div> 구조 적용
+        # 🚨 단일 HTML Card 캡슐 시작! (이 안의 코드는 Ghost가 절대 검열하지 못함 + 스크롤 박멸)
         html_content = f"""
-        <div style="background-color: #f8f9fa; padding: 15px 20px; border-left: 4px solid #f2a900; border-radius: 4px; margin-bottom: 25px; box-sizing: border-box; width: 100%;">
-            <p style="margin: 0; font-size: 16px; color: #555; line-height: 1.6; font-family: sans-serif; white-space: normal;">
-                <strong>✍️ Written by:</strong> {author_name}<br>
-                <strong>⏰ Published:</strong> {current_time_str}
-            </p>
-        </div>
-        <p style="font-size: 18px; line-height: 1.6; color: #333;">{summary}</p>
-        
-        <h2>Viral Social Insights 📱</h2>
-        <p style="font-size: 18px; line-height: 1.6; color: #333;">{tiktok}</p>
-        
-        <h2>Top Drivers & Deep Insights</h2>
-        <strong style="font-size: 22px;">{headline}</strong><br><br>
-        <p style="font-size: 18px; line-height: 1.6; color: #333;">{depth}</p>
-        
-        <div style="border-left: 4px solid #999; background-color: #f4f4f4; padding: 15px 20px; margin-top: 15px; margin-bottom: 30px; border-radius: 4px; box-sizing: border-box; width: 100%;">
-            <strong style="font-size: 18px; color: #333;">💡 Quick Flow:</strong> <span style="font-size: 18px; color: #333; white-space: normal;">{flow}</span>
-        </div>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden; overflow-wrap: break-word;">
+            
+            <div style="display: flex; align-items: center; background-color: #f8f9fa; padding: 16px 20px; border-left: 4px solid #f2a900; border-radius: 6px; margin-bottom: 30px; box-sizing: border-box; width: 100%;">
+                <div style="flex: 1;">
+                    <p style="margin: 0 0 4px 0; font-size: 15px; color: #333; font-weight: 600;">✍️ {author_name}</p>
+                    <p style="margin: 0; font-size: 14px; color: #777;">⏰ Published: {current_time_str}</p>
+                </div>
+            </div>
+            
+            <h2 style="font-size: 24px; color: #111; margin-top: 0; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">The Big Picture</h2>
+            <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 30px;">{summary}</p>
+            
+            <h2 style="font-size: 24px; color: #111; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">Viral Social Insights 📱</h2>
+            <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 30px;">{tiktok}</p>
+            
+            <h2 style="font-size: 24px; color: #111; margin-bottom: 12px; border-bottom: 2px solid #eee; padding-bottom: 8px;">Top Drivers & Deep Insights</h2>
+            <strong style="font-size: 20px; color: #2c3e50; display: block; margin-bottom: 12px;">{headline}</strong>
+            <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 20px;">{depth}</p>
+            
+            <div style="border-left: 4px solid #8e44ad; background-color: #f4f6f7; padding: 16px 20px; border-radius: 6px; margin-bottom: 40px; box-sizing: border-box; width: 100%;">
+                <strong style="font-size: 17px; color: #2c3e50;">💡 Quick Flow:</strong> <span style="font-size: 17px; color: #333;">{flow}</span>
+            </div>
         """
 
         if tier == "Royal Premium":
@@ -206,40 +212,52 @@ def analyze_with_gemini(news_items, category, tier):
             try: v3_int = int("".join(filter(str.isdigit, v3)))
             except: v3_int = 50
 
-            # 📊 스크롤 없는 순수 CSS 바 차트
+            # 📊 아름답고 모바일에 100% 최적화된 게이지(Pill) 차트
             chart_html = f"""
-            <div style="margin-top: 40px; margin-bottom: 30px; box-sizing: border-box; width: 100%;">
-                <h3 style="color: #2c3e50; font-size: 22px; margin-bottom: 20px; font-family: sans-serif;">📊 Key Market Indicators</h3>
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; font-size: 16px; font-family: sans-serif;"><strong>{l1}</strong> <span style="color: #c0392b;">({v1_int}%)</span></p>
-                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 16px; overflow: hidden; box-sizing: border-box;">
-                        <div style="width: {v1_int}%; background-color: #e74c3c; height: 100%;"></div>
+            <div style="background: #ffffff; border: 1px solid #eaeaea; border-radius: 12px; padding: 24px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%;">
+                <h3 style="margin-top: 0; color: #2c3e50; font-size: 20px; margin-bottom: 24px; text-align: center;">📊 Key Market Indicators</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong style="font-size: 15px; color: #444;">{l1}</strong>
+                        <span style="font-size: 15px; font-weight: bold; color: #e74c3c;">{v1_int}%</span>
+                    </div>
+                    <div style="width: 100%; background-color: #f1f3f5; border-radius: 20px; height: 12px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: {v1_int}%; background-color: #e74c3c; height: 100%; border-radius: 20px;"></div>
                     </div>
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; font-size: 16px; font-family: sans-serif;"><strong>{l2}</strong> <span style="color: #f39c12;">({v2_int}%)</span></p>
-                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 16px; overflow: hidden; box-sizing: border-box;">
-                        <div style="width: {v2_int}%; background-color: #f1c40f; height: 100%;"></div>
+
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong style="font-size: 15px; color: #444;">{l2}</strong>
+                        <span style="font-size: 15px; font-weight: bold; color: #f39c12;">{v2_int}%</span>
+                    </div>
+                    <div style="width: 100%; background-color: #f1f3f5; border-radius: 20px; height: 12px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: {v2_int}%; background-color: #f1c40f; height: 100%; border-radius: 20px;"></div>
                     </div>
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <p style="margin: 0 0 5px 0; font-size: 16px; font-family: sans-serif;"><strong>{l3}</strong> <span style="color: #27ae60;">({v3_int}%)</span></p>
-                    <div style="width: 100%; background-color: #e9ecef; border-radius: 10px; height: 16px; overflow: hidden; box-sizing: border-box;">
-                        <div style="width: {v3_int}%; background-color: #2ecc71; height: 100%;"></div>
+
+                <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong style="font-size: 15px; color: #444;">{l3}</strong>
+                        <span style="font-size: 15px; font-weight: bold; color: #27ae60;">{v3_int}%</span>
+                    </div>
+                    <div style="width: 100%; background-color: #f1f3f5; border-radius: 20px; height: 12px; overflow: hidden; box-sizing: border-box;">
+                        <div style="width: {v3_int}%; background-color: #2ecc71; height: 100%; border-radius: 20px;"></div>
                     </div>
                 </div>
             </div>
             """
 
-            # ⚖️ 자산배분 플렉스 바
+            # ⚖️ 모바일 반응형 자산배분 바
             allocation_html = f"""
-            <div style="margin-top: 15px; margin-bottom: 15px; box-sizing: border-box; width: 100%;">
-                <div style="display: flex; width: 100%; height: 35px; border-radius: 6px; overflow: hidden; font-family: sans-serif; box-sizing: border-box;">
-                    <div style="width: 60%; background-color: #3498db; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">Stocks 60%</div>
-                    <div style="width: 30%; background-color: #2ecc71; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">Safe 30%</div>
-                    <div style="width: 10%; background-color: #f1c40f; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">Cash 10%</div>
+            <div style="margin-top: 20px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                <div style="display: flex; width: 100%; height: 32px; border-radius: 8px; overflow: hidden; box-sizing: border-box;">
+                    <div style="width: 60%; background-color: #3498db; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">Stocks 60%</div>
+                    <div style="width: 30%; background-color: #2ecc71; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">Safe 30%</div>
+                    <div style="width: 10%; background-color: #f1c40f; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">Cash 10%</div>
                 </div>
-                <p style="font-size: 13px; color: #888; margin: 8px 0 0 0; text-align: center; font-style: italic;">* Mechanically rebalance to maintain this absolute ratio.</p>
+                <p style="font-size: 13px; color: #888; margin: 10px 0 0 0; text-align: center; font-style: italic;">* Mechanically rebalance to maintain this absolute ratio.</p>
             </div>
             """
 
@@ -253,60 +271,64 @@ def analyze_with_gemini(news_items, category, tier):
             vip_do = extract_tag(raw_text, "VIP_DO")
             vip_dont = extract_tag(raw_text, "VIP_DONT")
 
-            # 🚨 [핵심] 하나의 거대한 HTML Card 캡슐로 감싸서, 내부 요소들이 절대 스크롤을 만들지 못하게 차단!
+            # VIP 본문 (깔끔한 테두리와 여백)
             vip_html = f"""
-            <div style="font-family: sans-serif; width: 100%; box-sizing: border-box; max-width: 100%; overflow-x: hidden;">
+            <hr style="border: 0; height: 1px; background: #e0e0e0; margin: 40px 0;">
+            
+            {chart_html}
 
-                {chart_html}
+            <h2 style="color: #2c3e50; font-size: 24px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 8px;">📈 VIP Exclusive: Deep-Dive Analysis</h2>
+            <div style="background-color: #f4f6f7; border-left: 5px solid #34495e; padding: 24px; border-radius: 8px; margin-bottom: 40px; box-sizing: border-box; width: 100%;">
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-top: 0; margin-bottom: 16px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 16px;">{vip_c1}</p>
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 16px;">{vip_c2}</p>
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 0;">{vip_c3}</p>
+            </div>
 
-                <h2 style="color: #2c3e50; font-size: 26px; margin-bottom: 20px; line-height: 1.3;">📈 VIP Exclusive: Deep-Dive Macro Analysis</h2>
-                <div style="background-color: #f8f9fa; border-left: 6px solid #2c3e50; padding: 20px; border-radius: 6px; margin-bottom: 40px; box-sizing: border-box; width: 100%;">
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-top: 0; margin-bottom: 15px;"><strong>[Institutional Money Flow & Technical Outlook]</strong></p>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal;">{vip_c1}</p>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal;">{vip_c2}</p>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_c3}</p>
+            <h2 style="color: #1a237e; font-size: 24px; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 8px;">🛡️ The Titan's Playbook</h2>
+            <p style="font-size: 16px; color: #666; margin-bottom: 30px; font-style: italic;">How the top 1% navigate this specific market condition.</p>
+
+            <div style="border: 1px solid #f9e79f; border-left: 6px solid #f1c40f; background-color: #fef9e7; padding: 20px 24px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                <h3 style="color: #d4ac0d; margin-top: 0; font-size: 19px; margin-bottom: 12px;">1. The Generational Bargain (Fear vs. Greed)</h3>
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 0;">{vip_t1}</p>
+            </div>
+
+            <div style="border: 1px solid #a9dfbf; border-left: 6px solid #27ae60; background-color: #eafaf1; padding: 20px 24px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                <h3 style="color: #229954; margin-top: 0; font-size: 19px; margin-bottom: 12px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
+                {allocation_html}
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 0; margin-top: 20px;">{vip_t2}</p>
+            </div>
+
+            <div style="border: 1px solid #aed6f1; border-left: 6px solid #2980b9; background-color: #ebf5fb; padding: 20px 24px; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
+                <h3 style="color: #2471a3; margin-top: 0; font-size: 19px; margin-bottom: 12px;">3. The Global Shield (US Dollar & Market)</h3>
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 0;">{vip_t3}</p>
+            </div>
+
+            <div style="border: 1px solid #f5b7b1; border-left: 6px solid #e74c3c; background-color: #fdedec; padding: 20px 24px; border-radius: 8px; margin-bottom: 24px; box-sizing: border-box; width: 100%;">
+                <h3 style="color: #cb4335; margin-top: 0; font-size: 19px; margin-bottom: 12px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
+                <p style="font-size: 17px; line-height: 1.7; color: #333; margin-bottom: 0;">{vip_t4}</p>
+            </div>
+
+            <div style="background-color: #f4f6f7; border: 1px solid #d5dbdb; border-radius: 12px; padding: 30px; margin-top: 40px; margin-bottom: 40px; box-sizing: border-box; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="color: #2c3e50; margin-top: 0; font-size: 22px; margin-bottom: 20px; text-align: center;">✅ Today's VIP Action Plan</h3>
+                <div style="background-color: #fff; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #27ae60;">
+                    <p style="font-size: 17px; line-height: 1.6; color: #333; margin: 0;"><strong>🟢 DO (Immediate Action):</strong><br>{vip_do}</p>
                 </div>
-
-                <h2 style="color: #1a237e; font-size: 26px; margin-bottom: 10px; line-height: 1.3;">🛡️ The Titan's Playbook: Master Mindset</h2>
-                <p style="font-size: 17px; color: #555; margin-bottom: 25px; font-style: italic;">How the top 1% navigate this specific market condition.</p>
-
-                <div style="background-color: #fff8e1; border-left: 6px solid #f57f17; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
-                    <h3 style="color: #f57f17; margin-top: 0; font-size: 20px; margin-bottom: 10px;">1. The Generational Bargain (Fear vs. Greed)</h3>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_t1}</p>
+                <div style="background-color: #fff; padding: 16px; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                    <p style="font-size: 17px; line-height: 1.6; color: #333; margin: 0;"><strong>🔴 DON'T (Critical Mistakes):</strong><br>{vip_dont}</p>
                 </div>
-
-                <div style="background-color: #e8f5e9; border-left: 6px solid #2e7d32; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
-                    <h3 style="color: #2e7d32; margin-top: 0; font-size: 20px; margin-bottom: 10px;">2. The 60/30/10 Seesaw (Asset Allocation)</h3>
-                    {allocation_html}
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; margin-top: 15px; white-space: normal;">{vip_t2}</p>
-                </div>
-
-                <div style="background-color: #e3f2fd; border-left: 6px solid #1565c0; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
-                    <h3 style="color: #1565c0; margin-top: 0; font-size: 20px; margin-bottom: 10px;">3. The Global Shield (US Dollar & Market)</h3>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_t3}</p>
-                </div>
-
-                <div style="background-color: #fce4ec; border-left: 6px solid #c2185b; padding: 20px; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; width: 100%;">
-                    <h3 style="color: #c2185b; margin-top: 0; font-size: 20px; margin-bottom: 10px;">4. Survival Mechanics (Split Buying & Mental Peace)</h3>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;">{vip_t4}</p>
-                </div>
-
-                <div style="background-color: #e8eaf6; border-left: 6px solid #3f51b5; padding: 25px; border-radius: 6px; margin-top: 40px; margin-bottom: 30px; box-sizing: border-box; width: 100%;">
-                    <h3 style="color: #3f51b5; margin-top: 0; font-size: 22px; margin-bottom: 15px;">✅ Today's VIP Action Plan</h3>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 15px; white-space: normal;"><strong>🟢 DO (Immediate Action):</strong> {vip_do}</p>
-                    <p style="font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 0; white-space: normal;"><strong>🔴 DON'T (Critical Mistakes):</strong> {vip_dont}</p>
-                </div>
-
             </div>
             """
             html_content += vip_html
             
         footer_html = f"""
-        <hr>
-        <h2>Today's Warm Insight</h2>
-        <p style="font-size: 18px; line-height: 1.6; color: #333;">{takeaway}</p>
-        <p style="font-size: 18px; line-height: 1.6; color: #333;"><strong>P.S.</strong> {ps}</p>
-        <p style="font-size: 14px; color: #777;"><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
+            <hr style="border: 0; height: 1px; background: #e0e0e0; margin: 30px 0;">
+            <h2 style="font-size: 24px; color: #111; margin-bottom: 12px;">Today's Warm Insight</h2>
+            <p style="font-size: 17px; line-height: 1.7; color: #333;">{takeaway}</p>
+            <p style="font-size: 17px; line-height: 1.7; color: #333; margin-top: 24px; background-color: #f9f9f9; padding: 16px; border-radius: 8px;"><strong>P.S.</strong> {ps}</p>
+            <p style="font-size: 13px; color: #999; margin-top: 30px; text-align: center;"><em>Disclaimer: This article is for informational purposes only. All decisions are your own.</em></p>
+        
+        </div>
         """
         html_content += footer_html
             
