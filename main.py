@@ -16,7 +16,7 @@ from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 프리미엄 디자인 + 하이브리드 AI(1.5 Pro) 봇 🚀")
+print(" 🚀 40년 멘토 + 무적 디자인 + 하이브리드 AI(2.5 Pro) 복구 완료 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -131,13 +131,13 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [구글 API 모델명 완벽 수정] 뒤에 -latest 를 붙여야 서버가 정상 인식합니다!
+        # 🚨 [오류 완벽 복구] 404 에러 박멸! 대표님 말씀대로 2.5 버전으로 다시 장착했습니다.
         if tier == "Royal Premium" or tier == "Premium":
-            model_name = "gemini-1.5-pro-latest"  
-            print(f"      [AI 엔진] 🧠 {tier} 등급: 심층 분석용 Gemini 1.5 Pro 모델 가동 중...")
+            model_name = "gemini-2.5-pro"  
+            print(f"      [AI 엔진] 🧠 {tier} 등급: 심층 분석용 Gemini 2.5 Pro 모델 가동 중...")
         else:
-            model_name = "gemini-1.5-flash-latest"  
-            print(f"      [AI 엔진] ⚡ {tier} 등급: 고속 요약용 Gemini 1.5 Flash 모델 가동 중...")
+            model_name = "gemini-2.5-flash"  
+            print(f"      [AI 엔진] ⚡ {tier} 등급: 고속 요약용 Gemini 2.5 Flash 모델 가동 중...")
         
         vip_xml = ""
         if tier == "Basic":
