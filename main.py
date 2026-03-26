@@ -9,13 +9,14 @@ import base64
 import urllib.parse
 import random
 import re
+import json
 from datetime import datetime
 import feedparser
 from google import genai
 from google.genai import types
 
 print("=======================================")
-print(" 🚀 40년 멘토 + 무적 디자인 + 하이브리드 AI(1.5 Pro) 봇 🚀")
+print(" 🚀 40년 멘토 + 프리미엄 디자인 + 하이브리드 AI(1.5 Pro) 봇 🚀")
 print("=======================================")
 
 # --- [보안 키 점검] ---
@@ -130,12 +131,12 @@ def analyze_with_gemini(news_items, category, tier):
         client = genai.Client(api_key=GEMINI_API_KEY)
         selected_news = "\n".join(news_items)
         
-        # 🚨 [치명적 오류 수정] 구글 서버에 존재하는 정확한 정식 모델명(1.5) 사용
+        # 🚨 [구글 API 모델명 완벽 수정] 뒤에 -latest 를 붙여야 서버가 정상 인식합니다!
         if tier == "Royal Premium" or tier == "Premium":
-            model_name = "gemini-1.5-pro"  
+            model_name = "gemini-1.5-pro-latest"  
             print(f"      [AI 엔진] 🧠 {tier} 등급: 심층 분석용 Gemini 1.5 Pro 모델 가동 중...")
         else:
-            model_name = "gemini-1.5-flash"  
+            model_name = "gemini-1.5-flash-latest"  
             print(f"      [AI 엔진] ⚡ {tier} 등급: 고속 요약용 Gemini 1.5 Flash 모델 가동 중...")
         
         vip_xml = ""
@@ -179,7 +180,7 @@ def analyze_with_gemini(news_items, category, tier):
         custom_excerpt_with_time = f"⏰ {current_time_short} | {custom_excerpt}"
         
         # =====================================================================
-        # 🚨 [가독성 완벽 패치 및 단일 캡슐화]
+        # 🚨 [가독성 완벽 패치 및 단일 캡슐화 (디자인 유지)]
         # =====================================================================
         main_div_style = "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1a252c; width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; word-break: break-word; margin-top: 40px;"
         header_div_style = "border-top: 3px solid #b8974d; border-bottom: 1px solid #e5e7eb; padding: 12px 0; margin-bottom: 30px; box-sizing: border-box; width: 100%;"
@@ -196,7 +197,6 @@ def analyze_with_gemini(news_items, category, tier):
         ps_strong_style = "font-size: 18px; color: #b8974d; margin-right: 5px;"
         ps_p_style = "font-size: 18px; line-height: 1.6; color: #e5e7eb; margin: 0;"
 
-        # 🚨 Ghost가 디자인을 절대 못 건드리게 전체를 묶는 HTML 카드 시작
         html_content = "\n"
         html_content += f"""
         <div style="{main_div_style}">
@@ -364,7 +364,6 @@ def analyze_with_gemini(news_items, category, tier):
         </div>
         """
         html_content += footer_html
-        # 🚨 HTML 카드 종료
         html_content += "\n"
             
         return title, image_prompt, html_content, custom_excerpt_with_time
@@ -427,15 +426,26 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url, cus
         token = generate_ghost_token()
         headers_dict = {'Authorization': 'Ghost ' + token, 'Content-Type': 'application/json'}
         
+        mobiledoc_data = {
+            "version": "0.3.1",
+            "markups": [],
+            "atoms": [],
+            "cards": [
+                ["html", {"html": html_content}]
+            ],
+            "sections": [
+                [10, 0]
+            ]
+        }
+        
         post_dict = {
             "title": title, 
-            "html": html_content, 
+            "mobiledoc": json.dumps(mobiledoc_data), 
             "status": "published",
             "visibility": "public", 
             "tags": [{"name": category}, {"name": tier}]
         }
         
-        # 🚨 요약문 길이 초과 방어 로직 추가 (Ghost API 에러 방지)
         if custom_excerpt:
             if len(custom_excerpt) > 290:
                 custom_excerpt = custom_excerpt[:290] + "..."
@@ -443,7 +453,7 @@ def publish_to_ghost(title, html_content, category, tier, feature_image_url, cus
             
         if feature_image_url: post_dict["feature_image"] = feature_image_url
             
-        url = str(GHOST_API_URL) + "/ghost/api/admin/posts/?source=html"
+        url = str(GHOST_API_URL) + "/ghost/api/admin/posts/"
         response = requests.post(url, json={"posts": [post_dict]}, headers=headers_dict)
         
         if response.status_code in [200, 201]: print("🎉 [성공] 자동 발행 완료!")
