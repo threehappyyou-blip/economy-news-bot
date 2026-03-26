@@ -474,8 +474,8 @@ def build_premium(author, tf, raw):
     <div style="background:#fef2f2;border:1px solid #ef4444;padding:20px;border-radius:6px;margin-bottom:35px;">
       <p style="font-size:17px;line-height:1.6;color:#991b1b;margin:0;"><strong style="color:#991b1b;">🔴 DON'T:</strong> <span style="color:#991b1b;">{xtag(raw,'PRO_DONT')}</span></p>
     </div>
-    {_upgrade('Want institutional analysis & The Titan\'s Playbook? <strong>Upgrade to VIP.</strong>')}
-    {_ftr(xtag(raw,'TAKEAWAY'), xtag(raw,'PS'))}"""
+    {_upgrade("Want institutional analysis and The Titans Playbook? <strong>Upgrade to VIP.</strong>")}
+    {_ftr(xtag(raw,"TAKEAWAY"), xtag(raw,"PS"))}"""
 
 
 # ✅ v4: VIP — 인라인 SVG 시각 요소 포함
