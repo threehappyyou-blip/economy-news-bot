@@ -135,6 +135,8 @@ PROMPT_BASIC = """
 You are [PERSONA] writing for beginners on 'Warm Insight' ([CATEGORY]).
 English only. Simple. Max 400 words. No jargon.
 
+ACCURACY: Only discuss facts from the news below. Do NOT invent events or names not in the articles.
+
 OUTPUT (XML):
 <SEO_KEYWORD>A natural 3-6 word long-tail search phrase someone would Google about this topic</SEO_KEYWORD>
 <TITLE>Title that naturally includes the SEO keyword near the front</TITLE>
@@ -154,6 +156,8 @@ News: [NEWS_ITEMS]
 PROMPT_PREMIUM = """
 You are [PERSONA] writing for intermediate investors on 'Warm Insight' ([CATEGORY]).
 English only. 600-800 words. Behavioral economics depth.
+
+ACCURACY: Only analyze facts from the news below. Do NOT fabricate events, names, or specific data points not mentioned in the articles.
 
 OUTPUT (XML):
 <SEO_KEYWORD>A natural 4-7 word long-tail keyword phrase for this analysis</SEO_KEYWORD>
@@ -178,6 +182,12 @@ VIP_P1 = """
 You are [PERSONA] writing INSTITUTIONAL-GRADE analysis for VIP subscribers of 'Warm Insight' ([CATEGORY]).
 Every paragraph must justify VIP pricing with non-obvious insights.
 
+CRITICAL ACCURACY RULES:
+- ONLY analyze facts explicitly stated in the news articles below. Do NOT invent events, names, assassinations, or incidents.
+- Do NOT fabricate specific stock prices, RSI numbers, or exact statistics. Use directional language ("RSI is elevated", "trading near support") instead of fake precise numbers.
+- If the news does not mention a specific event, do NOT create one. Analyze what IS there.
+- All technical analysis should use general market conditions, not invented data points.
+
 WRITE real, substantive content in each tag (NOT instructions — write actual analysis):
 
 <SEO_KEYWORD>A highly specific 4-8 word long-tail keyword that a sophisticated investor would search for, related to this specific news</SEO_KEYWORD>
@@ -188,7 +198,7 @@ WRITE real, substantive content in each tag (NOT instructions — write actual a
 <TIKTOK>Gen-Z viral analogy</TIKTOK>
 <HEADLINE>Alpha-generating headline</HEADLINE>
 <DEPTH><strong>🧐 WHY (Macro):</strong> 5+ sentences of deep macro analysis.<br><br><strong>🐑 HERD:</strong> 4+ sentences on crowd bias.<br><br><strong>🦅 CONTRARIAN:</strong> 5+ sentences on 2nd/3rd order effects.</DEPTH>
-<FLOW>6+ step emoji chain</FLOW>
+<FLOW>6+ step chain. CRITICAL: Each step MUST have a text label WITH an emoji, like: "Rising Oil Costs 🛢️ ➡️ Squeezed Margins 📉 ➡️ Consumer Pain 😟 ➡️ Fed Dilemma 🏦". NEVER use emojis alone without text.</FLOW>
 <GRAPH_DATA>Create 3 metrics for [CATEGORY]. [CAT_HINT]. Each score must be DIFFERENT (not all the same). Realistic range 25-90. Format: Name1|Score1|Name2|Score2|Name3|Score3. Use pipe only.</GRAPH_DATA>
 <VIP_RADAR_1>Specific sector — BULLISH or BEARISH — 1 sentence reason</VIP_RADAR_1>
 <VIP_RADAR_2>Different sector — BULLISH or BEARISH — 1 sentence</VIP_RADAR_2>
@@ -203,6 +213,12 @@ NEWS: [NEWS_ITEMS]
 
 VIP_P2 = """
 You are [PERSONA]. You analyzed [CATEGORY] news for VIP subscribers.
+
+CRITICAL ACCURACY RULES:
+- ONLY reference facts from the news and your Part 1 analysis. Do NOT invent events or fabricate data.
+- When recommending ETFs or stocks, use well-known, real tickers (SPY, XLE, IEF, GLD, etc).
+- For price levels, use general language ("if it pulls back 5%") rather than fabricated exact prices.
+- Do NOT invent assassinations, incidents, or events that were not in the original news.
 
 YOUR PART 1 ANALYSIS:
 ---
@@ -668,9 +684,9 @@ def build_vip(author, tf, raw, cat):
     return (
         f'<div style="{M}">{_hdr(author, tf, "VIP EXCLUSIVE")}'
 
-        # 카테고리 배너
-        f'<div style="background:{accent};padding:12px 20px;border-radius:8px;margin-bottom:25px;">'
-        f'<p style="margin:0;font-size:18px;color:#ffffff;font-weight:bold;letter-spacing:1px;">{icon} {label}</p></div>'
+        # 카테고리 태그 (subtle pill, not full-width banner)
+        f'<div style="margin-bottom:25px;">'
+        f'<span style="display:inline-block;background:#f8fafc;border:2px solid {accent};color:{accent};padding:6px 16px;border-radius:20px;font-size:16px;font-weight:bold;letter-spacing:1px;">{icon} {label}</span></div>'
 
         f'<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:18px;">Executive Summary</h2>'
         f'<p style="{F}margin-bottom:35px;">{summary}</p>'
