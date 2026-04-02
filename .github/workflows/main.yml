@@ -2,8 +2,8 @@ name: 1 Hour Auto Ghost Poster
 
 on:
   schedule:
-    # 🚨 맨 앞에 0을 꼭 넣어야 '정각'에 실행됩니다. (0분, 6시간마다)
-    - cron: '0 */23 * * *'
+    # 매시 정각에 실행 (1시간마다)
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
