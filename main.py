@@ -250,13 +250,16 @@ EDITOR_PROMPT = (
 )
 
 # ═══════════════════════════════════════════════
-# DEDUP + EDITOR + ROTATION
+# GHOST TOKEN
 # ═══════════════════════════════════════════════
 def gtoken():
     kid, sec = str(GHOST_ADMIN_API_KEY).split(":")
     iat = int(datetime.now().timestamp())
     return jwt.encode({"iat":iat,"exp":iat+300,"aud":"/admin/"},bytes.fromhex(sec),algorithm="HS256",headers={"alg":"HS256","typ":"JWT","kid":kid})
 
+# ═══════════════════════════════════════════════
+# DEDUP + EDITOR + ROTATION
+# ═══════════════════════════════════════════════
 def get_recent_titles():
     try:
         r = requests.get(GHOST_API_URL+"/ghost/api/admin/posts/?limit=50&fields=title&order=published_at%20desc",headers={"Authorization":"Ghost "+gtoken()},timeout=30)
@@ -269,17 +272,22 @@ def get_recent_titles():
     return []
 
 def is_duplicate(new_title, recent):
-    if not new_title or not recent: return False
+    if not new_title or not recent:
+        return False
     labels = ["[🌱 free]","[💎 pro]","[👑 vip]"]
     cn = new_title.lower()
-    for lb in labels: cn = cn.replace(lb,"").strip()
+    for lb in labels:
+        cn = cn.replace(lb,"").strip()
     words_new = set(cn.split())
-    if len(words_new) < 4: return False
+    if len(words_new) < 4:
+        return False
     for rt in recent:
         cr = rt
-        for lb in labels: cr = cr.replace(lb,"").strip()
+        for lb in labels:
+            cr = cr.replace(lb,"").strip()
         words_rt = set(cr.split())
-        if len(words_rt) < 4: continue
+        if len(words_rt) < 4:
+            continue
         overlap = len(words_rt & words_new)
         if overlap / max(len(words_new),1) > 0.7:
             print("  DEDUP: skip "+str(int(overlap/max(len(words_new),1)*100))+"%")
@@ -292,7 +300,8 @@ def editor_review(client, news_str, html):
         text = re.sub(r"\s+"," ",text)[:3000]
         p = EDITOR_PROMPT.replace("[NEWS]",news_str[:2000]).replace("[CONTENT]",text)
         r = call_gem(client,"gemini-2.5-flash",p,retries=1)
-        if not r: return True,"N/A"
+        if not r:
+            return True,"N/A"
         v = xtag(r,"VERDICT").upper()
         i = xtag(r,"ISSUES")
         if "FAIL" in v:
@@ -324,22 +333,31 @@ def get_news(urls, count=20):
         try:
             for e in feedparser.parse(url).entries:
                 t = getattr(e,"title","")
-                if t in seen: continue
+                if t in seen:
+                    continue
                 seen.add(t)
                 news.append("- "+t+": "+getattr(e,"summary",""))
-                if len(news)>=count: break
-        except Exception: continue
+                if len(news)>=count:
+                    break
+        except Exception:
+            continue
     return news[:count]
 
 def parse_graph(raw, cat):
-    if not raw: return _fbg(cat)
+    if not raw:
+        return _fbg(cat)
     parts = [p.strip() for p in raw.split("|") if p.strip()]
-    if len(parts)<6: return _fbg(cat)
+    if len(parts)<6:
+        return _fbg(cat)
     try:
-        v1,v2,v3 = int(re.sub(r"[^0-9]","",parts[1])),int(re.sub(r"[^0-9]","",parts[3])),int(re.sub(r"[^0-9]","",parts[5]))
-        if v1==v2==v3: return _fbg(cat)
+        v1 = int(re.sub(r"[^0-9]","",parts[1]))
+        v2 = int(re.sub(r"[^0-9]","",parts[3]))
+        v3 = int(re.sub(r"[^0-9]","",parts[5]))
+        if v1==v2==v3:
+            return _fbg(cat)
         return parts[0],max(10,min(95,v1)),parts[2],max(10,min(95,v2)),parts[4],max(10,min(95,v3))
-    except Exception: return _fbg(cat)
+    except Exception:
+        return _fbg(cat)
 
 def _fbg(cat):
     pool = CAT_METRICS.get(cat,CAT_METRICS["Economy"])["pool"]
@@ -347,7 +365,8 @@ def _fbg(cat):
     return lb[0],random.randint(55,88),lb[1],random.randint(30,65),lb[2],random.randint(40,78)
 
 def is_echo(text):
-    if not text or len(text)<80: return True
+    if not text or len(text)<80:
+        return True
     sigs = ["6+ sentences","5+ sentences","At least 5","Write a detailed","Name ETFs","which ETF","trigger price","Write exactly","explain WHY","Write real","Write ALL","3-4 sentences"]
     return sum(1 for s in sigs if s.lower() in text.lower())>=2
 
@@ -355,7 +374,8 @@ def ok_tag(raw, tag):
     v = xtag(raw, tag)
     return "" if not v or is_echo(v) else v
 
-def sanitize(h): return re.sub(r"\s+"," ",h.replace("\n"," ").replace("\r",""))
+def sanitize(h):
+    return re.sub(r"\s+"," ",h.replace("\n"," ").replace("\r",""))
 
 def make_slug(kw, title):
     t = kw if kw else title
@@ -368,8 +388,10 @@ def make_slug(kw, title):
 def upload_img(ib):
     try:
         r = requests.post(GHOST_API_URL+"/ghost/api/admin/images/upload/",headers={"Authorization":"Ghost "+gtoken()},files={"file":("t.jpg",ib,"image/jpeg"),"purpose":(None,"image")},timeout=30)
-        if r.status_code in (200,201): return r.json()["images"][0]["url"]
-    except Exception as e: print("  img: "+str(e))
+        if r.status_code in (200,201):
+            return r.json()["images"][0]["url"]
+    except Exception as e:
+        print("  img: "+str(e))
     return None
 
 def publish(title,html,cat,tier,iu,exc,kw="",slug=""):
@@ -377,38 +399,53 @@ def publish(title,html,cat,tier,iu,exc,kw="",slug=""):
     try:
         md = json.dumps({"version":"0.3.1","markups":[],"atoms":[],"cards":[["html",{"html":html}]],"sections":[[10,0]]})
         p = {"title":title,"mobiledoc":md,"status":"published","visibility":TIER_VIS.get(tier,"public"),"tags":[{"name":cat},{"name":tier}]}
-        if slug: p["slug"]=slug
+        if slug:
+            p["slug"]=slug
         if kw:
             mt = title+" | Warm Insight "+cat
-            p["meta_title"]=mt[:300]; p["meta_description"]=(exc[:140]+" Expert "+cat.lower()+" analysis.")[:500]
-            p["og_title"]=mt[:300]; p["og_description"]=(exc[:140])[:300]
-        if exc: p["custom_excerpt"]=exc[:290]
+            p["meta_title"]=mt[:300]
+            p["meta_description"]=(exc[:140]+" Expert "+cat.lower()+" analysis.")[:500]
+            p["og_title"]=mt[:300]
+            p["og_description"]=(exc[:140])[:300]
+        if exc:
+            p["custom_excerpt"]=exc[:290]
         if iu:
             p["feature_image"]=iu
-            if kw: p["feature_image_alt"]=kw+" - Warm Insight "+cat
+            if kw:
+                p["feature_image_alt"]=kw+" - Warm Insight "+cat
         r = requests.post(GHOST_API_URL+"/ghost/api/admin/posts/",json={"posts":[p]},headers={"Authorization":"Ghost "+gtoken(),"Content-Type":"application/json"},timeout=60)
-        if r.status_code in (200,201): print("  OK!")
-        else: print("  FAIL "+str(r.status_code)+": "+r.text[:200])
-    except Exception as e: print("  ERR: "+str(e)); traceback.print_exc()
+        if r.status_code in (200,201):
+            print("  OK!")
+        else:
+            print("  FAIL "+str(r.status_code)+": "+r.text[:200])
+    except Exception as e:
+        print("  ERR: "+str(e))
+        traceback.print_exc()
 
 # ═══════════════════════════════════════════════
 # THUMBNAIL
 # ═══════════════════════════════════════════════
 def make_thumb(ip, tier, cat):
-    if tier=="Royal Premium": ip = VIP_THUMB.get(cat,ip)
+    if tier=="Royal Premium":
+        ip = VIP_THUMB.get(cat,ip)
     tries = 3 if tier=="Royal Premium" else 1
     for a in range(1,tries+1):
         try:
             c = genai.Client(api_key=GEMINI_API_KEY)
             r = c.models.generate_images(model="imagen-3.0-generate-001",prompt=ip,config=types.GenerateImagesConfig(number_of_images=1,aspect_ratio="16:9",output_mime_type="image/jpeg"))
-            if r.generated_images: print("  Imagen("+str(a)+")"); return r.generated_images[0].image.image_bytes
+            if r.generated_images:
+                print("  Imagen("+str(a)+")")
+                return r.generated_images[0].image.image_bytes
         except Exception as e:
             print("  Imagen("+str(a)+"): "+str(e))
-            if a<tries: time.sleep(5)
+            if a<tries:
+                time.sleep(5)
     try:
         r = requests.get("https://picsum.photos/seed/"+str(random.randint(1,9999))+"/1280/720",timeout=10)
-        if r.status_code==200: return r.content
-    except Exception: pass
+        if r.status_code==200:
+            return r.content
+    except Exception:
+        pass
     return None
 
 # ═══════════════════════════════════════════════
@@ -421,14 +458,16 @@ def call_gem(client,model,prompt,retries=2):
             return str(r.text)
         except Exception as e:
             print("    Gem("+model+")"+str(i)+": "+str(e))
-            if i<retries: time.sleep(10*i)
+            if i<retries:
+                time.sleep(10*i)
     return None
 
 def gem_fb(client,tier,prompt):
     for m in MODEL_PRI.get(tier,["gemini-2.5-flash"]):
         print("    [AI] "+m)
         r = call_gem(client,m,prompt)
-        if r: return r,m
+        if r:
+            return r,m
     return None,None
 
 # ═══════════════════════════════════════════════
@@ -447,12 +486,14 @@ def analyze(news_items, cat, tier):
     if tier=="Basic":
         prompt = PROMPT_BASIC.replace("[CATEGORY]",cat).replace("[PERSONA]",persona).replace("[ACCURACY]",acc).replace("[NEWS_ITEMS]",ns)
         raw,_ = gem_fb(client,tier,prompt)
-        if not raw: return None,None,None,None,None,None
+        if not raw:
+            return None,None,None,None,None,None
         html = build_basic(author,tf,raw)
     elif tier=="Premium":
         prompt = PROMPT_PREMIUM.replace("[CATEGORY]",cat).replace("[PERSONA]",persona).replace("[ACCURACY]",acc).replace("[NEWS_ITEMS]",ns)
         raw,_ = gem_fb(client,tier,prompt)
-        if not raw: return None,None,None,None,None,None
+        if not raw:
+            return None,None,None,None,None,None
         html = build_premium(author,tf,raw)
     else:
         hint = CAT_METRICS.get(cat,CAT_METRICS["Economy"])["hint"]
@@ -461,25 +502,33 @@ def analyze(news_items, cat, tier):
         al_str = str(al["s"])+"% stocks, "+str(al["b"])+"% safe, "+str(al["c"])+"% cash ("+al["note"]+")"
         p1 = VIP_P1.replace("[CATEGORY]",cat).replace("[PERSONA]",persona).replace("[ACCURACY]",acc).replace("[CAT_HINT]",hint).replace("[CAT_THUMB]",thumb).replace("[NEWS_ITEMS]",ns)
         raw1,_ = gem_fb(client,tier,p1)
-        if not raw1: return None,None,None,None,None,None
+        if not raw1:
+            return None,None,None,None,None,None
         if not xtag(raw1,"VIP_C1") or is_echo(xtag(raw1,"VIP_C1")):
-            print("    P1 retry"); time.sleep(15)
+            print("    P1 retry")
+            time.sleep(15)
             r1r,_ = gem_fb(client,tier,p1)
-            if r1r and xtag(r1r,"VIP_C1") and not is_echo(xtag(r1r,"VIP_C1")): raw1=r1r
+            if r1r and xtag(r1r,"VIP_C1") and not is_echo(xtag(r1r,"VIP_C1")):
+                raw1=r1r
         ctx = "Title: "+xtag(raw1,"TITLE")+"\nHeadline: "+xtag(raw1,"HEADLINE")+"\nSummary: "+xtag(raw1,"SUMMARY")+"\nDepth: "+xtag(raw1,"DEPTH")[:600]
         ctx_short = xtag(raw1,"HEADLINE")+". "+xtag(raw1,"SUMMARY")
-        print("    Part 2..."); time.sleep(10)
+        print("    Part 2...")
+        time.sleep(10)
         p2 = VIP_P2.replace("[CATEGORY]",cat).replace("[PERSONA]",persona).replace("[ACCURACY]",acc).replace("[CTX]",ctx).replace("[ALLOC_STR]",al_str).replace("[NEWS_ITEMS]",ns)
         raw2,_ = gem_fb(client,tier,p2)
         for retry in range(2):
-            if raw2 and ok_tag(raw2,"VIP_T1"): break
-            print("    P2 retry "+str(retry+1)); time.sleep(15)
+            if raw2 and ok_tag(raw2,"VIP_T1"):
+                break
+            print("    P2 retry "+str(retry+1))
+            time.sleep(15)
             raw2,_ = gem_fb(client,tier,p2)
         if not raw2 or not ok_tag(raw2,"VIP_T1"):
-            print("    P2 FAIL -> Fallback"); time.sleep(10)
+            print("    P2 FAIL -> Fallback")
+            time.sleep(10)
             fb = VIP_FB.replace("[CATEGORY]",cat).replace("[PERSONA]",persona).replace("[ACCURACY]",acc).replace("[CTX_SHORT]",ctx_short[:400]).replace("[ALLOC_STR]",al_str).replace("[NEWS_ITEMS]",ns)
             raw2,_ = gem_fb(client,tier,fb)
-            if not raw2: raw2=""
+            if not raw2:
+                raw2=""
         raw = raw1+"\n"+raw2
         html = build_vip(author,tf,raw,cat)
 
@@ -507,8 +556,10 @@ def _hdr(author,tf,badge=""):
             '<p style="margin:0;font-size:16px;color:#4b5563;"><strong style="color:#1a252c;">'+author+'</strong> | '+tf+b+'</p></div>')
 
 def _ftr(tw,ps):
-    if not tw or is_echo(tw): tw="Stay disciplined, stay diversified, and let time compound in your favor."
-    if not ps or is_echo(ps): ps="In 40 years of watching markets, the disciplined investor always wins."
+    if not tw or is_echo(tw):
+        tw="Stay disciplined, stay diversified, and let time compound in your favor."
+    if not ps or is_echo(ps):
+        ps="In 40 years of watching markets, the disciplined investor always wins."
     share = ('<div style="background:#f8fafc;border:2px solid #e5e7eb;border-radius:10px;padding:28px;margin:40px 0;text-align:center;">'
              '<p style="font-size:22px;font-weight:bold;color:#1a252c;margin:0 0 8px;">Found this useful? Share the insight.</p>'
              '<p style="font-size:18px;color:#6b7280;margin:0 0 15px;">Forward this email to a colleague who wants smarter market analysis.</p>'
@@ -544,16 +595,19 @@ def _impact(imp):
     return ('<span style="display:inline-block;background:'+bg+';color:'+c+';border:2px solid '+c+';padding:4px 14px;border-radius:20px;font-size:14px;font-weight:bold;margin-bottom:20px;">IMPACT: '+imp+'</span>') if imp else ""
 
 def _keynum(kn,knc,color="#1e40af"):
-    if not kn or not knc: return ""
+    if not kn or not knc:
+        return ""
     return ('<div style="background:#f0f9ff;border:2px solid '+color+';border-radius:12px;padding:28px;margin-bottom:30px;text-align:center;">'
             '<div style="font-size:48px;font-weight:800;color:'+color+';margin-bottom:8px;">'+kn+'</div>'
             '<p style="font-size:18px;color:#374151;margin:0;">'+knc+'</p></div>')
 
 def _qhits(raw):
     qh = xtag(raw,"QUICK_HITS")
-    if not qh or is_echo(qh): return ""
+    if not qh or is_echo(qh):
+        return ""
     lines = [l.strip() for l in qh.strip().split("\n") if l.strip()]
-    if not lines: return ""
+    if not lines:
+        return ""
     emos = ["⚡","🔥","📌"]
     items = ""
     for i,l in enumerate(lines[:3]):
@@ -563,26 +617,32 @@ def _qhits(raw):
 
 def _msnap(raw):
     ms = xtag(raw,"MARKET_SNAP")
-    if not ms or is_echo(ms): return ""
+    if not ms or is_echo(ms):
+        return ""
     lines = [l.strip() for l in ms.strip().split("\n") if l.strip() and "|" in l]
-    if len(lines)<2: return ""
+    if len(lines)<2:
+        return ""
     icons = {"UP":("▲","#059669"),"DOWN":("▼","#dc2626"),"FLAT":("—","#6b7280")}
     cells = ""
     for line in lines[:4]:
         parts = [p.strip() for p in line.split("|")]
-        if len(parts)<2: continue
-        name,direction = parts[0],parts[1].upper().strip()
+        if len(parts)<2:
+            continue
+        name = parts[0]
+        direction = parts[1].upper().strip()
         reason = parts[2][:40] if len(parts)>2 else ""
         arrow,color = icons.get(direction,("—","#6b7280"))
         cells += ('<div style="flex:1;min-width:130px;text-align:center;padding:12px 8px;">'
                   '<div style="font-size:14px;color:#94a3b8;font-weight:600;margin-bottom:4px;">'+name+'</div>'
                   '<div style="font-size:22px;font-weight:800;color:'+color+';">'+arrow+" "+direction+'</div>'
                   '<div style="font-size:12px;color:#64748b;margin-top:2px;">'+reason+'</div></div>')
-    if not cells: return ""
+    if not cells:
+        return ""
     return '<div style="background:#1e293b;border-radius:10px;padding:12px;margin-bottom:30px;overflow-x:auto;"><div style="display:flex;flex-wrap:wrap;justify-content:space-around;">'+cells+'</div></div>'
 
 def _compare(cb,cbear,bt="Bull Case",brt="Bear Case"):
-    if not cb and not cbear: return ""
+    if not cb and not cbear:
+        return ""
     bull = ('<div style="flex:1;min-width:220px;background:#ecfdf5;border:2px solid #10b981;border-radius:10px;padding:22px;">'
             '<h4 style="margin-top:0;font-size:20px;color:#065f46;">🐂 '+bt+'</h4>'
             '<p style="font-size:18px;line-height:1.7;color:#064e3b;margin:0;">'+cb+'</p></div>') if cb else ""
@@ -595,8 +655,13 @@ def _compare(cb,cbear,bt="Bull Case",brt="Bear Case"):
 # BUILD BASIC
 # ═══════════════════════════════════════════════
 def build_basic(a,tf,r):
-    dw = xtag(r,"DEPTH_WHAT") or xtag(r,"DEPTH"); dy = xtag(r,"DEPTH_WHY"); du = xtag(r,"DEPTH_YOU")
-    w = xtag(r,"WINNER"); l = xtag(r,"LOSER"); bl = xtag(r,"BOTTOM_LINE"); teaser = xtag(r,"TEASER")
+    dw = xtag(r,"DEPTH_WHAT") or xtag(r,"DEPTH")
+    dy = xtag(r,"DEPTH_WHY")
+    du = xtag(r,"DEPTH_YOU")
+    w = xtag(r,"WINNER")
+    l = xtag(r,"LOSER")
+    bl = xtag(r,"BOTTOM_LINE")
+    teaser = xtag(r,"TEASER")
     wl = ""
     if w or l:
         wc = ('<div style="flex:1;min-width:200px;background:#ecfdf5;border:2px solid #10b981;border-radius:10px;padding:20px;"><p style="font-size:20px;font-weight:bold;color:#065f46;margin:0 0 8px;">📈 Winner</p><p style="font-size:18px;color:#064e3b;margin:0;">'+w+'</p></div>') if w else ""
@@ -605,8 +670,10 @@ def build_basic(a,tf,r):
     bl_h = ('<div style="background:#1e293b;border-radius:10px;padding:22px;margin-bottom:30px;"><p style="font-size:20px;color:#fbbf24;font-weight:bold;margin:0;">'+bl+'</p></div>') if bl else ""
     ts_h = ('<div style="background:linear-gradient(135deg,#1e293b,#334155);border-radius:10px;padding:24px;margin-bottom:30px;"><p style="font-size:16px;color:#94a3b8;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">🔒 What VIP Learned Today</p><p style="font-size:18px;color:#e2e8f0;margin:0;font-style:italic;">'+teaser+'</p></div>') if teaser else ""
     dc = ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #3b82f6;padding:24px;border-radius:8px;margin-bottom:15px;"><h4 style="margin-top:0;font-size:20px;color:#1e40af;margin-bottom:10px;">📰 What Happened</h4><p style="'+F+'margin:0;">'+dw+'</p></div>')
-    if dy: dc += ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:24px;border-radius:8px;margin-bottom:15px;"><h4 style="margin-top:0;font-size:20px;color:#b45309;margin-bottom:10px;">🔍 Why It Matters</h4><p style="'+F+'margin:0;">'+dy+'</p></div>')
-    if du: dc += ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:24px;border-radius:8px;margin-bottom:30px;"><h4 style="margin-top:0;font-size:20px;color:#059669;margin-bottom:10px;">💡 For You</h4><p style="'+F+'margin:0;">'+du+'</p></div>')
+    if dy:
+        dc += ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:24px;border-radius:8px;margin-bottom:15px;"><h4 style="margin-top:0;font-size:20px;color:#b45309;margin-bottom:10px;">🔍 Why It Matters</h4><p style="'+F+'margin:0;">'+dy+'</p></div>')
+    if du:
+        dc += ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:24px;border-radius:8px;margin-bottom:30px;"><h4 style="margin-top:0;font-size:20px;color:#059669;margin-bottom:10px;">💡 For You</h4><p style="'+F+'margin:0;">'+du+'</p></div>')
     return ('<div style="'+MAIN+'">'+_hdr(a,tf)+_impact(xtag(r,"IMPACT"))+_keynum(xtag(r,"KEY_NUMBER"),xtag(r,"KEY_NUMBER_CONTEXT"))
             +'<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:18px;">What Happened</h2>'
             +'<p style="'+F+'margin-bottom:30px;">'+xtag(r,"SUMMARY")+'</p>'
@@ -650,9 +717,11 @@ def build_premium(a,tf,r):
 # BUILD VIP
 # ═══════════════════════════════════════════════
 def build_vip(a,tf,raw,cat):
-    theme = CAT_THEME.get(cat,CAT_THEME["Economy"]); accent = theme["accent"]
+    theme = CAT_THEME.get(cat,CAT_THEME["Economy"])
+    accent = theme["accent"]
     al = CAT_ALLOC.get(cat,CAT_ALLOC["Economy"])
-    l1,v1,l2,v2,l3,v3 = parse_graph(xtag(raw,"GRAPH_DATA"),cat); COL=[accent,"#f59e0b","#10b981"]
+    l1,v1,l2,v2,l3,v3 = parse_graph(xtag(raw,"GRAPH_DATA"),cat)
+    COL=[accent,"#f59e0b","#10b981"]
     # Sentiment
     sent_h = ""
     try:
@@ -674,9 +743,11 @@ def build_vip(a,tf,raw,cat):
                           '<span style="font-size:14px;color:#dc2626;font-weight:600;">Fear</span>'
                           '<span style="font-size:20px;color:'+sc+';font-weight:800;">'+str(sv)+' - '+sl+'</span>'
                           '<span style="font-size:14px;color:#059669;font-weight:600;">Greed</span></div></div>')
-    except Exception: pass
+    except Exception:
+        pass
     # Conviction
-    conv = xtag(raw,"CONVICTION").upper().strip(); conv_h=""
+    conv = xtag(raw,"CONVICTION").upper().strip()
+    conv_h=""
     if conv:
         cc = {"HIGH":("#065f46","#ecfdf5","🟢"),"MEDIUM":("#92400e","#fffbeb","🟡"),"LOW":("#991b1b","#fef2f2","🔴")}
         c2,bg2,ci = cc.get(conv,("#6b7280","#f3f4f6","⚪"))
@@ -691,7 +762,11 @@ def build_vip(a,tf,raw,cat):
                 '<div style="width:100%;background:#e5e7eb;border-radius:8px;height:16px;overflow:hidden;">'
                 '<div style="width:'+str(val)+'%;background:'+c+';height:100%;border-radius:8px;"></div></div></div>')
     # Pie
-    s,b,cp = al["s"],al["b"],al["c"]; circ=565.49; sd=circ*s/100; bd=circ*b/100; cd=circ*cp/100
+    s,b,cp = al["s"],al["b"],al["c"]
+    circ=565.49
+    sd=circ*s/100
+    bd=circ*b/100
+    cd=circ*cp/100
     pie = ('<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;">'
            '<circle cx="100" cy="100" r="90" fill="none" stroke="'+accent+'" stroke-width="30" stroke-dasharray="'+("%.1f"%sd)+' '+("%.1f"%circ)+'" stroke-dashoffset="0"/>'
            '<circle cx="100" cy="100" r="90" fill="none" stroke="#64748b" stroke-width="30" stroke-dasharray="'+("%.1f"%bd)+' '+("%.1f"%circ)+'" stroke-dashoffset="-'+("%.1f"%sd)+'"/>'
@@ -707,7 +782,8 @@ def build_vip(a,tf,raw,cat):
     rr=""
     for i in range(1,5):
         v = ok_tag(raw,"VIP_RADAR_"+str(i))
-        if not v: continue
+        if not v:
+            continue
         bull = "bullish" in v.lower()
         bg_r,tc,ic = ("#ecfdf5","#065f46","🟢 BULL") if bull else ("#fef2f2","#991b1b","🔴 BEAR")
         rr += ('<tr><td style="padding:14px;border-bottom:1px solid #e5e7eb;font-size:18px;color:#374151;">'+v+'</td>'
@@ -715,7 +791,7 @@ def build_vip(a,tf,raw,cat):
     radar = ('<div style="background:#fff;border:2px solid '+accent+';border-radius:8px;padding:25px;margin-bottom:35px;">'
              '<h3 style="margin-top:0;color:'+accent+';font-size:22px;margin-bottom:18px;">🎯 Sector Radar</h3>'
              '<table style="width:100%;border-collapse:collapse;">'+rr+'</table></div>') if rr else ""
-    # Mcard
+    # Metric cards
     def mc(lb,val,c):
         return ('<div style="flex:1;min-width:200px;background:#f8fafc;border:2px solid '+c+';border-radius:10px;padding:22px;text-align:center;">'
                 '<div style="font-size:42px;font-weight:800;color:'+c+';margin-bottom:5px;">'+str(val)+'%</div>'
@@ -725,18 +801,22 @@ def build_vip(a,tf,raw,cat):
     t1,t2,t3,t4 = ok_tag(raw,"VIP_T1"),ok_tag(raw,"VIP_T2"),ok_tag(raw,"VIP_T3"),ok_tag(raw,"VIP_T4")
     vdo,vdont = ok_tag(raw,"VIP_DO"),ok_tag(raw,"VIP_DONT")
     tw,ps = ok_tag(raw,"TAKEAWAY"),ok_tag(raw,"PS")
-    # Macro
+    # Macro with sub-labels
     macro=""
     if c1 or c2 or c3:
         pp=""
-        if c1: pp += '<p style="font-size:16px;color:'+accent+';font-weight:bold;margin:0 0 8px;text-transform:uppercase;">Technical Signals</p><p style="'+F+'margin-bottom:22px;">'+c1+'</p>'
-        if c2: pp += '<div style="border-top:1px solid #e5e7eb;margin:8px 0 18px;"></div><p style="font-size:16px;color:'+accent+';font-weight:bold;margin:0 0 8px;text-transform:uppercase;">Macro Flows</p><p style="'+F+'margin-bottom:22px;">'+c2+'</p>'
-        if c3: pp += '<div style="border-top:1px solid #e5e7eb;margin:8px 0 18px;"></div><p style="font-size:16px;color:'+accent+';font-weight:bold;margin:0 0 8px;text-transform:uppercase;">Smart Money</p><p style="'+F+'margin-bottom:0;">'+c3+'</p>'
+        if c1:
+            pp += '<p style="font-size:16px;color:'+accent+';font-weight:bold;margin:0 0 8px;text-transform:uppercase;">Technical Signals</p><p style="'+F+'margin-bottom:22px;">'+c1+'</p>'
+        if c2:
+            pp += '<div style="border-top:1px solid #e5e7eb;margin:8px 0 18px;"></div><p style="font-size:16px;color:'+accent+';font-weight:bold;margin:0 0 8px;text-transform:uppercase;">Macro Flows</p><p style="'+F+'margin-bottom:22px;">'+c2+'</p>'
+        if c3:
+            pp += '<div style="border-top:1px solid #e5e7eb;margin:8px 0 18px;"></div><p style="font-size:16px;color:'+accent+';font-weight:bold;margin:0 0 8px;text-transform:uppercase;">Smart Money</p><p style="'+F+'margin-bottom:0;">'+c3+'</p>'
         macro = ('<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:25px;border-bottom:3px solid '+accent+';padding-bottom:12px;display:inline-block;">VIP: Macro &amp; Flow Analysis</h2>'
                  '<div style="background:#fff;border:1px solid #e5e7eb;border-left:5px solid '+accent+';padding:28px;border-radius:8px;margin-bottom:40px;">'+pp+'</div>')
     # Playbook
     def pb(n,title,body,extra=""):
-        if not body: return ""
+        if not body:
+            return ""
         mt = "margin-top:22px;" if extra else ""
         return ('<div style="background:#f8fafc;border:1px solid #e5e7eb;border-left:4px solid '+accent+';padding:28px;border-radius:8px;margin-bottom:25px;">'
                 '<h3 style="color:#1a252c;margin-top:0;font-size:24px;margin-bottom:18px;">'+str(n)+'. '+title+'</h3>'+extra
@@ -784,43 +864,64 @@ def build_vip(a,tf,raw,cat):
             +macro+pbk+conv_h+act+_ftr(tw,ps))
 
 # ═══════════════════════════════════════════════
-# MAIN
+# MAIN — 1시간 1카테고리 + 중복방지 + 편집장
 # ═══════════════════════════════════════════════
 def main():
     print("="*50+"\n  Warm Insight v9 FINAL\n"+"="*50)
     cat = get_current_category()
     urls = CATEGORIES.get(cat)
-    if not urls: print("No URLs"); return
+    if not urls:
+        print("No URLs")
+        return
     recent = get_recent_titles()
     print("\n--- ["+cat+"] ---")
     news = get_news(urls, 20)
-    if len(news)<3: print("  Not enough news"); return
+    if len(news)<3:
+        print("  Not enough news")
+        return
     gem_client = genai.Client(api_key=GEMINI_API_KEY)
-    total=ok_cnt=fail=0
+    total=0
+    ok_cnt=0
+    fail=0
     for task in TASKS:
-        tier,cnt = task["tier"],task["count"]
-        if len(news)<cnt: print("  Skip "+tier); break
+        tier = task["tier"]
+        cnt = task["count"]
+        if len(news)<cnt:
+            print("  Skip "+tier)
+            break
         target = [news.pop(0) for _ in range(cnt)]
         total += 1
         print("\n  ["+TIER_LABELS[tier]+"] "+str(cnt)+" articles...")
         result = analyze(target,cat,tier)
-        if not result or not result[2]: fail+=1; continue
+        if not result or not result[2]:
+            fail+=1
+            continue
         title,ip,html,exc,kw,slug = result
-        if is_duplicate(title,recent): print("  SKIP dup"); fail+=1; continue
+        if is_duplicate(title,recent):
+            print("  SKIP dup")
+            fail+=1
+            continue
         if tier in ("Royal Premium","Premium"):
             passed,issues = editor_review(gem_client,"\n".join(target),html)
             if not passed:
-                print("    Retry..."); time.sleep(10)
+                print("    Retry...")
+                time.sleep(10)
                 result2 = analyze(target,cat,tier)
                 if result2 and result2[2]:
                     title,ip,html,exc,kw,slug = result2
                     p2,_ = editor_review(gem_client,"\n".join(target),html)
-                    if not p2: print("  REJECTED x2"); fail+=1; continue
-                else: fail+=1; continue
+                    if not p2:
+                        print("  REJECTED x2")
+                        fail+=1
+                        continue
+                else:
+                    fail+=1
+                    continue
         iu = None
         if ip:
             ib = make_thumb(ip,tier,cat)
-            if ib: iu = upload_img(ib)
+            if ib:
+                iu = upload_img(ib)
         publish(title,html,cat,tier,iu,exc,kw,slug)
         ok_cnt += 1
         recent.append(title.lower())
@@ -831,5 +932,9 @@ def main():
     print("\n"+"="*50+"\n  "+cat+" | Total "+str(total)+" | OK "+str(ok_cnt)+" | Fail "+str(fail)+"\n"+"="*50)
 
 if __name__=="__main__":
-    try: main()
-    except Exception: print("\nERR"); traceback.print_exc(); sys.exit(1)
+    try:
+        main()
+    except Exception:
+        print("\nERR")
+        traceback.print_exc()
+        sys.exit(1)
