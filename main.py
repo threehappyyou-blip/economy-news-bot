@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Warm Insight v10 — Complete 4-Issue Fix Build
-Based on v9 FINAL with targeted fixes:
-  FIX 1: Ghost 403 — publish retry with fresh JWT + backoff
-  FIX 2: Imagen — hasattr guard + REST API fallback + better picsum
-  FIX 3: VIP P2 — relaxed echo detection, simplified prompts, stronger accuracy guard
-  FIX 4: Random rotation — date-seeded daily shuffle (reproducible but varied)
+Warm Insight v11 — 2-Tier Cost Optimized Build
+Changes from v10:
+  - Basic tier removed (Premium + VIP only)
+  - News: 5 per tier
+  - Cost mode: low (all flash), ~200원/run
+  - Cron: every 3 hours recommended (8 runs/day, ~4.8만원/month)
+  - Thumbnails: pre-uploaded Warmy mascot images (no Imagen cost)
+  - Imagen removed entirely
 
-Python 3.10 safe. All v9 features preserved.
+Python 3.10 safe.
 """
-import os, sys, traceback, time, random, re, json, base64
+import os, sys, traceback, time, random, re, json
 from datetime import datetime
 import requests, jwt, feedparser
 from google import genai
@@ -50,49 +52,81 @@ CATEGORIES = {
         "https://www.aljazeera.com/xml/rss/all.xml",
         "https://asia.nikkei.com/rss/feed/nar"],
 }
-TASKS = [{"tier":"Basic","count":3},{"tier":"Premium","count":3},{"tier":"Royal Premium","count":5}]
-TIER_LABELS = {"Basic":"🌱 Free","Premium":"💎 Pro","Royal Premium":"👑 VIP"}
-TIER_VIS = {"Basic":"public","Premium":"public","Royal Premium":"public"}
-TIER_SLEEP = {"Basic":15,"Premium":30,"Royal Premium":50}
-MODEL_PRI = {"Royal Premium":["gemini-2.5-pro","gemini-2.5-flash"],"Premium":["gemini-2.5-pro","gemini-2.5-flash"],"Basic":["gemini-2.5-flash","gemini-2.5-pro"]}
+
+# ═══════════════════════════════════════════════
+# 2-TIER SETUP: Premium + VIP only
+# ═══════════════════════════════════════════════
+TASKS = [
+    {"tier": "Premium", "count": 5},
+    {"tier": "Royal Premium", "count": 5},
+]
+TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
+TIER_VIS = {"Premium": "public", "Royal Premium": "public"}
+TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
+
+# All flash for cost optimization (~200원/run total)
+MODEL_PRI = {
+    "Royal Premium": ["gemini-2.5-flash"],
+    "Premium": ["gemini-2.5-flash"],
+}
+
+# Editor only for VIP (saves 1 flash call per Premium)
+SKIP_EDITOR_TIERS = ["Premium"]
+
 EXPERT = {
-    "Economy":"a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
-    "Politics":"a veteran geopolitical strategist with 40 years covering Washington, Brussels, Beijing, and Middle East",
-    "Tech":"a veteran global technology analyst with 40 years covering Silicon Valley, Shenzhen, and emerging hubs",
-    "Health":"a veteran global healthcare analyst with 40 years covering US pharma, European biotech, and Asian markets",
-    "Energy":"a veteran global energy strategist with 40 years covering OPEC, US shale, European transition, and Asian demand",
+    "Economy": "a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
+    "Politics": "a veteran geopolitical strategist with 40 years covering Washington, Brussels, Beijing, and Middle East",
+    "Tech": "a veteran global technology analyst with 40 years covering Silicon Valley, Shenzhen, and emerging hubs",
+    "Health": "a veteran global healthcare analyst with 40 years covering US pharma, European biotech, and Asian markets",
+    "Energy": "a veteran global energy strategist with 40 years covering OPEC, US shale, European transition, and Asian demand",
 }
 CAT_THEME = {
-    "Economy":{"icon":"💰","accent":"#2563eb","label":"MACRO & RATES"},
-    "Politics":{"icon":"🏛","accent":"#dc2626","label":"GEOPOLITICS"},
-    "Tech":{"icon":"🤖","accent":"#7c3aed","label":"AI & DISRUPTION"},
-    "Health":{"icon":"🧬","accent":"#059669","label":"BIOTECH & PHARMA"},
-    "Energy":{"icon":"⚡","accent":"#d97706","label":"OIL, GAS & RENEWABLES"},
+    "Economy": {"icon": "💰", "accent": "#2563eb", "label": "MACRO & RATES"},
+    "Politics": {"icon": "🏛", "accent": "#dc2626", "label": "GEOPOLITICS"},
+    "Tech": {"icon": "🤖", "accent": "#7c3aed", "label": "AI & DISRUPTION"},
+    "Health": {"icon": "🧬", "accent": "#059669", "label": "BIOTECH & PHARMA"},
+    "Energy": {"icon": "⚡", "accent": "#d97706", "label": "OIL, GAS & RENEWABLES"},
 }
 CAT_ALLOC = {
-    "Economy":{"s":55,"b":35,"c":10,"note":"Defensive: higher bonds during macro uncertainty"},
-    "Politics":{"s":50,"b":35,"c":15,"note":"Elevated cash for geopolitical shock absorption"},
-    "Tech":{"s":70,"b":20,"c":10,"note":"Growth tilt: overweight innovation equities"},
-    "Health":{"s":60,"b":30,"c":10,"note":"Balanced: pharma stability with biotech upside"},
-    "Energy":{"s":65,"b":25,"c":10,"note":"Commodity tilt: overweight real assets"},
+    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
+    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
+    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
+    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
+    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
 }
 CAT_METRICS = {
-    "Economy":{"pool":["Inflation Momentum","Recession Risk","Consumer Pulse","Credit Stress","Rate Cut Odds","Dollar Strength","Yield Curve","PMI Signal","Global Trade Flow","EM Capital Flight Risk","G7 vs BRICS Gap"],"hint":"inflation, GDP, Fed policy, global capital flows, bloc divergence"},
-    "Politics":{"pool":["Policy Uncertainty","Regulatory Risk","Geopolitical Tension","Election Volatility","Trade War Risk","Sanctions Impact","Gridlock","Defense Momentum","Chokepoint Risk","Alliance Cohesion"],"hint":"policy, geopolitics, chokepoints, bloc politics, de-dollarization"},
-    "Tech":{"pool":["AI Race Intensity","Antitrust Pressure","Chip Supply Stress","IPO Sentiment","Cloud Velocity","Cyber Threat","Big Tech Momentum","Funding Freeze","Tech Decoupling Risk","Data Sovereignty"],"hint":"AI, semiconductors, regulation, tech decoupling, cyber sovereignty"},
-    "Health":{"pool":["Pipeline Confidence","Drug Pricing Pressure","Biotech Funding","FDA Momentum","Gene Therapy Index","Hospital Stress","Coverage Gap","Trial Success","Global Pharma Supply Risk"],"hint":"pharma pipelines, drug pricing, FDA, biotech, global supply chain"},
-    "Energy":{"pool":["Oil Supply Squeeze","Green Transition","OPEC Tension","LNG Surge","Renewable Growth","Geo Shock Risk","Grid Stress","Carbon Heat","Chokepoint Disruption","Energy Independence"],"hint":"oil, OPEC, renewables, LNG, chokepoints, energy security"},
-}
-VIP_THUMB = {
-    "Economy":"Dark dramatic 3D golden scales with dollar bills, cinematic blue lighting, data hologram, 8k",
-    "Politics":"Dark dramatic 3D marble chess board geopolitical symbols, red accent lighting, 8k",
-    "Tech":"Dark dramatic 3D neural network purple glow, circuit landscape, AI hologram, 8k",
-    "Health":"Dark dramatic 3D DNA helix with golden capsules, green glow, medical theme, 8k",
-    "Energy":"Dark dramatic 3D oil derricks vs solar panels, amber golden lighting, 8k",
+    "Economy": {"pool": ["Inflation Momentum", "Recession Risk", "Consumer Pulse", "Credit Stress", "Rate Cut Odds", "Dollar Strength", "Yield Curve", "PMI Signal", "Global Trade Flow", "EM Capital Flight Risk", "G7 vs BRICS Gap"], "hint": "inflation, GDP, Fed policy, global capital flows, bloc divergence"},
+    "Politics": {"pool": ["Policy Uncertainty", "Regulatory Risk", "Geopolitical Tension", "Election Volatility", "Trade War Risk", "Sanctions Impact", "Gridlock", "Defense Momentum", "Chokepoint Risk", "Alliance Cohesion"], "hint": "policy, geopolitics, chokepoints, bloc politics, de-dollarization"},
+    "Tech": {"pool": ["AI Race Intensity", "Antitrust Pressure", "Chip Supply Stress", "IPO Sentiment", "Cloud Velocity", "Cyber Threat", "Big Tech Momentum", "Funding Freeze", "Tech Decoupling Risk", "Data Sovereignty"], "hint": "AI, semiconductors, regulation, tech decoupling, cyber sovereignty"},
+    "Health": {"pool": ["Pipeline Confidence", "Drug Pricing Pressure", "Biotech Funding", "FDA Momentum", "Gene Therapy Index", "Hospital Stress", "Coverage Gap", "Trial Success", "Global Pharma Supply Risk"], "hint": "pharma pipelines, drug pricing, FDA, biotech, global supply chain"},
+    "Energy": {"pool": ["Oil Supply Squeeze", "Green Transition", "OPEC Tension", "LNG Surge", "Renewable Growth", "Geo Shock Risk", "Grid Stress", "Carbon Heat", "Chokepoint Disruption", "Energy Independence"], "hint": "oil, OPEC, renewables, LNG, chokepoints, energy security"},
 }
 
 # ═══════════════════════════════════════════════
-# RULES (FIX 3: Strengthened anti-fabrication)
+# WARMY MASCOT THUMBNAILS (pre-uploaded to Ghost)
+# Replace these URLs after uploading your mascot images
+# ═══════════════════════════════════════════════
+WARMY_THUMBS = {
+    "Premium": {
+        "Economy":  "https://www.warminsight.com/content/images/warmy-economy-pro.png",
+        "Politics": "https://www.warminsight.com/content/images/warmy-politics-pro.png",
+        "Tech":     "https://www.warminsight.com/content/images/warmy-tech-pro.png",
+        "Health":   "https://www.warminsight.com/content/images/warmy-health-pro.png",
+        "Energy":   "https://www.warminsight.com/content/images/warmy-energy-pro.png",
+    },
+    "Royal Premium": {
+        "Economy":  "https://www.warminsight.com/content/images/warmy-economy-vip.png",
+        "Politics": "https://www.warminsight.com/content/images/warmy-politics-vip.png",
+        "Tech":     "https://www.warminsight.com/content/images/warmy-tech-vip.png",
+        "Health":   "https://www.warminsight.com/content/images/warmy-health-vip.png",
+        "Energy":   "https://www.warminsight.com/content/images/warmy-energy-vip.png",
+    },
+}
+# Fallback if mascot images aren't uploaded yet
+WARMY_FALLBACK = "https://www.warminsight.com/content/images/warmy-default.png"
+
+# ═══════════════════════════════════════════════
+# RULES
 # ═══════════════════════════════════════════════
 ACCURACY = (
     "STRICT ACCURACY RULES (NEVER VIOLATE):\n"
@@ -117,38 +151,8 @@ ACCURACY = (
 )
 
 # ═══════════════════════════════════════════════
-# PROMPTS (unchanged from v9 except VIP_P2 & VIP_FB)
+# PROMPTS
 # ═══════════════════════════════════════════════
-PROMPT_BASIC = (
-    "You are [PERSONA] for Warm Insight ([CATEGORY]).\n"
-    "Audience: Smart beginners. Friendly but substantive.\n"
-    "[ACCURACY]\n"
-    "STYLE: Ladder of Abstraction: concrete -> why it matters globally -> what to do.\n"
-    "English only. 500-700 words.\n\n"
-    "OUTPUT (XML):\n"
-    "<SEO_KEYWORD>3-6 word search phrase</SEO_KEYWORD>\n"
-    "<TITLE>Catchy title with SEO keyword near front</TITLE>\n"
-    "<IMAGE_PROMPT>3D abstract cinematic about [CATEGORY]</IMAGE_PROMPT>\n"
-    "<EXCERPT>1 sentence with SEO keyword</EXCERPT>\n"
-    "<IMPACT>HIGH, MEDIUM, or LOW</IMPACT>\n"
-    "<SUMMARY>3 sentences. First includes SEO keyword. Global context.</SUMMARY>\n"
-    "<TIKTOK>Clever relatable analogy. Morning Brew wit, not slang. 3-4 sentences.</TIKTOK>\n"
-    "<HEADLINE>Key insight headline</HEADLINE>\n"
-    "<KEY_NUMBER>Most important number from this news</KEY_NUMBER>\n"
-    "<KEY_NUMBER_CONTEXT>1 sentence why this matters personally</KEY_NUMBER_CONTEXT>\n"
-    "<DEPTH_WHAT>WHAT HAPPENED: Clear with everyday analogy. US + global. 3-4 sentences.</DEPTH_WHAT>\n"
-    "<DEPTH_WHY>WHY IT MATTERS: Bigger global pattern. 3-4 sentences.</DEPTH_WHY>\n"
-    "<DEPTH_YOU>WHAT IT MEANS FOR YOU: Daily life + 1 tip. 3-4 sentences.</DEPTH_YOU>\n"
-    '<FLOW>TEXT + emoji each step: "Fed Hikes 🦅 ➡️ Dollar Up 💵 ➡️ Asia Hurt 🌏 ➡️ Slowdown 📉"</FLOW>\n'
-    "<BOTTOM_LINE>One punchy sentence. Start with: Bottom Line:</BOTTOM_LINE>\n"
-    "<WINNER>1 sector that benefits globally (1 sentence)</WINNER>\n"
-    "<LOSER>1 sector that loses globally (1 sentence)</LOSER>\n"
-    "<QUICK_HITS>3 other headlines. 1 sentence each. 3 lines.</QUICK_HITS>\n"
-    "<TEASER>1-sentence preview of what VIP learned today</TEASER>\n"
-    "<TAKEAWAY>One actionable sentence</TAKEAWAY>\n"
-    "<PS>Warm thought on the bigger picture</PS>\n\n"
-    "News: [NEWS_ITEMS]"
-)
 PROMPT_PREMIUM = (
     "You are [PERSONA] for Warm Insight ([CATEGORY]).\n"
     "Audience: Intermediate investors wanting deeper why.\n"
@@ -157,7 +161,6 @@ PROMPT_PREMIUM = (
     "OUTPUT (XML):\n"
     "<SEO_KEYWORD>4-7 word keyword</SEO_KEYWORD>\n"
     "<TITLE>Analytical title with SEO keyword</TITLE>\n"
-    "<IMAGE_PROMPT>3D cinematic about [CATEGORY]</IMAGE_PROMPT>\n"
     "<EXCERPT>1 sentence with SEO keyword</EXCERPT>\n"
     "<IMPACT>HIGH, MEDIUM, or LOW</IMPACT>\n"
     "<SUMMARY>3 sentences. First includes SEO keyword.</SUMMARY>\n"
@@ -178,6 +181,7 @@ PROMPT_PREMIUM = (
     "<PS>Historical perspective (2-3 sentences)</PS>\n\n"
     "News: [NEWS_ITEMS]"
 )
+
 VIP_P1 = (
     "You are [PERSONA] for Warm Insight VIP ([CATEGORY]).\n"
     "Audience: Sophisticated investors paying premium.\n"
@@ -188,7 +192,6 @@ VIP_P1 = (
     "WRITE real analysis:\n\n"
     "<SEO_KEYWORD>4-8 word keyword</SEO_KEYWORD>\n"
     "<TITLE>Institutional title with SEO keyword</TITLE>\n"
-    "<IMAGE_PROMPT>[CAT_THUMB]</IMAGE_PROMPT>\n"
     "<EXCERPT>1 VIP sentence with SEO keyword</EXCERPT>\n"
     "<IMPACT>HIGH, MEDIUM, or LOW</IMPACT>\n"
     "<KEY_NUMBER>Critical number</KEY_NUMBER>\n"
@@ -213,9 +216,6 @@ VIP_P1 = (
     "NEWS: [NEWS_ITEMS]"
 )
 
-# ═══════════════════════════════════════════════
-# FIX 3: Simplified VIP_P2 — fewer tags, clearer instructions
-# ═══════════════════════════════════════════════
 VIP_P2 = (
     "You are [PERSONA] writing Part 2 for Warm Insight VIP ([CATEGORY]).\n"
     "[ACCURACY]\n"
@@ -237,9 +237,6 @@ VIP_P2 = (
     "NEWS: [NEWS_ITEMS]"
 )
 
-# ═══════════════════════════════════════════════
-# FIX 3: Simplified VIP Fallback — even shorter, harder to fail
-# ═══════════════════════════════════════════════
 VIP_FB = (
     "You are [PERSONA]. Write a concise VIP strategy for [CATEGORY].\n"
     "[ACCURACY]\n"
@@ -277,15 +274,13 @@ EDITOR_PROMPT = (
 def gtoken():
     kid, sec = str(GHOST_ADMIN_API_KEY).split(":")
     iat = int(datetime.now().timestamp())
-    return jwt.encode({"iat":iat,"exp":iat+300,"aud":"/admin/"},bytes.fromhex(sec),algorithm="HS256",headers={"alg":"HS256","typ":"JWT","kid":kid})
+    return jwt.encode({"iat": iat, "exp": iat + 300, "aud": "/admin/"}, bytes.fromhex(sec), algorithm="HS256", headers={"alg": "HS256", "typ": "JWT", "kid": kid})
 
 def get_recent_titles():
     try:
         r = requests.get(
             GHOST_API_URL + "/ghost/api/admin/posts/?limit=50&fields=title&order=published_at%20desc",
-            headers={"Authorization": "Ghost " + gtoken()},
-            timeout=30
-        )
+            headers={"Authorization": "Ghost " + gtoken()}, timeout=30)
         if r.status_code in (200, 201):
             titles = [p.get("title", "").lower() for p in r.json().get("posts", []) if p.get("title")]
             print("  Loaded " + str(len(titles)) + " recent titles")
@@ -299,7 +294,7 @@ def get_recent_titles():
 def is_duplicate(new_title, recent):
     if not new_title or not recent:
         return False
-    labels = ["[🌱 free]", "[💎 pro]", "[👑 vip]"]
+    labels = ["[💎 pro]", "[👑 vip]"]
     cn = new_title.lower()
     for lb in labels:
         cn = cn.replace(lb, "").strip()
@@ -338,21 +333,18 @@ def editor_review(client, news_str, html):
         return True, str(e)
 
 # ═══════════════════════════════════════════════
-# FIX 4: Date-seeded daily shuffle rotation
-# Same hour on same day = same category (reproducible)
-# But order changes every day (not fixed h%5 pattern)
+# ROTATION: Date-seeded daily shuffle
 # ═══════════════════════════════════════════════
 def get_current_category():
     cats = list(CATEGORIES.keys())
     now = datetime.utcnow()
-    # Daily seed: changes every day, reproducible within same day
     seed = now.year * 10000 + now.month * 100 + now.day
     rng = random.Random(seed)
     shuffled = cats[:]
     rng.shuffle(shuffled)
     idx = now.hour % len(shuffled)
     sel = shuffled[idx]
-    print("  UTC " + str(now.hour) + " -> " + sel + " (daily seed: " + str(seed) + ", order: " + str(shuffled) + ")")
+    print("  UTC " + str(now.hour) + " -> " + sel + " (daily order: " + str(shuffled) + ")")
     return sel
 
 # ═══════════════════════════════════════════════
@@ -399,10 +391,6 @@ def _fbg(cat):
     lb = random.sample(pool, 3)
     return lb[0], random.randint(55, 88), lb[1], random.randint(30, 65), lb[2], random.randint(40, 78)
 
-# ═══════════════════════════════════════════════
-# FIX 3: Relaxed echo detection
-# Threshold: 3 matches (was 2), added more specific sigs
-# ═══════════════════════════════════════════════
 def is_echo(text):
     if not text or len(text) < 80:
         return True
@@ -433,43 +421,23 @@ def make_slug(kw, title):
     return re.sub(r"\s+", "-", s.strip())[:80]
 
 # ═══════════════════════════════════════════════
-# FIX 1: Ghost API — publish with retry + fresh JWT
+# THUMBNAIL: Pre-uploaded Warmy mascot images
 # ═══════════════════════════════════════════════
-def upload_img(ib):
-    for attempt in range(2):
-        try:
-            token = gtoken()
-            r = requests.post(
-                GHOST_API_URL + "/ghost/api/admin/images/upload/",
-                headers={"Authorization": "Ghost " + token},
-                files={"file": ("t.jpg", ib, "image/jpeg"), "purpose": (None, "image")},
-                timeout=30
-            )
-            if r.status_code in (200, 201):
-                return r.json()["images"][0]["url"]
-            elif r.status_code == 403:
-                print("  img upload 403 (plan limit?) attempt " + str(attempt + 1))
-                if attempt == 0:
-                    time.sleep(3)
-                    continue
-                else:
-                    print("  img upload 403 — skipping image")
-                    return None
-            else:
-                print("  img upload " + str(r.status_code) + ": " + r.text[:150])
-                return None
-        except Exception as e:
-            print("  img err: " + str(e))
-            if attempt == 0:
-                time.sleep(3)
-    return None
+def get_thumb_url(tier, cat):
+    """Return pre-uploaded Warmy mascot URL. No API calls needed."""
+    url = WARMY_THUMBS.get(tier, {}).get(cat, WARMY_FALLBACK)
+    print("  Thumb: " + url.split("/")[-1])
+    return url
 
-def publish(title, html, cat, tier, iu, exc, kw="", slug=""):
+# ═══════════════════════════════════════════════
+# GHOST API
+# ═══════════════════════════════════════════════
+def publish(title, html, cat, tier, feature_img_url, exc, kw="", slug=""):
     print("  Pub: " + title[:60])
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
-            token = gtoken()  # Fresh JWT every attempt
+            token = gtoken()
             md = json.dumps({
                 "version": "0.3.1", "markups": [], "atoms": [],
                 "cards": [["html", {"html": html}]],
@@ -491,8 +459,8 @@ def publish(title, html, cat, tier, iu, exc, kw="", slug=""):
                 p["og_description"] = exc[:300]
             if exc:
                 p["custom_excerpt"] = exc[:290]
-            if iu:
-                p["feature_image"] = iu
+            if feature_img_url:
+                p["feature_image"] = feature_img_url
                 if kw:
                     p["feature_image_alt"] = kw + " - Warm Insight " + cat
 
@@ -500,132 +468,27 @@ def publish(title, html, cat, tier, iu, exc, kw="", slug=""):
                 GHOST_API_URL + "/ghost/api/admin/posts/",
                 json={"posts": [p]},
                 headers={"Authorization": "Ghost " + token, "Content-Type": "application/json"},
-                timeout=60
-            )
+                timeout=60)
             if r.status_code in (200, 201):
                 print("  OK! (attempt " + str(attempt) + ")")
                 return True
             elif r.status_code == 403:
                 print("  GHOST 403 attempt " + str(attempt) + "/" + str(max_retries) + ": " + r.text[:200])
                 if attempt < max_retries:
-                    wait = 10 * attempt
-                    print("  Retrying in " + str(wait) + "s with fresh token...")
-                    time.sleep(wait)
+                    time.sleep(10 * attempt)
                     continue
-                else:
-                    # Last resort: try without image
-                    if iu:
-                        print("  Final retry: stripping image...")
-                        p.pop("feature_image", None)
-                        p.pop("feature_image_alt", None)
-                        token2 = gtoken()
-                        r2 = requests.post(
-                            GHOST_API_URL + "/ghost/api/admin/posts/",
-                            json={"posts": [p]},
-                            headers={"Authorization": "Ghost " + token2, "Content-Type": "application/json"},
-                            timeout=60
-                        )
-                        if r2.status_code in (200, 201):
-                            print("  OK! (no image fallback)")
-                            return True
-                        print("  GHOST FINAL FAIL " + str(r2.status_code))
-                    return False
+                return False
             elif r.status_code == 429:
-                wait = 30 * attempt
-                print("  GHOST 429 rate limit, waiting " + str(wait) + "s...")
-                time.sleep(wait)
+                time.sleep(30 * attempt)
                 continue
             else:
                 print("  GHOST FAIL " + str(r.status_code) + ": " + r.text[:200])
                 return False
         except Exception as e:
             print("  GHOST ERR: " + str(e))
-            traceback.print_exc()
             if attempt < max_retries:
                 time.sleep(5 * attempt)
     return False
-
-# ═══════════════════════════════════════════════
-# FIX 2: Thumbnail — hasattr guard + REST fallback
-# ═══════════════════════════════════════════════
-def make_thumb(ip, tier, cat):
-    if tier == "Royal Premium":
-        ip = VIP_THUMB.get(cat, ip)
-    tries = 3 if tier == "Royal Premium" else 1
-
-    for a in range(1, tries + 1):
-        # --- Method 1: google-genai library (if available) ---
-        try:
-            c = genai.Client(api_key=GEMINI_API_KEY)
-            if hasattr(c.models, "generate_images"):
-                r = c.models.generate_images(
-                    model="imagen-3.0-generate-001",
-                    prompt=ip,
-                    config=types.GenerateImagesConfig(
-                        number_of_images=1,
-                        aspect_ratio="16:9",
-                        output_mime_type="image/jpeg"
-                    )
-                )
-                if r.generated_images:
-                    print("  Imagen-lib(" + str(a) + ") OK")
-                    return r.generated_images[0].image.image_bytes
-                print("  Imagen-lib(" + str(a) + "): no images returned")
-            else:
-                if a == 1:
-                    print("  Imagen-lib: generate_images not available, trying REST...")
-        except Exception as e:
-            print("  Imagen-lib(" + str(a) + "): " + str(e))
-
-        # --- Method 2: REST API direct call ---
-        try:
-            url = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict"
-            headers_rest = {"Content-Type": "application/json"}
-            body = {
-                "instances": [{"prompt": ip}],
-                "parameters": {
-                    "sampleCount": 1,
-                    "aspectRatio": "16:9",
-                    "outputOptions": {"mimeType": "image/jpeg"}
-                }
-            }
-            r = requests.post(
-                url, headers=headers_rest,
-                params={"key": GEMINI_API_KEY},
-                json=body, timeout=60
-            )
-            if r.status_code == 200:
-                data = r.json()
-                preds = data.get("predictions", [])
-                if preds:
-                    img_b64 = preds[0].get("bytesBase64Encoded", "")
-                    if img_b64:
-                        print("  Imagen-REST(" + str(a) + ") OK")
-                        return base64.b64decode(img_b64)
-                print("  Imagen-REST(" + str(a) + "): no predictions")
-            else:
-                print("  Imagen-REST(" + str(a) + "): " + str(r.status_code) + " " + r.text[:100])
-        except Exception as e:
-            print("  Imagen-REST(" + str(a) + "): " + str(e))
-
-        if a < tries:
-            time.sleep(5)
-
-    # --- Method 3: Picsum fallback with category-based seed ---
-    try:
-        # Use cat + date for consistent daily image per category
-        seed_str = cat + datetime.utcnow().strftime("%Y%m%d%H")
-        seed_num = abs(hash(seed_str)) % 100000
-        r = requests.get(
-            "https://picsum.photos/seed/" + str(seed_num) + "/1280/720",
-            timeout=10
-        )
-        if r.status_code == 200:
-            print("  Picsum fallback OK (seed: " + str(seed_num) + ")")
-            return r.content
-    except Exception as e:
-        print("  Picsum err: " + str(e))
-    return None
 
 # ═══════════════════════════════════════════════
 # GEMINI
@@ -639,9 +502,7 @@ def call_gem(client, model, prompt, retries=2):
             err_str = str(e)
             print("    Gem(" + model + ")" + str(i) + ": " + err_str[:150])
             if "503" in err_str or "UNAVAILABLE" in err_str:
-                wait = 15 * i  # Longer backoff for 503
-                print("    503 backoff: " + str(wait) + "s")
-                time.sleep(wait)
+                time.sleep(15 * i)
             elif i < retries:
                 time.sleep(10 * i)
     return None
@@ -655,7 +516,7 @@ def gem_fb(client, tier, prompt):
     return None, None
 
 # ═══════════════════════════════════════════════
-# ANALYZE (FIX 3: Improved VIP P2 flow)
+# ANALYZE
 # ═══════════════════════════════════════════════
 def analyze(news_items, cat, tier):
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -667,15 +528,10 @@ def analyze(news_items, cat, tier):
     author = "Ethan Cole &amp; The Warm Insight Panel"
     acc = ACCURACY
 
-    if tier == "Basic":
-        prompt = PROMPT_BASIC.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", acc).replace("[NEWS_ITEMS]", ns)
-        raw, _ = gem_fb(client, tier, prompt)
-        if not raw:
-            return None, None, None, None, None, None
-        html = build_basic(author, tf, raw)
-
-    elif tier == "Premium":
-        prompt = PROMPT_PREMIUM.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", acc).replace("[NEWS_ITEMS]", ns)
+    if tier == "Premium":
+        prompt = (PROMPT_PREMIUM
+                  .replace("[CATEGORY]", cat).replace("[PERSONA]", persona)
+                  .replace("[ACCURACY]", acc).replace("[NEWS_ITEMS]", ns))
         raw, _ = gem_fb(client, tier, prompt)
         if not raw:
             return None, None, None, None, None, None
@@ -683,7 +539,6 @@ def analyze(news_items, cat, tier):
 
     else:  # Royal Premium (VIP)
         hint = CAT_METRICS.get(cat, CAT_METRICS["Economy"])["hint"]
-        thumb = VIP_THUMB.get(cat, "3D cinematic " + cat)
         al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
         al_str = str(al["s"]) + "% stocks, " + str(al["b"]) + "% safe, " + str(al["c"]) + "% cash (" + al["note"] + ")"
 
@@ -691,12 +546,11 @@ def analyze(news_items, cat, tier):
         p1 = (VIP_P1
               .replace("[CATEGORY]", cat).replace("[PERSONA]", persona)
               .replace("[ACCURACY]", acc).replace("[CAT_HINT]", hint)
-              .replace("[CAT_THUMB]", thumb).replace("[NEWS_ITEMS]", ns))
+              .replace("[NEWS_ITEMS]", ns))
         raw1, _ = gem_fb(client, tier, p1)
         if not raw1:
             return None, None, None, None, None, None
 
-        # P1 quality check — retry once if VIP_C1 is missing/echo
         if not xtag(raw1, "VIP_C1") or is_echo(xtag(raw1, "VIP_C1")):
             print("    P1 quality low, retrying...")
             time.sleep(15)
@@ -704,41 +558,34 @@ def analyze(news_items, cat, tier):
             if r1r and xtag(r1r, "VIP_C1") and not is_echo(xtag(r1r, "VIP_C1")):
                 raw1 = r1r
 
-        # Build context for P2
-        ctx = (
-            "Title: " + xtag(raw1, "TITLE") + "\n"
-            "Headline: " + xtag(raw1, "HEADLINE") + "\n"
-            "Summary: " + xtag(raw1, "SUMMARY") + "\n"
-            "Key insight: " + xtag(raw1, "DEPTH")[:500]
-        )
+        ctx = ("Title: " + xtag(raw1, "TITLE") + "\nHeadline: " + xtag(raw1, "HEADLINE")
+               + "\nSummary: " + xtag(raw1, "SUMMARY") + "\nKey insight: " + xtag(raw1, "DEPTH")[:500])
         ctx_short = xtag(raw1, "HEADLINE") + ". " + xtag(raw1, "SUMMARY")
 
-        # Part 2
-        print("    Part 2...")
+        # Part 2 (flash to save cost)
+        print("    Part 2 (gemini-2.5-flash)...")
         time.sleep(10)
         p2 = (VIP_P2
               .replace("[CATEGORY]", cat).replace("[PERSONA]", persona)
               .replace("[ACCURACY]", acc).replace("[CTX]", ctx)
               .replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns))
-        raw2, _ = gem_fb(client, tier, p2)
+        raw2 = call_gem(client, "gemini-2.5-flash", p2)
 
-        # P2 quality check — up to 2 retries, then fallback
         for retry in range(2):
             if raw2 and ok_tag(raw2, "VIP_T1"):
                 break
             print("    P2 retry " + str(retry + 1))
             time.sleep(15)
-            raw2, _ = gem_fb(client, tier, p2)
+            raw2 = call_gem(client, "gemini-2.5-flash", p2)
 
         if not raw2 or not ok_tag(raw2, "VIP_T1"):
-            print("    P2 FAIL -> Fallback prompt")
+            print("    P2 FAIL -> Fallback")
             time.sleep(10)
             fb = (VIP_FB
                   .replace("[CATEGORY]", cat).replace("[PERSONA]", persona)
-                  .replace("[ACCURACY]", acc)
-                  .replace("[CTX_SHORT]", ctx_short[:400])
+                  .replace("[ACCURACY]", acc).replace("[CTX_SHORT]", ctx_short[:400])
                   .replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns))
-            raw2, _ = gem_fb(client, tier, fb)
+            raw2 = call_gem(client, "gemini-2.5-flash", fb)
             if not raw2:
                 raw2 = ""
 
@@ -746,17 +593,16 @@ def analyze(news_items, cat, tier):
         html = build_vip(author, tf, raw, cat)
 
     tr = xtag(raw, "TITLE")
-    ip = xtag(raw, "IMAGE_PROMPT") or ("3D cinematic " + cat)
     exc = xtag(raw, "EXCERPT") or "Expert analysis."
     kw = xtag(raw, "SEO_KEYWORD")
     pretty = TIER_LABELS.get(tier, tier)
     title = "[" + pretty + "] " + tr if tr else "(" + tier + ") " + cat + " Insight"
     slug = make_slug(kw, tr or cat)
     html = sanitize(html)
-    return title, ip, html, ts + " | " + exc, kw, slug
+    return title, html, exc, kw, slug, tier
 
 # ═══════════════════════════════════════════════
-# HTML HELPERS (unchanged from v9)
+# HTML HELPERS
 # ═══════════════════════════════════════════════
 F = "font-size:18px;line-height:1.8;color:#374151;"
 MAIN = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a252c;width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box;word-break:break-word;margin-top:50px!important;"
@@ -864,42 +710,6 @@ def _compare(cb, cbear, bt="Bull Case", brt="Bear Case"):
     return '<div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:35px;">' + bull + bear + '</div>'
 
 # ═══════════════════════════════════════════════
-# BUILD BASIC
-# ═══════════════════════════════════════════════
-def build_basic(a, tf, r):
-    dw = xtag(r, "DEPTH_WHAT") or xtag(r, "DEPTH")
-    dy = xtag(r, "DEPTH_WHY")
-    du = xtag(r, "DEPTH_YOU")
-    w = xtag(r, "WINNER")
-    l = xtag(r, "LOSER")
-    bl = xtag(r, "BOTTOM_LINE")
-    teaser = xtag(r, "TEASER")
-    wl = ""
-    if w or l:
-        wc = ('<div style="flex:1;min-width:200px;background:#ecfdf5;border:2px solid #10b981;border-radius:10px;padding:20px;"><p style="font-size:20px;font-weight:bold;color:#065f46;margin:0 0 8px;">📈 Winner</p><p style="font-size:18px;color:#064e3b;margin:0;">' + w + '</p></div>') if w else ""
-        lc = ('<div style="flex:1;min-width:200px;background:#fef2f2;border:2px solid #ef4444;border-radius:10px;padding:20px;"><p style="font-size:20px;font-weight:bold;color:#991b1b;margin:0 0 8px;">📉 Loser</p><p style="font-size:18px;color:#7f1d1d;margin:0;">' + l + '</p></div>') if l else ""
-        wl = '<div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:30px;">' + wc + lc + '</div>'
-    bl_h = ('<div style="background:#1e293b;border-radius:10px;padding:22px;margin-bottom:30px;"><p style="font-size:20px;color:#fbbf24;font-weight:bold;margin:0;">' + bl + '</p></div>') if bl else ""
-    ts_h = ('<div style="background:linear-gradient(135deg,#1e293b,#334155);border-radius:10px;padding:24px;margin-bottom:30px;"><p style="font-size:16px;color:#94a3b8;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;">🔒 What VIP Learned Today</p><p style="font-size:18px;color:#e2e8f0;margin:0;font-style:italic;">' + teaser + '</p></div>') if teaser else ""
-    dc = ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #3b82f6;padding:24px;border-radius:8px;margin-bottom:15px;"><h4 style="margin-top:0;font-size:20px;color:#1e40af;margin-bottom:10px;">📰 What Happened</h4><p style="' + F + 'margin:0;">' + dw + '</p></div>')
-    if dy:
-        dc += ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:24px;border-radius:8px;margin-bottom:15px;"><h4 style="margin-top:0;font-size:20px;color:#b45309;margin-bottom:10px;">🔍 Why It Matters</h4><p style="' + F + 'margin:0;">' + dy + '</p></div>')
-    if du:
-        dc += ('<div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:24px;border-radius:8px;margin-bottom:30px;"><h4 style="margin-top:0;font-size:20px;color:#059669;margin-bottom:10px;">💡 For You</h4><p style="' + F + 'margin:0;">' + du + '</p></div>')
-    return ('<div style="' + MAIN + '">' + _hdr(a, tf) + _impact(xtag(r, "IMPACT")) + _keynum(xtag(r, "KEY_NUMBER"), xtag(r, "KEY_NUMBER_CONTEXT"))
-            + '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:18px;">What Happened</h2>'
-            + '<p style="' + F + 'margin-bottom:30px;">' + xtag(r, "SUMMARY") + '</p>'
-            + '<div style="background:#f3f4f6;border-left:5px solid #8e44ad;padding:24px;border-radius:8px;margin-bottom:35px;">'
-            + '<h3 style="margin-top:0;font-size:22px;color:#1a252c;margin-bottom:12px;">💡 The Simple Version</h3>'
-            + '<p style="' + F + 'margin:0;">' + xtag(r, "TIKTOK") + '</p></div>'
-            + '<h3 style="font-size:24px;color:#1a252c;margin-bottom:14px;">' + xtag(r, "HEADLINE") + '</h3>'
-            + dc
-            + '<div style="background:#f8fafc;border:1px solid #e5e7eb;padding:20px;border-radius:8px;margin-bottom:30px;">'
-            + '<strong style="font-size:18px;color:#b8974d;">⚡ Quick Flow:</strong>'
-            + '<p style="font-size:20px;color:#1a252c;margin:10px 0 0;font-weight:bold;">' + xtag(r, "FLOW") + '</p></div>'
-            + bl_h + wl + _qhits(r) + ts_h + _up('🔒 Want deeper analysis? <strong>Upgrade to Pro or VIP.</strong>') + _ftr(xtag(r, "TAKEAWAY"), xtag(r, "PS")))
-
-# ═══════════════════════════════════════════════
 # BUILD PREMIUM
 # ═══════════════════════════════════════════════
 def build_premium(a, tf, r):
@@ -969,7 +779,6 @@ def build_vip(a, tf, raw, cat):
                   '<p style="font-size:14px;color:#6b7280;margin:0 0 5px;text-transform:uppercase;">Overall Conviction</p>'
                   '<p style="font-size:28px;font-weight:800;color:' + c2 + ';margin:0;">' + ci + ' ' + conv + '</p></div>')
 
-    # Gauge
     def gauge(lb, val, c):
         return ('<div style="margin-bottom:22px;"><div style="display:flex;justify-content:space-between;margin-bottom:8px;">'
                 '<span style="font-size:18px;font-weight:600;color:#374151;">' + lb + '</span>'
@@ -977,12 +786,9 @@ def build_vip(a, tf, raw, cat):
                 '<div style="width:100%;background:#e5e7eb;border-radius:8px;height:16px;overflow:hidden;">'
                 '<div style="width:' + str(val) + '%;background:' + c + ';height:100%;border-radius:8px;"></div></div></div>')
 
-    # Pie
     s, b, cp = al["s"], al["b"], al["c"]
     circ = 565.49
-    sd = circ * s / 100
-    bd = circ * b / 100
-    cd = circ * cp / 100
+    sd, bd, cd = circ * s / 100, circ * b / 100, circ * cp / 100
     pie = ('<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;">'
            '<circle cx="100" cy="100" r="90" fill="none" stroke="' + accent + '" stroke-width="30" stroke-dasharray="' + ("%.1f" % sd) + ' ' + ("%.1f" % circ) + '" stroke-dashoffset="0"/>'
            '<circle cx="100" cy="100" r="90" fill="none" stroke="#64748b" stroke-width="30" stroke-dasharray="' + ("%.1f" % bd) + ' ' + ("%.1f" % circ) + '" stroke-dashoffset="-' + ("%.1f" % sd) + '"/>'
@@ -995,7 +801,6 @@ def build_vip(a, tf, raw, cat):
            '<span style="font-size:16px;color:#b8974d;">● Cash ' + str(cp) + '%</span></div>'
            '<p style="font-size:16px;color:#6b7280;text-align:center;font-style:italic;margin:5px 0 0;">' + al["note"] + '</p>')
 
-    # Radar
     rr = ""
     for i in range(1, 5):
         v = ok_tag(raw, "VIP_RADAR_" + str(i))
@@ -1009,19 +814,16 @@ def build_vip(a, tf, raw, cat):
              '<h3 style="margin-top:0;color:' + accent + ';font-size:22px;margin-bottom:18px;">🎯 Sector Radar</h3>'
              '<table style="width:100%;border-collapse:collapse;">' + rr + '</table></div>') if rr else ""
 
-    # Metric card
     def mc(lb, val, c):
         return ('<div style="flex:1;min-width:200px;background:#f8fafc;border:2px solid ' + c + ';border-radius:10px;padding:22px;text-align:center;">'
                 '<div style="font-size:42px;font-weight:800;color:' + c + ';margin-bottom:5px;">' + str(val) + '%</div>'
                 '<div style="font-size:16px;color:#4b5563;font-weight:600;">' + lb + '</div></div>')
 
-    # Sections
     c1, c2, c3 = ok_tag(raw, "VIP_C1"), ok_tag(raw, "VIP_C2"), ok_tag(raw, "VIP_C3")
     t1, t2, t3, t4 = ok_tag(raw, "VIP_T1"), ok_tag(raw, "VIP_T2"), ok_tag(raw, "VIP_T3"), ok_tag(raw, "VIP_T4")
     vdo, vdont = ok_tag(raw, "VIP_DO"), ok_tag(raw, "VIP_DONT")
     tw, ps = ok_tag(raw, "TAKEAWAY"), ok_tag(raw, "PS")
 
-    # Macro
     macro = ""
     if c1 or c2 or c3:
         pp = ""
@@ -1034,7 +836,6 @@ def build_vip(a, tf, raw, cat):
         macro = ('<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:25px;border-bottom:3px solid ' + accent + ';padding-bottom:12px;display:inline-block;">VIP: Macro &amp; Flow Analysis</h2>'
                  '<div style="background:#fff;border:1px solid #e5e7eb;border-left:5px solid ' + accent + ';padding:28px;border-radius:8px;margin-bottom:40px;">' + pp + '</div>')
 
-    # Playbook
     def pb(n, title, body, extra=""):
         if not body:
             return ""
@@ -1052,14 +853,12 @@ def build_vip(a, tf, raw, cat):
         pbk = ('<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:12px;border-bottom:3px solid ' + accent + ';padding-bottom:12px;display:inline-block;">The Titans Playbook</h2>'
                '<p style="font-size:18px;color:#6b7280;margin-bottom:30px;font-style:italic;">Strategic manual for ' + cat.lower() + ' conditions.</p>' + pbc)
 
-    # Action
     act = ""
     if vdo or vdont:
         do_b = ('<div style="background:#ecfdf5;border:2px solid #10b981;border-radius:8px;padding:24px;margin-bottom:20px;"><p style="font-size:20px;color:#065f46;font-weight:bold;margin:0 0 12px;">🟢 DO:</p><p style="font-size:18px;line-height:1.8;color:#064e3b;margin:0;">' + vdo + '</p></div>') if vdo else ""
         dn_b = ('<div style="background:#fef2f2;border:2px solid #ef4444;border-radius:8px;padding:24px;"><p style="font-size:20px;color:#991b1b;font-weight:bold;margin:0 0 12px;">🔴 AVOID:</p><p style="font-size:18px;line-height:1.8;color:#7f1d1d;margin:0;">' + vdont + '</p></div>') if vdont else ""
         act = '<div style="background:#1e293b;padding:35px;border-radius:10px;margin:45px 0 40px;"><h3 style="color:#b8974d;margin-top:0;font-size:26px;margin-bottom:25px;border-bottom:2px solid #475569;padding-bottom:15px;">✅ VIP Action Plan</h3>' + do_b + dn_b + '</div>'
 
-    # Assemble
     return ('<div style="' + MAIN + '">' + _hdr(a, tf, "VIP EXCLUSIVE")
             + '<div style="margin-bottom:25px;">' + _impact(xtag(raw, "IMPACT"))
             + '<span style="display:inline-block;background:#f8fafc;border:2px solid ' + accent + ';color:' + accent + ';padding:4px 14px;border-radius:20px;font-size:14px;font-weight:bold;">' + theme["icon"] + ' ' + theme["label"] + '</span></div>'
@@ -1094,7 +893,10 @@ def build_vip(a, tf, raw, cat):
 # MAIN
 # ═══════════════════════════════════════════════
 def main():
-    print("=" * 50 + "\n  Warm Insight v10 (4-Issue Fix)\n" + "=" * 50)
+    print("=" * 50)
+    print("  Warm Insight v11 (2-Tier Cost Optimized)")
+    print("  Tiers: Premium + VIP | Model: all flash")
+    print("=" * 50)
     cat = get_current_category()
     urls = CATEGORIES.get(cat)
     if not urls:
@@ -1103,8 +905,8 @@ def main():
     recent = get_recent_titles()
     print("\n--- [" + cat + "] ---")
     news = get_news(urls, 20)
-    if len(news) < 3:
-        print("  Not enough news")
+    if len(news) < 5:
+        print("  Not enough news (" + str(len(news)) + ")")
         return
 
     gem_client = genai.Client(api_key=GEMINI_API_KEY)
@@ -1113,34 +915,34 @@ def main():
     for task in TASKS:
         tier, cnt = task["tier"], task["count"]
         if len(news) < cnt:
-            print("  Skip " + tier + " (not enough news left)")
+            print("  Skip " + tier + " (not enough news)")
             break
         target = [news.pop(0) for _ in range(cnt)]
         total += 1
         print("\n  [" + TIER_LABELS[tier] + "] " + str(cnt) + " articles...")
 
         result = analyze(target, cat, tier)
-        if not result or not result[2]:
+        if not result or not result[1]:
             print("  ANALYZE FAILED for " + tier)
             fail += 1
             continue
 
-        title, ip, html, exc, kw, slug = result
+        title, html, exc, kw, slug, _ = result
 
         if is_duplicate(title, recent):
             print("  SKIP dup")
             fail += 1
             continue
 
-        # Editor review for Pro and VIP
-        if tier in ("Royal Premium", "Premium"):
+        # Editor review (skip for tiers in SKIP_EDITOR_TIERS)
+        if tier not in SKIP_EDITOR_TIERS:
             passed, issues = editor_review(gem_client, "\n".join(target), html)
             if not passed:
                 print("    Retry after editor reject...")
                 time.sleep(10)
                 result2 = analyze(target, cat, tier)
-                if result2 and result2[2]:
-                    title, ip, html, exc, kw, slug = result2
+                if result2 and result2[1]:
+                    title, html, exc, kw, slug, _ = result2
                     p2, _ = editor_review(gem_client, "\n".join(target), html)
                     if not p2:
                         print("  REJECTED x2 — skipping " + tier)
@@ -1150,26 +952,20 @@ def main():
                     fail += 1
                     continue
 
-        # Thumbnail
-        iu = None
-        if ip:
-            ib = make_thumb(ip, tier, cat)
-            if ib:
-                iu = upload_img(ib)
+        # Thumbnail: pre-uploaded Warmy mascot
+        feature_img = get_thumb_url(tier, cat)
 
-        # Publish (FIX 1: now returns bool with retry)
-        success = publish(title, html, cat, tier, iu, exc, kw, slug)
+        # Publish
+        success = publish(title, html, cat, tier, feature_img, exc, kw, slug)
         if success:
             ok_cnt += 1
             recent.append(title.lower())
         else:
             fail += 1
-            print("  PUBLISH FAILED for " + tier)
 
-        # Sleep between tiers
         extra = random.randint(60, 180)
         sl = TIER_SLEEP[tier] + extra
-        print("  Wait " + str(sl) + "s (base+" + str(extra) + " random)")
+        print("  Wait " + str(sl) + "s")
         time.sleep(sl)
 
     print("\n" + "=" * 50)
