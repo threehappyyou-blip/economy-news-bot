@@ -104,229 +104,230 @@ CAT_METRICS = {
 }
 
 # ═══════════════════════════════════════════════
-# DYNAMIC THUMBNAIL — Milk Road Style
-# Dark bg + huge bold title + mascot + badges
+# DYNAMIC THUMBNAIL — Milk Road Style v2
+# Pure Pillow: bold text + solid bg + geometric accents
+# No external images. Every thumbnail unique.
 # ═══════════════════════════════════════════════
-WARMY_MASCOT_URLS = {
-    "Premium": {
-        "Economy":  "https://www.warminsight.com/content/images/2026/04/economy-pro.png",
-        "Politics": "https://www.warminsight.com/content/images/2026/04/politics-pro.png",
-        "Tech":     "https://www.warminsight.com/content/images/2026/04/tech-pro.png",
-        "Health":   "https://www.warminsight.com/content/images/2026/04/health-pro.png",
-        "Energy":   "https://www.warminsight.com/content/images/2026/04/energy-pro.png",
-    },
-    "Royal Premium": {
-        "Economy":  "https://www.warminsight.com/content/images/2026/04/economy-vip.png",
-        "Politics": "https://www.warminsight.com/content/images/2026/04/politics-vip.png",
-        "Tech":     "https://www.warminsight.com/content/images/2026/04/tech-vip.png",
-        "Health":   "https://www.warminsight.com/content/images/2026/04/health-vip.png",
-        "Energy":   "https://www.warminsight.com/content/images/2026/04/energy-vip.png",
-    },
+THUMB_PALETTES = {
+    "Economy": [
+        {"bg": (10, 20, 45), "accent": (59, 130, 246), "text_hi": (96, 165, 250)},
+        {"bg": (5, 15, 35), "accent": (34, 197, 94), "text_hi": (74, 222, 128)},
+        {"bg": (15, 23, 42), "accent": (251, 191, 36), "text_hi": (253, 224, 71)},
+    ],
+    "Politics": [
+        {"bg": (35, 8, 8), "accent": (239, 68, 68), "text_hi": (252, 129, 129)},
+        {"bg": (25, 10, 15), "accent": (244, 114, 182), "text_hi": (251, 168, 211)},
+        {"bg": (30, 15, 10), "accent": (251, 146, 60), "text_hi": (253, 186, 116)},
+    ],
+    "Tech": [
+        {"bg": (20, 5, 40), "accent": (139, 92, 246), "text_hi": (167, 139, 250)},
+        {"bg": (10, 15, 35), "accent": (56, 189, 248), "text_hi": (125, 211, 252)},
+        {"bg": (15, 10, 30), "accent": (232, 121, 249), "text_hi": (240, 171, 252)},
+    ],
+    "Health": [
+        {"bg": (5, 25, 20), "accent": (16, 185, 129), "text_hi": (52, 211, 153)},
+        {"bg": (8, 20, 28), "accent": (34, 211, 238), "text_hi": (103, 232, 249)},
+        {"bg": (10, 25, 15), "accent": (132, 204, 22), "text_hi": (163, 230, 53)},
+    ],
+    "Energy": [
+        {"bg": (30, 18, 5), "accent": (245, 158, 11), "text_hi": (252, 211, 77)},
+        {"bg": (35, 12, 8), "accent": (249, 115, 22), "text_hi": (251, 146, 60)},
+        {"bg": (25, 20, 5), "accent": (234, 179, 8), "text_hi": (250, 204, 21)},
+    ],
 }
 
-THUMB_STYLE = {
-    "Economy":  {"bg": (10, 15, 36), "glow": (30, 64, 175), "accent": (59, 130, 246), "accent_hex": "#3b82f6"},
-    "Politics": {"bg": (30, 10, 10), "glow": (140, 30, 30), "accent": (239, 68, 68), "accent_hex": "#ef4444"},
-    "Tech":     {"bg": (18, 5, 38), "glow": (100, 40, 180), "accent": (139, 92, 246), "accent_hex": "#8b5cf6"},
-    "Health":   {"bg": (5, 25, 18), "glow": (16, 120, 80), "accent": (16, 185, 129), "accent_hex": "#10b981"},
-    "Energy":   {"bg": (30, 20, 5), "glow": (160, 100, 10), "accent": (245, 158, 11), "accent_hex": "#f59e0b"},
-}
+# Geometric pattern functions for variety
+def _pattern_diag_lines(draw, w, h, color, seed):
+    """Diagonal accent lines."""
+    rng = random.Random(seed)
+    gap = rng.randint(80, 140)
+    thickness = rng.randint(2, 5)
+    for offset in range(-h, w + h, gap):
+        draw.line([(offset, 0), (offset - h, h)], fill=color, width=thickness)
 
-_mascot_cache = {}
+def _pattern_circles(draw, w, h, color, seed):
+    """Scattered accent circles."""
+    rng = random.Random(seed)
+    for _ in range(rng.randint(3, 7)):
+        cx = rng.randint(int(w * 0.5), w - 50)
+        cy = rng.randint(50, h - 100)
+        r = rng.randint(30, 120)
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=3)
+
+def _pattern_dots(draw, w, h, color, seed):
+    """Grid of dots."""
+    rng = random.Random(seed)
+    gap = rng.randint(40, 70)
+    r = rng.randint(2, 5)
+    start_x = int(w * 0.55)
+    for x in range(start_x, w - 20, gap):
+        for y in range(60, h - 60, gap):
+            draw.ellipse([x - r, y - r, x + r, y + r], fill=color)
+
+def _pattern_blocks(draw, w, h, color, seed):
+    """Abstract rectangular blocks."""
+    rng = random.Random(seed)
+    for _ in range(rng.randint(2, 5)):
+        x1 = rng.randint(int(w * 0.5), w - 100)
+        y1 = rng.randint(40, h - 200)
+        bw = rng.randint(60, 200)
+        bh = rng.randint(40, 150)
+        draw.rectangle([x1, y1, x1 + bw, y1 + bh], outline=color, width=3)
+
+def _pattern_arrow(draw, w, h, color, seed):
+    """Large accent arrow or chevron."""
+    rng = random.Random(seed)
+    ax = int(w * 0.75)
+    ay = int(h * 0.5)
+    size = rng.randint(80, 160)
+    lw = rng.randint(6, 12)
+    # Chevron pointing right
+    draw.line([(ax - size, ay - size), (ax, ay)], fill=color, width=lw)
+    draw.line([(ax, ay), (ax - size, ay + size)], fill=color, width=lw)
+
+_PATTERNS = [_pattern_diag_lines, _pattern_circles, _pattern_dots, _pattern_blocks, _pattern_arrow]
+
 _font_cache = {}
 
-def _download_mascot(url):
-    if url in _mascot_cache:
-        return _mascot_cache[url]
-    try:
-        r = requests.get(url, timeout=15)
-        if r.status_code == 200:
-            img = Image.open(io.BytesIO(r.content)).convert("RGBA")
-            _mascot_cache[url] = img
-            return img
-    except Exception as e:
-        print("  Mascot dl err: " + str(e))
-    return None
-
 def _font(size, bold=True):
-    key = str(size) + str(bold)
+    key = str(size) + ("b" if bold else "r")
     if key in _font_cache:
         return _font_cache[key]
-    paths = [
-        # Google Fonts (downloaded in workflow)
+    bold_paths = [
         os.path.expanduser("~/.local/share/fonts/Montserrat-ExtraBold.ttf"),
         os.path.expanduser("~/.local/share/fonts/Montserrat-Bold.ttf"),
         os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
-        # System fonts
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
     ]
-    if not bold:
-        paths = [
-            os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-        ] + paths
-    for fp in paths:
+    reg_paths = [
+        os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+    ]
+    for fp in (bold_paths if bold else reg_paths + bold_paths):
         try:
             f = ImageFont.truetype(fp, size)
             _font_cache[key] = f
             return f
         except Exception:
             continue
-    f = ImageFont.load_default()
-    _font_cache[key] = f
-    return f
+    return ImageFont.load_default()
 
-def _draw_gradient_bg(draw, w, h, bg, glow):
-    """Draw dark gradient with colored glow."""
-    for y in range(h):
-        ratio = y / h
-        r = int(bg[0] + (glow[0] - bg[0]) * ratio * 0.3)
-        g = int(bg[1] + (glow[1] - bg[1]) * ratio * 0.3)
-        b = int(bg[2] + (glow[2] - bg[2]) * ratio * 0.3)
-        draw.line([(0, y), (w, y)], fill=(r, g, b))
-
-def _draw_glow(img, cx, cy, radius, color, intensity=40):
-    """Draw soft radial glow effect."""
-    draw = ImageDraw.Draw(img)
-    for rad in range(radius, 0, -3):
-        alpha = int(intensity * (rad / radius))
-        c = (
-            min(255, color[0] + alpha),
-            min(255, color[1] + alpha),
-            min(255, color[2] + alpha),
-        )
-        draw.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=c)
-
-def _wrap_title(title, max_chars=20):
-    """Smart word wrap for titles — short punchy lines."""
-    # Clean tier labels
+def _wrap_title(title, max_chars=16):
     clean = title
     for lb in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
         clean = clean.replace(lb, "")
     clean = clean.strip()
-
-    # Split into words and build lines
+    # Remove colon and after for shorter text
+    if ":" in clean and len(clean) > 40:
+        clean = clean.split(":")[0].strip()
     words = clean.split()
     lines = []
-    current = ""
-    for word in words:
-        test = (current + " " + word).strip() if current else word
+    cur = ""
+    for w in words:
+        test = (cur + " " + w).strip() if cur else w
         if len(test) <= max_chars:
-            current = test
+            cur = test
         else:
-            if current:
-                lines.append(current)
-            current = word
-    if current:
-        lines.append(current)
-
-    # Max 3 lines
+            if cur:
+                lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
     if len(lines) > 3:
         lines = lines[:3]
-        if len(lines[2]) > max_chars - 3:
-            lines[2] = lines[2][:max_chars - 3] + "..."
-
     return lines
 
-def _draw_pill(draw, x, y, text, font, bg_color, text_color=(255, 255, 255), padding_x=20, padding_y=8):
-    """Draw a rounded pill badge."""
-    bbox = font.getbbox(text)
-    tw = bbox[2] - bbox[0]
-    th = bbox[3] - bbox[1]
-    pw = tw + padding_x * 2
-    ph = th + padding_y * 2
-    draw.rounded_rectangle([x, y, x + pw, y + ph], radius=ph // 2, fill=bg_color)
-    draw.text((x + padding_x, y + padding_y - 2), text, font=font, fill=text_color)
+def _draw_pill(draw, x, y, text, font, bg, fg=(255, 255, 255), px=22, py=10):
+    bb = font.getbbox(text)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    pw, ph = tw + px * 2, th + py * 2
+    draw.rounded_rectangle([x, y, x + pw, y + ph], radius=ph // 2, fill=bg)
+    draw.text((x + px, y + py - 2), text, font=font, fill=fg)
     return pw, ph
 
 def make_dynamic_thumb(title, cat, tier):
-    """Generate Milk Road style thumbnail."""
+    """Pure Pillow thumbnail — Milk Road style. Every post unique."""
     TW, TH = 1280, 720
-    style = THUMB_STYLE.get(cat, THUMB_STYLE["Economy"])
-    theme = CAT_THEME.get(cat, CAT_THEME["Economy"])
 
-    img = Image.new("RGB", (TW, TH), style["bg"])
+    # Pick palette based on title hash (deterministic variety)
+    palettes = THUMB_PALETTES.get(cat, THUMB_PALETTES["Economy"])
+    seed = abs(hash(title)) % 100000
+    pal = palettes[seed % len(palettes)]
+    bg, accent, text_hi = pal["bg"], pal["accent"], pal["text_hi"]
+
+    # Muted accent for patterns (30% opacity feel)
+    pat_color = (
+        bg[0] + (accent[0] - bg[0]) // 5,
+        bg[1] + (accent[1] - bg[1]) // 5,
+        bg[2] + (accent[2] - bg[2]) // 5,
+    )
+
+    img = Image.new("RGB", (TW, TH), bg)
     draw = ImageDraw.Draw(img)
 
-    # 1) Gradient background
-    _draw_gradient_bg(draw, TW, TH, style["bg"], style["glow"])
+    # Subtle vertical gradient (slightly lighter at top)
+    for y in range(TH):
+        ratio = y / TH
+        r = int(bg[0] * (1.3 - ratio * 0.3))
+        g = int(bg[1] * (1.3 - ratio * 0.3))
+        b = int(bg[2] * (1.3 - ratio * 0.3))
+        draw.line([(0, y), (TW, y)], fill=(min(255, r), min(255, g), min(255, b)))
 
-    # 2) Glow effects — top-left accent, bottom-right subtle
-    _draw_glow(img, 200, 300, 350, style["glow"], 25)
-    _draw_glow(img, TW - 200, TH - 100, 250, style["glow"], 15)
+    # Right-side accent stripe
+    stripe_w = random.Random(seed).randint(180, 320)
+    draw.rectangle([TW - stripe_w, 0, TW, TH], fill=accent)
 
-    # 3) Paste Warmy mascot FIRST (behind text if overlapping)
-    mascot_url = WARMY_MASCOT_URLS.get(tier, {}).get(cat, "")
-    if mascot_url:
-        mascot = _download_mascot(mascot_url)
-        if mascot:
-            # Large mascot, right 40% of image
-            target_h = int(TH * 0.82)
-            aspect = mascot.width / mascot.height
-            target_w = int(target_h * aspect)
-            mascot_resized = mascot.resize((target_w, target_h), Image.LANCZOS)
-            mx = TW - target_w + 40  # Slightly off-screen right for dynamic feel
-            my = TH - target_h - 55  # Above bottom bar
-            img.paste(mascot_resized, (mx, my), mascot_resized)
+    # Geometric pattern on the right side
+    pattern_fn = _PATTERNS[seed % len(_PATTERNS)]
+    pattern_fn(draw, TW, TH, pat_color, seed)
 
-    # Redraw on top of mascot
-    draw = ImageDraw.Draw(img)
+    # Category badge — top left
+    font_badge = _font(24)
+    cat_label = cat.upper()
+    _draw_pill(draw, 50, 40, cat_label, font_badge, accent)
 
-    # 4) Category badge — top left
-    font_badge = _font(26)
-    cat_text = cat.upper()
-    _draw_pill(draw, 50, 35, cat_text, font_badge, style["accent"])
+    # Tier badge — top of accent stripe
+    tier_label = "PRO" if tier == "Premium" else "VIP"
+    tier_bg = (255, 255, 255)
+    tier_fg = accent
+    _draw_pill(draw, TW - stripe_w + 30, 40, tier_label, font_badge, tier_bg, tier_fg)
 
-    # 5) Tier badge — top right
-    tier_text = "PRO REPORT" if tier == "Premium" else "VIP EXCLUSIVE"
-    tier_bg = (30, 58, 138) if tier == "Premium" else (120, 80, 20)
-    _draw_pill(draw, TW - 280, 35, tier_text, font_badge, tier_bg)
+    # TITLE TEXT — the hero
+    font_title = _font(82)
+    lines = _wrap_title(title, max_chars=16)
 
-    # 6) Title text — THE HERO
-    font_title = _font(72)
-    lines = _wrap_title(title, max_chars=18)
-
-    # Calculate vertical center for text block
-    line_h = 85
+    line_h = 95
     block_h = len(lines) * line_h
-    start_y = max(120, (TH - block_h) // 2 - 30)
+    start_y = max(130, (TH - block_h) // 2 - 20)
 
-    # Draw each line with shadow + accent color for first line
     for i, line in enumerate(lines):
         y = start_y + i * line_h
         upper = line.upper()
+        # Heavy shadow
+        for dx in range(1, 5):
+            draw.text((50 + dx, y + dx), upper, font=font_title, fill=(0, 0, 0))
+        # First line = highlight color, rest = white
+        color = text_hi if i == 0 else (255, 255, 255)
+        draw.text((50, y), upper, font=font_title, fill=color)
 
-        # Text shadow (dark, offset)
-        draw.text((52, y + 3), upper, font=font_title, fill=(0, 0, 0))
-        draw.text((53, y + 4), upper, font=font_title, fill=(0, 0, 0))
+    # Accent bar under title
+    bar_y = start_y + len(lines) * line_h + 15
+    draw.rectangle([50, bar_y, 50 + 250, bar_y + 6], fill=accent)
 
-        # First line in accent color, rest in white
-        if i == 0:
-            draw.text((50, y), upper, font=font_title, fill=style["accent"])
-        else:
-            draw.text((50, y), upper, font=font_title, fill=(255, 255, 255))
-
-    # 7) Accent line below title
-    line_y = start_y + len(lines) * line_h + 12
-    draw.rectangle([50, line_y, 350, line_y + 4], fill=style["accent"])
-
-    # 8) Bottom bar
-    draw.rectangle([0, TH - 52, TW, TH], fill=(15, 23, 42))
-    font_logo = _font(24)
+    # Bottom bar
+    draw.rectangle([0, TH - 48, TW, TH], fill=(15, 23, 42))
+    font_logo = _font(20)
+    draw.text((50, TH - 38), "WARM INSIGHT", font=font_logo, fill=(184, 151, 77))
     font_sub = _font(14, bold=False)
-    # Logo
-    draw.text((TW // 2 - 90, TH - 42), "Warm Insight", font=font_logo, fill=(184, 151, 77))
-    # Subtitle dots
-    draw.text((TW // 2 - 90, TH - 18), "AI-Driven Global Market Analysis", font=font_sub, fill=(100, 116, 139))
+    draw.text((TW - 300, TH - 36), "AI-Driven Global Market Analysis", font=font_sub, fill=(100, 116, 139))
 
-    # Convert to JPEG
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=90)
-    print("  Thumb generated: " + str(len(buf.getvalue()) // 1024) + "KB")
+    img.save(buf, format="JPEG", quality=92)
+    kb = len(buf.getvalue()) // 1024
+    print("  Thumb: " + str(kb) + "KB | " + lines[0][:30] + "...")
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
@@ -1176,17 +1177,16 @@ def main():
                     fail += 1
                     continue
 
-        # Dynamic thumbnail: title + mascot + badge
+        # Dynamic thumbnail: pure Pillow generation
         print("  Generating thumbnail...")
         thumb_bytes = make_dynamic_thumb(title, cat, tier)
         feature_img = None
         if thumb_bytes:
             feature_img = upload_img(thumb_bytes)
             if feature_img:
-                print("  Thumb uploaded: " + feature_img.split("/")[-1])
+                print("  Thumb uploaded OK")
             else:
-                print("  Thumb upload failed, using mascot fallback")
-                feature_img = WARMY_MASCOT_URLS.get(tier, {}).get(cat, "")
+                print("  Thumb upload failed — publishing without image")
 
         # Publish
         success = publish(title, html, cat, tier, feature_img, exc, kw, slug)
