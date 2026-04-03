@@ -1,3 +1,108 @@
+# -*- coding: utf-8 -*-
+"""
+Warm Insight v11 — 2-Tier Cost Optimized Build
+Changes from v10:
+  - Basic tier removed (Premium + VIP only)
+  - News: 5 per tier
+  - Cost mode: low (all flash), ~200원/run
+  - Cron: every 3 hours recommended (8 runs/day, ~4.8만원/month)
+  - Thumbnails: pre-uploaded Warmy mascot images (no Imagen cost)
+  - Imagen removed entirely
+
+Python 3.10 safe.
+"""
+import os, sys, traceback, time, random, re, json, io, textwrap
+from datetime import datetime
+import requests, jwt, feedparser
+from google import genai
+from google.genai import types
+from PIL import Image, ImageDraw, ImageFont
+
+# ═══════════════════════════════════════════════
+# CONFIG
+# ═══════════════════════════════════════════════
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GHOST_API_URL = os.environ.get("GHOST_API_URL", "").rstrip("/")
+GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
+if not all([GEMINI_API_KEY, GHOST_API_URL, GHOST_ADMIN_API_KEY]):
+    sys.exit("Missing API keys")
+
+CATEGORIES = {
+    "Economy": [
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664",
+        "https://finance.yahoo.com/news/rssindex",
+        "https://feeds.bbci.co.uk/news/business/economy/rss.xml",
+        "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://asia.nikkei.com/rss/feed/nar"],
+    "Politics": [
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",
+        "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://feeds.npr.org/1004/rss.xml"],
+    "Tech": [
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",
+        "https://feeds.bbci.co.uk/news/technology/rss.xml",
+        "https://asia.nikkei.com/rss/feed/nar"],
+    "Health": [
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",
+        "https://feeds.bbci.co.uk/news/health/rss.xml",
+        "https://www.aljazeera.com/xml/rss/all.xml"],
+    "Energy": [
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",
+        "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+        "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://asia.nikkei.com/rss/feed/nar"],
+}
+
+# ═══════════════════════════════════════════════
+# 2-TIER SETUP: Premium + VIP only
+# ═══════════════════════════════════════════════
+TASKS = [
+    {"tier": "Premium", "count": 5},
+    {"tier": "Royal Premium", "count": 5},
+]
+TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
+TIER_VIS = {"Premium": "public", "Royal Premium": "public"}
+TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
+
+# All flash for cost optimization (~200원/run total)
+MODEL_PRI = {
+    "Royal Premium": ["gemini-2.5-flash"],
+    "Premium": ["gemini-2.5-flash"],
+}
+
+# Editor only for VIP (saves 1 flash call per Premium)
+SKIP_EDITOR_TIERS = ["Premium"]
+
+EXPERT = {
+    "Economy": "a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
+    "Politics": "a veteran geopolitical strategist with 40 years covering Washington, Brussels, Beijing, and Middle East",
+    "Tech": "a veteran global technology analyst with 40 years covering Silicon Valley, Shenzhen, and emerging hubs",
+    "Health": "a veteran global healthcare analyst with 40 years covering US pharma, European biotech, and Asian markets",
+    "Energy": "a veteran global energy strategist with 40 years covering OPEC, US shale, European transition, and Asian demand",
+}
+CAT_THEME = {
+    "Economy": {"icon": "💰", "accent": "#2563eb", "label": "MACRO & RATES"},
+    "Politics": {"icon": "🏛", "accent": "#dc2626", "label": "GEOPOLITICS"},
+    "Tech": {"icon": "🤖", "accent": "#7c3aed", "label": "AI & DISRUPTION"},
+    "Health": {"icon": "🧬", "accent": "#059669", "label": "BIOTECH & PHARMA"},
+    "Energy": {"icon": "⚡", "accent": "#d97706", "label": "OIL, GAS & RENEWABLES"},
+}
+CAT_ALLOC = {
+    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
+    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
+    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
+    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
+    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
+}
+CAT_METRICS = {
+    "Economy": {"pool": ["Inflation Momentum", "Recession Risk", "Consumer Pulse", "Credit Stress", "Rate Cut Odds", "Dollar Strength", "Yield Curve", "PMI Signal", "Global Trade Flow", "EM Capital Flight Risk", "G7 vs BRICS Gap"], "hint": "inflation, GDP, Fed policy, global capital flows, bloc divergence"},
+    "Politics": {"pool": ["Policy Uncertainty", "Regulatory Risk", "Geopolitical Tension", "Election Volatility", "Trade War Risk", "Sanctions Impact", "Gridlock", "Defense Momentum", "Chokepoint Risk", "Alliance Cohesion"], "hint": "policy, geopolitics, chokepoints, bloc politics, de-dollarization"},
+    "Tech": {"pool": ["AI Race Intensity", "Antitrust Pressure", "Chip Supply Stress", "IPO Sentiment", "Cloud Velocity", "Cyber Threat", "Big Tech Momentum", "Funding Freeze", "Tech Decoupling Risk", "Data Sovereignty"], "hint": "AI, semiconductors, regulation, tech decoupling, cyber sovereignty"},
+    "Health": {"pool": ["Pipeline Confidence", "Drug Pricing Pressure", "Biotech Funding", "FDA Momentum", "Gene Therapy Index", "Hospital Stress", "Coverage Gap", "Trial Success", "Global Pharma Supply Risk"], "hint": "pharma pipelines, drug pricing, FDA, biotech, global supply chain"},
+    "Energy": {"pool": ["Oil Supply Squeeze", "Green Transition", "OPEC Tension", "LNG Surge", "Renewable Growth", "Geo Shock Risk", "Grid Stress", "Carbon Heat", "Chokepoint Disruption", "Energy Independence"], "hint": "oil, OPEC, renewables, LNG, chokepoints, energy security"},
+}
+
 # ═══════════════════════════════════════════════
 # DYNAMIC THUMBNAIL CONFIG
 # Milk Road style: title text + Warmy mascot + category badge
@@ -145,133 +250,17 @@ def make_dynamic_thumb(title, cat, tier):
             # Position: right side, vertically centered
             mx = TW - mascot_w - 20
             my = (TH - mascot_h) // 2 + 30
-            i# -*- coding: utf-8 -*-
-"""
-Warm Insight v11 — 2-Tier Cost Optimized Build
-Changes from v10:
-  - Basic tier removed (Premium + VIP only)
-  - News: 5 per tier
-  - Cost mode: low (all flash), ~200원/run
-  - Cron: every 3 hours recommended (8 runs/day, ~4.8만원/month)
-  - Thumbnails: pre-uploaded Warmy mascot images (no Imagen cost)
-  - Imagen removed entirely
+            img.paste(mascot_resized, (mx, my), mascot_resized)
 
-Python 3.10 safe.
-"""
-import os, sys, traceback, time, random, re, json, io, textwrap
-from datetime import datetime
-import requests, jwt, feedparser
-from google import genai
-from google.genai import types
-from PIL import Image, ImageDraw, ImageFont
+    # Bottom bar
+    draw.rectangle([0, TH - 55, TW, TH], fill=(30, 41, 59))
+    font_logo = _get_font(22)
+    draw.text((TW // 2 - 70, TH - 42), "Warm Insight", font=font_logo, fill=(184, 151, 77))
 
-# ═══════════════════════════════════════════════
-# CONFIG
-# ═══════════════════════════════════════════════
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-GHOST_API_URL = os.environ.get("GHOST_API_URL", "").rstrip("/")
-GHOST_ADMIN_API_KEY = os.environ.get("GHOST_ADMIN_API_KEY")
-if not all([GEMINI_API_KEY, GHOST_API_URL, GHOST_ADMIN_API_KEY]):
-    sys.exit("Missing API keys")
-
-CATEGORIES = {
-    "Economy": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664",
-        "https://finance.yahoo.com/news/rssindex",
-        "https://feeds.bbci.co.uk/news/business/economy/rss.xml",
-        "https://www.aljazeera.com/xml/rss/all.xml",
-        "https://asia.nikkei.com/rss/feed/nar"],
-    "Politics": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",
-        "https://feeds.bbci.co.uk/news/world/rss.xml",
-        "https://www.aljazeera.com/xml/rss/all.xml",
-        "https://feeds.npr.org/1004/rss.xml"],
-    "Tech": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",
-        "https://feeds.bbci.co.uk/news/technology/rss.xml",
-        "https://asia.nikkei.com/rss/feed/nar"],
-    "Health": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",
-        "https://feeds.bbci.co.uk/news/health/rss.xml",
-        "https://www.aljazeera.com/xml/rss/all.xml"],
-    "Energy": [
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",
-        "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
-        "https://www.aljazeera.com/xml/rss/all.xml",
-        "https://asia.nikkei.com/rss/feed/nar"],
-}
-
-# ═══════════════════════════════════════════════
-# 2-TIER SETUP: Premium + VIP only
-# ═══════════════════════════════════════════════
-TASKS = [
-    {"tier": "Premium", "count": 5},
-    {"tier": "Royal Premium", "count": 5},
-]
-TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
-TIER_VIS = {"Premium": "public", "Royal Premium": "public"}
-TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
-
-# All flash for cost optimization (~200원/run total)
-MODEL_PRI = {
-    "Royal Premium": ["gemini-2.5-flash"],
-    "Premium": ["gemini-2.5-flash"],
-}
-
-# Editor only for VIP (saves 1 flash call per Premium)
-SKIP_EDITOR_TIERS = ["Premium"]
-
-EXPERT = {
-    "Economy": "a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
-    "Politics": "a veteran geopolitical strategist with 40 years covering Washington, Brussels, Beijing, and Middle East",
-    "Tech": "a veteran global technology analyst with 40 years covering Silicon Valley, Shenzhen, and emerging hubs",
-    "Health": "a veteran global healthcare analyst with 40 years covering US pharma, European biotech, and Asian markets",
-    "Energy": "a veteran global energy strategist with 40 years covering OPEC, US shale, European transition, and Asian demand",
-}
-CAT_THEME = {
-    "Economy": {"icon": "💰", "accent": "#2563eb", "label": "MACRO & RATES"},
-    "Politics": {"icon": "🏛", "accent": "#dc2626", "label": "GEOPOLITICS"},
-    "Tech": {"icon": "🤖", "accent": "#7c3aed", "label": "AI & DISRUPTION"},
-    "Health": {"icon": "🧬", "accent": "#059669", "label": "BIOTECH & PHARMA"},
-    "Energy": {"icon": "⚡", "accent": "#d97706", "label": "OIL, GAS & RENEWABLES"},
-}
-CAT_ALLOC = {
-    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
-    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
-    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
-    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
-    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
-}
-CAT_METRICS = {
-    "Economy": {"pool": ["Inflation Momentum", "Recession Risk", "Consumer Pulse", "Credit Stress", "Rate Cut Odds", "Dollar Strength", "Yield Curve", "PMI Signal", "Global Trade Flow", "EM Capital Flight Risk", "G7 vs BRICS Gap"], "hint": "inflation, GDP, Fed policy, global capital flows, bloc divergence"},
-    "Politics": {"pool": ["Policy Uncertainty", "Regulatory Risk", "Geopolitical Tension", "Election Volatility", "Trade War Risk", "Sanctions Impact", "Gridlock", "Defense Momentum", "Chokepoint Risk", "Alliance Cohesion"], "hint": "policy, geopolitics, chokepoints, bloc politics, de-dollarization"},
-    "Tech": {"pool": ["AI Race Intensity", "Antitrust Pressure", "Chip Supply Stress", "IPO Sentiment", "Cloud Velocity", "Cyber Threat", "Big Tech Momentum", "Funding Freeze", "Tech Decoupling Risk", "Data Sovereignty"], "hint": "AI, semiconductors, regulation, tech decoupling, cyber sovereignty"},
-    "Health": {"pool": ["Pipeline Confidence", "Drug Pricing Pressure", "Biotech Funding", "FDA Momentum", "Gene Therapy Index", "Hospital Stress", "Coverage Gap", "Trial Success", "Global Pharma Supply Risk"], "hint": "pharma pipelines, drug pricing, FDA, biotech, global supply chain"},
-    "Energy": {"pool": ["Oil Supply Squeeze", "Green Transition", "OPEC Tension", "LNG Surge", "Renewable Growth", "Geo Shock Risk", "Grid Stress", "Carbon Heat", "Chokepoint Disruption", "Energy Independence"], "hint": "oil, OPEC, renewables, LNG, chokepoints, energy security"},
-}
-
-# ═══════════════════════════════════════════════
-# WARMY MASCOT THUMBNAILS (pre-uploaded to Ghost)
-# Replace these URLs after uploading your mascot images
-# ═══════════════════════════════════════════════
-WARMY_THUMBS = {
-    "Premium": {
-        "Economy":  "https://www.warminsight.com/content/images/2026/04/economy-pro.png",
-        "Politics": "https://www.warminsight.com/content/images/2026/04/politics-pro.png",
-        "Tech":     "https://www.warminsight.com/content/images/2026/04/tech-pro.png",
-        "Health":   "https://www.warminsight.com/content/images/2026/04/health-pro.png",
-        "Energy":   "https://www.warminsight.com/content/images/2026/04/energy-pro.png",
-    },
-    "Royal Premium": {
-        "Economy":  "https://www.warminsight.com/content/images/2026/04/economy-vip.png",
-        "Politics": "https://www.warminsight.com/content/images/2026/04/politics-vip.png",
-        "Tech":     "https://www.warminsight.com/content/images/2026/04/tech-vip.png",
-        "Health":   "https://www.warminsight.com/content/images/2026/04/health-vip.png",
-        "Energy":   "https://www.warminsight.com/content/images/2026/04/energy-vip.png",
-    },
-}
-# Fallback: Economy Pro image as default
-WARMY_FALLBACK = "https://www.warminsight.com/content/images/2026/04/economy-pro.png"
+    # Convert to JPEG bytes
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=88)
+    return buf.getvalue()
 
 # ═══════════════════════════════════════════════
 # RULES
@@ -569,13 +558,33 @@ def make_slug(kw, title):
     return re.sub(r"\s+", "-", s.strip())[:80]
 
 # ═══════════════════════════════════════════════
-# THUMBNAIL: Pre-uploaded Warmy mascot images
+# GHOST IMAGE UPLOAD
 # ═══════════════════════════════════════════════
-def get_thumb_url(tier, cat):
-    """Return pre-uploaded Warmy mascot URL. No API calls needed."""
-    url = WARMY_THUMBS.get(tier, {}).get(cat, WARMY_FALLBACK)
-    print("  Thumb: " + url.split("/")[-1])
-    return url
+def upload_img(img_bytes):
+    for attempt in range(2):
+        try:
+            token = gtoken()
+            r = requests.post(
+                GHOST_API_URL + "/ghost/api/admin/images/upload/",
+                headers={"Authorization": "Ghost " + token},
+                files={"file": ("thumb.jpg", img_bytes, "image/jpeg"), "purpose": (None, "image")},
+                timeout=30)
+            if r.status_code in (200, 201):
+                return r.json()["images"][0]["url"]
+            elif r.status_code == 403:
+                print("  img upload 403 attempt " + str(attempt + 1))
+                if attempt == 0:
+                    time.sleep(3)
+                    continue
+                return None
+            else:
+                print("  img upload " + str(r.status_code))
+                return None
+        except Exception as e:
+            print("  img err: " + str(e))
+            if attempt == 0:
+                time.sleep(3)
+    return None
 
 # ═══════════════════════════════════════════════
 # GHOST API
@@ -1100,8 +1109,17 @@ def main():
                     fail += 1
                     continue
 
-        # Thumbnail: pre-uploaded Warmy mascot
-        feature_img = get_thumb_url(tier, cat)
+        # Dynamic thumbnail: title + mascot + badge
+        print("  Generating thumbnail...")
+        thumb_bytes = make_dynamic_thumb(title, cat, tier)
+        feature_img = None
+        if thumb_bytes:
+            feature_img = upload_img(thumb_bytes)
+            if feature_img:
+                print("  Thumb uploaded: " + feature_img.split("/")[-1])
+            else:
+                print("  Thumb upload failed, using mascot fallback")
+                feature_img = WARMY_MASCOT_URLS.get(tier, {}).get(cat, "")
 
         # Publish
         success = publish(title, html, cat, tier, feature_img, exc, kw, slug)
