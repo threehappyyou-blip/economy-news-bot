@@ -104,8 +104,8 @@ CAT_METRICS = {
 }
 
 # ═══════════════════════════════════════════════
-# DYNAMIC THUMBNAIL CONFIG
-# Milk Road style: title text + Warmy mascot + category badge
+# DYNAMIC THUMBNAIL — Milk Road Style
+# Dark bg + huge bold title + mascot + badges
 # ═══════════════════════════════════════════════
 WARMY_MASCOT_URLS = {
     "Premium": {
@@ -124,16 +124,16 @@ WARMY_MASCOT_URLS = {
     },
 }
 
-THUMB_BG = {
-    "Economy":  {"dark": "#0f172a", "accent": "#3b82f6", "grad": "#1e3a5f"},
-    "Politics": {"dark": "#1a0a0a", "accent": "#ef4444", "grad": "#3b1515"},
-    "Tech":     {"dark": "#0f0520", "accent": "#8b5cf6", "grad": "#2d1860"},
-    "Health":   {"dark": "#021a12", "accent": "#10b981", "grad": "#0a3d2a"},
-    "Energy":   {"dark": "#1a1000", "accent": "#f59e0b", "grad": "#3d2800"},
+THUMB_STYLE = {
+    "Economy":  {"bg": (10, 15, 36), "glow": (30, 64, 175), "accent": (59, 130, 246), "accent_hex": "#3b82f6"},
+    "Politics": {"bg": (30, 10, 10), "glow": (140, 30, 30), "accent": (239, 68, 68), "accent_hex": "#ef4444"},
+    "Tech":     {"bg": (18, 5, 38), "glow": (100, 40, 180), "accent": (139, 92, 246), "accent_hex": "#8b5cf6"},
+    "Health":   {"bg": (5, 25, 18), "glow": (16, 120, 80), "accent": (16, 185, 129), "accent_hex": "#10b981"},
+    "Energy":   {"bg": (30, 20, 5), "glow": (160, 100, 10), "accent": (245, 158, 11), "accent_hex": "#f59e0b"},
 }
 
-# Cache downloaded mascot images
 _mascot_cache = {}
+_font_cache = {}
 
 def _download_mascot(url):
     if url in _mascot_cache:
@@ -145,121 +145,188 @@ def _download_mascot(url):
             _mascot_cache[url] = img
             return img
     except Exception as e:
-        print("  Mascot download err: " + str(e))
+        print("  Mascot dl err: " + str(e))
     return None
 
-def _get_font(size):
-    """Try system fonts, fall back to default."""
-    font_paths = [
+def _font(size, bold=True):
+    key = str(size) + str(bold)
+    if key in _font_cache:
+        return _font_cache[key]
+    paths = [
+        # Google Fonts (downloaded in workflow)
+        os.path.expanduser("~/.local/share/fonts/Montserrat-ExtraBold.ttf"),
+        os.path.expanduser("~/.local/share/fonts/Montserrat-Bold.ttf"),
+        os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
+        # System fonts
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/ubuntu/Ubuntu-Bold.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
-        "C:/Windows/Fonts/segoeui.ttf",
     ]
-    for fp in font_paths:
+    if not bold:
+        paths = [
+            os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+        ] + paths
+    for fp in paths:
         try:
-            return ImageFont.truetype(fp, size)
+            f = ImageFont.truetype(fp, size)
+            _font_cache[key] = f
+            return f
         except Exception:
             continue
-    return ImageFont.load_default()
+    f = ImageFont.load_default()
+    _font_cache[key] = f
+    return f
+
+def _draw_gradient_bg(draw, w, h, bg, glow):
+    """Draw dark gradient with colored glow."""
+    for y in range(h):
+        ratio = y / h
+        r = int(bg[0] + (glow[0] - bg[0]) * ratio * 0.3)
+        g = int(bg[1] + (glow[1] - bg[1]) * ratio * 0.3)
+        b = int(bg[2] + (glow[2] - bg[2]) * ratio * 0.3)
+        draw.line([(0, y), (w, y)], fill=(r, g, b))
+
+def _draw_glow(img, cx, cy, radius, color, intensity=40):
+    """Draw soft radial glow effect."""
+    draw = ImageDraw.Draw(img)
+    for rad in range(radius, 0, -3):
+        alpha = int(intensity * (rad / radius))
+        c = (
+            min(255, color[0] + alpha),
+            min(255, color[1] + alpha),
+            min(255, color[2] + alpha),
+        )
+        draw.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=c)
+
+def _wrap_title(title, max_chars=20):
+    """Smart word wrap for titles — short punchy lines."""
+    # Clean tier labels
+    clean = title
+    for lb in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
+        clean = clean.replace(lb, "")
+    clean = clean.strip()
+
+    # Split into words and build lines
+    words = clean.split()
+    lines = []
+    current = ""
+    for word in words:
+        test = (current + " " + word).strip() if current else word
+        if len(test) <= max_chars:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+
+    # Max 3 lines
+    if len(lines) > 3:
+        lines = lines[:3]
+        if len(lines[2]) > max_chars - 3:
+            lines[2] = lines[2][:max_chars - 3] + "..."
+
+    return lines
+
+def _draw_pill(draw, x, y, text, font, bg_color, text_color=(255, 255, 255), padding_x=20, padding_y=8):
+    """Draw a rounded pill badge."""
+    bbox = font.getbbox(text)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    pw = tw + padding_x * 2
+    ph = th + padding_y * 2
+    draw.rounded_rectangle([x, y, x + pw, y + ph], radius=ph // 2, fill=bg_color)
+    draw.text((x + padding_x, y + padding_y - 2), text, font=font, fill=text_color)
+    return pw, ph
 
 def make_dynamic_thumb(title, cat, tier):
-    """Generate Milk Road style thumbnail: dark bg + large title + mascot + badge."""
+    """Generate Milk Road style thumbnail."""
     TW, TH = 1280, 720
-    colors = THUMB_BG.get(cat, THUMB_BG["Economy"])
+    style = THUMB_STYLE.get(cat, THUMB_STYLE["Economy"])
     theme = CAT_THEME.get(cat, CAT_THEME["Economy"])
 
-    # Create dark gradient background
-    img = Image.new("RGB", (TW, TH), colors["dark"])
+    img = Image.new("RGB", (TW, TH), style["bg"])
     draw = ImageDraw.Draw(img)
 
-    # Draw gradient overlay (diagonal accent glow)
-    for i in range(TH):
-        alpha = int(40 * (1 - i / TH))
-        r2 = int(colors["grad"][1:3], 16)
-        g_val = int(colors["grad"][3:5], 16)
-        b2 = int(colors["grad"][5:7], 16)
-        draw.line([(0, i), (TW, i)], fill=(r2, g_val, b2))
+    # 1) Gradient background
+    _draw_gradient_bg(draw, TW, TH, style["bg"], style["glow"])
 
-    # Draw accent glow circle (top-right)
-    ac = colors["accent"]
-    ac_r = int(ac[1:3], 16)
-    ac_g = int(ac[3:5], 16)
-    ac_b = int(ac[5:7], 16)
-    for rad in range(200, 0, -2):
-        opacity = int(15 * (rad / 200))
-        c_val = (min(255, ac_r + opacity * 2), min(255, ac_g + opacity * 2), min(255, ac_b + opacity * 2))
-        draw.ellipse([TW - 300 - rad, -100 - rad, TW - 300 + rad, -100 + rad], fill=c_val)
+    # 2) Glow effects — top-left accent, bottom-right subtle
+    _draw_glow(img, 200, 300, 350, style["glow"], 25)
+    _draw_glow(img, TW - 200, TH - 100, 250, style["glow"], 15)
 
-    # Clean title text (remove tier labels)
-    clean_title = title
-    for lb in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
-        clean_title = clean_title.replace(lb, "")
-    clean_title = clean_title.strip()
-
-    # Word wrap title
-    font_title = _get_font(62)
-    font_small = _get_font(28)
-    font_badge = _get_font(24)
-
-    # Wrap text to fit left 60% of image (leave room for mascot)
-    max_chars = 22
-    lines = textwrap.wrap(clean_title, width=max_chars)
-    if len(lines) > 4:
-        lines = lines[:4]
-        lines[3] = lines[3][:max_chars - 3] + "..."
-
-    # Draw title text with shadow
-    text_x = 60
-    text_y = 120
-    line_height = 78
-    for i, line in enumerate(lines):
-        y = text_y + i * line_height
-        # Shadow
-        draw.text((text_x + 3, y + 3), line.upper(), font=font_title, fill=(0, 0, 0))
-        # Main text
-        draw.text((text_x, y), line.upper(), font=font_title, fill=(255, 255, 255))
-
-    # Draw accent underline below title
-    underline_y = text_y + len(lines) * line_height + 10
-    draw.rectangle([text_x, underline_y, text_x + 300, underline_y + 5], fill=colors["accent"])
-
-    # Category badge (top-left)
-    badge_text = cat.upper()
-    badge_w = len(badge_text) * 16 + 40
-    draw.rounded_rectangle([text_x, 40, text_x + badge_w, 78], radius=19, fill=colors["accent"])
-    draw.text((text_x + 20, 46), badge_text, font=font_badge, fill=(255, 255, 255))
-
-    # Tier badge (top-right area)
-    tier_label = "PRO" if tier == "Premium" else "VIP"
-    tier_color = (59, 130, 246) if tier == "Premium" else (184, 151, 77)
-    tier_w = 120
-    draw.rounded_rectangle([TW - tier_w - 40, 40, TW - 40, 78], radius=19, fill=tier_color)
-    draw.text((TW - tier_w - 20, 46), tier_label, font=font_badge, fill=(255, 255, 255))
-
-    # Paste Warmy mascot (right side)
+    # 3) Paste Warmy mascot FIRST (behind text if overlapping)
     mascot_url = WARMY_MASCOT_URLS.get(tier, {}).get(cat, "")
     if mascot_url:
         mascot = _download_mascot(mascot_url)
         if mascot:
-            # Resize mascot to fit right portion
-            mascot_h = int(TH * 0.75)
-            mascot_w = int(mascot_h * (mascot.width / mascot.height))
-            mascot_resized = mascot.resize((mascot_w, mascot_h), Image.LANCZOS)
-            # Position: right side, vertically centered
-            mx = TW - mascot_w - 20
-            my = (TH - mascot_h) // 2 + 30
+            # Large mascot, right 40% of image
+            target_h = int(TH * 0.82)
+            aspect = mascot.width / mascot.height
+            target_w = int(target_h * aspect)
+            mascot_resized = mascot.resize((target_w, target_h), Image.LANCZOS)
+            mx = TW - target_w + 40  # Slightly off-screen right for dynamic feel
+            my = TH - target_h - 55  # Above bottom bar
             img.paste(mascot_resized, (mx, my), mascot_resized)
 
-    # Bottom bar
-    draw.rectangle([0, TH - 55, TW, TH], fill=(30, 41, 59))
-    font_logo = _get_font(22)
-    draw.text((TW // 2 - 70, TH - 42), "Warm Insight", font=font_logo, fill=(184, 151, 77))
+    # Redraw on top of mascot
+    draw = ImageDraw.Draw(img)
 
-    # Convert to JPEG bytes
+    # 4) Category badge — top left
+    font_badge = _font(26)
+    cat_text = cat.upper()
+    _draw_pill(draw, 50, 35, cat_text, font_badge, style["accent"])
+
+    # 5) Tier badge — top right
+    tier_text = "PRO REPORT" if tier == "Premium" else "VIP EXCLUSIVE"
+    tier_bg = (30, 58, 138) if tier == "Premium" else (120, 80, 20)
+    _draw_pill(draw, TW - 280, 35, tier_text, font_badge, tier_bg)
+
+    # 6) Title text — THE HERO
+    font_title = _font(72)
+    lines = _wrap_title(title, max_chars=18)
+
+    # Calculate vertical center for text block
+    line_h = 85
+    block_h = len(lines) * line_h
+    start_y = max(120, (TH - block_h) // 2 - 30)
+
+    # Draw each line with shadow + accent color for first line
+    for i, line in enumerate(lines):
+        y = start_y + i * line_h
+        upper = line.upper()
+
+        # Text shadow (dark, offset)
+        draw.text((52, y + 3), upper, font=font_title, fill=(0, 0, 0))
+        draw.text((53, y + 4), upper, font=font_title, fill=(0, 0, 0))
+
+        # First line in accent color, rest in white
+        if i == 0:
+            draw.text((50, y), upper, font=font_title, fill=style["accent"])
+        else:
+            draw.text((50, y), upper, font=font_title, fill=(255, 255, 255))
+
+    # 7) Accent line below title
+    line_y = start_y + len(lines) * line_h + 12
+    draw.rectangle([50, line_y, 350, line_y + 4], fill=style["accent"])
+
+    # 8) Bottom bar
+    draw.rectangle([0, TH - 52, TW, TH], fill=(15, 23, 42))
+    font_logo = _font(24)
+    font_sub = _font(14, bold=False)
+    # Logo
+    draw.text((TW // 2 - 90, TH - 42), "Warm Insight", font=font_logo, fill=(184, 151, 77))
+    # Subtitle dots
+    draw.text((TW // 2 - 90, TH - 18), "AI-Driven Global Market Analysis", font=font_sub, fill=(100, 116, 139))
+
+    # Convert to JPEG
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=88)
+    img.save(buf, format="JPEG", quality=90)
+    print("  Thumb generated: " + str(len(buf.getvalue()) // 1024) + "KB")
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
