@@ -11,7 +11,7 @@ Changes from v10:
 
 Python 3.10 safe.
 """
-import os, sys, traceback, time, random, re, json, io, textwrap
+import os, sys, traceback, time, random, re, json, io
 from datetime import datetime
 import requests, jwt, feedparser
 from google import genai
@@ -104,96 +104,43 @@ CAT_METRICS = {
 }
 
 # ═══════════════════════════════════════════════
-# DYNAMIC THUMBNAIL — Milk Road Style v2
-# Pure Pillow: bold text + solid bg + geometric accents
-# No external images. Every thumbnail unique.
+# DYNAMIC THUMBNAIL v3 — Research-backed design
+# Rules: 3-5 words, stroke outline, 60-30-10 color, ultra contrast
 # ═══════════════════════════════════════════════
-THUMB_PALETTES = {
+THUMB_COLORS = {
     "Economy": [
-        {"bg": (10, 20, 45), "accent": (59, 130, 246), "text_hi": (96, 165, 250)},
-        {"bg": (5, 15, 35), "accent": (34, 197, 94), "text_hi": (74, 222, 128)},
-        {"bg": (15, 23, 42), "accent": (251, 191, 36), "text_hi": (253, 224, 71)},
+        {"bg": (8, 12, 30), "hi": (253, 224, 71), "sub": (255, 255, 255), "bar": (37, 99, 235)},   # dark + yellow
+        {"bg": (37, 99, 235), "hi": (255, 255, 255), "sub": (219, 234, 254), "bar": (30, 58, 138)}, # blue + white
+        {"bg": (8, 8, 8), "hi": (74, 222, 128), "sub": (255, 255, 255), "bar": (22, 163, 74)},      # black + green
     ],
     "Politics": [
-        {"bg": (35, 8, 8), "accent": (239, 68, 68), "text_hi": (252, 129, 129)},
-        {"bg": (25, 10, 15), "accent": (244, 114, 182), "text_hi": (251, 168, 211)},
-        {"bg": (30, 15, 10), "accent": (251, 146, 60), "text_hi": (253, 186, 116)},
+        {"bg": (8, 8, 8), "hi": (252, 129, 129), "sub": (255, 255, 255), "bar": (220, 38, 38)},     # black + red
+        {"bg": (220, 38, 38), "hi": (255, 255, 255), "sub": (254, 226, 226), "bar": (153, 27, 27)},  # red + white
+        {"bg": (15, 10, 25), "hi": (251, 146, 60), "sub": (255, 255, 255), "bar": (194, 65, 12)},    # dark + orange
     ],
     "Tech": [
-        {"bg": (20, 5, 40), "accent": (139, 92, 246), "text_hi": (167, 139, 250)},
-        {"bg": (10, 15, 35), "accent": (56, 189, 248), "text_hi": (125, 211, 252)},
-        {"bg": (15, 10, 30), "accent": (232, 121, 249), "text_hi": (240, 171, 252)},
+        {"bg": (15, 3, 30), "hi": (167, 139, 250), "sub": (255, 255, 255), "bar": (124, 58, 237)},  # dark + purple
+        {"bg": (8, 8, 8), "hi": (56, 189, 248), "sub": (255, 255, 255), "bar": (14, 116, 144)},     # black + cyan
+        {"bg": (124, 58, 237), "hi": (255, 255, 255), "sub": (237, 233, 254), "bar": (91, 33, 182)}, # purple + white
     ],
     "Health": [
-        {"bg": (5, 25, 20), "accent": (16, 185, 129), "text_hi": (52, 211, 153)},
-        {"bg": (8, 20, 28), "accent": (34, 211, 238), "text_hi": (103, 232, 249)},
-        {"bg": (10, 25, 15), "accent": (132, 204, 22), "text_hi": (163, 230, 53)},
+        {"bg": (8, 8, 8), "hi": (52, 211, 153), "sub": (255, 255, 255), "bar": (5, 150, 105)},      # black + green
+        {"bg": (5, 150, 105), "hi": (255, 255, 255), "sub": (209, 250, 229), "bar": (4, 120, 87)},   # green + white
+        {"bg": (8, 15, 25), "hi": (103, 232, 249), "sub": (255, 255, 255), "bar": (8, 145, 178)},    # dark + teal
     ],
     "Energy": [
-        {"bg": (30, 18, 5), "accent": (245, 158, 11), "text_hi": (252, 211, 77)},
-        {"bg": (35, 12, 8), "accent": (249, 115, 22), "text_hi": (251, 146, 60)},
-        {"bg": (25, 20, 5), "accent": (234, 179, 8), "text_hi": (250, 204, 21)},
+        {"bg": (8, 8, 8), "hi": (253, 224, 71), "sub": (255, 255, 255), "bar": (202, 138, 4)},      # black + yellow
+        {"bg": (194, 65, 12), "hi": (255, 255, 255), "sub": (255, 237, 213), "bar": (154, 52, 18)},  # orange + white
+        {"bg": (20, 10, 5), "hi": (251, 191, 36), "sub": (255, 255, 255), "bar": (217, 119, 6)},     # dark + gold
     ],
 }
 
-# Geometric pattern functions for variety
-def _pattern_diag_lines(draw, w, h, color, seed):
-    """Diagonal accent lines."""
-    rng = random.Random(seed)
-    gap = rng.randint(80, 140)
-    thickness = rng.randint(2, 5)
-    for offset in range(-h, w + h, gap):
-        draw.line([(offset, 0), (offset - h, h)], fill=color, width=thickness)
-
-def _pattern_circles(draw, w, h, color, seed):
-    """Scattered accent circles."""
-    rng = random.Random(seed)
-    for _ in range(rng.randint(3, 7)):
-        cx = rng.randint(int(w * 0.5), w - 50)
-        cy = rng.randint(50, h - 100)
-        r = rng.randint(30, 120)
-        draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=3)
-
-def _pattern_dots(draw, w, h, color, seed):
-    """Grid of dots."""
-    rng = random.Random(seed)
-    gap = rng.randint(40, 70)
-    r = rng.randint(2, 5)
-    start_x = int(w * 0.55)
-    for x in range(start_x, w - 20, gap):
-        for y in range(60, h - 60, gap):
-            draw.ellipse([x - r, y - r, x + r, y + r], fill=color)
-
-def _pattern_blocks(draw, w, h, color, seed):
-    """Abstract rectangular blocks."""
-    rng = random.Random(seed)
-    for _ in range(rng.randint(2, 5)):
-        x1 = rng.randint(int(w * 0.5), w - 100)
-        y1 = rng.randint(40, h - 200)
-        bw = rng.randint(60, 200)
-        bh = rng.randint(40, 150)
-        draw.rectangle([x1, y1, x1 + bw, y1 + bh], outline=color, width=3)
-
-def _pattern_arrow(draw, w, h, color, seed):
-    """Large accent arrow or chevron."""
-    rng = random.Random(seed)
-    ax = int(w * 0.75)
-    ay = int(h * 0.5)
-    size = rng.randint(80, 160)
-    lw = rng.randint(6, 12)
-    # Chevron pointing right
-    draw.line([(ax - size, ay - size), (ax, ay)], fill=color, width=lw)
-    draw.line([(ax, ay), (ax - size, ay + size)], fill=color, width=lw)
-
-_PATTERNS = [_pattern_diag_lines, _pattern_circles, _pattern_dots, _pattern_blocks, _pattern_arrow]
-
 _font_cache = {}
 
-def _font(size, bold=True):
-    key = str(size) + ("b" if bold else "r")
-    if key in _font_cache:
-        return _font_cache[key]
-    bold_paths = [
+def _font(size):
+    if size in _font_cache:
+        return _font_cache[size]
+    paths = [
         os.path.expanduser("~/.local/share/fonts/Montserrat-ExtraBold.ttf"),
         os.path.expanduser("~/.local/share/fonts/Montserrat-Bold.ttf"),
         os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
@@ -201,133 +148,142 @@ def _font(size, bold=True):
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
     ]
-    reg_paths = [
-        os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-    ]
-    for fp in (bold_paths if bold else reg_paths + bold_paths):
+    for fp in paths:
         try:
             f = ImageFont.truetype(fp, size)
-            _font_cache[key] = f
+            _font_cache[size] = f
             return f
         except Exception:
             continue
     return ImageFont.load_default()
 
-def _wrap_title(title, max_chars=16):
+def _extract_hook(title):
+    """Extract 3-5 punchy words from title for thumbnail."""
     clean = title
     for lb in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
         clean = clean.replace(lb, "")
     clean = clean.strip()
-    # Remove colon and after for shorter text
-    if ":" in clean and len(clean) > 40:
-        clean = clean.split(":")[0].strip()
-    words = clean.split()
-    lines = []
-    cur = ""
-    for w in words:
-        test = (cur + " " + w).strip() if cur else w
-        if len(test) <= max_chars:
-            cur = test
+    # Split at colon — take the short part
+    if ":" in clean:
+        parts = clean.split(":")
+        # Use whichever part is shorter but meaningful (3+ words)
+        short = min(parts, key=lambda p: len(p.strip()))
+        if len(short.split()) >= 2:
+            clean = short.strip()
         else:
-            if cur:
-                lines.append(cur)
-            cur = w
-    if cur:
-        lines.append(cur)
-    if len(lines) > 3:
-        lines = lines[:3]
-    return lines
-
-def _draw_pill(draw, x, y, text, font, bg, fg=(255, 255, 255), px=22, py=10):
-    bb = font.getbbox(text)
-    tw, th = bb[2] - bb[0], bb[3] - bb[1]
-    pw, ph = tw + px * 2, th + py * 2
-    draw.rounded_rectangle([x, y, x + pw, y + ph], radius=ph // 2, fill=bg)
-    draw.text((x + px, y + py - 2), text, font=font, fill=fg)
-    return pw, ph
+            clean = parts[0].strip()
+    # Remove common filler words for punchier text
+    fillers = ["the", "a", "an", "of", "in", "for", "and", "to", "is", "are", "its", "how", "from"]
+    words = clean.split()
+    punchy = [w for w in words if w.lower() not in fillers]
+    if len(punchy) < 2:
+        punchy = words
+    # Take max 5 words
+    if len(punchy) > 5:
+        punchy = punchy[:5]
+    return punchy
 
 def make_dynamic_thumb(title, cat, tier):
-    """Pure Pillow thumbnail — Milk Road style. Every post unique."""
+    """Generate high-CTR thumbnail. Pure Pillow, zero external images."""
     TW, TH = 1280, 720
-
-    # Pick palette based on title hash (deterministic variety)
-    palettes = THUMB_PALETTES.get(cat, THUMB_PALETTES["Economy"])
     seed = abs(hash(title)) % 100000
-    pal = palettes[seed % len(palettes)]
-    bg, accent, text_hi = pal["bg"], pal["accent"], pal["text_hi"]
+    rng = random.Random(seed)
 
-    # Muted accent for patterns (30% opacity feel)
-    pat_color = (
-        bg[0] + (accent[0] - bg[0]) // 5,
-        bg[1] + (accent[1] - bg[1]) // 5,
-        bg[2] + (accent[2] - bg[2]) // 5,
-    )
+    # Pick color palette
+    palettes = THUMB_COLORS.get(cat, THUMB_COLORS["Economy"])
+    pal = palettes[seed % len(palettes)]
+    bg, hi, sub, bar = pal["bg"], pal["hi"], pal["sub"], pal["bar"]
 
     img = Image.new("RGB", (TW, TH), bg)
     draw = ImageDraw.Draw(img)
 
-    # Subtle vertical gradient (slightly lighter at top)
-    for y in range(TH):
-        ratio = y / TH
-        r = int(bg[0] * (1.3 - ratio * 0.3))
-        g = int(bg[1] * (1.3 - ratio * 0.3))
-        b = int(bg[2] * (1.3 - ratio * 0.3))
-        draw.line([(0, y), (TW, y)], fill=(min(255, r), min(255, g), min(255, b)))
+    # Left accent stripe (thin, 8px)
+    draw.rectangle([0, 0, 8, TH], fill=bar)
 
-    # Right-side accent stripe
-    stripe_w = random.Random(seed).randint(180, 320)
-    draw.rectangle([TW - stripe_w, 0, TW, TH], fill=accent)
+    # Extract hook words
+    words = _extract_hook(title)
 
-    # Geometric pattern on the right side
-    pattern_fn = _PATTERNS[seed % len(_PATTERNS)]
-    pattern_fn(draw, TW, TH, pat_color, seed)
+    # Split into 2 lines: first line highlight, second line white
+    mid = max(1, len(words) // 2 + len(words) % 2)
+    line1 = " ".join(words[:mid]).upper()
+    line2 = " ".join(words[mid:]).upper() if mid < len(words) else ""
+
+    # Determine font size — fill ~60% of frame width
+    font_size = 100
+    f = _font(font_size)
+    while f.getbbox(line1)[2] > TW * 0.85 and font_size > 50:
+        font_size -= 4
+        f = _font(font_size)
+    if line2:
+        while f.getbbox(line2)[2] > TW * 0.85 and font_size > 50:
+            font_size -= 4
+            f = _font(font_size)
+
+    font_big = _font(font_size)
+    line_h = int(font_size * 1.15)
+
+    # Vertical center
+    total_h = line_h * (2 if line2 else 1)
+    y1 = (TH - total_h) // 2 - 20
+
+    # Draw LINE 1 — highlight color with black stroke
+    try:
+        draw.text((60, y1), line1, font=font_big, fill=hi, stroke_width=5, stroke_fill=(0, 0, 0))
+    except TypeError:
+        # Pillow < 9.0 fallback: manual shadow
+        for dx in range(-3, 4):
+            for dy in range(-3, 4):
+                if dx or dy:
+                    draw.text((60 + dx, y1 + dy), line1, font=font_big, fill=(0, 0, 0))
+        draw.text((60, y1), line1, font=font_big, fill=hi)
+
+    # Draw LINE 2 — white with black stroke
+    if line2:
+        y2 = y1 + line_h
+        try:
+            draw.text((60, y2), line2, font=font_big, fill=sub, stroke_width=5, stroke_fill=(0, 0, 0))
+        except TypeError:
+            for dx in range(-3, 4):
+                for dy in range(-3, 4):
+                    if dx or dy:
+                        draw.text((60 + dx, y2 + dy), line2, font=font_big, fill=(0, 0, 0))
+            draw.text((60, y2), line2, font=font_big, fill=sub)
 
     # Category badge — top left
-    font_badge = _font(24)
-    cat_label = cat.upper()
-    _draw_pill(draw, 50, 40, cat_label, font_badge, accent)
+    font_badge = _font(22)
+    badge_text = cat.upper()
+    try:
+        bb = font_badge.getbbox(badge_text)
+        bw = bb[2] - bb[0] + 44
+        draw.rounded_rectangle([50, 35, 50 + bw, 75], radius=20, fill=bar)
+        draw.text((72, 40), badge_text, font=font_badge, fill=(255, 255, 255))
+    except Exception:
+        draw.rectangle([50, 35, 200, 75], fill=bar)
+        draw.text((72, 42), badge_text, font=font_badge, fill=(255, 255, 255))
 
-    # Tier badge — top of accent stripe
-    tier_label = "PRO" if tier == "Premium" else "VIP"
-    tier_bg = (255, 255, 255)
-    tier_fg = accent
-    _draw_pill(draw, TW - stripe_w + 30, 40, tier_label, font_badge, tier_bg, tier_fg)
-
-    # TITLE TEXT — the hero
-    font_title = _font(82)
-    lines = _wrap_title(title, max_chars=16)
-
-    line_h = 95
-    block_h = len(lines) * line_h
-    start_y = max(130, (TH - block_h) // 2 - 20)
-
-    for i, line in enumerate(lines):
-        y = start_y + i * line_h
-        upper = line.upper()
-        # Heavy shadow
-        for dx in range(1, 5):
-            draw.text((50 + dx, y + dx), upper, font=font_title, fill=(0, 0, 0))
-        # First line = highlight color, rest = white
-        color = text_hi if i == 0 else (255, 255, 255)
-        draw.text((50, y), upper, font=font_title, fill=color)
-
-    # Accent bar under title
-    bar_y = start_y + len(lines) * line_h + 15
-    draw.rectangle([50, bar_y, 50 + 250, bar_y + 6], fill=accent)
+    # Tier badge — top right
+    tier_text = "PRO" if tier == "Premium" else "VIP"
+    try:
+        tb = font_badge.getbbox(tier_text)
+        tw2 = tb[2] - tb[0] + 44
+        tier_bg2 = (30, 64, 175) if tier == "Premium" else (120, 80, 20)
+        draw.rounded_rectangle([TW - tw2 - 40, 35, TW - 40, 75], radius=20, fill=tier_bg2)
+        draw.text((TW - tw2 - 18, 40), tier_text, font=font_badge, fill=(255, 255, 255))
+    except Exception:
+        draw.rectangle([TW - 130, 35, TW - 40, 75], fill=(120, 80, 20))
+        draw.text((TW - 110, 42), tier_text, font=font_badge, fill=(255, 255, 255))
 
     # Bottom bar
-    draw.rectangle([0, TH - 48, TW, TH], fill=(15, 23, 42))
-    font_logo = _font(20)
-    draw.text((50, TH - 38), "WARM INSIGHT", font=font_logo, fill=(184, 151, 77))
-    font_sub = _font(14, bold=False)
-    draw.text((TW - 300, TH - 36), "AI-Driven Global Market Analysis", font=font_sub, fill=(100, 116, 139))
+    draw.rectangle([0, TH - 44, TW, TH], fill=(10, 15, 30))
+    font_logo = _font(18)
+    draw.text((60, TH - 34), "WARM INSIGHT", font=font_logo, fill=(184, 151, 77))
+    font_sm = _font(13)
+    draw.text((TW - 280, TH - 32), "AI-Driven Global Market Analysis", font=font_sm, fill=(100, 116, 139))
 
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=92)
     kb = len(buf.getvalue()) // 1024
-    print("  Thumb: " + str(kb) + "KB | " + lines[0][:30] + "...")
+    print("  Thumb: " + str(kb) + "KB | " + line1[:25])
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
