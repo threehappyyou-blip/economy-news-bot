@@ -104,34 +104,34 @@ CAT_METRICS = {
 }
 
 # ═══════════════════════════════════════════════
-# DYNAMIC THUMBNAIL v3 — Research-backed design
-# Rules: 3-5 words, stroke outline, 60-30-10 color, ultra contrast
+# THUMBNAIL v5 — Bold text + Warmy character + visuals
+# Everything drawn with Pillow. Zero external images.
 # ═══════════════════════════════════════════════
 THUMB_COLORS = {
     "Economy": [
-        {"bg": (8, 12, 30), "hi": (253, 224, 71), "sub": (255, 255, 255), "bar": (37, 99, 235)},   # dark + yellow
-        {"bg": (37, 99, 235), "hi": (255, 255, 255), "sub": (219, 234, 254), "bar": (30, 58, 138)}, # blue + white
-        {"bg": (8, 8, 8), "hi": (74, 222, 128), "sub": (255, 255, 255), "bar": (22, 163, 74)},      # black + green
+        {"bg": (0, 0, 0), "hi": (255, 220, 50), "sub": (255, 255, 255), "badge": (37, 99, 235), "glow": (30, 60, 180)},
+        {"bg": (15, 25, 60), "hi": (255, 255, 255), "sub": (180, 220, 255), "badge": (37, 99, 235), "glow": (50, 90, 200)},
+        {"bg": (0, 0, 0), "hi": (80, 255, 140), "sub": (255, 255, 255), "badge": (22, 163, 74), "glow": (20, 120, 60)},
     ],
     "Politics": [
-        {"bg": (8, 8, 8), "hi": (252, 129, 129), "sub": (255, 255, 255), "bar": (220, 38, 38)},     # black + red
-        {"bg": (220, 38, 38), "hi": (255, 255, 255), "sub": (254, 226, 226), "bar": (153, 27, 27)},  # red + white
-        {"bg": (15, 10, 25), "hi": (251, 146, 60), "sub": (255, 255, 255), "bar": (194, 65, 12)},    # dark + orange
+        {"bg": (0, 0, 0), "hi": (255, 80, 80), "sub": (255, 255, 255), "badge": (220, 38, 38), "glow": (150, 20, 20)},
+        {"bg": (130, 10, 10), "hi": (255, 255, 255), "sub": (255, 200, 200), "badge": (180, 20, 20), "glow": (200, 30, 30)},
+        {"bg": (0, 0, 0), "hi": (255, 165, 50), "sub": (255, 255, 255), "badge": (194, 65, 12), "glow": (140, 70, 10)},
     ],
     "Tech": [
-        {"bg": (15, 3, 30), "hi": (167, 139, 250), "sub": (255, 255, 255), "bar": (124, 58, 237)},  # dark + purple
-        {"bg": (8, 8, 8), "hi": (56, 189, 248), "sub": (255, 255, 255), "bar": (14, 116, 144)},     # black + cyan
-        {"bg": (124, 58, 237), "hi": (255, 255, 255), "sub": (237, 233, 254), "bar": (91, 33, 182)}, # purple + white
+        {"bg": (0, 0, 0), "hi": (160, 120, 255), "sub": (255, 255, 255), "badge": (124, 58, 237), "glow": (80, 30, 160)},
+        {"bg": (0, 0, 0), "hi": (50, 200, 255), "sub": (255, 255, 255), "badge": (14, 116, 144), "glow": (10, 80, 120)},
+        {"bg": (80, 20, 160), "hi": (255, 255, 255), "sub": (220, 200, 255), "badge": (100, 40, 200), "glow": (120, 50, 220)},
     ],
     "Health": [
-        {"bg": (8, 8, 8), "hi": (52, 211, 153), "sub": (255, 255, 255), "bar": (5, 150, 105)},      # black + green
-        {"bg": (5, 150, 105), "hi": (255, 255, 255), "sub": (209, 250, 229), "bar": (4, 120, 87)},   # green + white
-        {"bg": (8, 15, 25), "hi": (103, 232, 249), "sub": (255, 255, 255), "bar": (8, 145, 178)},    # dark + teal
+        {"bg": (0, 0, 0), "hi": (50, 230, 160), "sub": (255, 255, 255), "badge": (5, 150, 105), "glow": (10, 100, 70)},
+        {"bg": (0, 80, 60), "hi": (255, 255, 255), "sub": (180, 255, 220), "badge": (4, 120, 87), "glow": (5, 140, 100)},
+        {"bg": (0, 0, 0), "hi": (80, 240, 255), "sub": (255, 255, 255), "badge": (8, 145, 178), "glow": (10, 100, 140)},
     ],
     "Energy": [
-        {"bg": (8, 8, 8), "hi": (253, 224, 71), "sub": (255, 255, 255), "bar": (202, 138, 4)},      # black + yellow
-        {"bg": (194, 65, 12), "hi": (255, 255, 255), "sub": (255, 237, 213), "bar": (154, 52, 18)},  # orange + white
-        {"bg": (20, 10, 5), "hi": (251, 191, 36), "sub": (255, 255, 255), "bar": (217, 119, 6)},     # dark + gold
+        {"bg": (0, 0, 0), "hi": (255, 220, 50), "sub": (255, 255, 255), "badge": (202, 138, 4), "glow": (140, 100, 10)},
+        {"bg": (160, 50, 0), "hi": (255, 255, 255), "sub": (255, 220, 180), "badge": (180, 60, 10), "glow": (200, 80, 10)},
+        {"bg": (0, 0, 0), "hi": (255, 180, 30), "sub": (255, 255, 255), "badge": (217, 119, 6), "glow": (160, 90, 10)},
     ],
 }
 
@@ -141,12 +141,9 @@ def _font(size):
     if size in _font_cache:
         return _font_cache[size]
     paths = [
-        os.path.expanduser("~/.local/share/fonts/Montserrat-ExtraBold.ttf"),
-        os.path.expanduser("~/.local/share/fonts/Montserrat-Bold.ttf"),
-        os.path.expanduser("~/.local/share/fonts/Inter-Bold.ttf"),
+        "fonts/Anton.ttf", "fonts/BebasNeue.ttf", "fonts/Oswald.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "C:/Windows/Fonts/arialbd.ttf",
+        "C:/Windows/Fonts/impact.ttf", "C:/Windows/Fonts/arialbd.ttf",
     ]
     for fp in paths:
         try:
@@ -157,133 +154,340 @@ def _font(size):
             continue
     return ImageFont.load_default()
 
+def _font_sub(size):
+    paths = [
+        "fonts/Oswald.ttf", "fonts/BebasNeue.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "C:/Windows/Fonts/arialbd.ttf",
+    ]
+    for fp in paths:
+        try:
+            return ImageFont.truetype(fp, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
 def _extract_hook(title):
-    """Extract 3-5 punchy words from title for thumbnail."""
     clean = title
     for lb in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
         clean = clean.replace(lb, "")
     clean = clean.strip()
-    # Split at colon — take the short part
     if ":" in clean:
         parts = clean.split(":")
-        # Use whichever part is shorter but meaningful (3+ words)
         short = min(parts, key=lambda p: len(p.strip()))
         if len(short.split()) >= 2:
             clean = short.strip()
         else:
             clean = parts[0].strip()
-    # Remove common filler words for punchier text
-    fillers = ["the", "a", "an", "of", "in", "for", "and", "to", "is", "are", "its", "how", "from"]
+    fillers = {"the", "a", "an", "of", "in", "for", "and", "to", "is", "are", "its", "how", "from", "with", "on", "at", "by"}
     words = clean.split()
     punchy = [w for w in words if w.lower() not in fillers]
     if len(punchy) < 2:
-        punchy = words
-    # Take max 5 words
+        punchy = words[:4]
     if len(punchy) > 5:
         punchy = punchy[:5]
     return punchy
 
+# ═══════════════════════════════════════════════
+# DRAW WARMY CHARACTER (pure Pillow)
+# ═══════════════════════════════════════════════
+def _draw_warmy(draw, cx, cy, size, is_vip=False, accent=(50, 230, 160)):
+    """Draw Warmy mascot centered at (cx, cy) with given size."""
+    s = size
+    g1, g2, g3 = (74, 222, 128), (34, 197, 94), (22, 101, 52)
+
+    # Body
+    bw, bh = int(s * 0.45), int(s * 0.55)
+    bx1, by1 = cx - bw // 2, cy - bh // 2 + int(s * 0.05)
+    bx2, by2 = bx1 + bw, by1 + bh
+    draw.rounded_rectangle([bx1, by1, bx2, by2], radius=bw // 4, fill=g2, outline=g3, width=3)
+
+    # Belly patch
+    pw, ph = int(bw * 0.55), int(bh * 0.25)
+    px1 = cx - pw // 2
+    py1 = by1 + int(bh * 0.6)
+    draw.rounded_rectangle([px1, py1, px1 + pw, py1 + ph], radius=8, fill=(254, 252, 232), outline=None)
+
+    # Legs
+    lw = int(bw * 0.12)
+    lh = int(s * 0.12)
+    for lx in [cx - int(bw * 0.22), cx + int(bw * 0.22)]:
+        draw.rounded_rectangle([lx - lw, by2, lx + lw, by2 + lh], radius=lw, fill=g3)
+        draw.ellipse([lx - lw - 4, by2 + lh - 6, lx + lw + 4, by2 + lh + 8], fill=g3)
+
+    # Arms
+    aw = int(bw * 0.1)
+    al = int(bw * 0.35)
+    arm_y = by1 + int(bh * 0.35)
+    # Left arm (waving up)
+    draw.rounded_rectangle([bx1 - al, arm_y - int(al * 0.5), bx1, arm_y + aw], radius=aw, fill=g2, outline=g3, width=2)
+    draw.ellipse([bx1 - al - 6, arm_y - int(al * 0.5) - 6, bx1 - al + 10, arm_y - int(al * 0.5) + 10], fill=g1, outline=g3, width=2)
+    # Right arm
+    draw.rounded_rectangle([bx2, arm_y, bx2 + al, arm_y + aw], radius=aw, fill=g2, outline=g3, width=2)
+    draw.ellipse([bx2 + al - 6, arm_y - 4, bx2 + al + 10, arm_y + aw + 4], fill=g1, outline=g3, width=2)
+
+    # Cap
+    capw = int(bw * 0.5)
+    caph = int(s * 0.06)
+    draw.rounded_rectangle([cx - capw // 2, by1 - caph, cx + capw // 2, by1 + 2], radius=caph // 2, fill=g3)
+    cap_dot = (251, 191, 36) if is_vip else g1
+    draw.ellipse([cx - 7, by1 - caph - 5, cx + 7, by1 - caph + 9], fill=cap_dot, outline=g3, width=2)
+
+    # Eyes
+    er = int(bw * 0.11)
+    ey = by1 + int(bh * 0.3)
+    for ex in [cx - int(bw * 0.18), cx + int(bw * 0.18)]:
+        draw.ellipse([ex - er, ey - er, ex + er, ey + er], fill=(255, 255, 255), outline=g3, width=2)
+        pr = int(er * 0.5)
+        draw.ellipse([ex - pr + 2, ey - pr - 1, ex + pr + 2, ey + pr - 1], fill=g3)
+        draw.ellipse([ex + 2, ey - pr, ex + 5, ey - pr + 3], fill=(255, 255, 255))
+
+    # Mouth (smile)
+    mx1 = cx - int(bw * 0.12)
+    mx2 = cx + int(bw * 0.12)
+    my = by1 + int(bh * 0.48)
+    draw.arc([mx1, my - 4, mx2, my + int(bh * 0.08)], start=0, end=180, fill=g3, width=3)
+
+    # Cheeks
+    for chx in [cx - int(bw * 0.26), cx + int(bw * 0.26)]:
+        draw.ellipse([chx - 8, my - 4, chx + 8, my + 6], fill=(251, 146, 60, 80))
+
+    # VIP Crown
+    if is_vip:
+        crw = int(bw * 0.4)
+        crh = int(s * 0.1)
+        crx = cx - crw // 2
+        cry = by1 - caph - crh - 4
+        pts = [
+            (crx, cry + crh),
+            (crx + int(crw * 0.15), cry + int(crh * 0.2)),
+            (crx + int(crw * 0.35), cry + int(crh * 0.7)),
+            (crx + crw // 2, cry),
+            (crx + int(crw * 0.65), cry + int(crh * 0.7)),
+            (crx + int(crw * 0.85), cry + int(crh * 0.2)),
+            (crx + crw, cry + crh),
+        ]
+        draw.polygon(pts, fill=(251, 191, 36), outline=(146, 64, 14), width=2)
+        for gx in [crx + int(crw * 0.15), crx + crw // 2, crx + int(crw * 0.85)]:
+            draw.ellipse([gx - 3, cry + int(crh * 0.2), gx + 3, cry + int(crh * 0.2) + 6], fill=(239, 68, 68))
+
+# ═══════════════════════════════════════════════
+# DRAW CATEGORY VISUALS (pure Pillow)
+# ═══════════════════════════════════════════════
+def _draw_chart_up(draw, x, y, w, h, color, seed):
+    """Rising line chart with bars."""
+    rng = random.Random(seed)
+    bars = 5
+    bw = w // (bars * 2)
+    for i in range(bars):
+        bh = int(h * (0.3 + i * 0.15) + rng.randint(-10, 10))
+        bx = x + i * (w // bars) + bw // 2
+        by = y + h - bh
+        draw.rectangle([bx, by, bx + bw, y + h], fill=color, outline=None)
+    # Trend line
+    pts = []
+    for i in range(bars):
+        bh = int(h * (0.3 + i * 0.15))
+        px = x + i * (w // bars) + bw
+        py = y + h - bh - 10
+        pts.append((px, py))
+    if len(pts) >= 2:
+        draw.line(pts, fill=(255, 255, 255), width=3)
+    # Arrow up at end
+    if pts:
+        lx, ly = pts[-1]
+        draw.polygon([(lx - 8, ly + 5), (lx, ly - 12), (lx + 8, ly + 5)], fill=(255, 255, 255))
+
+def _draw_globe(draw, cx, cy, r, color):
+    """Simple globe."""
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=3)
+    draw.ellipse([cx - int(r * 0.4), cy - r, cx + int(r * 0.4), cy + r], outline=color, width=2)
+    draw.line([(cx - r, cy), (cx + r, cy)], fill=color, width=2)
+    draw.arc([cx - int(r * 0.8), cy - int(r * 0.45), cx + int(r * 0.8), cy + int(r * 0.1)], 0, 360, fill=color, width=2)
+
+def _draw_circuit(draw, x, y, w, h, color, seed):
+    """Circuit board pattern."""
+    rng = random.Random(seed)
+    for _ in range(8):
+        sx = rng.randint(x, x + w)
+        sy = rng.randint(y, y + h)
+        ex = rng.randint(x, x + w)
+        ey = rng.randint(y, y + h)
+        draw.line([(sx, sy), (ex, sy), (ex, ey)], fill=color, width=2)
+        draw.ellipse([ex - 4, ey - 4, ex + 4, ey + 4], fill=color)
+    for _ in range(4):
+        nx = rng.randint(x + 10, x + w - 10)
+        ny = rng.randint(y + 10, y + h - 10)
+        ns = rng.randint(12, 25)
+        draw.rectangle([nx, ny, nx + ns, ny + ns], outline=color, width=2)
+
+def _draw_pulse(draw, x, y, w, h, color):
+    """Heart pulse / EKG line."""
+    pts = []
+    seg = w // 8
+    pts.append((x, y + h // 2))
+    pts.append((x + seg, y + h // 2))
+    pts.append((x + seg * 2, y + h // 2 - 5))
+    pts.append((x + seg * 3, y + 5))
+    pts.append((x + int(seg * 3.5), y + h - 5))
+    pts.append((x + seg * 4, y + h // 2))
+    pts.append((x + seg * 5, y + h // 2 - 3))
+    pts.append((x + seg * 6, y + 15))
+    pts.append((x + int(seg * 6.5), y + h - 10))
+    pts.append((x + seg * 7, y + h // 2))
+    pts.append((x + w, y + h // 2))
+    draw.line(pts, fill=color, width=4)
+
+def _draw_bolt(draw, cx, cy, size, color):
+    """Lightning bolt."""
+    s = size
+    pts = [
+        (cx - int(s * 0.05), cy - int(s * 0.5)),
+        (cx + int(s * 0.25), cy - int(s * 0.5)),
+        (cx + int(s * 0.02), cy - int(s * 0.05)),
+        (cx + int(s * 0.28), cy - int(s * 0.05)),
+        (cx - int(s * 0.08), cy + int(s * 0.5)),
+        (cx + int(s * 0.05), cy + int(s * 0.05)),
+        (cx - int(s * 0.2), cy + int(s * 0.05)),
+    ]
+    draw.polygon(pts, fill=color, outline=(0, 0, 0), width=2)
+
+def _draw_category_visual(draw, cat, x, y, w, h, color, seed):
+    if cat == "Economy":
+        _draw_chart_up(draw, x, y + h // 4, w, h // 2, color, seed)
+    elif cat == "Politics":
+        _draw_globe(draw, x + w // 2, y + h // 2, min(w, h) // 3, color)
+    elif cat == "Tech":
+        _draw_circuit(draw, x, y, w, h, color, seed)
+    elif cat == "Health":
+        _draw_pulse(draw, x, y + h // 4, w, h // 2, color)
+    elif cat == "Energy":
+        _draw_bolt(draw, x + w // 2, y + h // 2, min(w, h) * 0.7, color)
+
+# ═══════════════════════════════════════════════
+# MAIN THUMBNAIL GENERATOR
+# ═══════════════════════════════════════════════
 def make_dynamic_thumb(title, cat, tier):
-    """Generate high-CTR thumbnail. Pure Pillow, zero external images."""
     TW, TH = 1280, 720
     seed = abs(hash(title)) % 100000
-    rng = random.Random(seed)
+    is_vip = tier == "Royal Premium"
 
-    # Pick color palette
     palettes = THUMB_COLORS.get(cat, THUMB_COLORS["Economy"])
     pal = palettes[seed % len(palettes)]
-    bg, hi, sub, bar = pal["bg"], pal["hi"], pal["sub"], pal["bar"]
+    bg, hi, sub, badge_c, glow = pal["bg"], pal["hi"], pal["sub"], pal["badge"], pal["glow"]
 
     img = Image.new("RGB", (TW, TH), bg)
     draw = ImageDraw.Draw(img)
 
-    # Left accent stripe (thin, 8px)
-    draw.rectangle([0, 0, 8, TH], fill=bar)
+    # Gradient background
+    for y in range(TH):
+        r = max(0, bg[0] - int(y * 0.015))
+        g = max(0, bg[1] - int(y * 0.015))
+        b = max(0, bg[2] - int(y * 0.015))
+        draw.line([(0, y), (TW, y)], fill=(r, g, b))
 
-    # Extract hook words
+    # Glow behind character area (right side)
+    gcx, gcy = TW - 250, TH // 2
+    for rad in range(200, 0, -4):
+        alpha = rad / 200
+        c = (
+            int(bg[0] + (glow[0] - bg[0]) * alpha * 0.4),
+            int(bg[1] + (glow[1] - bg[1]) * alpha * 0.4),
+            int(bg[2] + (glow[2] - bg[2]) * alpha * 0.4),
+        )
+        draw.ellipse([gcx - rad, gcy - rad, gcx + rad, gcy + rad], fill=c)
+
+    # Left accent bar
+    draw.rectangle([0, 0, 8, TH], fill=badge_c)
+
+    # Draw category visual element (behind character, right side)
+    vis_color = (
+        min(255, glow[0] + 60),
+        min(255, glow[1] + 60),
+        min(255, glow[2] + 60),
+    )
+    _draw_category_visual(draw, cat, TW - 420, 100, 350, TH - 200, vis_color, seed)
+
+    # Draw Warmy character (right side, overlapping visual)
+    warmy_cx = TW - 220
+    warmy_cy = TH // 2 + 20
+    warmy_size = 320
+    _draw_warmy(draw, warmy_cx, warmy_cy, warmy_size, is_vip=is_vip, accent=badge_c)
+
+    # Extract hook words and build 2-line title
     words = _extract_hook(title)
-
-    # Split into 2 lines: first line highlight, second line white
-    mid = max(1, len(words) // 2 + len(words) % 2)
+    mid = max(1, (len(words) + 1) // 2)
     line1 = " ".join(words[:mid]).upper()
     line2 = " ".join(words[mid:]).upper() if mid < len(words) else ""
 
-    # Determine font size — fill ~60% of frame width
-    font_size = 100
-    f = _font(font_size)
-    while f.getbbox(line1)[2] > TW * 0.85 and font_size > 50:
-        font_size -= 4
-        f = _font(font_size)
+    # Auto-size font — fit in left 60% of image
+    max_w = int(TW * 0.58)
+    font_sz = 120
+    test_line = line1 if len(line1) >= len(line2 or "") else (line2 or line1)
+    while font_sz > 55:
+        f = _font(font_sz)
+        bb = f.getbbox(test_line)
+        if bb and (bb[2] - bb[0]) <= max_w:
+            break
+        font_sz -= 4
+
+    font_big = _font(font_sz)
+    line_h = int(font_sz * 1.12)
+
+    num_lines = 2 if line2 else 1
+    block_h = num_lines * line_h
+    start_y = (TH - block_h) // 2 - 15
+    x = 50
+
+    # LINE 1 — highlight color with shadow
+    for dx in range(7, 0, -1):
+        a = max(0, 25 - dx * 4)
+        draw.text((x + dx, start_y + dx), line1, font=font_big, fill=(a, a, a))
+    draw.text((x, start_y), line1, font=font_big, fill=hi)
+
+    # LINE 2 — white with shadow
     if line2:
-        while f.getbbox(line2)[2] > TW * 0.85 and font_size > 50:
-            font_size -= 4
-            f = _font(font_size)
-
-    font_big = _font(font_size)
-    line_h = int(font_size * 1.15)
-
-    # Vertical center
-    total_h = line_h * (2 if line2 else 1)
-    y1 = (TH - total_h) // 2 - 20
-
-    # Draw LINE 1 — highlight color with black stroke
-    try:
-        draw.text((60, y1), line1, font=font_big, fill=hi, stroke_width=5, stroke_fill=(0, 0, 0))
-    except TypeError:
-        # Pillow < 9.0 fallback: manual shadow
-        for dx in range(-3, 4):
-            for dy in range(-3, 4):
-                if dx or dy:
-                    draw.text((60 + dx, y1 + dy), line1, font=font_big, fill=(0, 0, 0))
-        draw.text((60, y1), line1, font=font_big, fill=hi)
-
-    # Draw LINE 2 — white with black stroke
-    if line2:
-        y2 = y1 + line_h
-        try:
-            draw.text((60, y2), line2, font=font_big, fill=sub, stroke_width=5, stroke_fill=(0, 0, 0))
-        except TypeError:
-            for dx in range(-3, 4):
-                for dy in range(-3, 4):
-                    if dx or dy:
-                        draw.text((60 + dx, y2 + dy), line2, font=font_big, fill=(0, 0, 0))
-            draw.text((60, y2), line2, font=font_big, fill=sub)
+        y2 = start_y + line_h
+        for dx in range(7, 0, -1):
+            a = max(0, 25 - dx * 4)
+            draw.text((x + dx, y2 + dx), line2, font=font_big, fill=(a, a, a))
+        draw.text((x, y2), line2, font=font_big, fill=sub)
 
     # Category badge — top left
-    font_badge = _font(22)
-    badge_text = cat.upper()
+    fbadge = _font_sub(26)
+    cat_text = cat.upper()
     try:
-        bb = font_badge.getbbox(badge_text)
-        bw = bb[2] - bb[0] + 44
-        draw.rounded_rectangle([50, 35, 50 + bw, 75], radius=20, fill=bar)
-        draw.text((72, 40), badge_text, font=font_badge, fill=(255, 255, 255))
+        bb = fbadge.getbbox(cat_text)
+        bw = bb[2] - bb[0] + 48
+        draw.rounded_rectangle([45, 32, 45 + bw, 74], radius=21, fill=badge_c)
+        draw.text((69, 37), cat_text, font=fbadge, fill=(255, 255, 255))
     except Exception:
-        draw.rectangle([50, 35, 200, 75], fill=bar)
-        draw.text((72, 42), badge_text, font=font_badge, fill=(255, 255, 255))
+        draw.rectangle([45, 32, 195, 74], fill=badge_c)
+        draw.text((63, 39), cat_text, font=fbadge, fill=(255, 255, 255))
 
     # Tier badge — top right
     tier_text = "PRO" if tier == "Premium" else "VIP"
+    tier_bg = (30, 64, 175) if tier == "Premium" else (160, 120, 30)
     try:
-        tb = font_badge.getbbox(tier_text)
-        tw2 = tb[2] - tb[0] + 44
-        tier_bg2 = (30, 64, 175) if tier == "Premium" else (120, 80, 20)
-        draw.rounded_rectangle([TW - tw2 - 40, 35, TW - 40, 75], radius=20, fill=tier_bg2)
-        draw.text((TW - tw2 - 18, 40), tier_text, font=font_badge, fill=(255, 255, 255))
+        tb = fbadge.getbbox(tier_text)
+        tw2 = tb[2] - tb[0] + 48
+        draw.rounded_rectangle([TW - tw2 - 45, 32, TW - 45, 74], radius=21, fill=tier_bg)
+        draw.text((TW - tw2 - 21, 37), tier_text, font=fbadge, fill=(255, 255, 255))
     except Exception:
-        draw.rectangle([TW - 130, 35, TW - 40, 75], fill=(120, 80, 20))
-        draw.text((TW - 110, 42), tier_text, font=font_badge, fill=(255, 255, 255))
+        draw.rectangle([TW - 130, 32, TW - 45, 74], fill=tier_bg)
+        draw.text((TW - 112, 39), tier_text, font=fbadge, fill=(255, 255, 255))
 
     # Bottom bar
-    draw.rectangle([0, TH - 44, TW, TH], fill=(10, 15, 30))
-    font_logo = _font(18)
-    draw.text((60, TH - 34), "WARM INSIGHT", font=font_logo, fill=(184, 151, 77))
-    font_sm = _font(13)
-    draw.text((TW - 280, TH - 32), "AI-Driven Global Market Analysis", font=font_sm, fill=(100, 116, 139))
+    draw.rectangle([0, TH - 42, TW, TH], fill=(10, 12, 20))
+    flogo = _font_sub(20)
+    draw.text((50, TH - 34), "WARM INSIGHT", font=flogo, fill=(184, 151, 77))
+    fsm = _font_sub(14)
+    draw.text((TW - 290, TH - 32), "AI-Driven Global Market Analysis", font=fsm, fill=(100, 116, 139))
 
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=92)
     kb = len(buf.getvalue()) // 1024
-    print("  Thumb: " + str(kb) + "KB | " + line1[:25])
+    print("  Thumb: " + str(kb) + "KB | " + line1[:30])
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
