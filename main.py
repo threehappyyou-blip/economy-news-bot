@@ -62,7 +62,9 @@ TASKS = [
     {"tier": "Royal Premium", "count": 5},
 ]
 TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
-TIER_VIS = {"Premium": "public", "Royal Premium": "public"}
+# Post visibility: "members" = free signup required, "paid" = paid only
+# This enables Ghost's Public Preview (30/70 split) for SEO
+TIER_VIS = {"Premium": "members", "Royal Premium": "paid"}
 TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
 
 # All flash for cost optimization (~200원/run total)
@@ -109,29 +111,29 @@ CAT_METRICS = {
 # ═══════════════════════════════════════════════
 THUMB_COLORS = {
     "Economy": [
-        {"bg": (0, 0, 0), "hi": (255, 220, 50), "sub": (255, 255, 255), "badge": (37, 99, 235), "glow": (30, 60, 180)},
-        {"bg": (15, 25, 60), "hi": (255, 255, 255), "sub": (180, 220, 255), "badge": (37, 99, 235), "glow": (50, 90, 200)},
-        {"bg": (0, 0, 0), "hi": (80, 255, 140), "sub": (255, 255, 255), "badge": (22, 163, 74), "glow": (20, 120, 60)},
+        {"bg": (14, 165, 233), "bg2": (2, 132, 199), "text": (15, 23, 42), "hi": (220, 38, 38), "chart": [(34, 197, 94), (239, 68, 68)]},
+        {"bg": (16, 185, 129), "bg2": (5, 150, 105), "text": (15, 23, 42), "hi": (30, 58, 138), "chart": [(34, 197, 94), (239, 68, 68)]},
+        {"bg": (56, 189, 248), "bg2": (14, 165, 233), "text": (15, 23, 42), "hi": (124, 58, 237), "chart": [(34, 197, 94), (239, 68, 68)]},
     ],
     "Politics": [
-        {"bg": (0, 0, 0), "hi": (255, 80, 80), "sub": (255, 255, 255), "badge": (220, 38, 38), "glow": (150, 20, 20)},
-        {"bg": (130, 10, 10), "hi": (255, 255, 255), "sub": (255, 200, 200), "badge": (180, 20, 20), "glow": (200, 30, 30)},
-        {"bg": (0, 0, 0), "hi": (255, 165, 50), "sub": (255, 255, 255), "badge": (194, 65, 12), "glow": (140, 70, 10)},
+        {"bg": (239, 68, 68), "bg2": (185, 28, 28), "text": (255, 255, 255), "hi": (254, 240, 138), "chart": [(255, 255, 255), (254, 240, 138)]},
+        {"bg": (251, 146, 60), "bg2": (234, 88, 12), "text": (15, 23, 42), "hi": (127, 29, 29), "chart": [(15, 23, 42), (127, 29, 29)]},
+        {"bg": (244, 114, 182), "bg2": (219, 39, 119), "text": (255, 255, 255), "hi": (254, 240, 138), "chart": [(255, 255, 255), (254, 240, 138)]},
     ],
     "Tech": [
-        {"bg": (0, 0, 0), "hi": (160, 120, 255), "sub": (255, 255, 255), "badge": (124, 58, 237), "glow": (80, 30, 160)},
-        {"bg": (0, 0, 0), "hi": (50, 200, 255), "sub": (255, 255, 255), "badge": (14, 116, 144), "glow": (10, 80, 120)},
-        {"bg": (80, 20, 160), "hi": (255, 255, 255), "sub": (220, 200, 255), "badge": (100, 40, 200), "glow": (120, 50, 220)},
+        {"bg": (99, 102, 241), "bg2": (79, 70, 229), "text": (255, 255, 255), "hi": (253, 224, 71), "chart": [(52, 211, 153), (251, 113, 133)]},
+        {"bg": (14, 165, 233), "bg2": (3, 105, 161), "text": (255, 255, 255), "hi": (253, 224, 71), "chart": [(74, 222, 128), (251, 113, 133)]},
+        {"bg": (168, 85, 247), "bg2": (126, 34, 206), "text": (255, 255, 255), "hi": (253, 224, 71), "chart": [(52, 211, 153), (251, 113, 133)]},
     ],
     "Health": [
-        {"bg": (0, 0, 0), "hi": (50, 230, 160), "sub": (255, 255, 255), "badge": (5, 150, 105), "glow": (10, 100, 70)},
-        {"bg": (0, 80, 60), "hi": (255, 255, 255), "sub": (180, 255, 220), "badge": (4, 120, 87), "glow": (5, 140, 100)},
-        {"bg": (0, 0, 0), "hi": (80, 240, 255), "sub": (255, 255, 255), "badge": (8, 145, 178), "glow": (10, 100, 140)},
+        {"bg": (20, 184, 166), "bg2": (13, 148, 136), "text": (15, 23, 42), "hi": (127, 29, 29), "chart": [(34, 197, 94), (239, 68, 68)]},
+        {"bg": (34, 197, 94), "bg2": (22, 163, 74), "text": (15, 23, 42), "hi": (30, 58, 138), "chart": [(15, 23, 42), (239, 68, 68)]},
+        {"bg": (6, 182, 212), "bg2": (8, 145, 178), "text": (255, 255, 255), "hi": (254, 240, 138), "chart": [(74, 222, 128), (251, 113, 133)]},
     ],
     "Energy": [
-        {"bg": (0, 0, 0), "hi": (255, 220, 50), "sub": (255, 255, 255), "badge": (202, 138, 4), "glow": (140, 100, 10)},
-        {"bg": (160, 50, 0), "hi": (255, 255, 255), "sub": (255, 220, 180), "badge": (180, 60, 10), "glow": (200, 80, 10)},
-        {"bg": (0, 0, 0), "hi": (255, 180, 30), "sub": (255, 255, 255), "badge": (217, 119, 6), "glow": (160, 90, 10)},
+        {"bg": (245, 158, 11), "bg2": (217, 119, 6), "text": (15, 23, 42), "hi": (127, 29, 29), "chart": [(34, 197, 94), (239, 68, 68)]},
+        {"bg": (249, 115, 22), "bg2": (194, 65, 12), "text": (255, 255, 255), "hi": (254, 240, 138), "chart": [(255, 255, 255), (254, 240, 138)]},
+        {"bg": (251, 191, 36), "bg2": (202, 138, 4), "text": (15, 23, 42), "hi": (127, 29, 29), "chart": [(34, 197, 94), (239, 68, 68)]},
     ],
 }
 
@@ -532,137 +534,154 @@ def _draw_context_icon(draw, icon_type, cx, cy, size, accent):
 # MAIN THUMBNAIL GENERATOR v5.1
 # ═══════════════════════════════════════════════
 def make_dynamic_thumb(title, cat, tier):
-    # Render at 2x then downscale for crisp text
-    SCALE = 2
-    TW, TH = 1280 * SCALE, 720 * SCALE
+    # 2x supersampling for crisp output
+    S = 2
+    TW, TH = 1280 * S, 720 * S
     seed = abs(hash(title)) % 100000
     is_vip = tier == "Royal Premium"
 
     palettes = THUMB_COLORS.get(cat, THUMB_COLORS["Economy"])
     pal = palettes[seed % len(palettes)]
-    bg, hi, sub, badge_c, glow = pal["bg"], pal["hi"], pal["sub"], pal["badge"], pal["glow"]
+    bg1, bg2 = pal["bg"], pal["bg2"]
+    text_c, hi_c = pal["text"], pal["hi"]
+    chart_colors = pal["chart"]
 
-    img = Image.new("RGB", (TW, TH), bg)
+    img = Image.new("RGB", (TW, TH), bg1)
     draw = ImageDraw.Draw(img)
 
-    # Gradient background
+    # Clean diagonal gradient (top-left bright -> bottom-right darker)
     for y in range(TH):
-        r = max(0, bg[0] - int(y * 0.008))
-        g = max(0, bg[1] - int(y * 0.008))
-        b = max(0, bg[2] - int(y * 0.008))
+        ratio = y / TH
+        r = int(bg1[0] + (bg2[0] - bg1[0]) * ratio)
+        g = int(bg1[1] + (bg2[1] - bg1[1]) * ratio)
+        b = int(bg1[2] + (bg2[2] - bg1[2]) * ratio)
         draw.line([(0, y), (TW, y)], fill=(r, g, b))
 
-    # Glow behind character area
-    gcx, gcy = TW - 500 * SCALE // 2, TH // 2
-    for rad in range(350 * SCALE // 2, 0, -6):
-        alpha = rad / (350 * SCALE // 2)
-        c = (
-            int(bg[0] + (glow[0] - bg[0]) * alpha * 0.45),
-            int(bg[1] + (glow[1] - bg[1]) * alpha * 0.45),
-            int(bg[2] + (glow[2] - bg[2]) * alpha * 0.45),
-        )
-        draw.ellipse([gcx - rad, gcy - rad, gcx + rad, gcy + rad], fill=c)
+    # --- RIGHT SIDE: Big chart + Warmy ---
+    # Large prominent chart (Milk Road style)
+    cx_chart = int(TW * 0.72)
+    cy_chart = int(TH * 0.38)
+    chart_w = int(TW * 0.35)
+    chart_h = int(TH * 0.45)
 
-    # Left accent bar
-    draw.rectangle([0, 0, 14 * SCALE // 2, TH], fill=badge_c)
+    # Detect market direction from title
+    t_lower = title.lower()
+    going_up = any(w in t_lower for w in ["surge", "rise", "rally", "boom", "bull", "growth", "gain", "soar", "record"])
+    going_down = any(w in t_lower for w in ["crash", "fall", "drop", "plunge", "bear", "decline", "loss", "fear", "recession", "risk"])
 
-    # Draw category visual (behind character)
-    vis_color = (
-        min(255, glow[0] + 50),
-        min(255, glow[1] + 50),
-        min(255, glow[2] + 50),
-    )
-    _draw_category_visual(draw, cat, TW - 750 * SCALE // 2, 180 * SCALE // 2, 600 * SCALE // 2, (TH - 360 * SCALE // 2), vis_color, seed)
+    # Draw big line chart
+    rng = random.Random(seed)
+    pts = []
+    num_pts = 8
+    for i in range(num_pts):
+        px = cx_chart - chart_w // 2 + int(chart_w * i / (num_pts - 1))
+        if going_down:
+            base = cy_chart - chart_h // 3 + int(chart_h * 0.6 * i / num_pts)
+        elif going_up:
+            base = cy_chart + chart_h // 4 - int(chart_h * 0.6 * i / num_pts)
+        else:
+            base = cy_chart + int(30 * S * (0.5 - rng.random()))
+        noise = int(20 * S * (0.5 - rng.random()))
+        pts.append((px, base + noise))
 
-    # Draw Warmy character
-    warmy_cx = TW - 400 * SCALE // 2
-    warmy_cy = TH // 2 + 30 * SCALE // 2
-    warmy_size = 550 * SCALE // 2
-    _draw_warmy(draw, warmy_cx, warmy_cy, warmy_size, is_vip=is_vip, accent=badge_c)
+    if len(pts) >= 2:
+        # Thick chart line
+        line_color = chart_colors[0] if (going_up or not going_down) else chart_colors[1]
+        draw.line(pts, fill=line_color, width=6 * S)
+        # Arrow at end
+        lx, ly = pts[-1]
+        arr_size = 20 * S
+        if going_down:
+            draw.polygon([(lx - arr_size, ly - arr_size // 2), (lx, ly + arr_size), (lx + arr_size, ly - arr_size // 2)], fill=chart_colors[1])
+        else:
+            draw.polygon([(lx - arr_size, ly + arr_size // 2), (lx, ly - arr_size), (lx + arr_size, ly + arr_size // 2)], fill=chart_colors[0])
 
-    # Detect and draw context icons (next to character)
+    # Draw Warmy character (overlapping chart, bottom-right)
+    warmy_cx = int(TW * 0.78)
+    warmy_cy = int(TH * 0.62)
+    warmy_size = int(280 * S)
+    _draw_warmy(draw, warmy_cx, warmy_cy, warmy_size, is_vip=is_vip, accent=bg2)
+
+    # Context icons (1-2, positioned near top-right)
     icons = _detect_icons(title)
-    icon_positions = [
-        (TW - 160 * SCALE // 2, 250 * SCALE // 2),
-        (TW - 700 * SCALE // 2, 200 * SCALE // 2),
-    ]
+    icon_spots = [(int(TW * 0.62), int(TH * 0.15)), (int(TW * 0.88), int(TH * 0.22))]
     for i, icon_type in enumerate(icons[:2]):
-        if i < len(icon_positions):
-            ix, iy = icon_positions[i]
-            _draw_context_icon(draw, icon_type, ix, iy, 100 * SCALE // 2, badge_c)
+        if i < len(icon_spots):
+            ix, iy = icon_spots[i]
+            _draw_context_icon(draw, icon_type, ix, iy, int(60 * S), text_c)
 
-    # Extract hook words
+    # --- LEFT SIDE: Bold title text ---
     words = _extract_hook(title)
     mid = max(1, (len(words) + 1) // 2)
     line1 = " ".join(words[:mid]).upper()
     line2 = " ".join(words[mid:]).upper() if mid < len(words) else ""
 
-    # Auto-size font — fit in left 58%
-    max_w = int(TW * 0.56)
-    font_sz = 220 * SCALE // 2
+    # Auto-size font to fit left 55%
+    max_w = int(TW * 0.53)
+    font_sz = int(110 * S)
     test_line = line1 if len(line1) >= len(line2 or "") else (line2 or line1)
-    while font_sz > 80 * SCALE // 2:
+    while font_sz > int(50 * S):
         f = _font(font_sz)
         bb = f.getbbox(test_line)
         if bb and (bb[2] - bb[0]) <= max_w:
             break
-        font_sz -= 6
+        font_sz -= int(4 * S)
 
     font_big = _font(font_sz)
-    line_h = int(font_sz * 1.12)
+    line_h = int(font_sz * 1.1)
     num_lines = 2 if line2 else 1
     block_h = num_lines * line_h
-    start_y = (TH - block_h) // 2 - 20 * SCALE // 2
-    x = 80 * SCALE // 2
+    start_y = (TH - block_h) // 2
+    x = int(55 * S)
 
-    # LINE 1 — crisp shadow + highlight
-    for dx in [4, 3, 2]:
-        d = dx * SCALE // 2
-        draw.text((x + d, start_y + d), line1, font=font_big, fill=(0, 0, 0))
-    draw.text((x, start_y), line1, font=font_big, fill=hi)
+    # LINE 1 — main text color with crisp shadow
+    draw.text((x + 4 * S, start_y + 4 * S), line1, font=font_big, fill=(0, 0, 0, 60))
+    draw.text((x, start_y), line1, font=font_big, fill=text_c)
 
-    # LINE 2 — crisp shadow + white
+    # LINE 2 — highlight color
     if line2:
         y2 = start_y + line_h
-        for dx in [4, 3, 2]:
-            d = dx * SCALE // 2
-            draw.text((x + d, y2 + d), line2, font=font_big, fill=(0, 0, 0))
-        draw.text((x, y2), line2, font=font_big, fill=sub)
+        draw.text((x + 4 * S, y2 + 4 * S), line2, font=font_big, fill=(0, 0, 0, 60))
+        draw.text((x, y2), line2, font=font_big, fill=hi_c)
 
-    # Category badge
-    fbadge = _font_sub(44 * SCALE // 2)
+    # Category badge — top left (white pill with dark text)
+    fbadge = _font_sub(int(28 * S))
     cat_text = cat.upper()
     try:
         bb = fbadge.getbbox(cat_text)
-        bw = bb[2] - bb[0] + 80 * SCALE // 2
-        bh_val = 70 * SCALE // 2
-        draw.rounded_rectangle([70 * SCALE // 2, 55 * SCALE // 2, 70 * SCALE // 2 + bw, 55 * SCALE // 2 + bh_val], radius=bh_val // 2, fill=badge_c)
-        draw.text((70 * SCALE // 2 + 40 * SCALE // 4, 55 * SCALE // 2 + 10 * SCALE // 2), cat_text, font=fbadge, fill=(255, 255, 255))
+        bw = bb[2] - bb[0] + int(50 * S)
+        bh = int(44 * S)
+        badge_bg = (255, 255, 255) if text_c[0] < 128 else (15, 23, 42)
+        badge_fg = (15, 23, 42) if text_c[0] < 128 else (255, 255, 255)
+        draw.rounded_rectangle([int(45 * S), int(35 * S), int(45 * S) + bw, int(35 * S) + bh], radius=bh // 2, fill=badge_bg)
+        draw.text((int(45 * S) + int(25 * S), int(35 * S) + int(8 * S)), cat_text, font=fbadge, fill=badge_fg)
     except Exception:
-        draw.rectangle([70, 55, 350, 125], fill=badge_c)
-        draw.text((90, 65), cat_text, font=fbadge, fill=(255, 255, 255))
+        draw.rectangle([int(45 * S), int(35 * S), int(200 * S), int(75 * S)], fill=(255, 255, 255))
+        draw.text((int(60 * S), int(42 * S)), cat_text, font=fbadge, fill=(15, 23, 42))
 
-    # Tier badge
+    # Tier badge — top right
     tier_text = "PRO" if tier == "Premium" else "VIP"
-    tier_bg = (30, 64, 175) if tier == "Premium" else (160, 120, 30)
+    tier_pill_bg = (15, 23, 42) if text_c == (255, 255, 255) else (255, 255, 255)
+    tier_pill_fg = (255, 255, 255) if text_c == (255, 255, 255) else (15, 23, 42)
     try:
         tb = fbadge.getbbox(tier_text)
-        tw2 = tb[2] - tb[0] + 80 * SCALE // 2
-        bh_val = 70 * SCALE // 2
-        rx = TW - tw2 - 70 * SCALE // 2
-        draw.rounded_rectangle([rx, 55 * SCALE // 2, rx + tw2, 55 * SCALE // 2 + bh_val], radius=bh_val // 2, fill=tier_bg)
-        draw.text((rx + 40 * SCALE // 4, 55 * SCALE // 2 + 10 * SCALE // 2), tier_text, font=fbadge, fill=(255, 255, 255))
+        tw2 = tb[2] - tb[0] + int(50 * S)
+        bh = int(44 * S)
+        draw.rounded_rectangle([TW - tw2 - int(45 * S), int(35 * S), TW - int(45 * S), int(35 * S) + bh], radius=bh // 2, fill=tier_pill_bg)
+        draw.text((TW - tw2 - int(45 * S) + int(25 * S), int(35 * S) + int(8 * S)), tier_text, font=fbadge, fill=tier_pill_fg)
     except Exception:
-        draw.rectangle([TW - 250, 55, TW - 70, 125], fill=tier_bg)
-        draw.text((TW - 220, 65), tier_text, font=fbadge, fill=(255, 255, 255))
+        draw.rectangle([TW - int(150 * S), int(35 * S), TW - int(45 * S), int(75 * S)], fill=tier_pill_bg)
+        draw.text((TW - int(130 * S), int(42 * S)), tier_text, font=fbadge, fill=tier_pill_fg)
 
-    # Bottom bar
-    bar_h = 70 * SCALE // 2
-    draw.rectangle([0, TH - bar_h, TW, TH], fill=(10, 12, 20))
-    flogo = _font_sub(34 * SCALE // 2)
-    draw.text((80 * SCALE // 2, TH - bar_h + 14 * SCALE // 2), "WARM INSIGHT", font=flogo, fill=(184, 151, 77))
-    fsm = _font_sub(24 * SCALE // 2)
-    draw.text((TW - 520 * SCALE // 2, TH - bar_h + 18 * SCALE // 2), "AI-Driven Global Market Analysis", font=fsm, fill=(100, 116, 139))
+    # Bottom bar — darker shade
+    bar_h = int(44 * S)
+    bar_color = (max(0, bg2[0] - 40), max(0, bg2[1] - 40), max(0, bg2[2] - 40))
+    draw.rectangle([0, TH - bar_h, TW, TH], fill=bar_color)
+    flogo = _font_sub(int(20 * S))
+    fsm = _font_sub(int(14 * S))
+    logo_c = (255, 255, 255) if sum(bar_color) < 300 else (15, 23, 42)
+    draw.text((int(55 * S), TH - bar_h + int(10 * S)), "WARM INSIGHT", font=flogo, fill=logo_c)
+    draw.text((TW - int(310 * S), TH - bar_h + int(14 * S)), "AI-Driven Global Market Analysis", font=fsm, fill=logo_c)
 
     # Downscale 2x -> 1x for crisp result
     img = img.resize((1280, 720), Image.LANCZOS)
@@ -817,6 +836,104 @@ EDITOR_PROMPT = (
 )
 
 # ═══════════════════════════════════════════════
+# SEO CONFIG — E-E-A-T, Schema, Internal Links
+# ═══════════════════════════════════════════════
+SITE_URL = "https://www.warminsight.com"
+AUTHOR_NAME = "Ethan Cole"
+AUTHOR_BIO = "Ethan Cole is a veteran financial analyst and the lead voice behind Warm Insight. With deep expertise in global macro trends, geopolitics, and cross-asset strategy, Ethan distills complex market signals into actionable intelligence for everyday investors."
+AUTHOR_URL = SITE_URL + "/author/ethan/"
+
+# Pillar pages for content clustering (create these pages on Ghost)
+PILLAR_PAGES = {
+    "Economy": {"url": SITE_URL + "/tag/economy/", "title": "Economy Analysis Hub", "anchor": "all Economy analysis"},
+    "Politics": {"url": SITE_URL + "/tag/politics/", "title": "Geopolitics & Policy Hub", "anchor": "all Politics analysis"},
+    "Tech": {"url": SITE_URL + "/tag/tech/", "title": "Tech & AI Hub", "anchor": "all Tech analysis"},
+    "Health": {"url": SITE_URL + "/tag/health/", "title": "Healthcare & Biotech Hub", "anchor": "all Health analysis"},
+    "Energy": {"url": SITE_URL + "/tag/energy/", "title": "Energy & Commodities Hub", "anchor": "all Energy analysis"},
+}
+
+# Related categories for cross-linking
+CAT_RELATED = {
+    "Economy": ["Politics", "Energy"],
+    "Politics": ["Economy", "Energy"],
+    "Tech": ["Economy", "Health"],
+    "Health": ["Tech", "Economy"],
+    "Energy": ["Economy", "Politics"],
+}
+
+def _build_jsonld(title, excerpt, kw, cat, slug, tf):
+    """Generate NewsArticle JSON-LD with paywall markup per Google guidelines."""
+    pub_date = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": title[:110],
+        "description": excerpt[:150],
+        "keywords": kw + ", " + cat + ", market analysis, investing, Warm Insight",
+        "author": {
+            "@type": "Person",
+            "name": AUTHOR_NAME,
+            "url": AUTHOR_URL,
+            "description": AUTHOR_BIO[:200],
+            "jobTitle": "Lead Financial Analyst",
+            "worksFor": {
+                "@type": "Organization",
+                "name": "Warm Insight",
+                "url": SITE_URL
+            }
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Warm Insight",
+            "url": SITE_URL,
+            "logo": {
+                "@type": "ImageObject",
+                "url": SITE_URL + "/content/images/2026/04/economy-pro.png"
+            }
+        },
+        "datePublished": pub_date,
+        "dateModified": pub_date,
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": SITE_URL + "/" + slug + "/"
+        },
+        "articleSection": cat,
+        "inLanguage": "en",
+        "isAccessibleForFree": False,
+        "hasPart": {
+            "@type": "WebPageElement",
+            "isAccessibleForFree": False,
+            "cssSelector": ".gh-post-upgrade-cta"
+        }
+    }
+    return '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>'
+
+def _build_internal_links(cat):
+    """Generate internal link section for content clustering."""
+    pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
+    related_cats = CAT_RELATED.get(cat, ["Economy", "Tech"])
+    links_html = '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:22px;margin:30px 0;">'
+    links_html += '<h4 style="margin-top:0;font-size:18px;color:#1a252c;margin-bottom:14px;">Explore More from Warm Insight</h4>'
+    links_html += '<p style="font-size:16px;line-height:1.8;color:#374151;margin:0;">'
+    links_html += '<a href="' + pillar["url"] + '" style="color:#b8974d;text-decoration:underline;font-weight:600;">Browse ' + pillar["anchor"] + '</a>'
+    for rc in related_cats[:2]:
+        rp = PILLAR_PAGES.get(rc)
+        if rp:
+            links_html += ' &middot; <a href="' + rp["url"] + '" style="color:#b8974d;text-decoration:underline;">' + rp["anchor"].replace("all ", "") + '</a>'
+    links_html += '</p></div>'
+    return links_html
+
+def _build_author_bio():
+    """Generate E-E-A-T author bio section."""
+    return ('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:22px;margin:30px 0;">'
+            '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">'
+            '<div style="width:48px;height:48px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;">'
+            '<span style="color:#b8974d;font-size:20px;font-weight:bold;">EC</span></div>'
+            '<div><p style="margin:0;font-size:16px;font-weight:700;color:#1a252c;">' + AUTHOR_NAME + '</p>'
+            '<p style="margin:0;font-size:13px;color:#6b7280;">Lead Financial Analyst, Warm Insight</p></div></div>'
+            '<p style="font-size:15px;line-height:1.7;color:#374151;margin:0;">' + AUTHOR_BIO + '</p></div>')
+
+# ═══════════════════════════════════════════════
 # GHOST TOKEN + DEDUP + EDITOR
 # ═══════════════════════════════════════════════
 def gtoken():
@@ -963,10 +1080,49 @@ def ok_tag(raw, tag):
 def sanitize(h):
     return re.sub(r"\s+", " ", h.replace("\n", " ").replace("\r", ""))
 
-def make_slug(kw, title):
+def make_slug(kw, title, cat=""):
+    """SEO-optimized slug: category prefix + keyword."""
     t = kw if kw else title
+    prefix = cat.lower() + "-" if cat else ""
     s = re.sub(r"[^a-zA-Z0-9\s-]", "", t.lower())
-    return re.sub(r"\s+", "-", s.strip())[:80]
+    slug = prefix + re.sub(r"\s+", "-", s.strip())
+    return slug[:80]
+
+def _split_html_for_paywall(html):
+    """Split HTML into public (top ~30%) and private (bottom ~70%) for Ghost paywall.
+    Finds a clean break after the 'In Plain English' or 'Executive Summary' section."""
+    # Look for natural split points in the HTML
+    split_markers = [
+        'In Plain English</h3>',  # After TIKTOK section
+        'Executive Summary</h2>', # After summary heading
+        'Simple Version</h3>',    # Basic tier marker
+    ]
+    for marker in split_markers:
+        idx = html.find(marker)
+        if idx > 0:
+            # Find the next closing </div> after the marker's content block
+            search_start = idx + len(marker)
+            # Skip past the paragraph content and find 2nd </div> (closing the section)
+            div_count = 0
+            pos = search_start
+            while pos < len(html) and div_count < 2:
+                next_close = html.find('</div>', pos)
+                if next_close < 0:
+                    break
+                div_count += 1
+                pos = next_close + 6
+            if div_count >= 2 and pos < len(html) * 0.6:
+                return html[:pos], html[pos:]
+
+    # Fallback: split at roughly 30% on a </div> boundary
+    target = int(len(html) * 0.3)
+    best = html.rfind('</div>', 0, target + 500)
+    if best > len(html) * 0.15:
+        split = best + 6
+        return html[:split], html[split:]
+
+    # Last resort: no split
+    return html, ""
 
 # ═══════════════════════════════════════════════
 # GHOST IMAGE UPLOAD
@@ -1006,25 +1162,62 @@ def publish(title, html, cat, tier, feature_img_url, exc, kw="", slug=""):
     for attempt in range(1, max_retries + 1):
         try:
             token = gtoken()
-            md = json.dumps({
-                "version": "0.3.1", "markups": [], "atoms": [],
-                "cards": [["html", {"html": html}]],
-                "sections": [[10, 0]]
-            })
+            vis = TIER_VIS.get(tier, "public")
+
+            # Split HTML for paywall: top 30% public, bottom 70% behind paywall
+            if vis in ("members", "paid"):
+                public_html, private_html = _split_html_for_paywall(html)
+                if private_html:
+                    # Mobiledoc with paywall card: [public HTML] [paywall divider] [private HTML]
+                    md = json.dumps({
+                        "version": "0.3.1", "markups": [], "atoms": [],
+                        "cards": [
+                            ["html", {"html": public_html}],
+                            ["paywall", {}],
+                            ["html", {"html": private_html}]
+                        ],
+                        "sections": [[10, 0], [10, 1], [10, 2]]
+                    })
+                    print("  Paywall split: " + str(len(public_html)) + "/" + str(len(private_html)) + " chars")
+                else:
+                    md = json.dumps({
+                        "version": "0.3.1", "markups": [], "atoms": [],
+                        "cards": [["html", {"html": html}]],
+                        "sections": [[10, 0]]
+                    })
+            else:
+                md = json.dumps({
+                    "version": "0.3.1", "markups": [], "atoms": [],
+                    "cards": [["html", {"html": html}]],
+                    "sections": [[10, 0]]
+                })
             p = {
                 "title": title, "mobiledoc": md,
                 "status": "published",
-                "visibility": TIER_VIS.get(tier, "public"),
+                "visibility": vis,
                 "tags": [{"name": cat}, {"name": tier}]
             }
+            # Add SEO keyword as tag for content clustering
+            if kw and len(kw) > 3:
+                p["tags"].append({"name": kw[:50]})
+            # Inject JSON-LD schema into post head for crawlers
+            if kw and slug:
+                jsonld = _build_jsonld(title, exc or "", kw, cat, slug, "")
+                p["codeinjection_head"] = jsonld
             if slug:
                 p["slug"] = slug
             if kw:
-                mt = title + " | Warm Insight " + cat
-                p["meta_title"] = mt[:300]
-                p["meta_description"] = (exc[:140] + " Expert " + cat.lower() + " analysis.")[:500]
-                p["og_title"] = mt[:300]
-                p["og_description"] = exc[:300]
+                # SEO: keyword front-loaded, 60 char title, 150 char description
+                seo_title = (kw + " | " + cat + " Analysis | Warm Insight")[:60]
+                seo_desc = (exc[:120] + " Expert " + cat.lower() + " market analysis by Warm Insight.")[:155]
+                p["meta_title"] = seo_title
+                p["meta_description"] = seo_desc
+                p["og_title"] = seo_title
+                p["og_description"] = seo_desc[:200]
+                p["twitter_title"] = seo_title
+                p["twitter_description"] = seo_desc[:200]
+            elif exc:
+                p["meta_description"] = (exc[:120] + " | Warm Insight " + cat)[:155]
             if exc:
                 p["custom_excerpt"] = exc[:290]
             if feature_img_url:
@@ -1165,7 +1358,20 @@ def analyze(news_items, cat, tier):
     kw = xtag(raw, "SEO_KEYWORD")
     pretty = TIER_LABELS.get(tier, tier)
     title = "[" + pretty + "] " + tr if tr else "(" + tier + ") " + cat + " Insight"
-    slug = make_slug(kw, tr or cat)
+    slug = make_slug(kw, tr or cat, cat)
+
+    # Append SEO elements to HTML
+    seo_additions = ""
+    seo_additions += _build_jsonld(title, exc, kw or cat, cat, slug, tf)
+    seo_additions += _build_internal_links(cat)
+    seo_additions += _build_author_bio()
+
+    # Insert SEO before closing </div> of footer
+    if html.endswith("</div>"):
+        html = html[:-6] + seo_additions + "</div>"
+    else:
+        html += seo_additions
+
     html = sanitize(html)
     return title, html, exc, kw, slug, tier
 
