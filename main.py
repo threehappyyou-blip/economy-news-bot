@@ -365,10 +365,176 @@ def _draw_category_visual(draw, cat, x, y, w, h, color, seed):
         _draw_bolt(draw, x + w // 2, y + h // 2, min(w, h) * 0.7, color)
 
 # ═══════════════════════════════════════════════
-# MAIN THUMBNAIL GENERATOR
+# CONTEXT ICONS — keyword-matched visual elements
+# ═══════════════════════════════════════════════
+ICON_KEYWORDS = {
+    "up": ["surge", "rise", "soar", "rally", "boom", "bull", "growth", "gain", "jump", "spike", "climb", "record", "high"],
+    "down": ["crash", "fall", "drop", "plunge", "bear", "sink", "decline", "loss", "tumble", "slump", "low", "recession"],
+    "warn": ["warning", "risk", "fear", "danger", "crisis", "threat", "alert", "shock", "panic", "volatility", "unstable"],
+    "question": ["uncertainty", "unknown", "puzzle", "mystery", "question", "crossroads", "dilemma", "nobody knows", "confusion"],
+    "fire": ["hot", "fire", "explosive", "ignite", "heat", "intense", "blazing", "scorching", "inflation"],
+    "money": ["dollar", "billion", "trillion", "profit", "revenue", "earnings", "valuation", "price", "cost", "tariff", "tax"],
+    "shield": ["defense", "protect", "safe", "hedge", "insurance", "shield", "guard", "resilient"],
+    "globe": ["global", "world", "international", "geopolitical", "trade war", "sanctions", "emerging"],
+}
+
+def _detect_icons(title):
+    """Detect 1-2 relevant icons from title keywords."""
+    t = title.lower()
+    matches = []
+    for icon, keywords in ICON_KEYWORDS.items():
+        for kw in keywords:
+            if kw in t:
+                matches.append(icon)
+                break
+    # Unique, max 2
+    seen = []
+    for m in matches:
+        if m not in seen:
+            seen.append(m)
+        if len(seen) >= 2:
+            break
+    if not seen:
+        seen = ["globe"]  # Default
+    return seen
+
+def _draw_icon_up(draw, cx, cy, size, color):
+    """Big green up arrow."""
+    s = size
+    # Arrow body
+    draw.rectangle([cx - s // 6, cy - s // 6, cx + s // 6, cy + s // 2], fill=color)
+    # Arrow head
+    draw.polygon([
+        (cx - s // 3, cy - s // 6),
+        (cx, cy - s // 2),
+        (cx + s // 3, cy - s // 6),
+    ], fill=color)
+
+def _draw_icon_down(draw, cx, cy, size, color):
+    """Big red down arrow."""
+    s = size
+    draw.rectangle([cx - s // 6, cy - s // 2, cx + s // 6, cy + s // 6], fill=color)
+    draw.polygon([
+        (cx - s // 3, cy + s // 6),
+        (cx, cy + s // 2),
+        (cx + s // 3, cy + s // 6),
+    ], fill=color)
+
+def _draw_icon_warn(draw, cx, cy, size, color):
+    """Warning triangle."""
+    s = size
+    draw.polygon([
+        (cx, cy - s // 2),
+        (cx - s // 2, cy + s // 3),
+        (cx + s // 2, cy + s // 3),
+    ], fill=color, outline=(0, 0, 0), width=3)
+    # Exclamation
+    draw.rectangle([cx - 4, cy - s // 5, cx + 4, cy + s // 10], fill=(0, 0, 0))
+    draw.ellipse([cx - 4, cy + s // 7, cx + 4, cy + s // 4], fill=(0, 0, 0))
+
+def _draw_icon_question(draw, cx, cy, size, color):
+    """Question mark circle."""
+    r = size // 2
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=4)
+    f = _font_sub(size - 20)
+    try:
+        bb = f.getbbox("?")
+        tw = bb[2] - bb[0]
+        th = bb[3] - bb[1]
+        draw.text((cx - tw // 2, cy - th // 2 - 4), "?", font=f, fill=color)
+    except Exception:
+        draw.text((cx - 10, cy - 15), "?", font=f, fill=color)
+
+def _draw_icon_fire(draw, cx, cy, size, color):
+    """Fire / flame shape."""
+    s = size
+    # Outer flame
+    pts = [
+        (cx, cy - s // 2),
+        (cx + s // 4, cy - s // 6),
+        (cx + s // 3, cy + s // 6),
+        (cx + s // 5, cy + s // 2),
+        (cx - s // 5, cy + s // 2),
+        (cx - s // 3, cy + s // 6),
+        (cx - s // 4, cy - s // 6),
+    ]
+    draw.polygon(pts, fill=color)
+    # Inner flame (lighter)
+    inner = (min(255, color[0] + 80), min(255, color[1] + 40), min(255, color[2]))
+    pts2 = [
+        (cx, cy - s // 5),
+        (cx + s // 7, cy + s // 10),
+        (cx + s // 8, cy + s // 3),
+        (cx - s // 8, cy + s // 3),
+        (cx - s // 7, cy + s // 10),
+    ]
+    draw.polygon(pts2, fill=inner)
+
+def _draw_icon_money(draw, cx, cy, size, color):
+    """Dollar sign in circle."""
+    r = size // 2
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=4)
+    f = _font(size - 15)
+    try:
+        bb = f.getbbox("$")
+        tw = bb[2] - bb[0]
+        th = bb[3] - bb[1]
+        draw.text((cx - tw // 2, cy - th // 2 - 4), "$", font=f, fill=color)
+    except Exception:
+        draw.text((cx - 12, cy - 18), "$", font=f, fill=color)
+
+def _draw_icon_shield(draw, cx, cy, size, color):
+    """Shield shape."""
+    s = size
+    pts = [
+        (cx, cy - s // 2),
+        (cx + s // 3, cy - s // 3),
+        (cx + s // 3, cy + s // 8),
+        (cx, cy + s // 2),
+        (cx - s // 3, cy + s // 8),
+        (cx - s // 3, cy - s // 3),
+    ]
+    draw.polygon(pts, fill=color, outline=(255, 255, 255), width=3)
+    # Check mark
+    draw.line([(cx - s // 8, cy), (cx - s // 20, cy + s // 8), (cx + s // 6, cy - s // 8)], fill=(255, 255, 255), width=4)
+
+def _draw_context_icon(draw, icon_type, cx, cy, size, accent):
+    """Draw a specific icon type."""
+    colors = {
+        "up": (34, 197, 94),
+        "down": (239, 68, 68),
+        "warn": (253, 224, 71),
+        "question": accent,
+        "fire": (249, 115, 22),
+        "money": (253, 224, 71),
+        "shield": (59, 130, 246),
+        "globe": accent,
+    }
+    c = colors.get(icon_type, accent)
+    if icon_type == "up":
+        _draw_icon_up(draw, cx, cy, size, c)
+    elif icon_type == "down":
+        _draw_icon_down(draw, cx, cy, size, c)
+    elif icon_type == "warn":
+        _draw_icon_warn(draw, cx, cy, size, c)
+    elif icon_type == "question":
+        _draw_icon_question(draw, cx, cy, size, c)
+    elif icon_type == "fire":
+        _draw_icon_fire(draw, cx, cy, size, c)
+    elif icon_type == "money":
+        _draw_icon_money(draw, cx, cy, size, c)
+    elif icon_type == "shield":
+        _draw_icon_shield(draw, cx, cy, size, c)
+    elif icon_type == "globe":
+        _draw_globe(draw, cx, cy, size // 2, c)
+
+# ═══════════════════════════════════════════════
+# MAIN THUMBNAIL GENERATOR v5.1
 # ═══════════════════════════════════════════════
 def make_dynamic_thumb(title, cat, tier):
-    TW, TH = 1280, 720
+    # Render at 2x then downscale for crisp text
+    SCALE = 2
+    TW, TH = 1280 * SCALE, 720 * SCALE
     seed = abs(hash(title)) % 100000
     is_vip = tier == "Royal Premium"
 
@@ -381,111 +547,128 @@ def make_dynamic_thumb(title, cat, tier):
 
     # Gradient background
     for y in range(TH):
-        r = max(0, bg[0] - int(y * 0.015))
-        g = max(0, bg[1] - int(y * 0.015))
-        b = max(0, bg[2] - int(y * 0.015))
+        r = max(0, bg[0] - int(y * 0.008))
+        g = max(0, bg[1] - int(y * 0.008))
+        b = max(0, bg[2] - int(y * 0.008))
         draw.line([(0, y), (TW, y)], fill=(r, g, b))
 
-    # Glow behind character area (right side)
-    gcx, gcy = TW - 250, TH // 2
-    for rad in range(200, 0, -4):
-        alpha = rad / 200
+    # Glow behind character area
+    gcx, gcy = TW - 500 * SCALE // 2, TH // 2
+    for rad in range(350 * SCALE // 2, 0, -6):
+        alpha = rad / (350 * SCALE // 2)
         c = (
-            int(bg[0] + (glow[0] - bg[0]) * alpha * 0.4),
-            int(bg[1] + (glow[1] - bg[1]) * alpha * 0.4),
-            int(bg[2] + (glow[2] - bg[2]) * alpha * 0.4),
+            int(bg[0] + (glow[0] - bg[0]) * alpha * 0.45),
+            int(bg[1] + (glow[1] - bg[1]) * alpha * 0.45),
+            int(bg[2] + (glow[2] - bg[2]) * alpha * 0.45),
         )
         draw.ellipse([gcx - rad, gcy - rad, gcx + rad, gcy + rad], fill=c)
 
     # Left accent bar
-    draw.rectangle([0, 0, 8, TH], fill=badge_c)
+    draw.rectangle([0, 0, 14 * SCALE // 2, TH], fill=badge_c)
 
-    # Draw category visual element (behind character, right side)
+    # Draw category visual (behind character)
     vis_color = (
-        min(255, glow[0] + 60),
-        min(255, glow[1] + 60),
-        min(255, glow[2] + 60),
+        min(255, glow[0] + 50),
+        min(255, glow[1] + 50),
+        min(255, glow[2] + 50),
     )
-    _draw_category_visual(draw, cat, TW - 420, 100, 350, TH - 200, vis_color, seed)
+    _draw_category_visual(draw, cat, TW - 750 * SCALE // 2, 180 * SCALE // 2, 600 * SCALE // 2, (TH - 360 * SCALE // 2), vis_color, seed)
 
-    # Draw Warmy character (right side, overlapping visual)
-    warmy_cx = TW - 220
-    warmy_cy = TH // 2 + 20
-    warmy_size = 320
+    # Draw Warmy character
+    warmy_cx = TW - 400 * SCALE // 2
+    warmy_cy = TH // 2 + 30 * SCALE // 2
+    warmy_size = 550 * SCALE // 2
     _draw_warmy(draw, warmy_cx, warmy_cy, warmy_size, is_vip=is_vip, accent=badge_c)
 
-    # Extract hook words and build 2-line title
+    # Detect and draw context icons (next to character)
+    icons = _detect_icons(title)
+    icon_positions = [
+        (TW - 160 * SCALE // 2, 250 * SCALE // 2),
+        (TW - 700 * SCALE // 2, 200 * SCALE // 2),
+    ]
+    for i, icon_type in enumerate(icons[:2]):
+        if i < len(icon_positions):
+            ix, iy = icon_positions[i]
+            _draw_context_icon(draw, icon_type, ix, iy, 100 * SCALE // 2, badge_c)
+
+    # Extract hook words
     words = _extract_hook(title)
     mid = max(1, (len(words) + 1) // 2)
     line1 = " ".join(words[:mid]).upper()
     line2 = " ".join(words[mid:]).upper() if mid < len(words) else ""
 
-    # Auto-size font — fit in left 60% of image
-    max_w = int(TW * 0.58)
-    font_sz = 120
+    # Auto-size font — fit in left 58%
+    max_w = int(TW * 0.56)
+    font_sz = 220 * SCALE // 2
     test_line = line1 if len(line1) >= len(line2 or "") else (line2 or line1)
-    while font_sz > 55:
+    while font_sz > 80 * SCALE // 2:
         f = _font(font_sz)
         bb = f.getbbox(test_line)
         if bb and (bb[2] - bb[0]) <= max_w:
             break
-        font_sz -= 4
+        font_sz -= 6
 
     font_big = _font(font_sz)
     line_h = int(font_sz * 1.12)
-
     num_lines = 2 if line2 else 1
     block_h = num_lines * line_h
-    start_y = (TH - block_h) // 2 - 15
-    x = 50
+    start_y = (TH - block_h) // 2 - 20 * SCALE // 2
+    x = 80 * SCALE // 2
 
-    # LINE 1 — highlight color with shadow
-    for dx in range(7, 0, -1):
-        a = max(0, 25 - dx * 4)
-        draw.text((x + dx, start_y + dx), line1, font=font_big, fill=(a, a, a))
+    # LINE 1 — crisp shadow + highlight
+    for dx in [4, 3, 2]:
+        d = dx * SCALE // 2
+        draw.text((x + d, start_y + d), line1, font=font_big, fill=(0, 0, 0))
     draw.text((x, start_y), line1, font=font_big, fill=hi)
 
-    # LINE 2 — white with shadow
+    # LINE 2 — crisp shadow + white
     if line2:
         y2 = start_y + line_h
-        for dx in range(7, 0, -1):
-            a = max(0, 25 - dx * 4)
-            draw.text((x + dx, y2 + dx), line2, font=font_big, fill=(a, a, a))
+        for dx in [4, 3, 2]:
+            d = dx * SCALE // 2
+            draw.text((x + d, y2 + d), line2, font=font_big, fill=(0, 0, 0))
         draw.text((x, y2), line2, font=font_big, fill=sub)
 
-    # Category badge — top left
-    fbadge = _font_sub(26)
+    # Category badge
+    fbadge = _font_sub(44 * SCALE // 2)
     cat_text = cat.upper()
     try:
         bb = fbadge.getbbox(cat_text)
-        bw = bb[2] - bb[0] + 48
-        draw.rounded_rectangle([45, 32, 45 + bw, 74], radius=21, fill=badge_c)
-        draw.text((69, 37), cat_text, font=fbadge, fill=(255, 255, 255))
+        bw = bb[2] - bb[0] + 80 * SCALE // 2
+        bh_val = 70 * SCALE // 2
+        draw.rounded_rectangle([70 * SCALE // 2, 55 * SCALE // 2, 70 * SCALE // 2 + bw, 55 * SCALE // 2 + bh_val], radius=bh_val // 2, fill=badge_c)
+        draw.text((70 * SCALE // 2 + 40 * SCALE // 4, 55 * SCALE // 2 + 10 * SCALE // 2), cat_text, font=fbadge, fill=(255, 255, 255))
     except Exception:
-        draw.rectangle([45, 32, 195, 74], fill=badge_c)
-        draw.text((63, 39), cat_text, font=fbadge, fill=(255, 255, 255))
+        draw.rectangle([70, 55, 350, 125], fill=badge_c)
+        draw.text((90, 65), cat_text, font=fbadge, fill=(255, 255, 255))
 
-    # Tier badge — top right
+    # Tier badge
     tier_text = "PRO" if tier == "Premium" else "VIP"
     tier_bg = (30, 64, 175) if tier == "Premium" else (160, 120, 30)
     try:
         tb = fbadge.getbbox(tier_text)
-        tw2 = tb[2] - tb[0] + 48
-        draw.rounded_rectangle([TW - tw2 - 45, 32, TW - 45, 74], radius=21, fill=tier_bg)
-        draw.text((TW - tw2 - 21, 37), tier_text, font=fbadge, fill=(255, 255, 255))
+        tw2 = tb[2] - tb[0] + 80 * SCALE // 2
+        bh_val = 70 * SCALE // 2
+        rx = TW - tw2 - 70 * SCALE // 2
+        draw.rounded_rectangle([rx, 55 * SCALE // 2, rx + tw2, 55 * SCALE // 2 + bh_val], radius=bh_val // 2, fill=tier_bg)
+        draw.text((rx + 40 * SCALE // 4, 55 * SCALE // 2 + 10 * SCALE // 2), tier_text, font=fbadge, fill=(255, 255, 255))
     except Exception:
-        draw.rectangle([TW - 130, 32, TW - 45, 74], fill=tier_bg)
-        draw.text((TW - 112, 39), tier_text, font=fbadge, fill=(255, 255, 255))
+        draw.rectangle([TW - 250, 55, TW - 70, 125], fill=tier_bg)
+        draw.text((TW - 220, 65), tier_text, font=fbadge, fill=(255, 255, 255))
 
     # Bottom bar
-    draw.rectangle([0, TH - 42, TW, TH], fill=(10, 12, 20))
-    flogo = _font_sub(20)
-    draw.text((50, TH - 34), "WARM INSIGHT", font=flogo, fill=(184, 151, 77))
-    fsm = _font_sub(14)
-    draw.text((TW - 290, TH - 32), "AI-Driven Global Market Analysis", font=fsm, fill=(100, 116, 139))
+    bar_h = 70 * SCALE // 2
+    draw.rectangle([0, TH - bar_h, TW, TH], fill=(10, 12, 20))
+    flogo = _font_sub(34 * SCALE // 2)
+    draw.text((80 * SCALE // 2, TH - bar_h + 14 * SCALE // 2), "WARM INSIGHT", font=flogo, fill=(184, 151, 77))
+    fsm = _font_sub(24 * SCALE // 2)
+    draw.text((TW - 520 * SCALE // 2, TH - bar_h + 18 * SCALE // 2), "AI-Driven Global Market Analysis", font=fsm, fill=(100, 116, 139))
+
+    # Downscale 2x -> 1x for crisp result
+    img = img.resize((1280, 720), Image.LANCZOS)
 
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=92)
+    img.save(buf, format="JPEG", quality=93)
     kb = len(buf.getvalue()) // 1024
     print("  Thumb: " + str(kb) + "KB | " + line1[:30])
     return buf.getvalue()
