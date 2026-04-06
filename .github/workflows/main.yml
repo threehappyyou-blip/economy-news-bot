@@ -1,40 +1,31 @@
-name: 3 Hour Auto Ghost Poster
+name: Warm Insight Auto Poster
 
 on:
   schedule:
-    - cron: '0 */23 * * *'
-  workflow_dispatch:
+    - cron: '0 */3 * * *' # 매 3시간마다 실행 (UTC 기준)
+  workflow_dispatch: # 수동으로 버튼을 눌러서 실행할 수 있게 함
 
 jobs:
-  run-bot:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: 내 코드 가져오기
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: 파이썬 설치하기
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: 프리미엄 폰트 설치하기
-        run: |
-          mkdir -p ~/.local/share/fonts
-          cd ~/.local/share/fonts
-          wget -q -O Montserrat-ExtraBold.ttf "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf" || true
-          wget -q -O Montserrat-Bold.ttf "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf" || true
-          wget -q -O Inter-Bold.ttf "https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf" || true
-          sudo apt-get install -y fonts-dejavu-core fonts-liberation2 >/dev/null 2>&1
-          fc-cache -f 2>/dev/null || true
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests feedparser google-genai Pillow
 
-      - name: 필요한 부품 설치하기
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: 봇 실행하고 Ghost에 포스팅하기
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GHOST_API_URL: ${{ secrets.GHOST_API_URL }}
-          GHOST_ADMIN_API_KEY: ${{ secrets.GHOST_ADMIN_API_KEY }}
-        run: python main.py
+    - name: Run Auto Poster Bot
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        WP_URL: ${{ secrets.WP_URL }}
+        WP_USERNAME: ${{ secrets.WP_USERNAME }}
+        WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      run: python bot.py
