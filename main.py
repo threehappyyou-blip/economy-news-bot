@@ -874,7 +874,7 @@ def publish(title, html, cat, tier, feature_img_id, exc, kw="", slug=""):
             post_data = {
                 "title": title,
                 "content": full_content,
-                "status": "draft", # 💡 안전하게 '임시저장'으로 올립니다.
+                "status": "publish", # 💡 바로 발행되도록 수정됨!
                 "excerpt": exc[:290] if exc else "",
             }
 
