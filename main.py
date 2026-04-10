@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Warm Insight v11 — WordPress Full Fixed Build (2.5 Model Restored)
-Fixes:
-  1. 대표님 계정에 최적화된 gemini-2.5-pro 및 2.5-flash 1순위 복구
-  2. 404 에러(권한 없음) 발생 시 즉시 다음 모델로 넘어가는 스위칭 시스템 유지
-  3. 503 에러(서버 과부하) 발생 시 끈질기게 재시도하여 결국 완성해 내는 로직 유지
+Warm Insight v12 — WordPress Tank Build (503 Survival Edition)
 """
 import os, sys, traceback, time, random, re, json, io
 from datetime import datetime
@@ -20,10 +16,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 WP_URL = os.environ.get("WP_URL", "").rstrip("/")
 WP_USERNAME = os.environ.get("WP_USERNAME")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
-
 if not all([GEMINI_API_KEY, WP_URL, WP_USERNAME, WP_APP_PASSWORD]):
     sys.exit("Missing API keys or WordPress credentials")
-
 WP_AUTH = (WP_USERNAME, WP_APP_PASSWORD)
 
 CATEGORIES = {
@@ -53,21 +47,21 @@ CATEGORIES = {
         "https://asia.nikkei.com/rss/feed/nar"],
 }
 
+# 🚨 3시간마다 1개 카테고리의 Pro 1개 + VIP 1개
 TASKS = [
-    {"tier": "Premium", "count": 5},
-    {"tier": "Royal Premium", "count": 5},
+    {"tier": "Premium", "count": 1},
+    {"tier": "Royal Premium", "count": 1},
 ]
 TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
 TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
 SKIP_EDITOR_TIERS = ["Premium"]
 
-# 🚨 [핵심 수정] 대표님 계정에서 완벽하게 작동했던 2.5 모델을 1순위로 복구했습니다.
-# (만약의 사태를 대비해 구글이 추천하는 2.0-001 예비용 백업도 걸어두었습니다)
+# 🚨 모델 3단계 백업
 MODEL_PRI = {
-    "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash-001"],
-    "Premium": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-001"],
+    "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
+    "Premium": ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
 }
-FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-001"]
+FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
 EXPERT = {
     "Economy": "a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
@@ -99,7 +93,7 @@ CAT_METRICS = {
 }
 
 # ═══════════════════════════════════════════════
-# THUMBNAIL 
+# THUMBNAIL
 # ═══════════════════════════════════════════════
 THUMB_COLORS = {
     "Economy": [
@@ -128,7 +122,6 @@ THUMB_COLORS = {
         {"bg": (251, 191, 36), "bg2": (202, 138, 4), "text": (15, 23, 42), "hi": (127, 29, 29), "chart": [(34, 197, 94), (239, 68, 68)]},
     ],
 }
-
 _font_cache = {}
 def _font(size):
     if size in _font_cache: return _font_cache[size]
@@ -137,13 +130,11 @@ def _font(size):
             f = ImageFont.truetype(fp, size); _font_cache[size] = f; return f
         except: continue
     return ImageFont.load_default()
-
 def _font_sub(size):
     for fp in ["fonts/Oswald.ttf", "fonts/BebasNeue.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "C:/Windows/Fonts/arialbd.ttf"]:
         try: return ImageFont.truetype(fp, size)
         except: continue
     return ImageFont.load_default()
-
 def _extract_hook(title):
     clean = title
     for lb in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]: clean = clean.replace(lb, "")
@@ -159,7 +150,6 @@ def _extract_hook(title):
     if len(punchy) < 2: punchy = words[:4]
     if len(punchy) > 5: punchy = punchy[:5]
     return punchy
-
 def _draw_warmy(draw, cx, cy, size, is_vip=False, accent=(50, 230, 160)):
     s = size; g1, g2, g3 = (74, 222, 128), (34, 197, 94), (22, 101, 52)
     bw, bh = int(s * 0.45), int(s * 0.55)
@@ -207,7 +197,6 @@ ICON_KEYWORDS = {
     "shield": ["defense", "protect", "safe", "hedge", "insurance", "shield", "resilient"],
     "globe": ["global", "world", "international", "geopolitical", "sanctions", "emerging"],
 }
-
 def _detect_icons(title):
     t = title.lower(); matches = []
     for icon, keywords in ICON_KEYWORDS.items():
@@ -218,53 +207,44 @@ def _detect_icons(title):
         if m not in seen: seen.append(m)
         if len(seen) >= 2: break
     return seen or ["globe"]
-
 def _draw_icon_up(draw, cx, cy, size, color):
     s = size
     draw.rectangle([cx - s // 6, cy - s // 6, cx + s // 6, cy + s // 2], fill=color)
     draw.polygon([(cx - s // 3, cy - s // 6), (cx, cy - s // 2), (cx + s // 3, cy - s // 6)], fill=color)
-
 def _draw_icon_down(draw, cx, cy, size, color):
     s = size
     draw.rectangle([cx - s // 6, cy - s // 2, cx + s // 6, cy + s // 6], fill=color)
     draw.polygon([(cx - s // 3, cy + s // 6), (cx, cy + s // 2), (cx + s // 3, cy + s // 6)], fill=color)
-
 def _draw_icon_warn(draw, cx, cy, size, color):
     s = size
     draw.polygon([(cx, cy - s // 2), (cx - s // 2, cy + s // 3), (cx + s // 2, cy + s // 3)], fill=color, outline=(0, 0, 0), width=3)
     draw.rectangle([cx - 4, cy - s // 5, cx + 4, cy + s // 10], fill=(0, 0, 0))
     draw.ellipse([cx - 4, cy + s // 7, cx + 4, cy + s // 4], fill=(0, 0, 0))
-
 def _draw_icon_question(draw, cx, cy, size, color):
     r = size // 2; draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=4)
     f = _font_sub(size - 20)
     try:
         bb = f.getbbox("?"); draw.text((cx - (bb[2]-bb[0]) // 2, cy - (bb[3]-bb[1]) // 2 - 4), "?", font=f, fill=color)
     except: draw.text((cx - 10, cy - 15), "?", font=f, fill=color)
-
 def _draw_icon_fire(draw, cx, cy, size, color):
     s = size
     draw.polygon([(cx, cy - s // 2), (cx + s // 4, cy - s // 6), (cx + s // 3, cy + s // 6), (cx + s // 5, cy + s // 2), (cx - s // 5, cy + s // 2), (cx - s // 3, cy + s // 6), (cx - s // 4, cy - s // 6)], fill=color)
     inner = (min(255, color[0] + 80), min(255, color[1] + 40), min(255, color[2]))
     draw.polygon([(cx, cy - s // 5), (cx + s // 7, cy + s // 10), (cx + s // 8, cy + s // 3), (cx - s // 8, cy + s // 3), (cx - s // 7, cy + s // 10)], fill=inner)
-
 def _draw_icon_money(draw, cx, cy, size, color):
     r = size // 2; draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=4)
     f = _font(size - 15)
     try:
         bb = f.getbbox("$"); draw.text((cx - (bb[2]-bb[0]) // 2, cy - (bb[3]-bb[1]) // 2 - 4), "$", font=f, fill=color)
     except: draw.text((cx - 12, cy - 18), "$", font=f, fill=color)
-
 def _draw_icon_shield(draw, cx, cy, size, color):
     s = size
     draw.polygon([(cx, cy - s // 2), (cx + s // 3, cy - s // 3), (cx + s // 3, cy + s // 8), (cx, cy + s // 2), (cx - s // 3, cy + s // 8), (cx - s // 3, cy - s // 3)], fill=color, outline=(255, 255, 255), width=3)
     draw.line([(cx - s // 8, cy), (cx - s // 20, cy + s // 8), (cx + s // 6, cy - s // 8)], fill=(255, 255, 255), width=4)
-
 def _draw_globe(draw, cx, cy, r, color):
     draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=color, width=3)
     draw.ellipse([cx - int(r * 0.4), cy - r, cx + int(r * 0.4), cy + r], outline=color, width=2)
     draw.line([(cx - r, cy), (cx + r, cy)], fill=color, width=2)
-
 def _draw_context_icon(draw, icon_type, cx, cy, size, accent):
     colors = {"up": (34, 197, 94), "down": (239, 68, 68), "warn": (253, 224, 71), "question": accent, "fire": (249, 115, 22), "money": (253, 224, 71), "shield": (59, 130, 246), "globe": accent}
     c = colors.get(icon_type, accent)
@@ -273,6 +253,7 @@ def _draw_context_icon(draw, icon_type, cx, cy, size, accent):
     elif icon_type == "globe": _draw_globe(draw, cx, cy, size // 2, c)
 
 def make_dynamic_thumb(title, cat, tier):
+    """PIL 기반 로컬 썸네일 — 네트워크 불필요, 항상 성공."""
     S = 2; TW, TH = 1280 * S, 720 * S; seed = abs(hash(title)) % 100000; is_vip = tier == "Royal Premium"
     palettes = THUMB_COLORS.get(cat, THUMB_COLORS["Economy"]); pal = palettes[seed % len(palettes)]
     bg1, bg2, text_c, hi_c, chart_colors = pal["bg"], pal["bg2"], pal["text"], pal["hi"], pal["chart"]
@@ -358,7 +339,6 @@ ACCURACY = (
     "- No: fam, slay, lit, no cap, we are cooked, its giving. Ever.\n"
     "- Every sentence must sound human-written, not AI-generated.\n"
 )
-
 PROMPT_PREMIUM = (
     "You are [PERSONA] for Warm Insight ([CATEGORY]).\n"
     "Audience: Intermediate investors wanting deeper why.\n"
@@ -387,7 +367,6 @@ PROMPT_PREMIUM = (
     "<PS>Historical perspective (2-3 sentences)</PS>\n\n"
     "News: [NEWS_ITEMS]"
 )
-
 VIP_P1 = (
     "You are [PERSONA] for Warm Insight VIP ([CATEGORY]).\n"
     "Audience: Sophisticated investors paying premium.\n"
@@ -418,7 +397,6 @@ VIP_P1 = (
     "<MARKET_SNAP>S&P 500|DIRECTION|reason\n10Y Yield|DIRECTION|reason\nUS Dollar|DIRECTION|reason\nOil WTI|DIRECTION|reason</MARKET_SNAP>\n\n"
     "NEWS: [NEWS_ITEMS]"
 )
-
 VIP_P2 = (
     "You are [PERSONA] writing Part 2 for Warm Insight VIP ([CATEGORY]).\n"
     "[ACCURACY]\n"
@@ -437,7 +415,6 @@ VIP_P2 = (
     "<PS>Historical lesson 2-3 sentences.</PS>\n\n"
     "NEWS: [NEWS_ITEMS]"
 )
-
 VIP_FB = (
     "You are [PERSONA]. Write VIP strategy for [CATEGORY].\n"
     "[ACCURACY]\n"
@@ -455,7 +432,6 @@ VIP_FB = (
     "<PS>Historical parallel 1-2 sentences.</PS>\n\n"
     "NEWS: [NEWS_ITEMS]"
 )
-
 EDITOR_PROMPT = (
     "Senior editorial fact-checker. Review newsletter vs original news.\n"
     "CHECK: 1) Fabricated events 2) Fake stats 3) Invented names 4) False causation\n"
@@ -470,7 +446,6 @@ EDITOR_PROMPT = (
 SITE_URL = "https://warminsight.com"
 AUTHOR_NAME = "Ethan Cole"
 AUTHOR_BIO = "Ethan Cole is a veteran financial analyst and the lead voice behind Warm Insight."
-
 PILLAR_PAGES = {
     "Economy": {"url": SITE_URL + "/category/economy/", "anchor": "all Economy analysis"},
     "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "all Politics analysis"},
@@ -479,11 +454,9 @@ PILLAR_PAGES = {
     "Energy": {"url": SITE_URL + "/category/energy/", "anchor": "all Energy analysis"},
 }
 CAT_RELATED = {"Economy": ["Politics", "Energy"], "Politics": ["Economy", "Energy"], "Tech": ["Economy", "Health"], "Health": ["Tech", "Economy"], "Energy": ["Economy", "Politics"]}
-
 def _build_jsonld(title, excerpt, kw, cat, slug, tf):
     schema = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": title[:110], "description": excerpt[:150], "keywords": kw + ", " + cat + ", market analysis, Warm Insight", "author": {"@type": "Person", "name": AUTHOR_NAME}, "publisher": {"@type": "Organization", "name": "Warm Insight", "url": SITE_URL}, "datePublished": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), "articleSection": cat, "inLanguage": "en"}
     return '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>'
-
 def _build_internal_links(cat):
     pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
     h = '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:22px;margin:30px 0;"><h4 style="margin-top:0;">Explore More</h4><p style="margin:0;"><a href="' + pillar["url"] + '" style="color:#b8974d;">' + pillar["anchor"] + '</a>'
@@ -491,15 +464,104 @@ def _build_internal_links(cat):
         rp = PILLAR_PAGES.get(rc)
         if rp: h += ' · <a href="' + rp["url"] + '" style="color:#b8974d;">' + rp["anchor"].replace("all ", "") + '</a>'
     return h + '</p></div>'
-
 def _build_author_bio():
     return '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:22px;margin:30px 0;"><p style="margin:0;font-weight:700;">' + AUTHOR_NAME + '</p><p style="margin:4px 0 0;font-size:15px;color:#374151;">' + AUTHOR_BIO + '</p></div>'
+# ═══════════════════════════════════════════════
+# 🚨🚨🚨 TANK-GRADE GEMINI CALL (v12 CORE) 🚨🚨🚨
+# ═══════════════════════════════════════════════
+def call_gem(client, model, prompt, retries=6):
+    """
+    탱크급 Gemini 호출 엔진.
+    - 지수 백오프: 30s -> 60s -> 120s -> 240s -> 360s -> 480s
+    - 랜덤 지터: ±20% (Thundering Herd 방지)
+    - 총 최대 대기: 약 22분 (Github Actions 6시간 한도 여유)
+    - 404/400은 즉시 포기 (다음 모델로 이동)
+    - 503/429는 지수 백오프
+    """
+    BASE_WAITS = [30, 60, 120, 240, 360, 480]
+    time.sleep(random.uniform(1.0, 5.0))
+
+    for i in range(retries):
+        try:
+            r = client.models.generate_content(model=model, contents=prompt)
+            text = str(r.text) if r.text else ""
+            if not text or text == "None":
+                print(f"    Gem({model}) attempt {i+1}/{retries}: Empty response")
+                if i < retries - 1:
+                    wait = BASE_WAITS[min(i, len(BASE_WAITS)-1)]
+                    jitter = wait * random.uniform(-0.2, 0.2)
+                    total = max(10, int(wait + jitter))
+                    print(f"    ⏳ Empty retry in {total}s...")
+                    time.sleep(total)
+                continue
+            if i > 0:
+                print(f"    ✅ Recovered on attempt {i+1}")
+            return text
+        except Exception as e:
+            err_str = str(e)
+            short_err = err_str[:150].replace("\n", " ")
+            print(f"    ⚠️ Gem({model}) attempt {i+1}/{retries}: {short_err}")
+
+            if "404" in err_str or "NOT_FOUND" in err_str or "not found" in err_str.lower():
+                print(f"    ❌ Model {model} unavailable to this API key. Skipping.")
+                return None
+
+            if "400" in err_str and ("INVALID_ARGUMENT" in err_str or "invalid" in err_str.lower()):
+                print(f"    ❌ Invalid request for {model}. Skipping.")
+                return None
+
+            if "401" in err_str or "403" in err_str or "PERMISSION_DENIED" in err_str:
+                print(f"    ❌ Auth issue for {model}. Skipping.")
+                return None
+
+            if i < retries - 1:
+                wait = BASE_WAITS[min(i, len(BASE_WAITS)-1)]
+                jitter = wait * random.uniform(-0.2, 0.2)
+                total = max(15, int(wait + jitter))
+
+                if "503" in err_str or "UNAVAILABLE" in err_str:
+                    print(f"    ⏳ Server overloaded. Backing off {total}s...")
+                elif "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                    print(f"    ⏳ Rate limited. Backing off {total}s...")
+                else:
+                    print(f"    ⏳ Unknown error. Backing off {total}s...")
+
+                time.sleep(total)
+
+    print(f"    💀 All {retries} attempts exhausted for {model}")
+    return None
+
+def gem_fb(client, tier, prompt):
+    """모델 3단계 폴백: Pro -> Flash -> Flash-Lite"""
+    models_to_try = MODEL_PRI.get(tier, FAST_MODELS)
+    for m in models_to_try:
+        print("    [AI] Trying model: " + m)
+        r = call_gem(client, m, prompt, retries=6)
+        if r:
+            return r, m
+        print("    [AI] Model " + m + " exhausted. Trying next fallback...")
+        time.sleep(random.uniform(3, 8))
+    print("    💀 ALL models failed.")
+    return None, None
+
+def warmup_gemini(client):
+    """스타트업 워밍업 — Gemini 서버 상태를 미리 확인."""
+    print("\n🔥 Warming up Gemini API...")
+    for m in ["gemini-2.5-flash-lite", "gemini-2.5-flash"]:
+        try:
+            r = client.models.generate_content(model=m, contents="Reply OK")
+            if r.text:
+                print(f"  ✓ {m} ready: {str(r.text)[:30].strip()}")
+                return True
+        except Exception as e:
+            print(f"  ✗ {m} warmup failed: {str(e)[:80]}")
+    print("  ⚠️ All warmup probes failed. Proceeding anyway with robust backoff.")
+    return False
 
 # ═══════════════════════════════════════════════
-# WORDPRESS API 
+# WORDPRESS API
 # ═══════════════════════════════════════════════
 _wp_cat_cache = {}
-
 def get_or_create_wp_category(cat_name):
     if cat_name in _wp_cat_cache: return _wp_cat_cache[cat_name]
     try:
@@ -515,6 +577,7 @@ def get_or_create_wp_category(cat_name):
     return None
 
 def get_recent_titles():
+    """🚨 중복 방지용: 최근 WP 포스트 50개 제목을 가져옴"""
     try:
         r = requests.get(WP_URL + "/wp-json/wp/v2/posts?per_page=50&_fields=title", auth=WP_AUTH, timeout=30)
         if r.status_code in (200, 201):
@@ -525,6 +588,7 @@ def get_recent_titles():
     return []
 
 def is_duplicate(new_title, recent):
+    """🚨 중복 감지: 티어 라벨 제거 후 단어 70% 이상 겹치면 중복 판정"""
     if not new_title or not recent: return False
     labels = ["[💎 pro]", "[👑 vip]"]
     cn = new_title.lower()
@@ -538,23 +602,6 @@ def is_duplicate(new_title, recent):
         if len(words_rt) < 4: continue
         if len(words_rt & words_new) / max(len(words_new), 1) > 0.7: return True
     return False
-
-def editor_review(client, news_str, html):
-    try:
-        text = re.sub(r"<[^>]+>", " ", html); text = re.sub(r"\s+", " ", text)[:3000]
-        p = EDITOR_PROMPT.replace("[NEWS]", news_str[:2000]).replace("[CONTENT]", text)
-        
-        r = None
-        for m in FAST_MODELS:
-            r = call_gem(client, m, p, retries=1)
-            if r: break
-            
-        if not r: return True, "N/A"
-        if "FAIL" in xtag(r, "VERDICT").upper():
-            print("    EDITOR REJECTED: " + xtag(r, "ISSUES")[:200])
-            return False, xtag(r, "ISSUES")
-        return True, xtag(r, "ISSUES")
-    except Exception as e: return True, str(e)
 
 def upload_img(img_bytes):
     for attempt in range(2):
@@ -604,46 +651,6 @@ def publish(title, html, cat, tier, feature_img_id, exc, kw="", slug=""):
         except:
             if attempt < 3: time.sleep(5 * attempt)
     return False
-
-# ═══════════════════════════════════════════════
-# GEMINI — 🚨 [다중 폴백 및 404 즉시 우회 패치]
-# ═══════════════════════════════════════════════
-def call_gem(client, model, prompt, retries=2):
-    for i in range(1, retries + 1):
-        try:
-            r = client.models.generate_content(model=model, contents=prompt)
-            text = str(r.text) if r.text else ""
-            if not text or text == "None":
-                print("    Gem(" + model + ") attempt " + str(i) + ": Empty response")
-                if i < retries: time.sleep(10 * i)
-                continue
-            return text
-        except Exception as e:
-            err_str = str(e)
-            print("    ⚠️ Gem(" + model + ") ERROR: " + err_str[:150])
-            
-            # 🚨 404 에러(이름 거부)는 재시도해봤자 시간 낭비이므로 즉시 리턴하고 다음 폴백 모델로 넘김!
-            if "404" in err_str or "not found" in err_str.lower() or "not supported" in err_str.lower():
-                return None
-                
-            if "503" in err_str or "UNAVAILABLE" in err_str:
-                time.sleep(15 * i)
-            elif "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
-                time.sleep(30 * i)
-            elif i < retries:
-                time.sleep(10 * i)
-    return None
-
-def gem_fb(client, tier, prompt):
-    # 🚨 리스트에 있는 모델들을 하나씩 시도. 404가 뜨면 즉시 다음 것으로 넘어감!
-    models_to_try = MODEL_PRI.get(tier, FAST_MODELS)
-    for m in models_to_try:
-        print("    [AI] Trying model: " + m)
-        r = call_gem(client, m, prompt)
-        if r: 
-            return r, m
-        print("    [AI] Model " + m + " failed. Attempting next fallback...")
-    return None, None
 
 # ═══════════════════════════════════════════════
 # UTILS
@@ -703,7 +710,7 @@ def get_current_category():
     return sel
 
 # ═══════════════════════════════════════════════
-# HTML BUILDERS 
+# HTML BUILDERS
 # ═══════════════════════════════════════════════
 F = "font-size:18px;line-height:1.8;color:#374151;"
 MAIN = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a252c;width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box;word-break:break-word;margin-top:50px!important;"
@@ -761,7 +768,6 @@ def _compare(cb, cbear, bt="Bull Case", brt="Bear Case"):
     bull = ('<div style="flex:1;min-width:220px;background:#ecfdf5;border:2px solid #10b981;border-radius:10px;padding:22px;"><h4 style="margin-top:0;color:#065f46;">🐂 ' + bt + '</h4><p style="font-size:18px;color:#064e3b;margin:0;">' + cb + '</p></div>') if cb else ""
     bear = ('<div style="flex:1;min-width:220px;background:#fef2f2;border:2px solid #ef4444;border-radius:10px;padding:22px;"><h4 style="margin-top:0;color:#991b1b;">🐻 ' + brt + '</h4><p style="font-size:18px;color:#7f1d1d;margin:0;">' + cbear + '</p></div>') if cbear else ""
     return '<div style="display:flex;gap:15px;flex-wrap:wrap;margin-bottom:35px;">' + bull + bear + '</div>'
-
 def build_premium(a, tf, r):
     return ('<div style="' + MAIN + '">' + _hdr(a, tf, "PRO") + _impact(xtag(r, "IMPACT")) + _keynum(xtag(r, "KEY_NUMBER"), xtag(r, "KEY_NUMBER_CONTEXT"))
         + '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;">Executive Summary</h2><p style="' + F + '">' + xtag(r, "SUMMARY") + '</p>'
@@ -840,7 +846,7 @@ def build_vip(a, tf, raw, cat):
         + macro + pbk + conv_h + act + _ftr(tw, ps))
 
 # ═══════════════════════════════════════════════
-# ANALYZE
+# ANALYZE — 부분 실패 복구 로직 추가
 # ═══════════════════════════════════════════════
 def analyze(news_items, cat, tier):
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -853,56 +859,57 @@ def analyze(news_items, cat, tier):
         prompt = PROMPT_PREMIUM.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[NEWS_ITEMS]", ns)
         raw, _ = gem_fb(client, tier, prompt)
         if not raw:
-            print("  Premium: Gemini returned None")
+            print("  ❌ Premium: All Gemini attempts failed")
             return None, None, None, None, None, None
         html = build_premium(author, tf, raw)
     else:
         hint = CAT_METRICS.get(cat, CAT_METRICS["Economy"])["hint"]
         al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
         al_str = str(al["s"]) + "% stocks, " + str(al["b"]) + "% safe, " + str(al["c"]) + "% cash (" + al["note"] + ")"
+
+        # Part 1
         p1 = VIP_P1.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CAT_HINT]", hint).replace("[NEWS_ITEMS]", ns)
         raw1, _ = gem_fb(client, tier, p1)
         if not raw1:
-            print("  VIP P1: Gemini returned None")
+            print("  ❌ VIP P1: All Gemini attempts failed")
             return None, None, None, None, None, None
-        if not xtag(raw1, "VIP_C1") or is_echo(xtag(raw1, "VIP_C1")):
-            print("    P1 quality low, retrying...")
-            time.sleep(15)
-            r1r, _ = gem_fb(client, tier, p1)
-            if r1r and xtag(r1r, "VIP_C1") and not is_echo(xtag(r1r, "VIP_C1")): raw1 = r1r
+
         ctx = "Title: " + xtag(raw1, "TITLE") + "\nHeadline: " + xtag(raw1, "HEADLINE") + "\nSummary: " + xtag(raw1, "SUMMARY") + "\nInsight: " + xtag(raw1, "DEPTH")[:500]
         ctx_short = xtag(raw1, "HEADLINE") + ". " + xtag(raw1, "SUMMARY")
-        
+
+        # Part 2
         print(f"    Part 2 (Fast Model)...")
-        time.sleep(10)
+        time.sleep(random.uniform(5, 12))
         p2 = VIP_P2.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX]", ctx).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns)
-        
+
         raw2 = None
         for m in FAST_MODELS:
-            print("    [AI Fast] " + m)
-            raw2 = call_gem(client, m, p2)
-            if raw2: break
-            
-        for retry in range(2):
+            print("    [AI Fast P2] " + m)
+            raw2 = call_gem(client, m, p2, retries=5)
             if raw2 and ok_tag(raw2, "VIP_T1"): break
-            print("    P2 retry " + str(retry + 1)); time.sleep(15)
-            for m in FAST_MODELS:
-                raw2 = call_gem(client, m, p2)
-                if raw2: break
-                
+            time.sleep(random.uniform(3, 8))
+
+        # P2 fallback (최후 수단: 더 짧은 프롬프트)
         if not raw2 or not ok_tag(raw2, "VIP_T1"):
-            print("    P2 FAIL -> Fallback")
-            time.sleep(10)
+            print("    P2 primary failed -> Using shorter fallback prompt")
+            time.sleep(random.uniform(10, 20))
             fb_prompt = VIP_FB.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX_SHORT]", ctx_short[:400]).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns)
             for m in FAST_MODELS:
-                raw2 = call_gem(client, m, fb_prompt)
+                raw2 = call_gem(client, m, fb_prompt, retries=4)
                 if raw2: break
-            if not raw2: raw2 = ""
-            
+                time.sleep(random.uniform(3, 8))
+
+        # 🚨 v12 부분 실패 복구: P2가 완전 실패해도 P1 데이터만으로 발행
+        if not raw2:
+            print("    ⚠️ P2 completely failed. Publishing with P1 data only.")
+            raw2 = ""
+
         raw = raw1 + "\n" + raw2
         html = build_vip(author, tf, raw, cat)
 
-    tr = xtag(raw, "TITLE"); exc = xtag(raw, "EXCERPT") or "Expert analysis."; kw = xtag(raw, "SEO_KEYWORD")
+    tr = xtag(raw, "TITLE")
+    exc = xtag(raw, "EXCERPT") or "Expert analysis."
+    kw = xtag(raw, "SEO_KEYWORD")
     title = "[" + TIER_LABELS.get(tier, tier) + "] " + tr if tr else "(" + tier + ") " + cat + " Insight"
     slug = make_slug(kw, tr or cat, cat)
     html += _build_internal_links(cat) + _build_author_bio()
@@ -910,80 +917,112 @@ def analyze(news_items, cat, tier):
     return title, html, exc, kw, slug, tier
 
 # ═══════════════════════════════════════════════
-# MAIN 
+# MAIN
 # ═══════════════════════════════════════════════
 def main():
-    print("=" * 50)
-    print("  Warm Insight v11 (WP Full Fixed Build)")
-    print("=" * 50)
+    print("=" * 60)
+    print("  Warm Insight v12 — Tank Build (503 Survival)")
+    print("=" * 60)
+
+    # 🚨 v12: 스타트업 워밍업
+    warmup_client = genai.Client(api_key=GEMINI_API_KEY)
+    warmup_gemini(warmup_client)
+
     cat = get_current_category()
     urls = CATEGORIES.get(cat)
-    if not urls: print("No URLs"); return
+    if not urls:
+        print("No URLs"); return
+
     recent = get_recent_titles()
     print("\n--- [" + cat + "] ---")
     news = get_news(urls, 20)
-    if len(news) < 5: print("  Not enough news (" + str(len(news)) + ")"); return
+    if len(news) < 3:
+        print("  Not enough news (" + str(len(news)) + ")"); return
 
     gem_client = genai.Client(api_key=GEMINI_API_KEY)
     total = ok_cnt = fail = 0
 
     for task in TASKS:
         tier, cnt = task["tier"], task["count"]
-        if len(news) < cnt: print("  Skip " + tier + " (not enough news)"); break
+        if len(news) < cnt:
+            print("  Skip " + tier + " (not enough news)"); break
+
         target = [news.pop(0) for _ in range(cnt)]
         total += 1
         print("\n  [" + TIER_LABELS[tier] + "] " + str(cnt) + " articles...")
 
         result = analyze(target, cat, tier)
         if not result or not result[1]:
-            print("  ANALYZE FAILED for " + tier)
-            fail += 1; continue
+            print("  ❌ ANALYZE FAILED for " + tier)
+            fail += 1
+            # 실패 후 다음 기사 시도 전 쿨다운 (서버가 회복할 시간)
+            time.sleep(random.uniform(30, 60))
+            continue
 
         title, html, exc, kw, slug, _ = result
         print("  Title: " + title[:80])
 
+        # 🚨 중복 방지 체크
         if is_duplicate(title, recent):
             print("  SKIP dup"); fail += 1; continue
 
+        # 🚨 v12: Editor 검토를 SOFT하게 — 에디터 API가 죽어있어도 발행 계속
         if tier not in SKIP_EDITOR_TIERS:
-            passed = False
+            editor_ok = False
+            editor_tried = False
             for m in FAST_MODELS:
                 try:
                     text = re.sub(r"<[^>]+>", " ", html); text = re.sub(r"\s+", " ", text)[:3000]
                     p = EDITOR_PROMPT.replace("[NEWS]", "\n".join(target)[:2000]).replace("[CONTENT]", text)
-                    r = call_gem(gem_client, m, p, retries=1)
+                    r = call_gem(gem_client, m, p, retries=2)
+                    editor_tried = True
                     if r:
                         if "FAIL" in xtag(r, "VERDICT").upper():
                             print("    EDITOR REJECTED: " + xtag(r, "ISSUES")[:200])
                         else:
-                            print("    Editor: PASS")
-                            passed = True
+                            print("    ✅ Editor: PASS")
+                            editor_ok = True
                         break
-                except: pass
-                
-            if not passed:
-                time.sleep(10)
+                except Exception as e:
+                    print(f"    Editor error: {str(e)[:80]}")
+
+            # Editor가 아예 응답을 못 받은 경우: 그냥 발행 강행
+            if not editor_ok and not editor_tried:
+                print("    ⚠️ Editor API unreachable. Publishing anyway (soft-skip).")
+                editor_ok = True
+
+            # Editor가 FAIL을 내린 경우에만 재생성 시도
+            if not editor_ok:
+                time.sleep(random.uniform(10, 25))
                 result2 = analyze(target, cat, tier)
                 if result2 and result2[1]:
                     title, html, exc, kw, slug, _ = result2
-                else: fail += 1; continue
+                else:
+                    print("    ❌ Regen failed, skipping article")
+                    fail += 1
+                    continue
 
         print("  Generating thumbnail...")
         thumb_bytes = make_dynamic_thumb(title, cat, tier)
         feature_img = upload_img(thumb_bytes) if thumb_bytes else None
 
         if publish(title, html, cat, tier, feature_img, exc, kw, slug):
-            ok_cnt += 1; recent.append(title.lower())
-        else: fail += 1
+            ok_cnt += 1
+            recent.append(title.lower())
+        else:
+            fail += 1
 
         sl = TIER_SLEEP[tier] + random.randint(60, 180)
         print("  Wait " + str(sl) + "s"); time.sleep(sl)
 
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("  " + cat + " | Total " + str(total) + " | OK " + str(ok_cnt) + " | Fail " + str(fail))
-    print("=" * 50)
+    print("=" * 60)
 
 if __name__ == "__main__":
-    try: main()
+    try:
+        main()
     except Exception:
-        print("\nFATAL ERROR:"); traceback.print_exc(); sys.exit(1)
+        print("\nFATAL ERROR:")
+        traceback.print_exc()
+        sys.exit(1)
