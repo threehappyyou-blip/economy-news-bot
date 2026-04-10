@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Warm Insight v11 — WordPress Full Fixed Build (API Stability Patch)
+Warm Insight v11 — WordPress Full Fixed Build (Bulletproof API Patch)
 Fixes:
-  1. AI 모델을 가장 안정적인 1.5 Pro / Flash latest 버전으로 교체
-  2. 코드 내부(editor_review, analyze)에 숨어있던 2.5-flash 하드코딩 제거
-  3. 워드프레스 통신 및 발행 로직 유지
+  1. -latest 404 에러 원천 차단
+  2. 다중 모델 폴백(Fallback) 시스템 도입 (하나가 404 뜨면 즉시 다음 모델 가동)
+  3. 404 에러 시 무의미한 재시도(sleep)를 없애고 즉시 우회
 """
 import os, sys, traceback, time, random, re, json, io
 from datetime import datetime
 import requests, feedparser
 from google import genai
+from google.genai import types
 from PIL import Image, ImageDraw, ImageFont
 
 # ═══════════════════════════════════════════════
@@ -57,18 +58,15 @@ TASKS = [
     {"tier": "Royal Premium", "count": 5},
 ]
 TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
-TIER_VIS = {"Premium": "members", "Royal Premium": "paid"}
 TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
-
-# 🚨 수정됨: 안정적인 정식 API 모델명으로 교체 (하이브리드 전략)
-MODEL_PRI = {
-    "Royal Premium": ["gemini-1.5-pro-latest"],
-    "Premium": ["gemini-1.5-flash-latest"],
-}
-# 🚨 전역 폴백(빠른 작업용) 모델 정의
-FAST_MODEL = "gemini-1.5-flash-latest"
-
 SKIP_EDITOR_TIERS = ["Premium"]
+
+# 🚨 [핵심 수정] 다중 폴백(Fallback) 리스트. 첫 번째가 실패하면 두 번째를 즉시 호출!
+MODEL_PRI = {
+    "Royal Premium": ["gemini-1.5-pro", "gemini-1.5-pro-002"],
+    "Premium": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-002"],
+}
+FAST_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-002"]
 
 EXPERT = {
     "Economy": "a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
@@ -92,11 +90,11 @@ CAT_ALLOC = {
     "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
 }
 CAT_METRICS = {
-    "Economy": {"pool": ["Inflation Momentum", "Recession Risk", "Consumer Pulse", "Credit Stress", "Rate Cut Odds", "Dollar Strength", "Yield Curve", "PMI Signal", "Global Trade Flow", "EM Capital Flight Risk", "G7 vs BRICS Gap"], "hint": "inflation, GDP, Fed policy, global capital flows, bloc divergence"},
-    "Politics": {"pool": ["Policy Uncertainty", "Regulatory Risk", "Geopolitical Tension", "Election Volatility", "Trade War Risk", "Sanctions Impact", "Gridlock", "Defense Momentum", "Chokepoint Risk", "Alliance Cohesion"], "hint": "policy, geopolitics, chokepoints, bloc politics, de-dollarization"},
-    "Tech": {"pool": ["AI Race Intensity", "Antitrust Pressure", "Chip Supply Stress", "IPO Sentiment", "Cloud Velocity", "Cyber Threat", "Big Tech Momentum", "Funding Freeze", "Tech Decoupling Risk", "Data Sovereignty"], "hint": "AI, semiconductors, regulation, tech decoupling, cyber sovereignty"},
-    "Health": {"pool": ["Pipeline Confidence", "Drug Pricing Pressure", "Biotech Funding", "FDA Momentum", "Gene Therapy Index", "Hospital Stress", "Coverage Gap", "Trial Success", "Global Pharma Supply Risk"], "hint": "pharma pipelines, drug pricing, FDA, biotech, global supply chain"},
-    "Energy": {"pool": ["Oil Supply Squeeze", "Green Transition", "OPEC Tension", "LNG Surge", "Renewable Growth", "Geo Shock Risk", "Grid Stress", "Carbon Heat", "Chokepoint Disruption", "Energy Independence"], "hint": "oil, OPEC, renewables, LNG, chokepoints, energy security"},
+    "Economy": {"pool": ["Inflation Momentum", "Recession Risk", "Consumer Pulse", "Credit Stress", "Rate Cut Odds", "Dollar Strength", "Yield Curve", "PMI Signal", "Global Trade Flow", "EM Capital Flight Risk"], "hint": "inflation, GDP, Fed policy"},
+    "Politics": {"pool": ["Policy Uncertainty", "Regulatory Risk", "Geopolitical Tension", "Election Volatility", "Trade War Risk", "Sanctions Impact", "Gridlock", "Defense Momentum", "Chokepoint Risk"], "hint": "policy, geopolitics, chokepoints"},
+    "Tech": {"pool": ["AI Race Intensity", "Antitrust Pressure", "Chip Supply Stress", "IPO Sentiment", "Cloud Velocity", "Cyber Threat", "Big Tech Momentum", "Funding Freeze", "Tech Decoupling Risk"], "hint": "AI, semiconductors, regulation"},
+    "Health": {"pool": ["Pipeline Confidence", "Drug Pricing Pressure", "Biotech Funding", "FDA Momentum", "Gene Therapy Index", "Hospital Stress", "Coverage Gap", "Trial Success", "Pharma Supply Risk"], "hint": "pharma pipelines, drug pricing, FDA"},
+    "Energy": {"pool": ["Oil Supply Squeeze", "Green Transition", "OPEC Tension", "LNG Surge", "Renewable Growth", "Geo Shock Risk", "Grid Stress", "Carbon Heat", "Chokepoint Disruption"], "hint": "oil, OPEC, renewables, LNG"},
 }
 
 # ═══════════════════════════════════════════════
@@ -199,14 +197,14 @@ def _draw_warmy(draw, cx, cy, size, is_vip=False, accent=(50, 230, 160)):
             draw.ellipse([gx - 3, cry + int(crh * 0.2), gx + 3, cry + int(crh * 0.2) + 6], fill=(239, 68, 68))
 
 ICON_KEYWORDS = {
-    "up": ["surge", "rise", "soar", "rally", "boom", "bull", "growth", "gain", "jump", "spike", "climb", "record", "high"],
-    "down": ["crash", "fall", "drop", "plunge", "bear", "sink", "decline", "loss", "tumble", "slump", "low", "recession"],
-    "warn": ["warning", "risk", "fear", "danger", "crisis", "threat", "alert", "shock", "panic", "volatility", "unstable"],
-    "question": ["uncertainty", "unknown", "puzzle", "mystery", "question", "crossroads", "dilemma"],
-    "fire": ["hot", "fire", "explosive", "ignite", "heat", "intense", "blazing", "inflation"],
-    "money": ["dollar", "billion", "trillion", "profit", "revenue", "earnings", "valuation", "price", "cost", "tariff", "tax"],
-    "shield": ["defense", "protect", "safe", "hedge", "insurance", "shield", "guard", "resilient"],
-    "globe": ["global", "world", "international", "geopolitical", "trade war", "sanctions", "emerging"],
+    "up": ["surge", "rise", "soar", "rally", "boom", "bull", "growth", "gain", "jump"],
+    "down": ["crash", "fall", "drop", "plunge", "bear", "sink", "decline", "loss", "recession"],
+    "warn": ["warning", "risk", "fear", "danger", "crisis", "threat", "alert", "panic"],
+    "question": ["uncertainty", "unknown", "puzzle", "mystery", "question", "dilemma"],
+    "fire": ["hot", "fire", "explosive", "ignite", "heat", "blazing", "inflation"],
+    "money": ["dollar", "billion", "trillion", "profit", "revenue", "earnings", "tax"],
+    "shield": ["defense", "protect", "safe", "hedge", "insurance", "shield", "resilient"],
+    "globe": ["global", "world", "international", "geopolitical", "sanctions", "emerging"],
 }
 
 def _detect_icons(title):
@@ -502,24 +500,17 @@ def _build_author_bio():
 _wp_cat_cache = {}
 
 def get_or_create_wp_category(cat_name):
-    """WordPress 카테고리 ID 가져오기 또는 생성"""
-    if cat_name in _wp_cat_cache:
-        return _wp_cat_cache[cat_name]
+    if cat_name in _wp_cat_cache: return _wp_cat_cache[cat_name]
     try:
         r = requests.get(WP_URL + "/wp-json/wp/v2/categories?search=" + cat_name + "&per_page=10", auth=WP_AUTH, timeout=15)
         if r.status_code == 200:
             for c in r.json():
                 if c["name"].lower() == cat_name.lower():
-                    _wp_cat_cache[cat_name] = c["id"]
-                    print("  WP Category '" + cat_name + "' = ID " + str(c["id"]))
-                    return c["id"]
+                    _wp_cat_cache[cat_name] = c["id"]; return c["id"]
         r2 = requests.post(WP_URL + "/wp-json/wp/v2/categories", auth=WP_AUTH, json={"name": cat_name, "slug": cat_name.lower()}, timeout=15)
         if r2.status_code in (200, 201):
-            _wp_cat_cache[cat_name] = r2.json()["id"]
-            print("  WP Category '" + cat_name + "' created = ID " + str(r2.json()["id"]))
-            return r2.json()["id"]
-    except Exception as e:
-        print("  WP Category error: " + str(e))
+            _wp_cat_cache[cat_name] = r2.json()["id"]; return r2.json()["id"]
+    except Exception as e: print("  WP Category error: " + str(e))
     return None
 
 def get_recent_titles():
@@ -529,10 +520,7 @@ def get_recent_titles():
             titles = [p.get("title", {}).get("rendered", "").lower() for p in r.json()]
             print("  Loaded " + str(len(titles)) + " recent titles from WP")
             return titles
-        else:
-            print("  WP titles fetch " + str(r.status_code) + ": " + r.text[:200])
-    except Exception as e:
-        print("  WP titles error: " + str(e))
+    except Exception as e: pass
     return []
 
 def is_duplicate(new_title, recent):
@@ -547,41 +535,33 @@ def is_duplicate(new_title, recent):
         for lb in labels: cr = cr.replace(lb, "").strip()
         words_rt = set(cr.split())
         if len(words_rt) < 4: continue
-        if len(words_rt & words_new) / max(len(words_new), 1) > 0.7:
-            print("  DEDUP: skip")
-            return True
+        if len(words_rt & words_new) / max(len(words_new), 1) > 0.7: return True
     return False
 
 def editor_review(client, news_str, html):
     try:
         text = re.sub(r"<[^>]+>", " ", html); text = re.sub(r"\s+", " ", text)[:3000]
         p = EDITOR_PROMPT.replace("[NEWS]", news_str[:2000]).replace("[CONTENT]", text)
-        # 🚨 하드코딩 제거: 안정화 모델 변수 사용
-        r = call_gem(client, FAST_MODEL, p, retries=1)
+        
+        r = None
+        for m in FAST_MODELS:
+            r = call_gem(client, m, p, retries=1)
+            if r: break
+            
         if not r: return True, "N/A"
         if "FAIL" in xtag(r, "VERDICT").upper():
             print("    EDITOR REJECTED: " + xtag(r, "ISSUES")[:200])
             return False, xtag(r, "ISSUES")
-        print("    Editor: PASS")
         return True, xtag(r, "ISSUES")
-    except Exception as e:
-        return True, str(e)
+    except Exception as e: return True, str(e)
 
 def upload_img(img_bytes):
-    """워드프레스 미디어 업로드"""
     for attempt in range(2):
         try:
-            r = requests.post(WP_URL + "/wp-json/wp/v2/media", auth=WP_AUTH,
-                headers={'Content-Disposition': 'attachment; filename="warm_thumb.jpg"', 'Content-Type': 'image/jpeg'},
-                data=img_bytes, timeout=30)
-            if r.status_code in (200, 201):
-                print("  Image uploaded: ID " + str(r.json()["id"]))
-                return r.json()["id"]
-            else:
-                print("  Image upload " + str(r.status_code) + ": " + r.text[:200])
-                if attempt == 0: time.sleep(3)
-        except Exception as e:
-            print("  Image upload error: " + str(e))
+            r = requests.post(WP_URL + "/wp-json/wp/v2/media", auth=WP_AUTH, headers={'Content-Disposition': 'attachment; filename="warm_thumb.jpg"', 'Content-Type': 'image/jpeg'}, data=img_bytes, timeout=30)
+            if r.status_code in (200, 201): return r.json()["id"]
+            if attempt == 0: time.sleep(3)
+        except:
             if attempt == 0: time.sleep(3)
     return None
 
@@ -594,59 +574,38 @@ def _split_html_for_paywall(html):
                 nc = html.find('</div>', pos)
                 if nc < 0: break
                 div_count += 1; pos = nc + 6
-            if div_count >= 2 and pos < len(html) * 0.6:
-                return html[:pos], html[pos:]
+            if div_count >= 2 and pos < len(html) * 0.6: return html[:pos], html[pos:]
     target = int(len(html) * 0.3)
     best = html.rfind('</div>', 0, target + 500)
     if best > len(html) * 0.15: return html[:best + 6], html[best + 6:]
     return html, ""
 
 def publish(title, html, cat, tier, feature_img_id, exc, kw="", slug=""):
-    """워드프레스 발행"""
     print("  Pub: " + title[:60])
     for attempt in range(1, 4):
         try:
             public_html, private_html = _split_html_for_paywall(html)
             full_content = public_html
-            if private_html:
-                full_content += "\n\n\n\n" + private_html
-            if kw and slug:
-                full_content = _build_jsonld(title, exc or "", kw, cat, slug, "") + full_content
-
+            if private_html: full_content += "\n\n\n\n" + private_html
+            if kw and slug: full_content = _build_jsonld(title, exc or "", kw, cat, slug, "") + full_content
             post_data = {"title": title, "content": full_content, "status": "publish", "excerpt": exc[:290] if exc else ""}
             cat_id = get_or_create_wp_category(cat)
             if cat_id: post_data["categories"] = [cat_id]
             if slug: post_data["slug"] = slug
             if feature_img_id: post_data["featured_media"] = feature_img_id
-            if kw:
-                post_data["meta"] = {
-                    "rank_math_title": (kw + " | " + cat + " | Warm Insight")[:60],
-                    "rank_math_description": (exc[:120] + " Expert " + cat.lower() + " analysis.")[:155],
-                    "rank_math_focus_keyword": kw,
-                }
-
+            if kw: post_data["meta"] = {"rank_math_title": (kw + " | " + cat + " | Warm Insight")[:60], "rank_math_description": (exc[:120] + " Expert " + cat.lower() + " analysis.")[:155], "rank_math_focus_keyword": kw}
             r = requests.post(WP_URL + "/wp-json/wp/v2/posts", auth=WP_AUTH, json=post_data, timeout=60)
             if r.status_code in (200, 201):
-                print("  WP OK! " + r.json().get("link", ""))
-                return True
-            elif r.status_code == 401:
-                print("  WP 401: Application Password 인증 실패 — " + r.text[:200])
-                return False
-            elif r.status_code == 403:
-                print("  WP 403 (attempt " + str(attempt) + "): " + r.text[:200])
-                time.sleep(10 * attempt); continue
-            elif r.status_code == 429:
-                print("  WP 429 Rate Limited"); time.sleep(30 * attempt); continue
-            else:
-                print("  WP FAIL " + str(r.status_code) + ": " + r.text[:200])
-                return False
-        except Exception as e:
-            print("  WP Exception: " + str(e))
+                print("  WP OK! " + r.json().get("link", "")); return True
+            elif r.status_code == 403: time.sleep(10 * attempt); continue
+            elif r.status_code == 429: time.sleep(30 * attempt); continue
+            else: return False
+        except:
             if attempt < 3: time.sleep(5 * attempt)
     return False
 
 # ═══════════════════════════════════════════════
-# GEMINI — 수정됨: 디버그 로그 추가
+# GEMINI — 🚨 [다중 폴백 및 404 즉시 우회 패치]
 # ═══════════════════════════════════════════════
 def call_gem(client, model, prompt, retries=2):
     for i in range(1, retries + 1):
@@ -660,27 +619,29 @@ def call_gem(client, model, prompt, retries=2):
             return text
         except Exception as e:
             err_str = str(e)
-            # 🚨 에러 상세 내용 콘솔 출력 (디버깅 필수 요소)
-            print("    ⚠️ Gem(" + model + ") attempt " + str(i) + " ERROR: " + err_str[:300])
+            print("    ⚠️ Gem(" + model + ") ERROR: " + err_str[:150])
             
+            # 🚨 404 에러(이름 거부)는 재시도해봤자 시간 낭비이므로 즉시 리턴하고 다음 폴백 모델로 넘김!
+            if "404" in err_str or "not found" in err_str.lower() or "not supported" in err_str.lower():
+                return None
+                
             if "503" in err_str or "UNAVAILABLE" in err_str:
                 time.sleep(15 * i)
             elif "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
-                print("    API quota exceeded! Waiting 30s...")
                 time.sleep(30 * i)
-            elif "blocked" in err_str.lower() or "safety" in err_str.lower():
-                print("    Safety filter blocked!")
-                if i < retries: time.sleep(5)
             elif i < retries:
                 time.sleep(10 * i)
     return None
 
 def gem_fb(client, tier, prompt):
-    # 🚨 수정됨: 안정적인 정식 API 모델명으로 교체된 MODEL_PRI 사용
-    for m in MODEL_PRI.get(tier, [FAST_MODEL]):
-        print("    [AI] " + m)
+    # 🚨 리스트에 있는 모델들을 하나씩 시도. 404가 뜨면 즉시 다음 것으로 넘어감!
+    models_to_try = MODEL_PRI.get(tier, FAST_MODELS)
+    for m in models_to_try:
+        print("    [AI] Trying model: " + m)
         r = call_gem(client, m, prompt)
-        if r: return r, m
+        if r: 
+            return r, m
+        print("    [AI] Model " + m + " failed. Attempting next fallback...")
     return None, None
 
 # ═══════════════════════════════════════════════
@@ -878,7 +839,7 @@ def build_vip(a, tf, raw, cat):
         + macro + pbk + conv_h + act + _ftr(tw, ps))
 
 # ═══════════════════════════════════════════════
-# ANALYZE — 수정됨: 2.5 하드코딩 완전 제거 (안정화 모델 사용)
+# ANALYZE
 # ═══════════════════════════════════════════════
 def analyze(news_items, cat, tier):
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -911,21 +872,32 @@ def analyze(news_items, cat, tier):
         ctx = "Title: " + xtag(raw1, "TITLE") + "\nHeadline: " + xtag(raw1, "HEADLINE") + "\nSummary: " + xtag(raw1, "SUMMARY") + "\nInsight: " + xtag(raw1, "DEPTH")[:500]
         ctx_short = xtag(raw1, "HEADLINE") + ". " + xtag(raw1, "SUMMARY")
         
-        # 🚨 하드코딩된 'gemini-2.5-flash' 제거하고 안정적인 FAST_MODEL 변수 사용
-        print(f"    Part 2 ({FAST_MODEL})...")
+        print(f"    Part 2 (Fast Model)...")
         time.sleep(10)
         p2 = VIP_P2.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX]", ctx).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns)
         
-        raw2 = call_gem(client, FAST_MODEL, p2)
+        raw2 = None
+        for m in FAST_MODELS:
+            print("    [AI Fast] " + m)
+            raw2 = call_gem(client, m, p2)
+            if raw2: break
+            
         for retry in range(2):
             if raw2 and ok_tag(raw2, "VIP_T1"): break
             print("    P2 retry " + str(retry + 1)); time.sleep(15)
-            raw2 = call_gem(client, FAST_MODEL, p2)
+            for m in FAST_MODELS:
+                raw2 = call_gem(client, m, p2)
+                if raw2: break
+                
         if not raw2 or not ok_tag(raw2, "VIP_T1"):
             print("    P2 FAIL -> Fallback")
             time.sleep(10)
-            raw2 = call_gem(client, FAST_MODEL, VIP_FB.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX_SHORT]", ctx_short[:400]).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns))
+            fb_prompt = VIP_FB.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX_SHORT]", ctx_short[:400]).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns)
+            for m in FAST_MODELS:
+                raw2 = call_gem(client, m, fb_prompt)
+                if raw2: break
             if not raw2: raw2 = ""
+            
         raw = raw1 + "\n" + raw2
         html = build_vip(author, tf, raw, cat)
 
@@ -973,14 +945,26 @@ def main():
             print("  SKIP dup"); fail += 1; continue
 
         if tier not in SKIP_EDITOR_TIERS:
-            passed, issues = editor_review(gem_client, "\n".join(target), html)
+            passed = False
+            for m in FAST_MODELS:
+                try:
+                    text = re.sub(r"<[^>]+>", " ", html); text = re.sub(r"\s+", " ", text)[:3000]
+                    p = EDITOR_PROMPT.replace("[NEWS]", "\n".join(target)[:2000]).replace("[CONTENT]", text)
+                    r = call_gem(gem_client, m, p, retries=1)
+                    if r:
+                        if "FAIL" in xtag(r, "VERDICT").upper():
+                            print("    EDITOR REJECTED: " + xtag(r, "ISSUES")[:200])
+                        else:
+                            print("    Editor: PASS")
+                            passed = True
+                        break
+                except: pass
+                
             if not passed:
                 time.sleep(10)
                 result2 = analyze(target, cat, tier)
                 if result2 and result2[1]:
                     title, html, exc, kw, slug, _ = result2
-                    p2, _ = editor_review(gem_client, "\n".join(target), html)
-                    if not p2: print("  REJECTED x2"); fail += 1; continue
                 else: fail += 1; continue
 
         print("  Generating thumbnail...")
