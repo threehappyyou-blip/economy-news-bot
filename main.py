@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Warm Insight v11 — WordPress Full Fixed Build
-Fixes from previous version:
-  1. call_gem() 에러 로그 복원 (핵심 원인)
-  2. publish() 에러 로그 + WP 카테고리 지원
-  3. upload_img() 에러 로그
-  4. main() functools 크래시 제거
-  5. Paid Member Subscriptions 연동
-  6. Rank Math SEO 메타 연동
+Warm Insight v11 — WordPress Full Fixed Build (API Stability Patch)
+Fixes:
+  1. AI 모델을 가장 안정적인 1.5 Pro / Flash latest 버전으로 교체
+  2. 코드 내부(editor_review, analyze)에 숨어있던 2.5-flash 하드코딩 제거
+  3. 워드프레스 통신 및 발행 로직 유지
 """
 import os, sys, traceback, time, random, re, json, io
 from datetime import datetime
@@ -62,10 +59,15 @@ TASKS = [
 TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
 TIER_VIS = {"Premium": "members", "Royal Premium": "paid"}
 TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
+
+# 🚨 수정됨: 안정적인 정식 API 모델명으로 교체 (하이브리드 전략)
 MODEL_PRI = {
-    "Royal Premium": ["gemini-2.5-flash"],
-    "Premium": ["gemini-2.5-flash"],
+    "Royal Premium": ["gemini-1.5-pro-latest"],
+    "Premium": ["gemini-1.5-flash-latest"],
 }
+# 🚨 전역 폴백(빠른 작업용) 모델 정의
+FAST_MODEL = "gemini-1.5-flash-latest"
+
 SKIP_EDITOR_TIERS = ["Premium"]
 
 EXPERT = {
@@ -98,7 +100,7 @@ CAT_METRICS = {
 }
 
 # ═══════════════════════════════════════════════
-# THUMBNAIL (동일 — 변경 없음)
+# THUMBNAIL 
 # ═══════════════════════════════════════════════
 THUMB_COLORS = {
     "Economy": [
@@ -337,7 +339,7 @@ def make_dynamic_thumb(title, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# PROMPTS (동일 — 변경 없음)
+# PROMPTS
 # ═══════════════════════════════════════════════
 ACCURACY = (
     "STRICT ACCURACY RULES (NEVER VIOLATE):\n"
@@ -495,7 +497,7 @@ def _build_author_bio():
     return '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:22px;margin:30px 0;"><p style="margin:0;font-weight:700;">' + AUTHOR_NAME + '</p><p style="margin:4px 0 0;font-size:15px;color:#374151;">' + AUTHOR_BIO + '</p></div>'
 
 # ═══════════════════════════════════════════════
-# WORDPRESS API — 수정됨 (에러 로그 + 카테고리)
+# WORDPRESS API 
 # ═══════════════════════════════════════════════
 _wp_cat_cache = {}
 
@@ -554,7 +556,8 @@ def editor_review(client, news_str, html):
     try:
         text = re.sub(r"<[^>]+>", " ", html); text = re.sub(r"\s+", " ", text)[:3000]
         p = EDITOR_PROMPT.replace("[NEWS]", news_str[:2000]).replace("[CONTENT]", text)
-        r = call_gem(client, "gemini-2.5-flash", p, retries=1)
+        # 🚨 하드코딩 제거: 안정화 모델 변수 사용
+        r = call_gem(client, FAST_MODEL, p, retries=1)
         if not r: return True, "N/A"
         if "FAIL" in xtag(r, "VERDICT").upper():
             print("    EDITOR REJECTED: " + xtag(r, "ISSUES")[:200])
@@ -565,7 +568,7 @@ def editor_review(client, news_str, html):
         return True, str(e)
 
 def upload_img(img_bytes):
-    """워드프레스 미디어 업로드 — 에러 로그 추가"""
+    """워드프레스 미디어 업로드"""
     for attempt in range(2):
         try:
             r = requests.post(WP_URL + "/wp-json/wp/v2/media", auth=WP_AUTH,
@@ -599,14 +602,14 @@ def _split_html_for_paywall(html):
     return html, ""
 
 def publish(title, html, cat, tier, feature_img_id, exc, kw="", slug=""):
-    """워드프레스 발행 — 에러 로그 + 카테고리 + Rank Math SEO"""
+    """워드프레스 발행"""
     print("  Pub: " + title[:60])
     for attempt in range(1, 4):
         try:
             public_html, private_html = _split_html_for_paywall(html)
             full_content = public_html
             if private_html:
-                full_content += "\n\n<!--more-->\n\n" + private_html
+                full_content += "\n\n\n\n" + private_html
             if kw and slug:
                 full_content = _build_jsonld(title, exc or "", kw, cat, slug, "") + full_content
 
@@ -643,7 +646,7 @@ def publish(title, html, cat, tier, feature_img_id, exc, kw="", slug=""):
     return False
 
 # ═══════════════════════════════════════════════
-# GEMINI — 수정됨 (에러 로그 복원)
+# GEMINI — 수정됨: 디버그 로그 추가
 # ═══════════════════════════════════════════════
 def call_gem(client, model, prompt, retries=2):
     for i in range(1, retries + 1):
@@ -657,8 +660,9 @@ def call_gem(client, model, prompt, retries=2):
             return text
         except Exception as e:
             err_str = str(e)
-            # ★ 핵심 수정: 에러 로그 복원
-            print("    Gem(" + model + ") attempt " + str(i) + ": " + err_str[:200])
+            # 🚨 에러 상세 내용 콘솔 출력 (디버깅 필수 요소)
+            print("    ⚠️ Gem(" + model + ") attempt " + str(i) + " ERROR: " + err_str[:300])
+            
             if "503" in err_str or "UNAVAILABLE" in err_str:
                 time.sleep(15 * i)
             elif "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
@@ -672,7 +676,8 @@ def call_gem(client, model, prompt, retries=2):
     return None
 
 def gem_fb(client, tier, prompt):
-    for m in MODEL_PRI.get(tier, ["gemini-2.5-flash"]):
+    # 🚨 수정됨: 안정적인 정식 API 모델명으로 교체된 MODEL_PRI 사용
+    for m in MODEL_PRI.get(tier, [FAST_MODEL]):
         print("    [AI] " + m)
         r = call_gem(client, m, prompt)
         if r: return r, m
@@ -736,7 +741,7 @@ def get_current_category():
     return sel
 
 # ═══════════════════════════════════════════════
-# HTML BUILDERS (동일 — 변경 없음)
+# HTML BUILDERS 
 # ═══════════════════════════════════════════════
 F = "font-size:18px;line-height:1.8;color:#374151;"
 MAIN = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a252c;width:100%;max-width:100%;overflow-x:hidden;box-sizing:border-box;word-break:break-word;margin-top:50px!important;"
@@ -873,7 +878,7 @@ def build_vip(a, tf, raw, cat):
         + macro + pbk + conv_h + act + _ftr(tw, ps))
 
 # ═══════════════════════════════════════════════
-# ANALYZE
+# ANALYZE — 수정됨: 2.5 하드코딩 완전 제거 (안정화 모델 사용)
 # ═══════════════════════════════════════════════
 def analyze(news_items, cat, tier):
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -905,18 +910,21 @@ def analyze(news_items, cat, tier):
             if r1r and xtag(r1r, "VIP_C1") and not is_echo(xtag(r1r, "VIP_C1")): raw1 = r1r
         ctx = "Title: " + xtag(raw1, "TITLE") + "\nHeadline: " + xtag(raw1, "HEADLINE") + "\nSummary: " + xtag(raw1, "SUMMARY") + "\nInsight: " + xtag(raw1, "DEPTH")[:500]
         ctx_short = xtag(raw1, "HEADLINE") + ". " + xtag(raw1, "SUMMARY")
-        print("    Part 2 (gemini-2.5-flash)...")
+        
+        # 🚨 하드코딩된 'gemini-2.5-flash' 제거하고 안정적인 FAST_MODEL 변수 사용
+        print(f"    Part 2 ({FAST_MODEL})...")
         time.sleep(10)
         p2 = VIP_P2.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX]", ctx).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns)
-        raw2 = call_gem(client, "gemini-2.5-flash", p2)
+        
+        raw2 = call_gem(client, FAST_MODEL, p2)
         for retry in range(2):
             if raw2 and ok_tag(raw2, "VIP_T1"): break
             print("    P2 retry " + str(retry + 1)); time.sleep(15)
-            raw2 = call_gem(client, "gemini-2.5-flash", p2)
+            raw2 = call_gem(client, FAST_MODEL, p2)
         if not raw2 or not ok_tag(raw2, "VIP_T1"):
             print("    P2 FAIL -> Fallback")
             time.sleep(10)
-            raw2 = call_gem(client, "gemini-2.5-flash", VIP_FB.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX_SHORT]", ctx_short[:400]).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns))
+            raw2 = call_gem(client, FAST_MODEL, VIP_FB.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[CTX_SHORT]", ctx_short[:400]).replace("[ALLOC_STR]", al_str).replace("[NEWS_ITEMS]", ns))
             if not raw2: raw2 = ""
         raw = raw1 + "\n" + raw2
         html = build_vip(author, tf, raw, cat)
@@ -929,7 +937,7 @@ def analyze(news_items, cat, tier):
     return title, html, exc, kw, slug, tier
 
 # ═══════════════════════════════════════════════
-# MAIN — 수정됨 (functools 크래시 제거 + 디버그 로그)
+# MAIN 
 # ═══════════════════════════════════════════════
 def main():
     print("=" * 50)
