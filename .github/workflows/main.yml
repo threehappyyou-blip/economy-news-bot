@@ -24,6 +24,7 @@ jobs:
 
     - name: Run Auto Poster Bot
       env:
+        PYTHONUNBUFFERED: "1"          # ← 추가! 로그 실시간 출력
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         WP_URL: ${{ secrets.WP_URL }}
         WP_USERNAME: ${{ secrets.WP_USERNAME }}
