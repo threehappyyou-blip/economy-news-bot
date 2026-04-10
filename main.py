@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Warm Insight v11 — WordPress Full Fixed Build (Bulletproof API Patch)
+Warm Insight v11 — WordPress Full Fixed Build (2.5 Model Restored)
 Fixes:
-  1. -latest 404 에러 원천 차단
-  2. 다중 모델 폴백(Fallback) 시스템 도입 (하나가 404 뜨면 즉시 다음 모델 가동)
-  3. 404 에러 시 무의미한 재시도(sleep)를 없애고 즉시 우회
+  1. 대표님 계정에 최적화된 gemini-2.5-pro 및 2.5-flash 1순위 복구
+  2. 404 에러(권한 없음) 발생 시 즉시 다음 모델로 넘어가는 스위칭 시스템 유지
+  3. 503 에러(서버 과부하) 발생 시 끈질기게 재시도하여 결국 완성해 내는 로직 유지
 """
 import os, sys, traceback, time, random, re, json, io
 from datetime import datetime
@@ -61,12 +61,13 @@ TIER_LABELS = {"Premium": "💎 Pro", "Royal Premium": "👑 VIP"}
 TIER_SLEEP = {"Premium": 30, "Royal Premium": 50}
 SKIP_EDITOR_TIERS = ["Premium"]
 
-# 🚨 [핵심 수정] 다중 폴백(Fallback) 리스트. 첫 번째가 실패하면 두 번째를 즉시 호출!
+# 🚨 [핵심 수정] 대표님 계정에서 완벽하게 작동했던 2.5 모델을 1순위로 복구했습니다.
+# (만약의 사태를 대비해 구글이 추천하는 2.0-001 예비용 백업도 걸어두었습니다)
 MODEL_PRI = {
-    "Royal Premium": ["gemini-1.5-pro", "gemini-1.5-pro-002"],
-    "Premium": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-002"],
+    "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash-001"],
+    "Premium": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-001"],
 }
-FAST_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-002"]
+FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-001"]
 
 EXPERT = {
     "Economy": "a veteran global macro strategist with 40 years spanning Wall Street, City of London, and Asian markets",
