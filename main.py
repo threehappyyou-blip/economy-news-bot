@@ -19,10 +19,10 @@ WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
 if not all([GEMINI_API_KEY, WP_URL, WP_USERNAME, WP_APP_PASSWORD]):
     sys.exit("Missing API keys or WordPress credentials")
 WP_AUTH = (WP_USERNAME, WP_APP_PASSWORD)
- 
+
 # ✅ [수정 1] YouTube 채널 URL 추가
 YOUTUBE_URL = "https://www.youtube.com/@WarmInsightyou"
- 
+
 CATEGORIES = {
     "Economy": [
         "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664",
@@ -439,8 +439,37 @@ EDITOR_PROMPT = (
 # SEO CONFIG
 # ═══════════════════════════════════════════════
 SITE_URL = "https://warminsight.com"
-AUTHOR_NAME = "Ethan Cole"
-AUTHOR_BIO = "Ethan Cole is a veteran financial analyst and the lead voice behind Warm Insight."
+AUTHOR_NAME = "Ethan Cole"  # 폴백용 (기존 호환성 유지)
+AUTHOR_BIO = "Ethan Cole is a veteran financial analyst and the lead voice behind Warm Insight."  # 폴백용
+
+# ✅ [수정 4] 카테고리별 작성자 설정 — 각 섹터 전문 애널리스트 페르소나
+CAT_AUTHORS = {
+    "Economy": {
+        "name": "Marcus Reid",
+        "title": "Global Macro Strategist",
+        "bio": "Marcus Reid is a former Wall Street macro strategist with 20 years tracking global monetary policy, inflation cycles, and sovereign debt markets. He co-founded Warm Insight to help everyday investors understand the forces that move markets — before the headlines catch up.",
+    },
+    "Politics": {
+        "name": "Diana Walsh",
+        "title": "Geopolitical Risk Analyst",
+        "bio": "Diana Walsh spent 15 years as a geopolitical risk consultant advising institutional clients across Washington D.C. and Brussels. At Warm Insight, she translates complex policy shifts and international tensions into clear, actionable investment implications.",
+    },
+    "Tech": {
+        "name": "James Park",
+        "title": "Technology & AI Analyst",
+        "bio": "James Park is a technology investment analyst who has covered Silicon Valley and Asian tech ecosystems for over a decade. At Warm Insight, he decodes AI breakthroughs, semiconductor shifts, and regulatory upheavals for investors who want to stay ahead.",
+    },
+    "Health": {
+        "name": "Dr. Sarah Chen",
+        "title": "Healthcare & Biotech Analyst",
+        "bio": "Dr. Sarah Chen holds advanced degrees in biochemistry and health economics, with 12 years analyzing pharmaceutical pipelines and biotech valuations. At Warm Insight, she makes healthcare investing accessible to everyday investors.",
+    },
+    "Energy": {
+        "name": "Oliver Grant",
+        "title": "Energy Markets Strategist",
+        "bio": "Oliver Grant is an energy markets veteran with deep expertise in oil, gas, LNG, and the global renewable transition. After years advising commodity funds, he joined Warm Insight to help investors navigate the most pivotal energy shift in a generation.",
+    },
+}
 PILLAR_PAGES = {
     "Economy": {"url": SITE_URL + "/category/economy/", "anchor": "all Economy analysis"},
     "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "all Politics analysis"},
@@ -450,7 +479,9 @@ PILLAR_PAGES = {
 }
 CAT_RELATED = {"Economy": ["Politics", "Energy"], "Politics": ["Economy", "Energy"], "Tech": ["Economy", "Health"], "Health": ["Tech", "Economy"], "Energy": ["Economy", "Politics"]}
 def _build_jsonld(title, excerpt, kw, cat, slug, tf):
-    schema = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": title[:110], "description": excerpt[:150], "keywords": kw + ", " + cat + ", market analysis, Warm Insight", "author": {"@type": "Person", "name": AUTHOR_NAME}, "publisher": {"@type": "Organization", "name": "Warm Insight", "url": SITE_URL}, "datePublished": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), "articleSection": cat, "inLanguage": "en"}
+    # ✅ [수정 4-a] 카테고리별 작성자 이름을 Schema.org에 반영
+    author_name = CAT_AUTHORS.get(cat, {"name": AUTHOR_NAME})["name"]
+    schema = {"@context": "https://schema.org", "@type": "NewsArticle", "headline": title[:110], "description": excerpt[:150], "keywords": kw + ", " + cat + ", market analysis, Warm Insight", "author": {"@type": "Person", "name": author_name}, "publisher": {"@type": "Organization", "name": "Warm Insight", "url": SITE_URL}, "datePublished": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), "articleSection": cat, "inLanguage": "en"}
     return '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>'
 def _build_internal_links(cat):
     pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
@@ -459,20 +490,167 @@ def _build_internal_links(cat):
         rp = PILLAR_PAGES.get(rc)
         if rp: h += ' · <a href="' + rp["url"] + '" style="color:#b8974d;">' + rp["anchor"].replace("all ", "") + '</a>'
     return h + '</p></div>'
- 
-# ✅ [수정 2] _build_author_bio() — YouTube 링크 추가
-def _build_author_bio():
+
+# ✅ [수정 2+5] _build_author_bio(cat) — 카테고리별 작성자 + YouTube 링크
+def _build_author_bio(cat=""):
+    a = CAT_AUTHORS.get(cat, {"name": AUTHOR_NAME, "title": "Financial Analyst", "bio": AUTHOR_BIO})
     return (
         '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:22px;margin:30px 0;">'
-        '<p style="margin:0;font-weight:700;">' + AUTHOR_NAME + '</p>'
-        '<p style="margin:4px 0 12px;font-size:15px;color:#374151;">' + AUTHOR_BIO + '</p>'
+        '<p style="margin:0;font-weight:700;font-size:17px;color:#1a252c;">' + a["name"] + '</p>'
+        '<p style="margin:3px 0 8px;font-size:12px;color:#6b7280;font-weight:600;'
+        'text-transform:uppercase;letter-spacing:0.06em;">' + a["title"] + '</p>'
+        '<p style="margin:0 0 14px;font-size:15px;color:#374151;line-height:1.7;">' + a["bio"] + '</p>'
         '<a href="' + YOUTUBE_URL + '" target="_blank" rel="noopener noreferrer" '
         'style="display:inline-flex;align-items:center;gap:8px;background:#FF0000;color:#ffffff;'
         'padding:8px 18px;border-radius:20px;font-size:14px;font-weight:bold;text-decoration:none;">'
         '▶&nbsp;Watch on YouTube — Warm Insight</a>'
         '</div>'
     )
- 
+
+# ═══════════════════════════════════════════════
+# ✅ [수정 6] ABOUT US 페이지 HTML 빌더 + 자동 생성
+# ═══════════════════════════════════════════════
+def build_about_html():
+    """Warm Insight About Us 스토리텔링 페이지 HTML"""
+    team_cards = ""
+    for cat, a in CAT_AUTHORS.items():
+        theme = CAT_THEME.get(cat, {"icon": "📊", "accent": "#b8974d"})
+        team_cards += (
+            '<div style="flex:1;min-width:240px;background:#fff;border:1px solid #e5e7eb;'
+            'border-top:4px solid ' + theme["accent"] + ';border-radius:10px;padding:24px;">'
+            '<div style="font-size:28px;margin-bottom:8px;">' + theme["icon"] + '</div>'
+            '<p style="margin:0;font-size:16px;font-weight:700;color:#1a252c;">' + a["name"] + '</p>'
+            '<p style="margin:3px 0 10px;font-size:12px;color:#6b7280;font-weight:600;'
+            'text-transform:uppercase;letter-spacing:0.06em;">' + a["title"] + '</p>'
+            '<p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">' + a["bio"] + '</p>'
+            '</div>'
+        )
+    return (
+        '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+        'color:#1a252c;max-width:860px;margin:0 auto;padding:20px;">'
+
+        # ── Hero ──
+        '<div style="text-align:center;padding:60px 20px 40px;border-bottom:1px solid #e5e7eb;">'
+        '<p style="font-size:13px;font-weight:700;color:#b8974d;text-transform:uppercase;'
+        'letter-spacing:0.1em;margin:0 0 12px;">Our Story</p>'
+        '<h1 style="font-family:Georgia,serif;font-size:38px;font-weight:700;'
+        'color:#1a252c;margin:0 0 20px;line-height:1.3;">'
+        'Turning Everyday People Into<br>Smart Investors</h1>'
+        '<p style="font-size:19px;color:#4b5563;max-width:600px;margin:0 auto;line-height:1.8;">'
+        'We believe the financial markets shouldn\'t be a closed club. '
+        'Every day, we decode the economic forces shaping your future — '
+        'in plain language, with institutional-grade depth.'
+        '</p>'
+        '</div>'
+
+        # ── Why We Started ──
+        '<div style="padding:50px 0;border-bottom:1px solid #e5e7eb;">'
+        '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin:0 0 20px;">'
+        'Why We Started Warm Insight</h2>'
+        '<p style="font-size:17px;color:#374151;line-height:1.9;margin:0 0 18px;">'
+        'We\'ve all been there. A headline flashes — "Fed raises rates," "Oil hits $90," '
+        '"Chip stocks surge" — and you feel like you\'re missing something crucial. '
+        'The financial media moves fast and talks in jargon. '
+        'Meanwhile, the real analysis sits behind paywalls designed for hedge funds.'
+        '</p>'
+        '<p style="font-size:17px;color:#374151;line-height:1.9;margin:0 0 18px;">'
+        'Warm Insight was built to close that gap. Our team of sector specialists — '
+        'spanning macro economics, geopolitics, technology, healthcare, and energy — '
+        'reads the same news the institutions read, then translates it into insights '
+        'you can actually use. No jargon. No noise. Just the signal that matters.'
+        '</p>'
+        '<p style="font-size:17px;color:#374151;line-height:1.9;margin:0;">'
+        'We don\'t promise you\'ll beat the market. We promise you\'ll '
+        '<strong style="color:#1a252c;">understand</strong> it — and that changes everything.'
+        '</p>'
+        '</div>'
+
+        # ── What We Cover ──
+        '<div style="padding:50px 0;border-bottom:1px solid #e5e7eb;">'
+        '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin:0 0 10px;">'
+        'Five Lenses on Every Market Move</h2>'
+        '<p style="font-size:17px;color:#6b7280;margin:0 0 30px;">'
+        'Real markets don\'t move in silos. A trade war hits energy prices, '
+        'which drives inflation, which shifts central bank policy. '
+        'We cover all five sectors — so you never miss the connection.'
+        '</p>'
+        '<div style="display:flex;flex-wrap:wrap;gap:16px;">' + team_cards + '</div>'
+        '</div>'
+
+        # ── Who We\'re For ──
+        '<div style="background:#1e293b;border-radius:12px;padding:45px;margin:50px 0;">'
+        '<h2 style="font-family:Georgia,serif;font-size:28px;color:#b8974d;margin:0 0 20px;">'
+        'Who Warm Insight Is For</h2>'
+        '<p style="font-size:17px;color:#cbd5e1;line-height:1.9;margin:0 0 16px;">'
+        'You don\'t need to be a Wall Street veteran. '
+        'You just need to be someone who takes their financial future seriously.'
+        '</p>'
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-top:24px;">'
+        '<div style="background:#0f172a;border-radius:8px;padding:20px;">'
+        '<p style="color:#b8974d;font-weight:700;margin:0 0 8px;">✅ Self-directed investors</p>'
+        '<p style="color:#94a3b8;font-size:14px;margin:0;">Managing your own portfolio and want an edge beyond CNBC.</p>'
+        '</div>'
+        '<div style="background:#0f172a;border-radius:8px;padding:20px;">'
+        '<p style="color:#b8974d;font-weight:700;margin:0 0 8px;">✅ Busy professionals</p>'
+        '<p style="color:#94a3b8;font-size:14px;margin:0;">No time to read 20 sources — we do it for you, every day.</p>'
+        '</div>'
+        '<div style="background:#0f172a;border-radius:8px;padding:20px;">'
+        '<p style="color:#b8974d;font-weight:700;margin:0 0 8px;">✅ Curious learners</p>'
+        '<p style="color:#94a3b8;font-size:14px;margin:0;">Want to truly understand why markets move, not just what happened.</p>'
+        '</div>'
+        '</div>'
+        '</div>'
+
+        # ── CTA ──
+        '<div style="text-align:center;padding:50px 20px;">'
+        '<h2 style="font-family:Georgia,serif;font-size:30px;color:#1a252c;margin:0 0 16px;">'
+        'Ready to Invest Smarter?</h2>'
+        '<p style="font-size:17px;color:#6b7280;margin:0 0 28px;">'
+        'Join thousands of readers who start every morning with Warm Insight.'
+        '</p>'
+        '<a href="' + SITE_URL + '/warm-insight-vip-membership/" '
+        'style="display:inline-block;background:#b8974d;color:#fff;padding:14px 36px;'
+        'border-radius:8px;font-size:17px;font-weight:bold;text-decoration:none;margin-right:12px;">'
+        'Join VIP →</a>'
+        '<a href="' + YOUTUBE_URL + '" target="_blank" '
+        'style="display:inline-block;background:#FF0000;color:#fff;padding:14px 28px;'
+        'border-radius:8px;font-size:17px;font-weight:bold;text-decoration:none;">'
+        '▶ YouTube</a>'
+        '</div>'
+        '</div>'
+    )
+
+def create_about_page():
+    """About Us 페이지가 없으면 WordPress에 자동 생성"""
+    print("\n  [About Us] Checking if page exists...")
+    try:
+        r = requests.get(
+            WP_URL + "/wp-json/wp/v2/pages?slug=about-us&_fields=id,slug,link",
+            auth=WP_AUTH, timeout=15
+        )
+        if r.status_code == 200 and r.json():
+            print("  [About Us] Already exists: " + r.json()[0].get("link", ""))
+            return
+        # 없으면 생성
+        print("  [About Us] Creating page...")
+        page_data = {
+            "title": "About Us — Warm Insight",
+            "slug": "about-us",
+            "content": build_about_html(),
+            "status": "publish",
+            "meta": {
+                "rank_math_title": "About Us | Warm Insight — Turning Everyday People Into Smart Investors",
+                "rank_math_description": "Meet the Warm Insight team. We decode global markets across Economy, Politics, Tech, Health and Energy — so you can invest with confidence.",
+            }
+        }
+        r2 = requests.post(WP_URL + "/wp-json/wp/v2/pages", auth=WP_AUTH, json=page_data, timeout=30)
+        if r2.status_code in (200, 201):
+            print("  ✅ About Us page created: " + r2.json().get("link", ""))
+        else:
+            print("  ❌ About Us creation failed (status " + str(r2.status_code) + ")")
+    except Exception as e:
+        print("  ⚠️ About Us page error: " + str(e)[:80])
+
 # ═══════════════════════════════════════════════
 # 🚨🚨🚨 TANK-GRADE GEMINI CALL (v12 CORE) 🚨🚨🚨
 # ═══════════════════════════════════════════════
@@ -698,7 +876,7 @@ MAIN = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica
 def _hdr(author, tf, badge=""):
     b = (' <span style="background:#b8974d;color:#fff;padding:3px 12px;border-radius:4px;font-size:14px;font-weight:bold;">' + badge + '</span>') if badge else ""
     return '<div style="border-top:3px solid #b8974d;border-bottom:1px solid #e5e7eb;padding:14px 0;margin-bottom:30px;"><p style="margin:0;font-size:16px;color:#4b5563;"><strong style="color:#1a252c;">' + author + '</strong> | ' + tf + b + '</p></div>'
- 
+
 # ✅ [수정 3] _ftr() — "Found this useful?" 섹션에 YouTube 버튼 추가
 def _ftr(tw, ps):
     if not tw or is_echo(tw): tw = "Stay disciplined, stay diversified, and let time compound in your favor."
@@ -733,7 +911,7 @@ def _ftr(tw, ps):
         '</p>'
         '</div></div>'
     )
- 
+
 def _up(msg): return '<div style="background:#fffbeb;border:2px solid #f59e0b;padding:18px;border-radius:8px;margin:35px 0;"><p style="font-size:18px;color:#92400e;margin:0;text-align:center;">' + msg + '</p></div>'
 def _impact(imp):
     imp = (imp or "").upper().strip()
@@ -853,7 +1031,8 @@ def analyze(news_items, cat, tier):
     ns = "\n".join(news_items)
     persona = EXPERT.get(cat, EXPERT["Economy"])
     tf = datetime.now().strftime("%B %d, %Y at %I:%M %p (UTC)")
-    author = "Ethan Cole &amp; The Warm Insight Panel"
+    # ✅ [수정 4-b] 카테고리별 작성자 이름을 헤더에 반영
+    author = CAT_AUTHORS.get(cat, {"name": AUTHOR_NAME})["name"] + " &amp; The Warm Insight Panel"
     if tier == "Premium":
         prompt = PROMPT_PREMIUM.replace("[CATEGORY]", cat).replace("[PERSONA]", persona).replace("[ACCURACY]", ACCURACY).replace("[NEWS_ITEMS]", ns)
         raw, _ = gem_fb(client, tier, prompt)
@@ -903,7 +1082,7 @@ def analyze(news_items, cat, tier):
     kw = xtag(raw, "SEO_KEYWORD")
     title = "[" + TIER_LABELS.get(tier, tier) + "] " + tr if tr else "(" + tier + ") " + cat + " Insight"
     slug = make_slug(kw, tr or cat, cat)
-    html += _build_internal_links(cat) + _build_author_bio()
+    html += _build_internal_links(cat) + _build_author_bio(cat)  # ✅ [수정 4-c] cat 파라미터 전달
     html = sanitize(html)
     return title, html, exc, kw, slug, tier
 # ═══════════════════════════════════════════════
@@ -916,6 +1095,10 @@ def main():
     # 🚨 v12: 스타트업 워밍업
     warmup_client = genai.Client(api_key=GEMINI_API_KEY)
     warmup_gemini(warmup_client)
+
+    # ✅ [수정 6] About Us 페이지 자동 생성 (없을 때만 1회 실행)
+    create_about_page()
+
     cat = get_current_category()
     urls = CATEGORIES.get(cat)
     if not urls:
