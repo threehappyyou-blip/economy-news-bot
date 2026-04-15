@@ -18,7 +18,7 @@ WP_URL         = os.environ.get("WP_URL", "https://warminsight.com")
 WP_USER        = os.environ.get("WP_USER", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASS", "")
 SITE_URL       = "https://warminsight.com"
-MODEL          = "gemini-2.0-flash"
+MODEL          = "gemini-2.5-flash-preview-04-17"
 
 SOCIAL_LINKS = {
     "youtube":  "https://www.youtube.com/@WarmInsightyou",
