@@ -1,227 +1,820 @@
+#!/usr/bin/env python3
 # ═══════════════════════════════════════════════
-# v12 업그레이드 패치 — 아래 함수들을 main.py에서 교체하세요
-# 변경 1: SEO 타이틀에서 이모지 제거
-# 변경 2: AI 프롬프트에 FAQ 생성 추가
-# 변경 3: FAQ Schema JSON-LD 자동 삽입
-# 변경 4: 소셜 링크 + 관련 글 섹션 강화
+# Warm Insight Auto Poster — v12 (Complete)
 # ═══════════════════════════════════════════════
 
-# ── 소셜 링크 설정 (코드 상단 CONFIG 영역에 추가) ──
+import os, json, time, random, re, datetime, io
+import requests
+import feedparser
+from PIL import Image, ImageDraw, ImageFont
+from google import genai
+
+# ═══════════════════════════════════════════════
+# CONFIG
+# ═══════════════════════════════════════════════
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+WP_URL         = os.environ.get("WP_URL", "https://warminsight.com")
+WP_USER        = os.environ.get("WP_USER", "")
+WP_APP_PASS    = os.environ.get("WP_APP_PASS", "")
+SITE_URL       = "https://warminsight.com"
+MODEL          = "gemini-2.0-flash"
+
 SOCIAL_LINKS = {
-    "youtube": "https://www.youtube.com/@WarmInsightyou",
-    "x": "https://x.com/warminsight",       # X(트위터) 계정이 있으면 입력
-    "linkedin": "",                           # LinkedIn 있으면 입력
+    "youtube":  "https://www.youtube.com/@WarmInsightyou",
+    "x":        "https://x.com/warminsight",
+    "linkedin": "",
+}
+
+CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
+TIER_LABELS = {"premium": "💎 Pro", "vip": "👑 VIP"}
+
+# Body text font style
+F = "font-size:18px;line-height:1.8;color:#374151;font-family:Georgia,serif;"
+
+PILLAR_PAGES = {
+    "Economy":  {"url": SITE_URL + "/category/economy/",  "anchor": "Economy Analysis"},
+    "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "Politics & Policy"},
+    "Tech":     {"url": SITE_URL + "/category/tech/",     "anchor": "Tech & Innovation"},
+    "Health":   {"url": SITE_URL + "/category/health/",   "anchor": "Health & Markets"},
+    "Energy":   {"url": SITE_URL + "/category/energy/",   "anchor": "Energy & Resources"},
+}
+
+CAT_RELATED = {
+    "Economy":  ["Tech", "Energy"],
+    "Politics": ["Economy", "Tech"],
+    "Tech":     ["Economy", "Health"],
+    "Health":   ["Economy", "Politics"],
+    "Energy":   ["Economy", "Politics"],
+}
+
+RSS_FEEDS = {
+    "Economy": [
+        "https://feeds.reuters.com/reuters/businessNews",
+        "https://feeds.bloomberg.com/markets/news.rss",
+        "https://www.wsj.com/xml/rss/3_7031.xml",
+        "https://feeds.ft.com/rss/home/uk",
+    ],
+    "Politics": [
+        "https://feeds.reuters.com/Reuters/PoliticsNews",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
+        "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "https://feeds.reuters.com/Reuters/worldNews",
+    ],
+    "Tech": [
+        "https://feeds.reuters.com/reuters/technologyNews",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+        "https://feeds.arstechnica.com/arstechnica/index",
+        "https://techcrunch.com/feed/",
+    ],
+    "Health": [
+        "https://feeds.reuters.com/reuters/healthNews",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml",
+        "https://www.who.int/rss-feeds/news-english.xml",
+    ],
+    "Energy": [
+        "https://feeds.reuters.com/reuters/environment",
+        "https://oilprice.com/rss/main",
+        "https://feeds.reuters.com/reuters/energy",
+    ],
 }
 
 # ═══════════════════════════════════════════════
-# 변경 1: publish() — SEO 타이틀에서 이모지/VIP 접두사 제거
+# CORE HELPERS
 # ═══════════════════════════════════════════════
+
+def xtag(raw, tag):
+    """Extract XML tag content from AI response"""
+    m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL)
+    return m.group(1).strip() if m else ""
+
+def is_echo(text):
+    """Detect placeholder/echo text from AI"""
+    if not text or len(text) < 20:
+        return True
+    echoes = ["your ", "here", "example", "placeholder", "[insert", "TODO"]
+    return any(e.lower() in text.lower() for e in echoes)
+
+def make_slug(kw, title, cat):
+    """Generate URL-safe slug"""
+    base = kw if (kw and len(kw) > 4) else title
+    slug = re.sub(r"[^\w\s-]", "", base.lower())
+    slug = re.sub(r"[\s_]+", "-", slug).strip("-")[:55]
+    ts   = datetime.datetime.utcnow().strftime("%m%d")
+    return f"{slug}-{ts}" if slug else f"{cat.lower()}-{ts}"
+
+def sanitize(html):
+    """Remove dangerous tags while preserving JSON-LD"""
+    html = re.sub(
+        r"<script(?!\s+type=['\"]application/ld\+json['\"])[^>]*>.*?</script>",
+        "", html, flags=re.DOTALL
+    )
+    html = re.sub(r"<iframe[^>]*>.*?</iframe>", "", html, flags=re.DOTALL)
+    return html
+
+# ═══════════════════════════════════════════════
+# SEO BUILDERS  (v12)
+# ═══════════════════════════════════════════════
+
 def _clean_seo_title(title):
-    """[👑 VIP] 같은 접두사를 SEO용 타이틀에서 제거"""
+    """Strip [💎 Pro] / [👑 VIP] prefixes from SEO title"""
     clean = title
     for prefix in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
         clean = clean.replace(prefix, "")
     return clean.strip()
 
-# publish() 함수 안의 rank_math 메타 부분을 이렇게 교체:
-# (기존 코드에서 `if kw: post_data["meta"] = ...` 블록을 아래로 교체)
-"""
-            seo_title = _clean_seo_title(title)
-            if kw:
-                post_data["meta"] = {
-                    "rank_math_title": (seo_title + " | Warm Insight")[:60],
-                    "rank_math_description": (exc[:120] + " Expert " + cat.lower() + " analysis by Warm Insight.")[:155],
-                    "rank_math_focus_keyword": kw,
-                }
-"""
+def _build_jsonld(title, exc, kw, cat, slug, img_url=""):
+    seo_title = _clean_seo_title(title)
+    url = SITE_URL + "/" + slug + "/"
+    now = datetime.datetime.utcnow().isoformat() + "Z"
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline":      seo_title[:110],
+        "description":   exc[:200],
+        "url":           url,
+        "datePublished": now,
+        "dateModified":  now,
+        "author":        {"@type": "Organization", "name": "Warm Insight"},
+        "publisher": {
+            "@type": "Organization",
+            "name":  "Warm Insight",
+            "logo":  {"@type": "ImageObject", "url": SITE_URL + "/wp-content/uploads/logo.png"},
+        },
+        "keywords":        kw,
+        "articleSection":  cat,
+    }
+    if img_url:
+        schema["image"] = {"@type": "ImageObject", "url": img_url}
+    return (
+        '<script type="application/ld+json">'
+        + json.dumps(schema, ensure_ascii=False)
+        + "</script>"
+    )
 
-# ═══════════════════════════════════════════════
-# 변경 2: 프롬프트에 FAQ 태그 추가
-# ═══════════════════════════════════════════════
-# PROMPT_PREMIUM 끝에 추가 (</PS> 뒤, "News:" 앞):
-FAQ_PROMPT_ADDITION = (
-    "<FAQ_1_Q>A question a reader would Google about this topic</FAQ_1_Q>\n"
-    "<FAQ_1_A>Clear 2-3 sentence answer</FAQ_1_A>\n"
-    "<FAQ_2_Q>Second question about market implications</FAQ_2_Q>\n"
-    "<FAQ_2_A>Clear 2-3 sentence answer</FAQ_2_A>\n"
-    "<FAQ_3_Q>Third question about what investors should do</FAQ_3_Q>\n"
-    "<FAQ_3_A>Clear 2-3 sentence answer</FAQ_3_A>\n"
-)
-# VIP_P1에도 동일하게 추가
-
-# ═══════════════════════════════════════════════
-# 변경 3: FAQ Schema + FAQ HTML 빌더
-# ═══════════════════════════════════════════════
 def _build_faq_schema(raw):
-    """FAQPage JSON-LD — AI 검색(ChatGPT, Perplexity, Google AI Overview) 노출용"""
+    """FAQPage JSON-LD + visible FAQ section"""
     faqs = []
     for i in range(1, 4):
         q = xtag(raw, f"FAQ_{i}_Q")
         a = xtag(raw, f"FAQ_{i}_A")
         if q and a and len(q) > 10 and len(a) > 20:
-            faqs.append({"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}})
+            faqs.append({
+                "@type": "Question",
+                "name":  q,
+                "acceptedAnswer": {"@type": "Answer", "text": a},
+            })
     if not faqs:
         return "", ""
-    schema = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": faqs
-    }
-    schema_html = '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False) + '</script>'
-    # FAQ visible section for readers
-    faq_visible = '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:28px;margin:35px 0;">'
-    faq_visible += '<h3 style="margin-top:0;font-size:22px;color:#1a252c;margin-bottom:20px;">❓ Frequently Asked Questions</h3>'
+
+    schema_html = (
+        '<script type="application/ld+json">'
+        + json.dumps(
+            {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": faqs},
+            ensure_ascii=False,
+        )
+        + "</script>"
+    )
+
+    faq_visible = (
+        '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;'
+        'padding:28px;margin:35px 0;">'
+        '<h3 style="margin-top:0;font-size:22px;color:#1a252c;margin-bottom:20px;">'
+        "❓ Frequently Asked Questions</h3>"
+    )
     for faq in faqs:
-        faq_visible += '<div style="margin-bottom:18px;border-bottom:1px solid #e5e7eb;padding-bottom:16px;">'
-        faq_visible += '<p style="font-size:17px;font-weight:700;color:#1a252c;margin:0 0 8px;">' + faq["name"] + '</p>'
-        faq_visible += '<p style="font-size:16px;line-height:1.7;color:#374151;margin:0;">' + faq["acceptedAnswer"]["text"] + '</p>'
-        faq_visible += '</div>'
-    faq_visible += '</div>'
+        faq_visible += (
+            '<div style="margin-bottom:18px;border-bottom:1px solid #e5e7eb;padding-bottom:16px;">'
+            f'<p style="font-size:17px;font-weight:700;color:#1a252c;margin:0 0 8px;">{faq["name"]}</p>'
+            f'<p style="font-size:16px;line-height:1.7;color:#374151;margin:0;">'
+            f'{faq["acceptedAnswer"]["text"]}</p></div>'
+        )
+    faq_visible += "</div>"
     return schema_html, faq_visible
 
-# ═══════════════════════════════════════════════
-# 변경 4: 소셜 공유 버튼 + 관련 글 섹션
-# ═══════════════════════════════════════════════
-def _build_social_share(title, slug):
-    """기사 하단 소셜 공유 버튼 (트위터, 링크드인, 이메일)"""
-    post_url = SITE_URL + "/" + slug + "/"
-    encoded_title = title.replace(" ", "%20").replace("&", "%26")[:100]
-    encoded_url = post_url.replace(":", "%3A").replace("/", "%2F")
+def _build_internal_links(cat):
+    pillar  = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
+    related = CAT_RELATED.get(cat, ["Economy", "Tech"])
+    html = (
+        '<div style="margin:30px 0;padding:20px;background:#f9fafb;'
+        'border-left:4px solid #b8974d;border-radius:0 8px 8px 0;">'
+        '<p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1a252c;">📌 Related Resources</p>'
+        f'<p style="margin:0 0 8px;"><a href="{pillar["url"]}" '
+        f'style="color:#b8974d;text-decoration:underline;">{pillar["anchor"]}</a></p>'
+    )
+    for rc in related[:2]:
+        rp = PILLAR_PAGES.get(rc)
+        if rp:
+            html += (
+                f'<p style="margin:0 0 8px;"><a href="{rp["url"]}" '
+                f'style="color:#6b7280;text-decoration:underline;">{rc} Analysis</a></p>'
+            )
+    html += "</div>"
+    return html
 
+def _build_author_bio(cat):
     return (
-        '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:22px;margin:30px 0;text-align:center;">'
+        '<div style="display:flex;align-items:flex-start;gap:16px;background:#f8fafc;'
+        'border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin:35px 0;">'
+        '<div style="flex-shrink:0;width:56px;height:56px;background:#b8974d;border-radius:50%;'
+        'display:flex;align-items:center;justify-content:center;font-size:24px;">🤖</div>'
+        '<div><p style="font-size:16px;font-weight:700;color:#1a252c;margin:0 0 6px;">'
+        "Warm Insight Research Team</p>"
+        f'<p style="font-size:14px;color:#6b7280;margin:0;">AI-powered {cat} analysis for everyday '
+        "investors. We synthesize global market signals into clear, actionable insights.</p>"
+        "</div></div>"
+    )
+
+def _build_social_share(title, slug):
+    post_url      = SITE_URL + "/" + slug + "/"
+    enc_title     = title.replace(" ", "%20").replace("&", "%26")[:100]
+    enc_url       = post_url.replace(":", "%3A").replace("/", "%2F")
+    return (
+        '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;'
+        'padding:22px;margin:30px 0;text-align:center;">'
         '<p style="font-size:18px;font-weight:700;color:#1a252c;margin:0 0 14px;">Share This Analysis</p>'
         '<div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">'
-        # X (Twitter)
-        '<a href="https://twitter.com/intent/tweet?text=' + encoded_title + '&url=' + encoded_url + '" '
+        f'<a href="https://twitter.com/intent/tweet?text={enc_title}&url={enc_url}" '
         'target="_blank" rel="noopener" style="display:inline-block;background:#000;color:#fff;'
         'padding:10px 20px;border-radius:8px;font-size:14px;font-weight:bold;text-decoration:none;">𝕏 Share</a>'
-        # LinkedIn
-        '<a href="https://www.linkedin.com/sharing/share-offsite/?url=' + encoded_url + '" '
+        f'<a href="https://www.linkedin.com/sharing/share-offsite/?url={enc_url}" '
         'target="_blank" rel="noopener" style="display:inline-block;background:#0A66C2;color:#fff;'
         'padding:10px 20px;border-radius:8px;font-size:14px;font-weight:bold;text-decoration:none;">in Share</a>'
-        # Email
-        '<a href="mailto:?subject=' + encoded_title + '&body=Check%20this%20out%3A%20' + encoded_url + '" '
+        f'<a href="mailto:?subject={enc_title}&body=Check%20this%20out%3A%20{enc_url}" '
         'style="display:inline-block;background:#6b7280;color:#fff;'
         'padding:10px 20px;border-radius:8px;font-size:14px;font-weight:bold;text-decoration:none;">✉ Email</a>'
-        '</div>'
-        '</div>'
+        "</div></div>"
     )
 
 def _build_related_posts(cat):
-    """관련 글 섹션 — 같은 카테고리 + 관련 카테고리 링크"""
-    pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
+    pillar       = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
     related_cats = CAT_RELATED.get(cat, ["Economy", "Tech"])
-
-    html = '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:28px;margin:30px 0;">'
-    html += '<h3 style="margin-top:0;font-size:20px;color:#1a252c;margin-bottom:16px;">📖 Continue Reading</h3>'
-    html += '<div style="display:flex;flex-wrap:wrap;gap:12px;">'
-    # Main category
-    html += '<a href="' + pillar["url"] + '" style="display:inline-block;background:#fff;border:2px solid #3b82f6;color:#1e40af;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;">Browse ' + pillar["anchor"] + ' →</a>'
-    # Related categories
+    html = (
+        '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;'
+        'padding:28px;margin:30px 0;">'
+        '<h3 style="margin-top:0;font-size:20px;color:#1a252c;margin-bottom:16px;">📖 Continue Reading</h3>'
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;">'
+        f'<a href="{pillar["url"]}" style="display:inline-block;background:#fff;border:2px solid #3b82f6;'
+        f'color:#1e40af;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:600;'
+        f'text-decoration:none;">Browse {pillar["anchor"]} →</a>'
+    )
     for rc in related_cats[:2]:
         rp = PILLAR_PAGES.get(rc)
         if rp:
-            html += '<a href="' + rp["url"] + '" style="display:inline-block;background:#fff;border:1px solid #e5e7eb;color:#374151;padding:10px 18px;border-radius:8px;font-size:15px;text-decoration:none;">' + rc + ' Analysis →</a>'
-    # VIP CTA
-    html += '<a href="' + SITE_URL + '/warm-insight-vip-membership/" style="display:inline-block;background:#b8974d;color:#fff;padding:10px 18px;border-radius:8px;font-size:15px;font-weight:bold;text-decoration:none;">🔒 Upgrade to VIP →</a>'
-    html += '</div></div>'
+            html += (
+                f'<a href="{rp["url"]}" style="display:inline-block;background:#fff;'
+                f'border:1px solid #e5e7eb;color:#374151;padding:10px 18px;border-radius:8px;'
+                f'font-size:15px;text-decoration:none;">{rc} Analysis →</a>'
+            )
+    html += (
+        f'<a href="{SITE_URL}/warm-insight-vip-membership/" style="display:inline-block;'
+        'background:#b8974d;color:#fff;padding:10px 18px;border-radius:8px;font-size:15px;'
+        'font-weight:bold;text-decoration:none;">🔒 Upgrade to VIP →</a>'
+        "</div></div>"
+    )
     return html
 
-# ═══════════════════════════════════════════════
-# 변경 5: _ftr() 교체 — 소셜 아이콘 + YouTube 강화
-# ═══════════════════════════════════════════════
 def _ftr(tw, ps):
-    if not tw or is_echo(tw): tw = "Stay disciplined, stay diversified, and let time compound in your favor."
-    if not ps or is_echo(ps): ps = "In 40 years of watching markets, the disciplined investor always wins."
+    if not tw or is_echo(tw):
+        tw = "Stay disciplined, stay diversified, and let time compound in your favor."
+    if not ps or is_echo(ps):
+        ps = "In 40 years of watching markets, the disciplined investor always wins."
 
-    social_icons = ''
+    social_icons = ""
     if SOCIAL_LINKS.get("youtube"):
-        social_icons += '<a href="' + SOCIAL_LINKS["youtube"] + '" target="_blank" style="display:inline-block;background:#FF0000;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:bold;text-decoration:none;margin:0 4px;">▶ YouTube</a>'
+        social_icons += (
+            f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block;'
+            'background:#FF0000;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;'
+            'font-weight:bold;text-decoration:none;margin:0 4px;">▶ YouTube</a>'
+        )
     if SOCIAL_LINKS.get("x"):
-        social_icons += '<a href="' + SOCIAL_LINKS["x"] + '" target="_blank" style="display:inline-block;background:#000;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:bold;text-decoration:none;margin:0 4px;">𝕏 Follow</a>'
+        social_icons += (
+            f'<a href="{SOCIAL_LINKS["x"]}" target="_blank" style="display:inline-block;'
+            'background:#000;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;'
+            'font-weight:bold;text-decoration:none;margin:0 4px;">𝕏 Follow</a>'
+        )
     if SOCIAL_LINKS.get("linkedin"):
-        social_icons += '<a href="' + SOCIAL_LINKS["linkedin"] + '" target="_blank" style="display:inline-block;background:#0A66C2;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:bold;text-decoration:none;margin:0 4px;">in LinkedIn</a>'
+        social_icons += (
+            f'<a href="{SOCIAL_LINKS["linkedin"]}" target="_blank" style="display:inline-block;'
+            'background:#0A66C2;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;'
+            'font-weight:bold;text-decoration:none;margin:0 4px;">in LinkedIn</a>'
+        )
 
     return (
         '<hr style="border:0;height:1px;background:#e5e7eb;margin:45px 0;">'
-        '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:18px;">Today\'s Warm Insight</h2>'
-        '<p style="' + F + '">' + tw + '</p>'
-        '<div style="margin-top:30px;background:#1e293b;padding:28px;border-radius:8px;border-left:4px solid #b8974d;">'
+        '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:18px;">'
+        "Today's Warm Insight</h2>"
+        f'<p style="{F}">{tw}</p>'
+        '<div style="margin-top:30px;background:#1e293b;padding:28px;border-radius:8px;'
+        'border-left:4px solid #b8974d;">'
         '<p style="font-size:18px;line-height:1.8;color:#e2e8f0;margin:0;">'
         '<span style="color:#b8974d;font-weight:bold;">P.S.</span> '
-        '<span style="color:#cbd5e1;">' + ps + '</span></p></div>'
-        # CTA + Social
-        '<div style="background:#f8fafc;border:2px solid #e5e7eb;border-radius:10px;padding:28px;margin:40px 0;text-align:center;">'
+        f'<span style="color:#cbd5e1;">{ps}</span></p></div>'
+        # CTA box
+        '<div style="background:#f8fafc;border:2px solid #e5e7eb;border-radius:10px;'
+        'padding:28px;margin:40px 0;text-align:center;">'
         '<p style="font-size:22px;font-weight:bold;color:#1a252c;margin:0 0 10px;">Found this useful?</p>'
-        '<p style="font-size:16px;color:#6b7280;margin:0 0 18px;">Forward to a friend who wants smarter market analysis.</p>'
-        '<div style="margin-bottom:14px;">' + social_icons + '</div>'
-        '<p style="margin:0;"><a href="' + SITE_URL + '" style="color:#b8974d;font-weight:600;text-decoration:underline;">Subscribe at warminsight.com</a></p>'
-        '</div>'
-        # Footer
+        '<p style="font-size:16px;color:#6b7280;margin:0 0 18px;">'
+        "Forward to a friend who wants smarter market analysis.</p>"
+        f'<div style="margin-bottom:14px;">{social_icons}</div>'
+        f'<p style="margin:0;"><a href="{SITE_URL}" '
+        'style="color:#b8974d;font-weight:600;text-decoration:underline;">'
+        "Subscribe at warminsight.com</a></p></div>"
+        # Dark footer
         '<div style="background:#1e293b;padding:35px;border-radius:10px;margin-top:30px;">'
-        '<p style="font-size:24px;font-weight:bold;color:#b8974d;margin:0 0 12px;text-align:center;">Warm Insight</p>'
-        '<div style="text-align:center;margin-bottom:16px;">' + social_icons + '</div>'
+        '<p style="font-size:24px;font-weight:bold;color:#b8974d;margin:0 0 12px;text-align:center;">'
+        "Warm Insight</p>"
+        f'<div style="text-align:center;margin-bottom:16px;">{social_icons}</div>'
         '<div style="text-align:center;margin-bottom:16px;font-size:13px;">'
-        '<a href="' + SITE_URL + '/about-us/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">About</a>'
-        '<a href="' + SITE_URL + '/privacy-policy/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">Privacy</a>'
-        '<a href="' + SITE_URL + '/terms/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">Terms</a>'
-        '<a href="' + SITE_URL + '/warm-insight-vip-membership/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">VIP</a>'
-        '</div>'
+        f'<a href="{SITE_URL}/about-us/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">About</a>'
+        f'<a href="{SITE_URL}/privacy-policy/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">Privacy</a>'
+        f'<a href="{SITE_URL}/terms/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">Terms</a>'
+        f'<a href="{SITE_URL}/warm-insight-vip-membership/" style="color:#cbd5e1;text-decoration:none;margin:0 8px;">VIP</a>'
+        "</div>"
         '<p style="font-size:13px;color:#64748b;margin:0;text-align:center;">'
-        'All analysis is for informational purposes only. Not financial advice.<br>'
-        '&copy; 2026 Warm Insight. All rights reserved.</p>'
-        '</div></div>'
+        "All analysis is for informational purposes only. Not financial advice.<br>"
+        "&copy; 2026 Warm Insight. All rights reserved.</p>"
+        "</div>"
     )
 
 # ═══════════════════════════════════════════════
-# 변경 6: analyze() — FAQ + 소셜공유 + 관련글 추가
+# THUMBNAIL GENERATOR
 # ═══════════════════════════════════════════════
-# analyze() 함수의 마지막 부분 (html 조립 후) 을 이렇게 교체:
-"""
-    # ... (기존 html 생성 코드 뒤에)
-    
-    tr = xtag(raw, "TITLE")
-    exc = xtag(raw, "EXCERPT") or "Expert analysis."
-    kw = xtag(raw, "SEO_KEYWORD")
-    title = "[" + TIER_LABELS.get(tier, tier) + "] " + tr if tr else "(" + tier + ") " + cat + " Insight"
-    slug = make_slug(kw, tr or cat, cat)
-    
-    # FAQ schema + visible FAQ section
-    faq_schema, faq_visible = _build_faq_schema(raw)
-    
-    # Assemble SEO additions
-    html += faq_visible                        # FAQ Q&A 섹션
-    html += _build_social_share(title, slug)   # 소셜 공유 버튼
-    html += _build_related_posts(cat)          # 관련 글 섹션
-    html += _build_internal_links(cat)         # 내부 링크
-    html += _build_author_bio(cat)             # 저자 프로필
-    
-    html = sanitize(html)
-    return title, html, exc, kw, slug, tier
-"""
+
+CAT_COLORS = {
+    "Economy":  ("#1a6ef5", "#ffffff", "#ffcc00"),
+    "Politics": ("#dc2626", "#ffffff", "#fbbf24"),
+    "Tech":     ("#6366f1", "#ffffff", "#34d399"),
+    "Health":   ("#059669", "#ffffff", "#ffffff"),
+    "Energy":   ("#d97706", "#1a252c", "#1a252c"),
+}
+
+def make_thumbnail(kw, cat, tier):
+    """Pillow thumbnail with 2× supersampling"""
+    W, H   = 1200, 630
+    SCALE  = 2
+    w, h   = W * SCALE, H * SCALE
+
+    bg, text_c, accent = CAT_COLORS.get(cat, CAT_COLORS["Economy"])
+    tier_c = "#b8974d" if tier == "vip" else "#6366f1"
+
+    img  = Image.new("RGB", (w, h), bg)
+    draw = ImageDraw.Draw(img)
+
+    # Load fonts (fall back gracefully)
+    def load_font(path, size):
+        try:
+            return ImageFont.truetype(path, size * SCALE)
+        except Exception:
+            return ImageFont.load_default()
+
+    f_title = load_font("fonts/Anton-Regular.ttf",    80)
+    f_small = load_font("fonts/BebasNeue-Regular.ttf", 32)
+    f_badge = load_font("fonts/BebasNeue-Regular.ttf", 28)
+
+    # Accent bar at bottom
+    draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill=accent)
+
+    # Category badge
+    draw.rectangle([(40 * SCALE, 36 * SCALE), (260 * SCALE, 86 * SCALE)], fill="#00000033")
+    draw.text((52 * SCALE, 42 * SCALE), cat.upper(), font=f_badge, fill="#ffffff")
+
+    # Tier badge
+    tier_label = "VIP" if tier == "vip" else "PRO"
+    bw = 130 * SCALE
+    draw.rectangle([(w - bw - 40 * SCALE, 36 * SCALE), (w - 40 * SCALE, 86 * SCALE)], fill=tier_c)
+    draw.text((w - bw - 20 * SCALE, 42 * SCALE), tier_label, font=f_badge, fill="#ffffff")
+
+    # Title (word-wrapped)
+    words  = (kw or cat).upper().split()
+    lines, line = [], []
+    max_w  = w - 140 * SCALE
+    for word in words:
+        test = " ".join(line + [word])
+        try:
+            tw2 = draw.textlength(test, font=f_title)
+        except Exception:
+            tw2 = len(test) * 38 * SCALE
+        if tw2 < max_w:
+            line.append(word)
+        else:
+            if line:
+                lines.append(" ".join(line))
+            line = [word]
+    if line:
+        lines.append(" ".join(line))
+
+    y = 150 * SCALE
+    for ln in lines[:3]:
+        draw.text((60 * SCALE, y), ln, font=f_title, fill=text_c)
+        try:
+            bb = draw.textbbox((0, 0), ln, font=f_title)
+            y += (bb[3] - bb[1]) + 8 * SCALE
+        except Exception:
+            y += 95 * SCALE
+
+    # Simple Warmy mascot (green robot)
+    mx, my = w - 220 * SCALE, h // 2 - 20 * SCALE
+    draw.rectangle([(mx, my - 55 * SCALE), (mx + 110 * SCALE, my + 55 * SCALE)], fill="#4ade80")
+    draw.rectangle([(mx + 15 * SCALE, my - 28 * SCALE), (mx + 42 * SCALE, my + 4 * SCALE)], fill="#1a252c")
+    draw.rectangle([(mx + 68 * SCALE, my - 28 * SCALE), (mx + 95 * SCALE, my + 4 * SCALE)], fill="#1a252c")
+    draw.rectangle([(mx + 25 * SCALE, my + 15 * SCALE), (mx + 85 * SCALE, my + 28 * SCALE)], fill="#1a252c")
+
+    # Branding text
+    draw.text((60 * SCALE, h - 62 * SCALE), "WARM INSIGHT", font=f_small, fill="#1a252c")
+    draw.text((w - 520 * SCALE, h - 62 * SCALE), "AI-Driven Global Market Analysis", font=f_small, fill="#1a252c")
+
+    img = img.resize((W, H), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 변경 7: publish() — FAQ Schema를 codeinjection에 추가
+# NEWS FETCHER
 # ═══════════════════════════════════════════════
-# publish() 함수에서 full_content 조립 시:
-"""
-            # JSON-LD schemas
-            schemas = ""
-            if kw and slug:
-                schemas += _build_jsonld(title, exc or "", kw, cat, slug, "")
-            # FAQ schema도 추가
-            faq_schema, _ = _build_faq_schema(raw)  # raw를 publish에 전달해야 함
-            schemas += faq_schema
-            
-            full_content = schemas + full_content
-            
-            # SEO title에서 이모지 제거
-            seo_title = _clean_seo_title(title)
-            if kw:
-                post_data["meta"] = {
-                    "rank_math_title": (seo_title + " | Warm Insight")[:60],
-                    "rank_math_description": (exc[:120] + " Expert " + cat.lower() + " analysis.")[:155],
-                    "rank_math_focus_keyword": kw,
-                }
-"""
+
+def fetch_news(cat, max_items=8):
+    feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
+    items = []
+    random.shuffle(feeds)
+    for url in feeds:
+        try:
+            d = feedparser.parse(url)
+            for entry in d.entries[:3]:
+                title   = entry.get("title", "").strip()
+                summary = entry.get("summary", entry.get("description", ""))[:250].strip()
+                summary = re.sub(r"<[^>]+>", "", summary)
+                if title:
+                    items.append(f"• {title}: {summary}")
+        except Exception as e:
+            print(f"RSS error ({url}): {e}")
+            continue
+        if len(items) >= max_items:
+            break
+    random.shuffle(items)
+    return "\n".join(items[:max_items]) if items else f"Latest {cat} market developments today."
+
+# ═══════════════════════════════════════════════
+# DUPLICATE CHECK
+# ═══════════════════════════════════════════════
+
+def check_duplicate(kw):
+    """Return True if a recent post with similar keyword already exists"""
+    if not kw or not WP_USER:
+        return False
+    try:
+        resp = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            params={"search": kw[:40], "status": "publish,draft", "per_page": 5},
+            auth=(WP_USER, WP_APP_PASS),
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            posts = resp.json()
+            for post in posts:
+                existing = post.get("title", {}).get("rendered", "").lower()
+                if kw.lower()[:20] in existing:
+                    print(f"⚠️  Duplicate found: {existing[:60]}")
+                    return True
+    except Exception as e:
+        print(f"Duplicate check error: {e}")
+    return False
+
+# ═══════════════════════════════════════════════
+# GEMINI API
+# ═══════════════════════════════════════════════
+
+def call_gemini(prompt):
+    try:
+        client   = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(model=MODEL, contents=prompt)
+        return response.text or ""
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return ""
+
+# ═══════════════════════════════════════════════
+# PROMPTS
+# ═══════════════════════════════════════════════
+
+FAQ_TAGS = (
+    "<FAQ_1_Q>A question a reader would Google about this topic</FAQ_1_Q>\n"
+    "<FAQ_1_A>Clear 2-3 sentence answer</FAQ_1_A>\n"
+    "<FAQ_2_Q>Second question about market implications</FAQ_2_Q>\n"
+    "<FAQ_2_A>Clear 2-3 sentence answer</FAQ_2_A>\n"
+    "<FAQ_3_Q>Third question about what investors should do</FAQ_3_Q>\n"
+    "<FAQ_3_A>Clear 2-3 sentence answer</FAQ_3_A>"
+)
+
+def _make_premium_prompt(news_text, cat):
+    return f"""You are Warm Insight's AI analyst. Write a Premium newsletter article on {cat}.
+
+Respond ONLY using these exact XML tags:
+
+<TITLE>Compelling headline, no emoji, max 80 chars</TITLE>
+<EXCERPT>2–3 sentence SEO summary, 120–150 chars</EXCERPT>
+<SEO_KEYWORD>3–5 word focus keyphrase</SEO_KEYWORD>
+<LEAD>Strong opening paragraph hooking the reader on the key insight</LEAD>
+<BODY>3–4 paragraphs of analysis using HTML: <h2>, <p>, <strong>, <ul><li>. 600–800 words total.</BODY>
+<SENTIMENT>BULLISH or BEARISH or NEUTRAL</SENTIMENT>
+<TW>One memorable market wisdom sentence</TW>
+<PS>One-line P.S. from a veteran investor's perspective</PS>
+{FAQ_TAGS}
+
+News inputs:
+{news_text[:3000]}
+
+Tone: professional, confident, accessible to everyday investors.
+Focus on second-order effects and actionable takeaways."""
+
+def _make_vip_prompt1(news_text, cat):
+    return f"""You are Warm Insight's senior analyst. Write Part 1 of a VIP deep-dive on {cat}.
+
+<TITLE>High-impact headline, no emoji, max 90 chars</TITLE>
+<EXCERPT>Premium 2–3 sentence teaser, 120–150 chars</EXCERPT>
+<SEO_KEYWORD>3–5 word focus keyphrase</SEO_KEYWORD>
+<LEAD>Provocative macro thesis opening paragraph</LEAD>
+<DEEP_ANALYSIS>4–5 paragraphs using HTML: <h2>, <p>, <strong>, <ul><li>. Cover macro context,
+geopolitical dimensions (G7 vs BRICS+ dynamics where relevant), second-order market effects,
+and fragmented multipolarity framework. 900–1100 words.</DEEP_ANALYSIS>
+<SENTIMENT>BULLISH or BEARISH or NEUTRAL</SENTIMENT>
+<BULL_CASE>2–3 sentences: the bull case for investors</BULL_CASE>
+<BEAR_CASE>2–3 sentences: the bear case for investors</BEAR_CASE>
+
+News inputs:
+{news_text[:4000]}
+
+Write as if advising sophisticated institutional investors."""
+
+def _make_vip_prompt2(raw1, cat):
+    title   = xtag(raw1, "TITLE")
+    summary = xtag(raw1, "DEEP_ANALYSIS")[:600]
+    return f"""Complete the VIP analysis for: "{title}" ({cat})
+
+Context summary: {summary}...
+
+Respond with ONLY these tags:
+<ACTION_ITEMS>3–5 concrete investor action items as <ul><li>HTML list</ACTION_ITEMS>
+<TW>Memorable market wisdom quote relevant to this story</TW>
+<PS>Compelling one-line P.S. from a 40-year market veteran</PS>
+{FAQ_TAGS}"""
+
+# ═══════════════════════════════════════════════
+# CONTENT ASSEMBLER
+# ═══════════════════════════════════════════════
+
+def analyze(raw1, raw2, cat, tier):
+    """Parse AI responses and assemble HTML article"""
+    full = raw1 + ("\n" + raw2 if raw2 else "")
+
+    tr   = xtag(full, "TITLE")
+    exc  = xtag(full, "EXCERPT") or "Expert market analysis."
+    kw   = xtag(full, "SEO_KEYWORD")
+    tw   = xtag(full, "TW")
+    ps   = xtag(full, "PS")
+    lead = xtag(full, "LEAD")
+    body = xtag(full, "BODY") or xtag(full, "DEEP_ANALYSIS")
+    sent = xtag(full, "SENTIMENT").upper() or "NEUTRAL"
+    bull = xtag(full, "BULL_CASE")
+    bear = xtag(full, "BEAR_CASE")
+    acts = xtag(full, "ACTION_ITEMS")
+
+    title = (
+        "[" + TIER_LABELS.get(tier, tier) + "] " + tr
+        if tr else f"({tier.upper()}) {cat} Insight"
+    )
+    slug = make_slug(kw, tr or cat, cat)
+
+    # ── HTML assembly ──
+    html = ""
+
+    # Lead
+    if lead:
+        html += f'<p style="{F}">{lead}</p>\n'
+
+    # Sentiment meter
+    s_colors = {"BULLISH": "#10b981", "BEARISH": "#ef4444", "NEUTRAL": "#f59e0b"}
+    s_c = s_colors.get(sent, "#f59e0b")
+    html += (
+        '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;'
+        'padding:14px 20px;margin:20px 0;display:flex;align-items:center;gap:12px;">'
+        '<span style="font-size:14px;font-weight:600;color:#6b7280;">Market Sentiment:</span>'
+        f'<span style="background:{s_c};color:#fff;padding:4px 14px;border-radius:20px;'
+        f'font-size:13px;font-weight:700;">{sent}</span></div>\n'
+    )
+
+    # Body content
+    if body:
+        html += body + "\n"
+
+    # VIP: Bull / Bear cards
+    if tier == "vip" and (bull or bear):
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:30px 0;">\n'
+        if bull:
+            html += (
+                '<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:10px;padding:20px;">'
+                '<p style="font-size:15px;font-weight:700;color:#065f46;margin:0 0 8px;">🐂 Bull Case</p>'
+                f'<p style="font-size:14px;color:#064e3b;margin:0;">{bull}</p></div>\n'
+            )
+        if bear:
+            html += (
+                '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:20px;">'
+                '<p style="font-size:15px;font-weight:700;color:#7f1d1d;margin:0 0 8px;">🐻 Bear Case</p>'
+                f'<p style="font-size:14px;color:#7f1d1d;margin:0;">{bear}</p></div>\n'
+            )
+        html += "</div>\n"
+
+    # VIP: Action items
+    if tier == "vip" and acts:
+        html += (
+            '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;'
+            'padding:24px;margin:30px 0;">'
+            '<p style="font-size:18px;font-weight:700;color:#1e3a5f;margin:0 0 14px;">'
+            f"⚡ Investor Action Items</p>{acts}</div>\n"
+        )
+
+    # FAQ (v12)
+    faq_schema, faq_visible = _build_faq_schema(full)
+    html += faq_visible
+
+    # Social share + related posts + internal links + author bio (v12)
+    html += _build_social_share(title, slug)
+    html += _build_related_posts(cat)
+    html += _build_internal_links(cat)
+    html += _build_author_bio(cat)
+
+    # Footer
+    html += _ftr(tw, ps)
+    html = sanitize(html)
+
+    return title, html, exc, kw, slug, tier, full, faq_schema
+
+# ═══════════════════════════════════════════════
+# WORDPRESS PUBLISHER
+# ═══════════════════════════════════════════════
+
+def _upload_image(img_bytes, filename):
+    """Upload thumbnail to WordPress media library"""
+    try:
+        resp = requests.post(
+            f"{WP_URL}/wp-json/wp/v2/media",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Type": "image/jpeg",
+            },
+            data=img_bytes,
+            auth=(WP_USER, WP_APP_PASS),
+            timeout=30,
+        )
+        if resp.status_code in (200, 201):
+            data = resp.json()
+            return data.get("id"), data.get("source_url", "")
+    except Exception as e:
+        print(f"Image upload error: {e}")
+    return None, ""
+
+def _get_category_id(cat_name):
+    """Look up WordPress category ID"""
+    try:
+        resp = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/categories",
+            params={"search": cat_name, "per_page": 10},
+            auth=(WP_USER, WP_APP_PASS),
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            for c in resp.json():
+                if c["name"].lower() == cat_name.lower():
+                    return c["id"]
+    except Exception as e:
+        print(f"Category lookup error: {e}")
+    return None
+
+def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema):
+    """Post article to WordPress"""
+
+    # Upload thumbnail
+    media_id, img_url = None, ""
+    if img_bytes:
+        media_id, img_url = _upload_image(img_bytes, f"{slug[:40]}.jpg")
+        if media_id:
+            print(f"🖼  Thumbnail uploaded: {img_url}")
+
+    # Schemas
+    seo_title = _clean_seo_title(title)
+    schemas   = _build_jsonld(title, exc, kw, cat, slug, img_url) + faq_schema
+    full_content = schemas + html
+
+    # Category
+    cat_id = _get_category_id(cat)
+
+    post_data = {
+        "title":   title,
+        "content": full_content,
+        "excerpt": exc,
+        "status":  "publish",
+        "slug":    slug,
+    }
+    if cat_id:
+        post_data["categories"] = [cat_id]
+    if media_id:
+        post_data["featured_media"] = media_id
+
+    # Rank Math SEO (v12: emoji-free title)
+    if kw:
+        post_data["meta"] = {
+            "rank_math_title":         (seo_title + " | Warm Insight")[:60],
+            "rank_math_description":   (exc[:120] + " Expert " + cat.lower() + " analysis.")[:155],
+            "rank_math_focus_keyword": kw,
+        }
+
+    # Randomised publish delay (avoids bulk-posting pattern)
+    delay = random.randint(3, 12)
+    print(f"⏳ Publish delay: {delay}s …")
+    time.sleep(delay)
+
+    try:
+        resp = requests.post(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            json=post_data,
+            auth=(WP_USER, WP_APP_PASS),
+            timeout=30,
+        )
+        if resp.status_code in (200, 201):
+            link = resp.json().get("link", "")
+            print(f"✅ Published [{tier.upper()}] {title}")
+            print(f"   URL: {link}")
+            return True
+        else:
+            print(f"❌ Publish failed {resp.status_code}: {resp.text[:300]}")
+            return False
+    except Exception as e:
+        print(f"❌ Publish error: {e}")
+        return False
+
+# ═══════════════════════════════════════════════
+# PIPELINE ORCHESTRATOR
+# ═══════════════════════════════════════════════
+
+def _pick_cat():
+    """Round-robin category by UTC hour"""
+    return CATEGORIES[datetime.datetime.utcnow().hour % len(CATEGORIES)]
+
+def _pick_tier():
+    """Alternate VIP / Premium each run"""
+    return "vip" if datetime.datetime.utcnow().hour % 2 == 0 else "premium"
+
+def run_pipeline():
+    cat  = _pick_cat()
+    tier = _pick_tier()
+    print(f"\n{'='*50}")
+    print(f"🚀 Warm Insight v12 | {cat} | {tier.upper()} | {datetime.datetime.utcnow():%Y-%m-%d %H:%M} UTC")
+    print(f"{'='*50}")
+
+    # 1. Fetch news
+    news = fetch_news(cat)
+    print(f"📰 News fetched ({len(news.splitlines())} items)")
+
+    # 2. Generate content via Gemini
+    raw1, raw2 = "", ""
+    if tier == "vip":
+        print("🤖 VIP Part 1 …")
+        raw1 = call_gemini(_make_vip_prompt1(news, cat))
+        if not raw1:
+            print("❌ VIP Part 1 empty — aborting")
+            return
+        print("🤖 VIP Part 2 …")
+        raw2 = call_gemini(_make_vip_prompt2(raw1, cat))
+        if not raw2:
+            print("❌ VIP Part 2 empty — aborting")
+            return
+    else:
+        print("🤖 Premium generation …")
+        raw1 = call_gemini(_make_premium_prompt(news, cat))
+        if not raw1:
+            print("❌ Premium generation empty — aborting")
+            return
+
+    # 3. Assemble HTML
+    title, html, exc, kw, slug, tier, full_raw, faq_schema = analyze(raw1, raw2, cat, tier)
+    print(f"📝 Article: {title}")
+
+    # 4. Duplicate guard
+    if check_duplicate(kw or title[:30]):
+        print("⚠️  Duplicate detected — skipping publish")
+        return
+
+    # 5. Thumbnail
+    print("🖌  Generating thumbnail …")
+    img_bytes = make_thumbnail(kw or title[:40], cat, tier)
+
+    # 6. Publish
+    publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema)
+
+
+# ═══════════════════════════════════════════════
+# ENTRY POINT
+# ═══════════════════════════════════════════════
+
+if __name__ == "__main__":
+    run_pipeline()
