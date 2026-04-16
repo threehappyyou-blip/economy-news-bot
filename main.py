@@ -2,7 +2,6 @@
 # ═══════════════════════════════════════════════
 # Warm Insight Auto Poster — v12 (Complete)
 # ═══════════════════════════════════════════════
-
 import os, json, time, random, re, datetime, io
 import requests
 import feedparser
@@ -12,20 +11,21 @@ from google import genai
 # ═══════════════════════════════════════════════
 # CONFIG
 # ═══════════════════════════════════════════════
-
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 WP_URL         = os.environ.get("WP_URL", "https://warminsight.com")
 WP_USER        = os.environ.get("WP_USER", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASS", "")
 SITE_URL       = "https://warminsight.com"
-MODEL          = "gemini-2.5-flash-preview-04-17"
+
+# ─── FIX: Updated to GA (stable) model. Fallback to gemini-2.0-flash if needed ───
+MODEL          = "gemini-2.5-flash"
+MODEL_FALLBACK = "gemini-2.0-flash"
 
 SOCIAL_LINKS = {
     "youtube":  "https://www.youtube.com/@WarmInsightyou",
     "x":        "https://x.com/warminsight",
     "linkedin": "",
 }
-
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
 TIER_LABELS = {"premium": "💎 Pro", "vip": "👑 VIP"}
 
@@ -39,7 +39,6 @@ PILLAR_PAGES = {
     "Health":   {"url": SITE_URL + "/category/health/",   "anchor": "Health & Markets"},
     "Energy":   {"url": SITE_URL + "/category/energy/",   "anchor": "Energy & Resources"},
 }
-
 CAT_RELATED = {
     "Economy":  ["Tech", "Energy"],
     "Politics": ["Economy", "Tech"],
@@ -47,7 +46,6 @@ CAT_RELATED = {
     "Health":   ["Economy", "Politics"],
     "Energy":   ["Economy", "Politics"],
 }
-
 RSS_FEEDS = {
     "Economy": [
         "https://feeds.reuters.com/reuters/businessNews",
@@ -79,10 +77,18 @@ RSS_FEEDS = {
     ],
 }
 
+# ─── FIX: Gemini client initialized once at module level (not per call) ───
+_gemini_client = None
+
+def _get_gemini_client():
+    global _gemini_client
+    if _gemini_client is None:
+        _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    return _gemini_client
+
 # ═══════════════════════════════════════════════
 # CORE HELPERS
 # ═══════════════════════════════════════════════
-
 def xtag(raw, tag):
     """Extract XML tag content from AI response"""
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL)
@@ -115,7 +121,6 @@ def sanitize(html):
 # ═══════════════════════════════════════════════
 # SEO BUILDERS  (v12)
 # ═══════════════════════════════════════════════
-
 def _clean_seo_title(title):
     """Strip [💎 Pro] / [👑 VIP] prefixes from SEO title"""
     clean = title
@@ -166,7 +171,6 @@ def _build_faq_schema(raw):
             })
     if not faqs:
         return "", ""
-
     schema_html = (
         '<script type="application/ld+json">'
         + json.dumps(
@@ -175,7 +179,6 @@ def _build_faq_schema(raw):
         )
         + "</script>"
     )
-
     faq_visible = (
         '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;'
         'padding:28px;margin:35px 0;">'
@@ -279,7 +282,6 @@ def _ftr(tw, ps):
         tw = "Stay disciplined, stay diversified, and let time compound in your favor."
     if not ps or is_echo(ps):
         ps = "In 40 years of watching markets, the disciplined investor always wins."
-
     social_icons = ""
     if SOCIAL_LINKS.get("youtube"):
         social_icons += (
@@ -299,7 +301,6 @@ def _ftr(tw, ps):
             'background:#0A66C2;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;'
             'font-weight:bold;text-decoration:none;margin:0 4px;">in LinkedIn</a>'
         )
-
     return (
         '<hr style="border:0;height:1px;background:#e5e7eb;margin:45px 0;">'
         '<h2 style="font-family:Georgia,serif;font-size:28px;color:#1a252c;margin-bottom:18px;">'
@@ -340,7 +341,6 @@ def _ftr(tw, ps):
 # ═══════════════════════════════════════════════
 # THUMBNAIL GENERATOR
 # ═══════════════════════════════════════════════
-
 CAT_COLORS = {
     "Economy":  ("#1a6ef5", "#ffffff", "#ffcc00"),
     "Politics": ("#dc2626", "#ffffff", "#fbbf24"),
@@ -354,14 +354,11 @@ def make_thumbnail(kw, cat, tier):
     W, H   = 1200, 630
     SCALE  = 2
     w, h   = W * SCALE, H * SCALE
-
     bg, text_c, accent = CAT_COLORS.get(cat, CAT_COLORS["Economy"])
     tier_c = "#b8974d" if tier == "vip" else "#6366f1"
-
     img  = Image.new("RGB", (w, h), bg)
     draw = ImageDraw.Draw(img)
 
-    # Load fonts (fall back gracefully)
     def load_font(path, size):
         try:
             return ImageFont.truetype(path, size * SCALE)
@@ -372,20 +369,15 @@ def make_thumbnail(kw, cat, tier):
     f_small = load_font("fonts/BebasNeue-Regular.ttf", 32)
     f_badge = load_font("fonts/BebasNeue-Regular.ttf", 28)
 
-    # Accent bar at bottom
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill=accent)
-
-    # Category badge
     draw.rectangle([(40 * SCALE, 36 * SCALE), (260 * SCALE, 86 * SCALE)], fill="#00000033")
     draw.text((52 * SCALE, 42 * SCALE), cat.upper(), font=f_badge, fill="#ffffff")
 
-    # Tier badge
     tier_label = "VIP" if tier == "vip" else "PRO"
     bw = 130 * SCALE
     draw.rectangle([(w - bw - 40 * SCALE, 36 * SCALE), (w - 40 * SCALE, 86 * SCALE)], fill=tier_c)
     draw.text((w - bw - 20 * SCALE, 42 * SCALE), tier_label, font=f_badge, fill="#ffffff")
 
-    # Title (word-wrapped)
     words  = (kw or cat).upper().split()
     lines, line = [], []
     max_w  = w - 140 * SCALE
@@ -413,14 +405,12 @@ def make_thumbnail(kw, cat, tier):
         except Exception:
             y += 95 * SCALE
 
-    # Simple Warmy mascot (green robot)
     mx, my = w - 220 * SCALE, h // 2 - 20 * SCALE
     draw.rectangle([(mx, my - 55 * SCALE), (mx + 110 * SCALE, my + 55 * SCALE)], fill="#4ade80")
     draw.rectangle([(mx + 15 * SCALE, my - 28 * SCALE), (mx + 42 * SCALE, my + 4 * SCALE)], fill="#1a252c")
     draw.rectangle([(mx + 68 * SCALE, my - 28 * SCALE), (mx + 95 * SCALE, my + 4 * SCALE)], fill="#1a252c")
     draw.rectangle([(mx + 25 * SCALE, my + 15 * SCALE), (mx + 85 * SCALE, my + 28 * SCALE)], fill="#1a252c")
 
-    # Branding text
     draw.text((60 * SCALE, h - 62 * SCALE), "WARM INSIGHT", font=f_small, fill="#1a252c")
     draw.text((w - 520 * SCALE, h - 62 * SCALE), "AI-Driven Global Market Analysis", font=f_small, fill="#1a252c")
 
@@ -432,7 +422,6 @@ def make_thumbnail(kw, cat, tier):
 # ═══════════════════════════════════════════════
 # NEWS FETCHER
 # ═══════════════════════════════════════════════
-
 def fetch_news(cat, max_items=8):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = []
@@ -457,7 +446,6 @@ def fetch_news(cat, max_items=8):
 # ═══════════════════════════════════════════════
 # DUPLICATE CHECK
 # ═══════════════════════════════════════════════
-
 def check_duplicate(kw):
     """Return True if a recent post with similar keyword already exists"""
     if not kw or not WP_USER:
@@ -481,22 +469,38 @@ def check_duplicate(kw):
     return False
 
 # ═══════════════════════════════════════════════
-# GEMINI API
+# GEMINI API  — FIX: client reuse + model fallback
 # ═══════════════════════════════════════════════
-
 def call_gemini(prompt):
-    try:
-        client   = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(model=MODEL, contents=prompt)
-        return response.text or ""
-    except Exception as e:
-        print(f"Gemini error: {e}")
-        return ""
+    """
+    Call Gemini API with automatic model fallback.
+    Tries MODEL first, then MODEL_FALLBACK if a 404/model-not-found error occurs.
+    """
+    client = _get_gemini_client()
+    models_to_try = [MODEL, MODEL_FALLBACK]
+
+    for model in models_to_try:
+        try:
+            response = client.models.generate_content(model=model, contents=prompt)
+            if model != MODEL:
+                print(f"ℹ️  Used fallback model: {model}")
+            return response.text or ""
+        except Exception as e:
+            err_str = str(e)
+            print(f"Gemini error ({model}): {e}")
+            # Only fall through to next model on 404 / NOT_FOUND errors
+            if "404" in err_str or "NOT_FOUND" in err_str or "not found" in err_str.lower():
+                if model != models_to_try[-1]:
+                    print(f"⚠️  Model '{model}' not available — trying fallback …")
+                    continue
+            # For other errors (auth, quota, etc.), fail immediately
+            return ""
+
+    return ""
 
 # ═══════════════════════════════════════════════
 # PROMPTS
 # ═══════════════════════════════════════════════
-
 FAQ_TAGS = (
     "<FAQ_1_Q>A question a reader would Google about this topic</FAQ_1_Q>\n"
     "<FAQ_1_A>Clear 2-3 sentence answer</FAQ_1_A>\n"
@@ -508,9 +512,7 @@ FAQ_TAGS = (
 
 def _make_premium_prompt(news_text, cat):
     return f"""You are Warm Insight's AI analyst. Write a Premium newsletter article on {cat}.
-
 Respond ONLY using these exact XML tags:
-
 <TITLE>Compelling headline, no emoji, max 80 chars</TITLE>
 <EXCERPT>2–3 sentence SEO summary, 120–150 chars</EXCERPT>
 <SEO_KEYWORD>3–5 word focus keyphrase</SEO_KEYWORD>
@@ -520,16 +522,13 @@ Respond ONLY using these exact XML tags:
 <TW>One memorable market wisdom sentence</TW>
 <PS>One-line P.S. from a veteran investor's perspective</PS>
 {FAQ_TAGS}
-
 News inputs:
 {news_text[:3000]}
-
 Tone: professional, confident, accessible to everyday investors.
 Focus on second-order effects and actionable takeaways."""
 
 def _make_vip_prompt1(news_text, cat):
     return f"""You are Warm Insight's senior analyst. Write Part 1 of a VIP deep-dive on {cat}.
-
 <TITLE>High-impact headline, no emoji, max 90 chars</TITLE>
 <EXCERPT>Premium 2–3 sentence teaser, 120–150 chars</EXCERPT>
 <SEO_KEYWORD>3–5 word focus keyphrase</SEO_KEYWORD>
@@ -540,19 +539,15 @@ and fragmented multipolarity framework. 900–1100 words.</DEEP_ANALYSIS>
 <SENTIMENT>BULLISH or BEARISH or NEUTRAL</SENTIMENT>
 <BULL_CASE>2–3 sentences: the bull case for investors</BULL_CASE>
 <BEAR_CASE>2–3 sentences: the bear case for investors</BEAR_CASE>
-
 News inputs:
 {news_text[:4000]}
-
 Write as if advising sophisticated institutional investors."""
 
 def _make_vip_prompt2(raw1, cat):
     title   = xtag(raw1, "TITLE")
     summary = xtag(raw1, "DEEP_ANALYSIS")[:600]
     return f"""Complete the VIP analysis for: "{title}" ({cat})
-
 Context summary: {summary}...
-
 Respond with ONLY these tags:
 <ACTION_ITEMS>3–5 concrete investor action items as <ul><li>HTML list</ACTION_ITEMS>
 <TW>Memorable market wisdom quote relevant to this story</TW>
@@ -562,11 +557,9 @@ Respond with ONLY these tags:
 # ═══════════════════════════════════════════════
 # CONTENT ASSEMBLER
 # ═══════════════════════════════════════════════
-
 def analyze(raw1, raw2, cat, tier):
     """Parse AI responses and assemble HTML article"""
     full = raw1 + ("\n" + raw2 if raw2 else "")
-
     tr   = xtag(full, "TITLE")
     exc  = xtag(full, "EXCERPT") or "Expert market analysis."
     kw   = xtag(full, "SEO_KEYWORD")
@@ -578,21 +571,16 @@ def analyze(raw1, raw2, cat, tier):
     bull = xtag(full, "BULL_CASE")
     bear = xtag(full, "BEAR_CASE")
     acts = xtag(full, "ACTION_ITEMS")
-
     title = (
         "[" + TIER_LABELS.get(tier, tier) + "] " + tr
         if tr else f"({tier.upper()}) {cat} Insight"
     )
     slug = make_slug(kw, tr or cat, cat)
 
-    # ── HTML assembly ──
     html = ""
-
-    # Lead
     if lead:
         html += f'<p style="{F}">{lead}</p>\n'
 
-    # Sentiment meter
     s_colors = {"BULLISH": "#10b981", "BEARISH": "#ef4444", "NEUTRAL": "#f59e0b"}
     s_c = s_colors.get(sent, "#f59e0b")
     html += (
@@ -603,11 +591,9 @@ def analyze(raw1, raw2, cat, tier):
         f'font-size:13px;font-weight:700;">{sent}</span></div>\n'
     )
 
-    # Body content
     if body:
         html += body + "\n"
 
-    # VIP: Bull / Bear cards
     if tier == "vip" and (bull or bear):
         html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:30px 0;">\n'
         if bull:
@@ -624,7 +610,6 @@ def analyze(raw1, raw2, cat, tier):
             )
         html += "</div>\n"
 
-    # VIP: Action items
     if tier == "vip" and acts:
         html += (
             '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;'
@@ -633,26 +618,19 @@ def analyze(raw1, raw2, cat, tier):
             f"⚡ Investor Action Items</p>{acts}</div>\n"
         )
 
-    # FAQ (v12)
     faq_schema, faq_visible = _build_faq_schema(full)
     html += faq_visible
-
-    # Social share + related posts + internal links + author bio (v12)
     html += _build_social_share(title, slug)
     html += _build_related_posts(cat)
     html += _build_internal_links(cat)
     html += _build_author_bio(cat)
-
-    # Footer
     html += _ftr(tw, ps)
     html = sanitize(html)
-
     return title, html, exc, kw, slug, tier, full, faq_schema
 
 # ═══════════════════════════════════════════════
 # WORDPRESS PUBLISHER
 # ═══════════════════════════════════════════════
-
 def _upload_image(img_bytes, filename):
     """Upload thumbnail to WordPress media library"""
     try:
@@ -692,22 +670,17 @@ def _get_category_id(cat_name):
 
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema):
     """Post article to WordPress"""
-
-    # Upload thumbnail
     media_id, img_url = None, ""
     if img_bytes:
         media_id, img_url = _upload_image(img_bytes, f"{slug[:40]}.jpg")
         if media_id:
             print(f"🖼  Thumbnail uploaded: {img_url}")
 
-    # Schemas
     seo_title = _clean_seo_title(title)
     schemas   = _build_jsonld(title, exc, kw, cat, slug, img_url) + faq_schema
     full_content = schemas + html
 
-    # Category
     cat_id = _get_category_id(cat)
-
     post_data = {
         "title":   title,
         "content": full_content,
@@ -720,7 +693,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
     if media_id:
         post_data["featured_media"] = media_id
 
-    # Rank Math SEO (v12: emoji-free title)
     if kw:
         post_data["meta"] = {
             "rank_math_title":         (seo_title + " | Warm Insight")[:60],
@@ -728,7 +700,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
             "rank_math_focus_keyword": kw,
         }
 
-    # Randomised publish delay (avoids bulk-posting pattern)
     delay = random.randint(3, 12)
     print(f"⏳ Publish delay: {delay}s …")
     time.sleep(delay)
@@ -755,7 +726,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
 # ═══════════════════════════════════════════════
 # PIPELINE ORCHESTRATOR
 # ═══════════════════════════════════════════════
-
 def _pick_cat():
     """Round-robin category by UTC hour"""
     return CATEGORIES[datetime.datetime.utcnow().hour % len(CATEGORIES)]
@@ -811,10 +781,8 @@ def run_pipeline():
     # 6. Publish
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema)
 
-
 # ═══════════════════════════════════════════════
 # ENTRY POINT
 # ═══════════════════════════════════════════════
-
 if __name__ == "__main__":
     run_pipeline()
