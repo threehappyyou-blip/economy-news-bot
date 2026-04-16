@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════
-# Warm Insight Auto Poster — v12 (Complete)
+# Warm Insight Auto Poster — v13
+# Changes from v12:
+#   - MODEL updated to gemini-2.5-flash (GA) + gemini-2.0-flash fallback
+#   - WordPress credential pre-verification before pipeline starts
+#   - Detailed 401/403/500 error messages with fix instructions
+#   - Publish retry logic (up to 2 retries on transient 5xx errors)
+#   - Gemini client reuse (no per-call re-instantiation)
+#   - Env-var sanity check at startup
 # ═══════════════════════════════════════════════
 import os, json, time, random, re, datetime, io
 import requests
@@ -12,12 +19,12 @@ from google import genai
 # CONFIG
 # ═══════════════════════════════════════════════
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-WP_URL         = os.environ.get("WP_URL", "https://warminsight.com")
+WP_URL         = os.environ.get("WP_URL", "https://warminsight.com").rstrip("/")
 WP_USER        = os.environ.get("WP_USER", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASS", "")
 SITE_URL       = "https://warminsight.com"
 
-# ─── FIX: Updated to GA (stable) model. Fallback to gemini-2.0-flash if needed ───
+# Gemini models — tries MODEL first, falls back to MODEL_FALLBACK on 404/NOT_FOUND
 MODEL          = "gemini-2.5-flash"
 MODEL_FALLBACK = "gemini-2.0-flash"
 
@@ -77,7 +84,9 @@ RSS_FEEDS = {
     ],
 }
 
-# ─── FIX: Gemini client initialized once at module level (not per call) ───
+# ═══════════════════════════════════════════════
+# GEMINI CLIENT  (initialised once, reused per run)
+# ═══════════════════════════════════════════════
 _gemini_client = None
 
 def _get_gemini_client():
@@ -87,22 +96,110 @@ def _get_gemini_client():
     return _gemini_client
 
 # ═══════════════════════════════════════════════
+# STARTUP SANITY CHECK
+# ═══════════════════════════════════════════════
+def check_env_vars():
+    """
+    Verify that all required environment variables are set.
+    Prints clear instructions for any that are missing.
+    Returns False if any critical variable is absent.
+    """
+    missing = []
+    if not GEMINI_API_KEY:
+        missing.append("GEMINI_API_KEY  → Get from https://aistudio.google.com/apikey")
+    if not WP_USER:
+        missing.append("WP_USER        → Your WordPress username (e.g. admin)")
+    if not WP_APP_PASS:
+        missing.append(
+            "WP_APP_PASS    → WordPress Application Password\n"
+            "                 (WordPress Admin → Users → Profile → Application Passwords → Add New)\n"
+            "                 Copy the generated password INCLUDING spaces, e.g.: xxxx xxxx xxxx xxxx xxxx xxxx"
+        )
+    if missing:
+        print("❌ Missing GitHub Secrets — add these in your repo:")
+        print("   Settings → Secrets and variables → Actions → New repository secret\n")
+        for m in missing:
+            print(f"   • {m}")
+        return False
+    return True
+
+# ═══════════════════════════════════════════════
+# WORDPRESS CREDENTIAL PRE-VERIFICATION
+# ═══════════════════════════════════════════════
+def verify_wp_credentials():
+    """
+    Call /wp-json/wp/v2/users/me to confirm authentication and role BEFORE
+    running the full pipeline.  Returns True if safe to proceed.
+    """
+    print("🔐 Verifying WordPress credentials …")
+    try:
+        resp = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/users/me",
+            auth=(WP_USER, WP_APP_PASS),
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            data      = resp.json()
+            name      = data.get("name", "Unknown")
+            roles     = data.get("roles", [])
+            caps      = data.get("capabilities", {})
+            can_post  = caps.get("publish_posts") or caps.get("edit_posts") or \
+                        any(r in roles for r in ("administrator", "editor", "author"))
+            print(f"   ✅ Authenticated as: {name}  |  roles: {roles}")
+            if not can_post:
+                print("   ⚠️  WARNING: This user may not be able to publish posts.")
+                print("       → Change the WordPress user role to Author / Editor / Administrator.")
+                # Still return True — let the publish attempt surface the real error.
+            return True
+
+        elif resp.status_code == 401:
+            print("   ❌ 401 Unauthorized — authentication failed.")
+            print("      Possible causes:")
+            print("      1. WP_APP_PASS is wrong or has been revoked.")
+            print("      2. The Application Password was copied incorrectly (spaces matter).")
+            print("      3. WP_USER is the username, NOT the email address.")
+            print("   → Fix: WordPress Admin → Users → Profile → Application Passwords")
+            print("          Delete the old password, generate a new one, update GitHub Secret.")
+            return False
+
+        elif resp.status_code == 403:
+            print("   ❌ 403 Forbidden — user authenticated but lacks REST API access.")
+            print("      → Possible cause: a security plugin is blocking REST API for this role.")
+            print("      → Fix: Check plugins like Wordfence, iThemes Security, or Disable REST API.")
+            return False
+
+        elif resp.status_code == 404:
+            print(f"   ❌ 404 — REST API endpoint not found at {WP_URL}/wp-json/wp/v2/users/me")
+            print("      → Check WP_URL is correct and the REST API is enabled.")
+            return False
+
+        else:
+            print(f"   ⚠️  Unexpected status {resp.status_code} — proceeding anyway.")
+            return True
+
+    except requests.exceptions.ConnectionError:
+        print(f"   ❌ Cannot connect to {WP_URL}")
+        print("      → Check WP_URL in GitHub Secrets (include https://, no trailing slash).")
+        return False
+    except Exception as e:
+        print(f"   ⚠️  Credential check failed with exception: {e}")
+        # Don't abort on unexpected network issues — let the publish attempt decide.
+        return True
+
+# ═══════════════════════════════════════════════
 # CORE HELPERS
 # ═══════════════════════════════════════════════
 def xtag(raw, tag):
-    """Extract XML tag content from AI response"""
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL)
     return m.group(1).strip() if m else ""
 
 def is_echo(text):
-    """Detect placeholder/echo text from AI"""
     if not text or len(text) < 20:
         return True
     echoes = ["your ", "here", "example", "placeholder", "[insert", "TODO"]
     return any(e.lower() in text.lower() for e in echoes)
 
 def make_slug(kw, title, cat):
-    """Generate URL-safe slug"""
     base = kw if (kw and len(kw) > 4) else title
     slug = re.sub(r"[^\w\s-]", "", base.lower())
     slug = re.sub(r"[\s_]+", "-", slug).strip("-")[:55]
@@ -110,7 +207,6 @@ def make_slug(kw, title, cat):
     return f"{slug}-{ts}" if slug else f"{cat.lower()}-{ts}"
 
 def sanitize(html):
-    """Remove dangerous tags while preserving JSON-LD"""
     html = re.sub(
         r"<script(?!\s+type=['\"]application/ld\+json['\"])[^>]*>.*?</script>",
         "", html, flags=re.DOTALL
@@ -119,10 +215,9 @@ def sanitize(html):
     return html
 
 # ═══════════════════════════════════════════════
-# SEO BUILDERS  (v12)
+# SEO BUILDERS
 # ═══════════════════════════════════════════════
 def _clean_seo_title(title):
-    """Strip [💎 Pro] / [👑 VIP] prefixes from SEO title"""
     clean = title
     for prefix in ["[💎 Pro] ", "[👑 VIP] ", "[💎 Pro]", "[👑 VIP]"]:
         clean = clean.replace(prefix, "")
@@ -146,8 +241,8 @@ def _build_jsonld(title, exc, kw, cat, slug, img_url=""):
             "name":  "Warm Insight",
             "logo":  {"@type": "ImageObject", "url": SITE_URL + "/wp-content/uploads/logo.png"},
         },
-        "keywords":        kw,
-        "articleSection":  cat,
+        "keywords":       kw,
+        "articleSection": cat,
     }
     if img_url:
         schema["image"] = {"@type": "ImageObject", "url": img_url}
@@ -158,7 +253,6 @@ def _build_jsonld(title, exc, kw, cat, slug, img_url=""):
     )
 
 def _build_faq_schema(raw):
-    """FAQPage JSON-LD + visible FAQ section"""
     faqs = []
     for i in range(1, 4):
         q = xtag(raw, f"FAQ_{i}_Q")
@@ -229,9 +323,9 @@ def _build_author_bio(cat):
     )
 
 def _build_social_share(title, slug):
-    post_url      = SITE_URL + "/" + slug + "/"
-    enc_title     = title.replace(" ", "%20").replace("&", "%26")[:100]
-    enc_url       = post_url.replace(":", "%3A").replace("/", "%2F")
+    post_url  = SITE_URL + "/" + slug + "/"
+    enc_title = title.replace(" ", "%20").replace("&", "%26")[:100]
+    enc_url   = post_url.replace(":", "%3A").replace("/", "%2F")
     return (
         '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;'
         'padding:22px;margin:30px 0;text-align:center;">'
@@ -311,7 +405,6 @@ def _ftr(tw, ps):
         '<p style="font-size:18px;line-height:1.8;color:#e2e8f0;margin:0;">'
         '<span style="color:#b8974d;font-weight:bold;">P.S.</span> '
         f'<span style="color:#cbd5e1;">{ps}</span></p></div>'
-        # CTA box
         '<div style="background:#f8fafc;border:2px solid #e5e7eb;border-radius:10px;'
         'padding:28px;margin:40px 0;text-align:center;">'
         '<p style="font-size:22px;font-weight:bold;color:#1a252c;margin:0 0 10px;">Found this useful?</p>'
@@ -321,7 +414,6 @@ def _ftr(tw, ps):
         f'<p style="margin:0;"><a href="{SITE_URL}" '
         'style="color:#b8974d;font-weight:600;text-decoration:underline;">'
         "Subscribe at warminsight.com</a></p></div>"
-        # Dark footer
         '<div style="background:#1e293b;padding:35px;border-radius:10px;margin-top:30px;">'
         '<p style="font-size:24px;font-weight:bold;color:#b8974d;margin:0 0 12px;text-align:center;">'
         "Warm Insight</p>"
@@ -350,10 +442,9 @@ CAT_COLORS = {
 }
 
 def make_thumbnail(kw, cat, tier):
-    """Pillow thumbnail with 2× supersampling"""
-    W, H   = 1200, 630
-    SCALE  = 2
-    w, h   = W * SCALE, H * SCALE
+    W, H  = 1200, 630
+    SCALE = 2
+    w, h  = W * SCALE, H * SCALE
     bg, text_c, accent = CAT_COLORS.get(cat, CAT_COLORS["Economy"])
     tier_c = "#b8974d" if tier == "vip" else "#6366f1"
     img  = Image.new("RGB", (w, h), bg)
@@ -378,9 +469,9 @@ def make_thumbnail(kw, cat, tier):
     draw.rectangle([(w - bw - 40 * SCALE, 36 * SCALE), (w - 40 * SCALE, 86 * SCALE)], fill=tier_c)
     draw.text((w - bw - 20 * SCALE, 42 * SCALE), tier_label, font=f_badge, fill="#ffffff")
 
-    words  = (kw or cat).upper().split()
+    words = (kw or cat).upper().split()
     lines, line = [], []
-    max_w  = w - 140 * SCALE
+    max_w = w - 140 * SCALE
     for word in words:
         test = " ".join(line + [word])
         try:
@@ -447,7 +538,6 @@ def fetch_news(cat, max_items=8):
 # DUPLICATE CHECK
 # ═══════════════════════════════════════════════
 def check_duplicate(kw):
-    """Return True if a recent post with similar keyword already exists"""
     if not kw or not WP_USER:
         return False
     try:
@@ -458,8 +548,7 @@ def check_duplicate(kw):
             timeout=10,
         )
         if resp.status_code == 200:
-            posts = resp.json()
-            for post in posts:
+            for post in resp.json():
                 existing = post.get("title", {}).get("rendered", "").lower()
                 if kw.lower()[:20] in existing:
                     print(f"⚠️  Duplicate found: {existing[:60]}")
@@ -469,31 +558,30 @@ def check_duplicate(kw):
     return False
 
 # ═══════════════════════════════════════════════
-# GEMINI API  — FIX: client reuse + model fallback
+# GEMINI API  — reuse client, model fallback
 # ═══════════════════════════════════════════════
 def call_gemini(prompt):
     """
-    Call Gemini API with automatic model fallback.
-    Tries MODEL first, then MODEL_FALLBACK if a 404/model-not-found error occurs.
+    Generate content via Gemini.
+    Tries MODEL first; on 404/NOT_FOUND falls back to MODEL_FALLBACK.
     """
-    client = _get_gemini_client()
-    models_to_try = [MODEL, MODEL_FALLBACK]
+    client         = _get_gemini_client()
+    models_to_try  = [MODEL, MODEL_FALLBACK]
 
     for model in models_to_try:
         try:
             response = client.models.generate_content(model=model, contents=prompt)
             if model != MODEL:
-                print(f"ℹ️  Used fallback model: {model}")
+                print(f"   ℹ️  Used fallback model: {model}")
             return response.text or ""
         except Exception as e:
-            err_str = str(e)
+            err = str(e)
             print(f"Gemini error ({model}): {e}")
-            # Only fall through to next model on 404 / NOT_FOUND errors
-            if "404" in err_str or "NOT_FOUND" in err_str or "not found" in err_str.lower():
-                if model != models_to_try[-1]:
-                    print(f"⚠️  Model '{model}' not available — trying fallback …")
-                    continue
-            # For other errors (auth, quota, etc.), fail immediately
+            if ("404" in err or "NOT_FOUND" in err or "not found" in err.lower()) \
+                    and model != models_to_try[-1]:
+                print(f"   ⚠️  '{model}' unavailable — trying fallback …")
+                continue
+            # Auth errors, quota exhausted, etc. — fail immediately
             return ""
 
     return ""
@@ -558,7 +646,6 @@ Respond with ONLY these tags:
 # CONTENT ASSEMBLER
 # ═══════════════════════════════════════════════
 def analyze(raw1, raw2, cat, tier):
-    """Parse AI responses and assemble HTML article"""
     full = raw1 + ("\n" + raw2 if raw2 else "")
     tr   = xtag(full, "TITLE")
     exc  = xtag(full, "EXCERPT") or "Expert market analysis."
@@ -625,14 +712,13 @@ def analyze(raw1, raw2, cat, tier):
     html += _build_internal_links(cat)
     html += _build_author_bio(cat)
     html += _ftr(tw, ps)
-    html = sanitize(html)
+    html  = sanitize(html)
     return title, html, exc, kw, slug, tier, full, faq_schema
 
 # ═══════════════════════════════════════════════
-# WORDPRESS PUBLISHER
+# WORDPRESS PUBLISHER  — with retry + clear error messages
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
-    """Upload thumbnail to WordPress media library"""
     try:
         resp = requests.post(
             f"{WP_URL}/wp-json/wp/v2/media",
@@ -647,12 +733,12 @@ def _upload_image(img_bytes, filename):
         if resp.status_code in (200, 201):
             data = resp.json()
             return data.get("id"), data.get("source_url", "")
+        print(f"   ⚠️  Image upload failed {resp.status_code} — continuing without thumbnail.")
     except Exception as e:
-        print(f"Image upload error: {e}")
+        print(f"   ⚠️  Image upload error: {e} — continuing without thumbnail.")
     return None, ""
 
 def _get_category_id(cat_name):
-    """Look up WordPress category ID"""
     try:
         resp = requests.get(
             f"{WP_URL}/wp-json/wp/v2/categories",
@@ -668,16 +754,47 @@ def _get_category_id(cat_name):
         print(f"Category lookup error: {e}")
     return None
 
+def _explain_publish_error(status_code, body_text):
+    """Print a human-readable explanation for common WordPress publish errors."""
+    if status_code == 401:
+        print("   ❌ 401 Unauthorized — WordPress rejected the credentials.")
+        print("      Most likely cause: WP_APP_PASS is wrong, expired, or was copied incorrectly.")
+        print()
+        print("      ── HOW TO FIX ──────────────────────────────────────────────")
+        print("      1. Log in to WordPress Admin.")
+        print("      2. Go to Users → Profile → scroll to 'Application Passwords'.")
+        print("      3. Delete the existing entry (if any), then click 'Add New'.")
+        print("      4. Name it e.g. 'GitHub Actions' and click 'Add New Application Password'.")
+        print("      5. Copy the generated password (format: xxxx xxxx xxxx xxxx xxxx xxxx).")
+        print("      6. In GitHub repo → Settings → Secrets and variables → Actions:")
+        print("         Update WP_APP_PASS with the new password (keep the spaces).")
+        print("      7. Also confirm WP_USER is the exact WordPress username (not email).")
+        print("      ────────────────────────────────────────────────────────────")
+    elif status_code == 403:
+        print("   ❌ 403 Forbidden — authenticated but not allowed to create posts.")
+        print("      → The WordPress user's role must be Author / Editor / Administrator.")
+        print("      → Check if a security plugin (Wordfence, iThemes, Disable REST API)")
+        print("        is blocking POST requests to /wp-json/wp/v2/posts.")
+    elif status_code == 500:
+        print("   ❌ 500 Internal Server Error — WordPress server-side error.")
+        print("      → Check the WordPress error log for details.")
+        print("      → This is usually a plugin conflict or PHP error.")
+    elif status_code == 503:
+        print("   ❌ 503 Service Unavailable — server overloaded or in maintenance mode.")
+    else:
+        print(f"   ❌ HTTP {status_code} — {body_text[:200]}")
+
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema):
-    """Post article to WordPress"""
+    """Post article to WordPress with up to 2 retries on transient 5xx errors."""
+    # Upload thumbnail (non-fatal)
     media_id, img_url = None, ""
     if img_bytes:
         media_id, img_url = _upload_image(img_bytes, f"{slug[:40]}.jpg")
         if media_id:
             print(f"🖼  Thumbnail uploaded: {img_url}")
 
-    seo_title = _clean_seo_title(title)
-    schemas   = _build_jsonld(title, exc, kw, cat, slug, img_url) + faq_schema
+    seo_title    = _clean_seo_title(title)
+    schemas      = _build_jsonld(title, exc, kw, cat, slug, img_url) + faq_schema
     full_content = schemas + html
 
     cat_id = _get_category_id(cat)
@@ -692,7 +809,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
         post_data["categories"] = [cat_id]
     if media_id:
         post_data["featured_media"] = media_id
-
     if kw:
         post_data["meta"] = {
             "rank_math_title":         (seo_title + " | Warm Insight")[:60],
@@ -704,48 +820,77 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
     print(f"⏳ Publish delay: {delay}s …")
     time.sleep(delay)
 
-    try:
-        resp = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/posts",
-            json=post_data,
-            auth=(WP_USER, WP_APP_PASS),
-            timeout=30,
-        )
-        if resp.status_code in (200, 201):
-            link = resp.json().get("link", "")
-            print(f"✅ Published [{tier.upper()}] {title}")
-            print(f"   URL: {link}")
-            return True
-        else:
-            print(f"❌ Publish failed {resp.status_code}: {resp.text[:300]}")
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            resp = requests.post(
+                f"{WP_URL}/wp-json/wp/v2/posts",
+                json=post_data,
+                auth=(WP_USER, WP_APP_PASS),
+                timeout=30,
+            )
+            if resp.status_code in (200, 201):
+                link = resp.json().get("link", "")
+                print(f"✅ Published [{tier.upper()}] {title}")
+                print(f"   URL: {link}")
+                return True
+
+            # 4xx errors are non-retryable
+            if 400 <= resp.status_code < 500:
+                _explain_publish_error(resp.status_code, resp.text)
+                return False
+
+            # 5xx — transient; retry after a short wait
+            _explain_publish_error(resp.status_code, resp.text)
+            if attempt < max_attempts:
+                wait = 15 * attempt
+                print(f"   ↻ Retrying in {wait}s … (attempt {attempt}/{max_attempts})")
+                time.sleep(wait)
+            else:
+                print(f"   🛑 All {max_attempts} publish attempts failed.")
+                return False
+
+        except requests.exceptions.Timeout:
+            print(f"   ⚠️  Request timed out (attempt {attempt}/{max_attempts}).")
+            if attempt < max_attempts:
+                time.sleep(10)
+        except Exception as e:
+            print(f"❌ Publish error: {e}")
             return False
-    except Exception as e:
-        print(f"❌ Publish error: {e}")
-        return False
+
+    return False
 
 # ═══════════════════════════════════════════════
 # PIPELINE ORCHESTRATOR
 # ═══════════════════════════════════════════════
 def _pick_cat():
-    """Round-robin category by UTC hour"""
     return CATEGORIES[datetime.datetime.utcnow().hour % len(CATEGORIES)]
 
 def _pick_tier():
-    """Alternate VIP / Premium each run"""
     return "vip" if datetime.datetime.utcnow().hour % 2 == 0 else "premium"
 
 def run_pipeline():
     cat  = _pick_cat()
     tier = _pick_tier()
     print(f"\n{'='*50}")
-    print(f"🚀 Warm Insight v12 | {cat} | {tier.upper()} | {datetime.datetime.utcnow():%Y-%m-%d %H:%M} UTC")
+    print(f"🚀 Warm Insight v13 | {cat} | {tier.upper()} | {datetime.datetime.utcnow():%Y-%m-%d %H:%M} UTC")
     print(f"{'='*50}")
 
-    # 1. Fetch news
+    # 0. Env-var sanity check
+    if not check_env_vars():
+        print("🛑 Aborting — set the missing GitHub Secrets and re-run.")
+        return
+
+    # 1. WordPress credential pre-verification
+    if not verify_wp_credentials():
+        print("🛑 Aborting — fix WordPress credentials before retrying.")
+        return
+
+    # 2. Fetch news
     news = fetch_news(cat)
     print(f"📰 News fetched ({len(news.splitlines())} items)")
 
-    # 2. Generate content via Gemini
+    # 3. Generate content via Gemini
     raw1, raw2 = "", ""
     if tier == "vip":
         print("🤖 VIP Part 1 …")
@@ -765,20 +910,20 @@ def run_pipeline():
             print("❌ Premium generation empty — aborting")
             return
 
-    # 3. Assemble HTML
+    # 4. Assemble HTML
     title, html, exc, kw, slug, tier, full_raw, faq_schema = analyze(raw1, raw2, cat, tier)
     print(f"📝 Article: {title}")
 
-    # 4. Duplicate guard
+    # 5. Duplicate guard
     if check_duplicate(kw or title[:30]):
         print("⚠️  Duplicate detected — skipping publish")
         return
 
-    # 5. Thumbnail
+    # 6. Thumbnail
     print("🖌  Generating thumbnail …")
     img_bytes = make_thumbnail(kw or title[:40], cat, tier)
 
-    # 6. Publish
+    # 7. Publish
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema)
 
 # ═══════════════════════════════════════════════
