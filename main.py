@@ -20,8 +20,8 @@ from google import genai
 # ═══════════════════════════════════════════════
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 WP_URL         = os.environ.get("WP_URL", "https://warminsight.com").rstrip("/")
-WP_USER        = os.environ.get("WP_USER", "")
-WP_APP_PASS    = os.environ.get("WP_APP_PASS", "")
+WP_USER        = os.environ.get("WP_USERNAME", "")
+WP_APP_PASS    = os.environ.get("WP_APP_PASSWORD", "")
 SITE_URL       = "https://warminsight.com"
 
 # Gemini models — tries MODEL first, falls back to MODEL_FALLBACK on 404/NOT_FOUND
