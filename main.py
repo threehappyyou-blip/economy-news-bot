@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v17 (Universal Audience & Stability)
+# Warm Insight Auto Poster — v17 (Universal Audience & Perfect Rotation)
 # ═══════════════════════════════════════════════════════════════
 import os, json, time, random, re, datetime, io
 import requests
@@ -25,6 +25,7 @@ SOCIAL_LINKS = {
     "x":        "https://x.com/warminsight",
     "linkedin": "",
 }
+# 정확한 무한 순환을 위한 5개 카테고리 배열
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
 TIERS       = ["premium", "vip"]
 TIER_LABELS = {"premium": "💎 Pro", "vip": "👑 VIP"}
@@ -488,7 +489,7 @@ def _vip_action_items(acts):
     )
 
 # ═══════════════════════════════════════════════
-# 🎨 PREMIUM HTML BUILDERS 
+# 🎨 PREMIUM HTML BUILDERS
 # ═══════════════════════════════════════════════
 def _pro_header(impact, sector_tag):
     now = datetime.datetime.utcnow()
@@ -1090,6 +1091,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
 def get_current_task():
     """
     무한 로테이션: GitHub Actions 지연에 대비하여 1년 기준 누적 블록으로 계산
+    이렇게 하면 정확히 Economy > Politics > Tech > Health > Energy 순서대로 무한히 돌아갑니다.
     """
     now = datetime.datetime.utcnow()
     # 1년 중 며칠째인지 계산하여 하루 8번(3시간) 블록을 누적 합산
