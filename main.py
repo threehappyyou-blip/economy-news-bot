@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v19 (Ultimate Stability & Auto Fonts)
+# Warm Insight Auto Poster — v20 (Ultimate Stability & Bug Fix)
 # ═══════════════════════════════════════════════════════════════
 import os, json, time, random, re, datetime, io
 import urllib.request
@@ -59,7 +59,7 @@ VIP_AUTHORS = {
     "Politics": "Elena Vasquez & The Warm Insight Panel",
     "Tech":     "Marcus Chen & The Warm Insight Panel",
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
-    "Energy":  "Oliver Grant & The Warm Insight Panel",
+    "Energy":   "Oliver Grant & The Warm Insight Panel",
 }
 RSS_FEEDS = {
     "Economy": [
@@ -126,11 +126,17 @@ def verify_wp_credentials():
     return True
 
 # ═══════════════════════════════════════════════
-# CORE HELPERS
+# CORE HELPERS (✅ v20: is_echo 복구)
 # ═══════════════════════════════════════════════
 def xtag(raw, tag):
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL)
     return m.group(1).strip() if m else ""
+
+def is_echo(text):
+    """AI가 엉뚱한 플레이스홀더를 반환했는지 검사하는 필수 함수 (복구됨)"""
+    if not text or len(text) < 20:
+        return True
+    return any(e.lower() in text.lower() for e in ["your ", "here", "example", "placeholder", "[insert", "TODO"])
 
 def make_slug(kw, title, cat):
     base = kw if (kw and len(kw) > 4) else title
@@ -499,7 +505,6 @@ def get_font(url, filename):
 # ═══════════════════════════════════════════════
 # THUMBNAIL GENERATOR 
 # ═══════════════════════════════════════════════
-# 🚨 썸네일 색상 변수 완벽 복구
 CAT_COLORS = {
     "Economy": ("#1a6ef5", "#ffffff", "#ffcc00"),
     "Politics": ("#dc2626", "#ffffff", "#fbbf24"),
@@ -515,7 +520,6 @@ def make_thumbnail(kw, cat, tier):
     img = Image.new("RGB", (w, h), bg)
     draw = ImageDraw.Draw(img)
     
-    # 폰트 깨짐 방지 다운로드
     font_url_anton = "https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf"
     font_url_bebas = "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf"
     ft_path = get_font(font_url_anton, "fonts/Anton-Regular.ttf")
@@ -605,8 +609,6 @@ def check_duplicate(kw):
 # ═══════════════════════════════════════════════
 def call_gemini(prompt, retries=3):
     client = _get_gemini_client()
-    
-    # 503 에러 등 API 서버 문제 발생 시 총 3번까지 재요청합니다.
     for attempt in range(retries):
         for model in [MODEL, MODEL_FALLBACK]:
             try:
@@ -616,13 +618,9 @@ def call_gemini(prompt, retries=3):
                 return resp.text or ""
             except Exception as e:
                 print(f"   ⚠️ Gemini API error ({model}): {e}")
-                # 첫 번째 모델 실패 시 두 번째(예비) 모델로 즉시 넘어갑니다.
-                
-        # 두 모델 모두 실패하면 10초 대기 후 다음 시도로 넘어갑니다.
         if attempt < retries - 1:
             print(f"   ⏳ API overload. Waiting 10s before retry {attempt+1}/{retries}...")
             time.sleep(10)
-            
     print("   ❌ Gemini API failed after all retries.")
     return ""
 
@@ -882,7 +880,7 @@ def run_pipeline():
     cat = get_current_task()
     now = datetime.datetime.utcnow()
     print(f"\n{'═'*54}")
-    print(f"🚀 Warm Insight v19 | {cat} | VIP + Pro")
+    print(f"🚀 Warm Insight v20 | {cat} | VIP + Pro")
     print(f"   {now:%Y-%m-%d %H:%M} UTC")
     print(f"{'═'*54}")
 
