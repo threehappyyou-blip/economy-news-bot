@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v17 (Universal Audience & Perfect Rotation)
+# Warm Insight Auto Poster — v18 (Mobile Responsive & Auto Fonts)
 # ═══════════════════════════════════════════════════════════════
 import os, json, time, random, re, datetime, io
+import urllib.request
 import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
@@ -25,12 +26,11 @@ SOCIAL_LINKS = {
     "x":        "https://x.com/warminsight",
     "linkedin": "",
 }
-# 정확한 무한 순환을 위한 5개 카테고리 배열
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
 TIERS       = ["premium", "vip"]
 TIER_LABELS = {"premium": "💎 Pro", "vip": "👑 VIP"}
 
-# 디자인 시스템 — 통일된 폰트/색상
+# 디자인 시스템
 F = "font-size:17px;line-height:1.85;color:#334155;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;"
 GOLD   = "#b8974d"
 AMBER  = "#f59e0b"
@@ -93,7 +93,7 @@ RSS_FEEDS = {
 }
 
 # ═══════════════════════════════════════════════
-# GEMINI CLIENT
+# GEMINI CLIENT & CHECKS
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -102,9 +102,6 @@ def _get_gemini_client():
         _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     return _gemini_client
 
-# ═══════════════════════════════════════════════
-# STARTUP CHECKS
-# ═══════════════════════════════════════════════
 def check_env_vars():
     missing = []
     if not GEMINI_API_KEY:
@@ -164,6 +161,39 @@ def sanitize(html):
     html = re.sub(r"<script(?!\s+type=['\"]application/ld\+json['\"])[^>]*>.*?</script>", "", html, flags=re.DOTALL)
     html = re.sub(r"<iframe[^>]*>.*?</iframe>", "", html, flags=re.DOTALL)
     return html
+
+# ═══════════════════════════════════════════════
+# 📱 MOBILE RESPONSIVE CSS INJECTOR
+# ═══════════════════════════════════════════════
+def _build_global_css():
+    """모바일 환경에서 표와 박스가 깨지지 않도록 자동으로 크기를 조절하는 마법의 CSS입니다."""
+    return """
+    <style>
+    /* Warm Insight Responsive System */
+    .wi-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 35px 0; }
+    .wi-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 30px 0; }
+    .wi-card-pad { padding: 40px 20px; }
+    .wi-text-huge { font-size: 72px; }
+    .wi-radar-table { width: 100%; border-collapse: collapse; }
+    .wi-radar-tr { border-bottom: 1px solid #e2e8f0; }
+    .wi-radar-td1 { padding: 14px 0; font-size: 15px; color: #334155; line-height: 1.6; }
+    .wi-radar-td2 { padding: 14px 0 14px 16px; text-align: center; width: 65px; vertical-align: middle; }
+    
+    /* 스마트폰 화면(768px 이하)일 때 작동하는 레이아웃 변형 로직 */
+    @media (max-width: 768px) {
+        .wi-grid-2 { grid-template-columns: 1fr; gap: 15px; margin: 25px 0; }
+        .wi-card-pad { padding: 24px 16px !important; margin: 20px auto !important; }
+        .wi-text-huge { font-size: 48px !important; }
+        
+        /* 표(Table)를 모바일에서 1열로 예쁘게 정렬 */
+        .wi-radar-tr { display: flex; flex-direction: column; padding: 12px 0; }
+        .wi-radar-td1 { padding: 0 0 10px 0 !important; }
+        .wi-radar-td2 { padding: 0 !important; width: 100% !important; text-align: left !important; display: flex; align-items: center; gap: 10px; }
+        .wi-radar-td2 br { display: none; }
+        .wi-radar-td2 span { display: inline-block; margin-bottom: 0 !important; }
+    }
+    </style>
+    """
 
 # ═══════════════════════════════════════════════
 # SEO BUILDERS
@@ -237,10 +267,10 @@ def _vip_big_number(number, desc):
     if not number:
         return ""
     return (
-        f'<div style="background:#fff;border:1px solid {AMBER};border-radius:10px;'
-        f'padding:40px 20px;margin:30px auto;text-align:center;max-width:600px;'
+        f'<div class="wi-card-pad" style="background:#fff;border:1px solid {AMBER};border-radius:10px;'
+        f'margin:30px auto;text-align:center;max-width:600px;'
         f'box-shadow:0 4px 6px -1px rgba(0,0,0,0.08);">'
-        f'<p style="font-size:72px;font-weight:900;color:#ea580c;margin:0;line-height:1;'
+        f'<p class="wi-text-huge" style="font-weight:900;color:#ea580c;margin:0;line-height:1;'
         f'font-family:Impact,sans-serif;">{number}</p>'
         f'<p style="font-size:16px;color:#475569;margin:16px 0 0;line-height:1.6;">{desc}</p>'
         f'</div>'
@@ -254,7 +284,7 @@ def _vip_market_dashboard(dashboard_data):
         d = item.get("direction", "SIDEWAYS").upper()
         color, arrow = {"UP": ("#10b981", "▲"), "DOWN": ("#ef4444", "▼")}.get(d, ("#64748b", "—"))
         cells += (
-            f'<div style="flex:1;min-width:130px;text-align:center;padding:16px 10px;'
+            f'<div style="text-align:center;padding:16px 10px;'
             f'background:#1e293b;border-radius:8px;">'
             f'<p style="font-size:12px;color:#94a3b8;margin:0 0 8px;font-weight:600;'
             f'letter-spacing:0.5px;text-transform:uppercase;">{item.get("name","")}</p>'
@@ -265,8 +295,7 @@ def _vip_market_dashboard(dashboard_data):
             f'</div>'
         )
     return (
-        f'<div style="background:{DARK};border-radius:12px;padding:20px;margin:30px 0;'
-        f'display:flex;flex-wrap:wrap;gap:10px;">{cells}</div>'
+        f'<div class="wi-grid-4" style="background:{DARK};border-radius:12px;padding:20px;">{cells}</div>'
     )
 
 def _vip_fear_greed(score):
@@ -354,12 +383,12 @@ def _vip_key_indicators(indicators):
     if not indicators:
         return ""
     colors = ["#f59e0b", "#f97316", "#10b981"]
-    cards = '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:30px 0;">'
+    cards = '<div class="wi-grid-4">'
     for i, ind in enumerate(indicators[:3]):
         c = colors[i % len(colors)]
         pct = ind.get("pct", 50)
         cards += (
-            f'<div style="flex:1;min-width:140px;border:2px solid {c};border-radius:10px;'
+            f'<div style="border:2px solid {c};border-radius:10px;'
             f'padding:20px;text-align:center;background:#fff;'
             f'box-shadow:0 2px 4px rgba(0,0,0,0.05);">'
             f'<p style="font-size:36px;font-weight:800;color:{c};margin:0;">{pct}%</p>'
@@ -367,6 +396,7 @@ def _vip_key_indicators(indicators):
             f'</div>'
         )
     cards += '</div>'
+    
     bars = (
         f'<div style="background:#fff;border:1px solid {BORDER};border-radius:10px;'
         f'padding:24px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05);">'
@@ -395,7 +425,7 @@ def _vip_sector_radar(sectors):
         f'<div style="background:#fff;border:1px solid {AMBER};border-radius:10px;'
         f'padding:24px;margin:30px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05);">'
         f'<p style="font-size:20px;font-weight:700;color:#d97706;margin:0 0 20px;">🎯 Sector Radar</p>'
-        f'<table style="width:100%;border-collapse:collapse;">'
+        f'<table class="wi-radar-table">'
     )
     for sec in sectors[:5]:
         s = sec.get("sentiment", "NEUTRAL").upper()
@@ -406,11 +436,11 @@ def _vip_sector_radar(sectors):
         else:
             color, label, bg = "#f59e0b", "NEUT", "#fffbeb"
         html += (
-            f'<tr style="border-bottom:1px solid {BORDER};">'
-            f'<td style="padding:14px 0;font-size:15px;color:{SLATE};line-height:1.6;">'
+            f'<tr class="wi-radar-tr">'
+            f'<td class="wi-radar-td1">'
             f'<strong style="color:{DARK};">{sec.get("name","")}</strong> – {sec.get("desc","")}</td>'
-            f'<td style="padding:14px 0 14px 16px;text-align:center;width:65px;vertical-align:middle;">'
-            f'<div style="background:{bg};padding:8px 4px;border-radius:6px;border:1px solid {color}40;">'
+            f'<td class="wi-radar-td2">'
+            f'<div style="background:{bg};padding:8px 8px;border-radius:6px;border:1px solid {color}40;display:inline-block;text-align:center;">'
             f'<span style="display:inline-block;width:12px;height:12px;border-radius:50%;'
             f'background:{color};margin-bottom:4px;"></span><br>'
             f'<span style="font-size:11px;font-weight:800;color:{color};">{label}</span>'
@@ -422,17 +452,17 @@ def _vip_sector_radar(sectors):
 def _vip_bull_bear(bull, bear):
     if not bull and not bear:
         return ""
-    html = '<div style="display:flex;flex-wrap:wrap;gap:20px;margin:35px 0;">'
+    html = '<div class="wi-grid-2">'
     if bull:
         html += (
-            '<div style="flex:1;min-width:280px;background:#ecfdf5;border:1px solid #a7f3d0;'
+            '<div style="background:#ecfdf5;border:1px solid #a7f3d0;'
             'border-radius:10px;padding:24px;">'
             '<p style="font-size:18px;font-weight:700;color:#065f46;margin:0 0 12px;">🐂 Market Bull</p>'
             f'<p style="font-size:15px;line-height:1.75;color:#064e3b;margin:0;">{bull}</p></div>'
         )
     if bear:
         html += (
-            '<div style="flex:1;min-width:280px;background:#fef2f2;border:1px solid #fecaca;'
+            '<div style="background:#fef2f2;border:1px solid #fecaca;'
             'border-radius:10px;padding:24px;">'
             '<p style="font-size:18px;font-weight:700;color:#991b1b;margin:0 0 12px;">🐻 Market Bear</p>'
             f'<p style="font-size:15px;line-height:1.75;color:#7f1d1d;margin:0;">{bear}</p></div>'
@@ -532,7 +562,7 @@ def _pro_key_takeaways(text):
     )
 
 # ═══════════════════════════════════════════════
-# COMMON HTML BUILDERS
+# FOOTER BUILDERS
 # ═══════════════════════════════════════════════
 def _build_author_bio(cat):
     author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
@@ -661,38 +691,118 @@ def _build_footer(tw, ps):
     )
 
 # ═══════════════════════════════════════════════
-# THUMBNAIL GENERATOR
+# MAIN ANALYZE ROUTER (CSS INJECTION)
 # ═══════════════════════════════════════════════
-CAT_COLORS = {
-    "Economy": ("#1a6ef5", "#ffffff", "#ffcc00"),
-    "Politics": ("#dc2626", "#ffffff", "#fbbf24"),
-    "Tech": ("#6366f1", "#ffffff", "#34d399"),
-    "Health": ("#059669", "#ffffff", "#ffffff"),
-    "Energy": ("#d97706", "#1a252c", "#1a252c"),
-}
+def analyze(raw1, raw2, cat, tier):
+    full = raw1 + ("\n" + raw2 if raw2 else "")
+    tr = xtag(full, "TITLE")
+    exc = xtag(full, "EXCERPT") or "Expert market analysis."
+    kw = xtag(full, "SEO_KEYWORD")
+    tw = xtag(full, "TW")
+    ps = xtag(full, "PS")
+    title = ("[" + TIER_LABELS.get(tier, tier) + "] " + tr if tr else f"({tier.upper()}) {cat} Insight")
+    slug = make_slug(kw, tr or cat, cat)
 
+    # 🚀 핵심: 여기서 모바일 반응형 CSS 블록을 HTML 제일 처음에 주입합니다.
+    html = _build_global_css()
+
+    if tier == "vip":
+        html += _vip_header(VIP_AUTHORS.get(cat, "The Warm Insight Panel"), xtag(full, "IMPACT_LEVEL") or "MEDIUM", xtag(full, "SECTOR_TAG") or cat, cat)
+        html += _vip_big_number(xtag(full, "BIG_NUMBER"), xtag(full, "BIG_NUMBER_DESC"))
+        
+        dashboard_data = [{"name": xtag(full, f"MARKET_{i}_NAME"), "direction": xtag(full, f"MARKET_{i}_DIR"), "desc": xtag(full, f"MARKET_{i}_DESC")} for i in range(1, 5) if xtag(full, f"MARKET_{i}_NAME")]
+        html += _vip_market_dashboard(dashboard_data)
+        
+        html += _vip_fear_greed(xtag(full, "FEAR_GREED"))
+        html += _vip_executive_summary(xtag(full, "EXECUTIVE_SUMMARY"))
+        html += _vip_plain_english(xtag(full, "PLAIN_ENGLISH"))
+        html += _vip_market_drivers(xtag(full, "MACRO"), xtag(full, "HERD"), xtag(full, "CONTRARIAN"))
+        html += _vip_quick_flow(xtag(full, "QUICK_FLOW"))
+        
+        ind_data = [{"name": xtag(full, f"IND_{i}_NAME"), "pct": xtag(full, f"IND_{i}_PCT")} for i in range(1, 4) if xtag(full, f"IND_{i}_NAME")]
+        html += _vip_key_indicators(ind_data)
+        
+        sec_data = [{"name": xtag(full, f"SECTOR_{i}_NAME"), "sentiment": xtag(full, f"SECTOR_{i}_SENT"), "desc": xtag(full, f"SECTOR_{i}_DESC")} for i in range(1, 5) if xtag(full, f"SECTOR_{i}_NAME")]
+        html += _vip_sector_radar(sec_data)
+        
+        html += _vip_bull_bear(xtag(full, "BULL_CASE"), xtag(full, "BEAR_CASE"))
+        html += _vip_deep_analysis(xtag(full, "TECHNICAL_SIGNALS"), xtag(full, "MACRO_FLOWS"), xtag(full, "SMART_MONEY"))
+        html += _vip_titans_playbook(xtag(full, "TITANS_TITLE"), xtag(full, "TITANS_BODY"))
+        html += _vip_action_items(xtag(full, "ACTION_ITEMS"))
+    else:
+        html += _pro_header(xtag(full, "IMPACT_LEVEL") or "MEDIUM", xtag(full, "SECTOR_TAG") or cat)
+        if xtag(full, "EXECUTIVE_SUMMARY"):
+            html += f'<p style="{F}font-weight:600;">{xtag(full, "EXECUTIVE_SUMMARY")}</p>'
+        html += _pro_sentiment_badge(xtag(full, "SENTIMENT").upper() or "NEUTRAL")
+        html += _pro_key_takeaways(xtag(full, "KEY_TAKEAWAY"))
+        
+        if xtag(full, "LEAD"):
+            html += f'<p style="{F}">{xtag(full, "LEAD")}</p>\n'
+        if xtag(full, "BODY"):
+            html += xtag(full, "BODY") + "\n"
+
+    faq_schema, faq_visible = _build_faq_schema(full)
+    html += faq_visible
+    html += _build_author_bio(cat)
+    html += _build_social_share(title, slug)
+    html += _build_related_posts(cat)
+    html += _build_internal_links(cat)
+    html += _build_footer(tw, ps)
+    
+    html = sanitize(html)
+    return title, html, exc, kw, slug, tier, full, faq_schema
+
+# ═══════════════════════════════════════════════
+# ⬇️ 폰트 자동 다운로드 함수 (썸네일 깨짐 방지용)
+# ═══════════════════════════════════════════════
+def get_font(url, filename):
+    """GitHub Actions 환경에 폰트가 없을 경우 자동으로 다운로드합니다."""
+    if not os.path.exists(filename):
+        try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response, open(filename, 'wb') as out_file:
+                out_file.write(response.read())
+        except Exception as e:
+            print(f"   ⚠️ Font download error: {e}")
+    return filename
+
+# ═══════════════════════════════════════════════
+# THUMBNAIL GENERATOR (FONT FIX APPLIED)
+# ═══════════════════════════════════════════════
 def make_thumbnail(kw, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
     bg, tc, acc = CAT_COLORS.get(cat, CAT_COLORS["Economy"])
     img = Image.new("RGB", (w, h), bg)
     draw = ImageDraw.Draw(img)
+    
+    # 구글 폰트 자동 다운로드 적용 (까만 박스로 깨지는 현상 해결)
+    font_url_anton = "https://github.com/google/fonts/raw/main/ofl/anton/Anton-Regular.ttf"
+    font_url_bebas = "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf"
+    ft_path = get_font(font_url_anton, "fonts/Anton-Regular.ttf")
+    fs_path = get_font(font_url_bebas, "fonts/BebasNeue-Regular.ttf")
+    
     def lf(p, s):
         try:
             return ImageFont.truetype(p, s * SCALE)
         except:
             return ImageFont.load_default()
-    ft = lf("fonts/Anton-Regular.ttf", 80)
-    fs = lf("fonts/BebasNeue-Regular.ttf", 32)
-    fb = lf("fonts/BebasNeue-Regular.ttf", 28)
+        
+    ft = lf(ft_path, 80)
+    fs = lf(fs_path, 32)
+    fb = lf(fs_path, 28)
+    
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill=acc)
     draw.rectangle([(40 * SCALE, 36 * SCALE), (260 * SCALE, 86 * SCALE)], fill="#00000033")
     draw.text((52 * SCALE, 42 * SCALE), cat.upper(), font=fb, fill="#ffffff")
+    
     tl = "VIP" if tier == "vip" else "PRO"
     bw = 130 * SCALE
     tc2 = "#b8974d" if tier == "vip" else "#6366f1"
     draw.rectangle([(w - bw - 40 * SCALE, 36 * SCALE), (w - 40 * SCALE, 86 * SCALE)], fill=tc2)
     draw.text((w - bw - 20 * SCALE, 42 * SCALE), tl, font=fb, fill="#ffffff")
+    
     words = (kw or cat).upper().split()
     lines, line = [], []
     mw = w - 140 * SCALE
@@ -710,6 +820,7 @@ def make_thumbnail(kw, cat, tier):
             line = [word]
     if line:
         lines.append(" ".join(line))
+        
     y = 150 * SCALE
     for ln in lines[:3]:
         draw.text((60 * SCALE, y), ln, font=ft, fill=tc)
@@ -718,6 +829,7 @@ def make_thumbnail(kw, cat, tier):
             y += (bb[3] - bb[1]) + 8 * SCALE
         except:
             y += 95 * SCALE
+            
     draw.text((60 * SCALE, h - 62 * SCALE), "WARM INSIGHT", font=fs, fill="#1a252c")
     draw.text((w - 520 * SCALE, h - 62 * SCALE), "AI-Driven Global Market Analysis", font=fs, fill="#1a252c")
     img = img.resize((W, H), Image.LANCZOS)
@@ -753,7 +865,7 @@ def check_duplicate(kw):
     try:
         resp = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
-            params={"search": kw[:40], "status": "publish,draft", "per_page": 20}, # 중복 필터링 강화 (20개 비교)
+            params={"search": kw[:40], "status": "publish,draft", "per_page": 20}, # 중복 필터링 강화
             auth=(WP_USER, WP_APP_PASS), timeout=10)
         if resp.status_code == 200:
             for p in resp.json():
@@ -901,111 +1013,6 @@ News inputs:
 Tone: Insightful, empathetic, intuitive, and highly accessible to the general public. No generic filler text."""
 
 # ═══════════════════════════════════════════════
-# CONTENT ASSEMBLER
-# ═══════════════════════════════════════════════
-def _parse_market_dashboard(full):
-    dashboard = []
-    for i in range(1, 5):
-        name = xtag(full, f"MARKET_{i}_NAME")
-        direction = xtag(full, f"MARKET_{i}_DIR")
-        desc = xtag(full, f"MARKET_{i}_DESC")
-        if name:
-            dashboard.append({"name": name, "direction": direction or "SIDEWAYS", "desc": desc})
-    return dashboard
-
-def _parse_indicators(full):
-    inds = []
-    for i in range(1, 4):
-        name = xtag(full, f"IND_{i}_NAME")
-        pct = xtag(full, f"IND_{i}_PCT")
-        if name:
-            try:
-                p = int(pct)
-            except:
-                p = 50
-            inds.append({"name": name, "pct": max(0, min(100, p))})
-    return inds
-
-def _parse_sectors(full):
-    sectors = []
-    for i in range(1, 5):
-        name = xtag(full, f"SECTOR_{i}_NAME")
-        sent = xtag(full, f"SECTOR_{i}_SENT")
-        desc = xtag(full, f"SECTOR_{i}_DESC")
-        if name:
-            sectors.append({"name": name, "sentiment": sent or "NEUTRAL", "desc": desc})
-    return sectors
-
-def analyze(raw1, raw2, cat, tier):
-    full = raw1 + ("\n" + raw2 if raw2 else "")
-    tr = xtag(full, "TITLE")
-    exc = xtag(full, "EXCERPT") or "Expert market analysis."
-    kw = xtag(full, "SEO_KEYWORD")
-    tw = xtag(full, "TW")
-    ps = xtag(full, "PS")
-    title = ("[" + TIER_LABELS.get(tier, tier) + "] " + tr if tr else f"({tier.upper()}) {cat} Insight")
-    slug = make_slug(kw, tr or cat, cat)
-
-    html = ""
-
-    if tier == "vip":
-        # ── VIP Rich Format ──
-        impact = xtag(full, "IMPACT_LEVEL") or "MEDIUM"
-        sector_tag = xtag(full, "SECTOR_TAG") or cat
-        author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
-
-        html += _vip_header(author, impact, sector_tag, cat)
-        html += _vip_big_number(xtag(full, "BIG_NUMBER"), xtag(full, "BIG_NUMBER_DESC"))
-        html += _vip_market_dashboard(_parse_market_dashboard(full))
-        html += _vip_fear_greed(xtag(full, "FEAR_GREED"))
-        html += _vip_executive_summary(xtag(full, "EXECUTIVE_SUMMARY"))
-        html += _vip_plain_english(xtag(full, "PLAIN_ENGLISH"))
-        html += _vip_market_drivers(xtag(full, "MACRO"), xtag(full, "HERD"), xtag(full, "CONTRARIAN"))
-        html += _vip_quick_flow(xtag(full, "QUICK_FLOW"))
-        html += _vip_key_indicators(_parse_indicators(full))
-        html += _vip_sector_radar(_parse_sectors(full))
-        html += _vip_bull_bear(xtag(full, "BULL_CASE"), xtag(full, "BEAR_CASE"))
-        html += _vip_deep_analysis(
-            xtag(full, "TECHNICAL_SIGNALS"),
-            xtag(full, "MACRO_FLOWS"),
-            xtag(full, "SMART_MONEY"))
-        html += _vip_titans_playbook(xtag(full, "TITANS_TITLE"), xtag(full, "TITANS_BODY"))
-        html += _vip_action_items(xtag(full, "ACTION_ITEMS"))
-    else:
-        # ── Premium Format (v16 Upgraded) ──
-        impact = xtag(full, "IMPACT_LEVEL") or "MEDIUM"
-        sector_tag = xtag(full, "SECTOR_TAG") or cat
-        lead = xtag(full, "LEAD")
-        body = xtag(full, "BODY")
-        sent = xtag(full, "SENTIMENT").upper() or "NEUTRAL"
-        exec_sum = xtag(full, "EXECUTIVE_SUMMARY")
-        key_take = xtag(full, "KEY_TAKEAWAY")
-
-        html += _pro_header(impact, sector_tag)
-
-        if exec_sum:
-            html += f'<p style="{F}font-weight:600;">{exec_sum}</p>'
-
-        html += _pro_sentiment_badge(sent)
-        html += _pro_key_takeaways(key_take)
-
-        if lead:
-            html += f'<p style="{F}">{lead}</p>\n'
-        if body:
-            html += body + "\n"
-
-    # Common sections (both VIP and Premium)
-    faq_schema, faq_visible = _build_faq_schema(full)
-    html += faq_visible
-    html += _build_author_bio(cat)
-    html += _build_social_share(title, slug)
-    html += _build_related_posts(cat)
-    html += _build_internal_links(cat)
-    html += _build_footer(tw, ps)
-    html = sanitize(html)
-    return title, html, exc, kw, slug, tier, full, faq_schema
-
-# ═══════════════════════════════════════════════
 # WORDPRESS PUBLISHER
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
@@ -1042,12 +1049,18 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
         media_id, img_url = _upload_image(img_bytes, f"{slug[:40]}.jpg")
         if media_id:
             print(f"   🖼  Thumbnail uploaded: {img_url}")
+            
     seo_title = _clean_seo_title(title)
     full_content = _build_jsonld(title, exc, kw, cat, slug, img_url) + faq_schema + html
     cat_id = _get_category_id(cat)
 
-    post_data = {"title": title, "content": full_content, "excerpt": exc,
-                 "status": "publish", "slug": slug}
+    post_data = {
+        "title": title, 
+        "content": full_content, 
+        "excerpt": exc,
+        "status": "publish", 
+        "slug": slug
+    }
     if cat_id:
         post_data["categories"] = [cat_id]
     if media_id:
@@ -1090,19 +1103,14 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_sche
 # ═══════════════════════════════════════════════
 def get_current_task():
     """
-    무한 로테이션: GitHub Actions 지연에 대비하여 1년 기준 누적 블록으로 계산
-    이렇게 하면 정확히 Economy > Politics > Tech > Health > Energy 순서대로 무한히 돌아갑니다.
+    무한 로테이션: 1년 기준 누적 블록 계산 (정확히 Economy > Politics > Tech > Health > Energy 순환)
     """
     now = datetime.datetime.utcnow()
-    # 1년 중 며칠째인지 계산하여 하루 8번(3시간) 블록을 누적 합산
     total_blocks = (now.timetuple().tm_yday * 8) + (now.hour // 3)
-    
-    # 누적 블록을 5개 카테고리로 나누어 절대 순서가 꼬이지 않게 배정
     cat = CATEGORIES[total_blocks % len(CATEGORIES)]
     return cat
 
 def _run_single(cat, tier, news):
-    """하나의 카테고리+티어 조합으로 기사 생성 및 발행"""
     print(f"\n{'─'*44}")
     print(f"📌 {cat} | {tier.upper()}")
     print(f"{'─'*44}")
@@ -1135,13 +1143,14 @@ def _run_single(cat, tier, news):
 
     print("   🖌  Generating thumbnail …")
     img_bytes = make_thumbnail(kw or title[:40], cat, tier)
+    
     return publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema)
 
 def run_pipeline():
     cat = get_current_task()
     now = datetime.datetime.utcnow()
     print(f"\n{'═'*54}")
-    print(f"🚀 Warm Insight v17 | {cat} | VIP + Pro")
+    print(f"🚀 Warm Insight v18 | {cat} | VIP + Pro")
     print(f"   {now:%Y-%m-%d %H:%M} UTC")
     print(f"{'═'*54}")
 
@@ -1156,18 +1165,18 @@ def run_pipeline():
     news = fetch_news(cat)
     print(f"📰 News fetched ({len(news.splitlines())} items)")
 
-    # ── 1) VIP 발행 ──
+    # 1) VIP 발행
     ok_vip = _run_single(cat, "vip", news)
 
-    # VIP → Premium 간 간격 (WordPress 부하 방지)
+    # VIP → Premium 간격 대기 (워드프레스 서버 부하 방지)
     gap = random.randint(20, 40)
     print(f"\n⏳ Waiting {gap}s before Premium …")
     time.sleep(gap)
 
-    # ── 2) Premium 발행 ──
+    # 2) Premium 발행
     ok_pre = _run_single(cat, "premium", news)
 
-    # ── 결과 요약 ──
+    # 결과 요약
     print(f"\n{'═'*54}")
     print(f"📊 Results — {cat} ({now:%H:%M} UTC)")
     print(f"   VIP:     {'✅ OK' if ok_vip else '❌ FAIL'}")
