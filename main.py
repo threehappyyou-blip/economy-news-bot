@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v32 (Dynamic Pooling & Full-Spec PRO)
+# Warm Insight Auto Poster — v33 (Milk Road UI & WP Tag Sync)
 # ═══════════════════════════════════════════════════════════════
-import os, json, time, random, re, datetime, io
+import os, json, time, random, re, datetime, io, math
 import urllib.request
 import requests
 import feedparser
@@ -27,9 +27,8 @@ FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
 TIERS       = ["premium", "vip"]
-TIER_LABELS = {"premium": "PRO", "vip": "VIP"} 
+TIER_LABELS = {"premium": "Pro", "vip": "VIP"} 
 
-# 디자인 시스템 컬러
 F = "font-size:17px;line-height:1.85;color:#334155;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;"
 GOLD   = "#b8974d"
 AMBER  = "#f59e0b"
@@ -122,10 +121,9 @@ def sanitize(html):
     return re.sub(r"<iframe[^>]*>.*?</iframe>", "", html, flags=re.DOTALL)
 
 def _clean_seo_title(title):
-    for p in ["[PRO] ", "[VIP] ", "[PRO]", "[VIP]"]: title = title.replace(p, "")
+    for p in ["[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] "]: title = title.replace(p, "")
     return title.strip()
 
-# 🚨 지터 백오프가 적용된 무적의 API 호출 엔진
 def call_gemini(client, model, prompt, retries=5):
     for i in range(1, retries + 1):
         try:
@@ -152,13 +150,12 @@ def gem_fb(tier, prompt):
     return ""
 
 # ═══════════════════════════════════════════════
-# 📊 VISUAL DATA BUILDERS (사람이 보기 편한 표/그래프)
+# 📊 VISUAL DATA BUILDERS (HTML Tables/Bars)
 # ═══════════════════════════════════════════════
 def _build_data_table(raw_data, title="Market Data Overview"):
     if not raw_data: return ""
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
     if not lines: return ""
-    
     html = f"""
     <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:12px; padding:20px; margin:30px 0; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; font-size:18px; color:{DARK}; border-bottom:2px solid {GOLD}; padding-bottom:10px; display:inline-block;">{title}</h3>
@@ -174,7 +171,7 @@ def _build_data_table(raw_data, title="Market Data Overview"):
             </thead>
             <tbody>
     """
-    for line in lines[:5]: # 최대 5개
+    for line in lines[:5]:
         parts = [p.strip() for p in line.split('|')]
         if len(parts) >= 4:
             asset, value, trend, insight = parts[:4]
@@ -182,7 +179,6 @@ def _build_data_table(raw_data, title="Market Data Overview"):
             if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢" 
             elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴" 
             else: t_color, t_icon = "#f59e0b", "🟡"
-            
             html += f"""
                 <tr style="border-bottom:1px solid {BORDER};">
                     <td style="padding:12px; font-weight:600; color:{DARK};">{asset}</td>
@@ -198,13 +194,11 @@ def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
     if not raw_data: return ""
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
     if not lines: return ""
-    
     html = f"""
     <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:12px; padding:24px; margin:30px 0;">
         <h3 style="margin-top:0; font-size:18px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">{title}</h3>
     """
     colors = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444"]
-    
     for i, line in enumerate(lines[:4]):
         parts = [p.strip() for p in line.split('|')]
         if len(parts) >= 2:
@@ -213,7 +207,6 @@ def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
             except: pct = 50
             pct = max(0, min(100, pct))
             c = colors[i % len(colors)]
-            
             html += f"""
             <div style="margin-top:15px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
@@ -245,8 +238,6 @@ def _build_quick_hits(raw_data):
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, title, author, tf, slug, exc, kw):
     html = f"<div style=\"{F}\">\n"
-    
-    # 1. Header (공통)
     badge = "VIP EXCLUSIVE" if tier == "vip" else "PRO EXCLUSIVE"
     badge_bg = GOLD if tier == "vip" else "#3b82f6"
     
@@ -259,12 +250,9 @@ def build_html(tier, cat, raw, title, author, tf, slug, exc, kw):
     </div>
     """
     
-    # 2. Body (등급별 차별화)
     if tier == "vip":
-        # VIP: 극한의 분석과 데이터 시각화 (HEATMAP 포함)
         html += f'<h2 style="font-size:26px; color:{DARK}; border-bottom:2px solid {GOLD}; padding-bottom:8px; display:inline-block;">Executive Summary</h2>'
         html += f'<p><strong>{xtag(raw, "EXECUTIVE_SUMMARY")}</strong></p>'
-        
         html += _build_data_table(xtag(raw, "DATA_TABLE"), "Global Macro Dashboard")
         html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
         
@@ -274,48 +262,36 @@ def build_html(tier, cat, raw, title, author, tf, slug, exc, kw):
             <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
         </div>
         """
-        
         html += f'<h2 style="font-size:26px; color:{DARK}; border-bottom:2px solid {GOLD}; padding-bottom:8px; display:inline-block; margin-top:20px;">Market Drivers & Analysis</h2>'
         html += f'<h3 style="font-size:22px; color:{DARK}; margin-top:15px;">{xtag(raw, "MARKET_HEADLINE")}</h3>'
         html += f'<p>{xtag(raw, "MACRO")}</p><p>{xtag(raw, "HERD")}</p><p>{xtag(raw, "CONTRARIAN")}</p>'
-        
         html += f"""
         <div style="background:#fffbeb; border:1px solid #fde68a; border-left:4px solid {AMBER}; padding:20px; margin:35px 0; border-radius:4px 10px 10px 4px;">
             <strong style="color:#92400e; font-size:18px;">🔗 Quick Flow:</strong><br>
             <span style="font-weight:600; color:{DARK}; display:inline-block; margin-top:8px;">{xtag(raw, "QUICK_FLOW")}</span>
         </div>
         """
-        
     else: 
-        # 🚨 PRO: 대표님이 요청하신 완벽한 풀-스펙 복원
         html += f'<h2 style="font-size:26px; color:{DARK}; border-bottom:2px solid #3b82f6; padding-bottom:8px; display:inline-block;">Executive Summary</h2>'
         html += f'<p><strong>{xtag(raw, "EXECUTIVE_SUMMARY")}</strong></p>'
-        
-        # PRO에도 가독성 높은 표(Table) 삽입
         html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Movers Dashboard")
         
-        # Plain English (Viral Social Insights)
         html += f"""
         <div style="background:#f4f4f5; border-left:5px solid #8b5cf6; padding:24px; border-radius:8px; margin:35px 0;">
             <h3 style="margin-top:0; font-size:20px; color:{DARK}; margin-bottom:12px;">📱 Viral Social Insights</h3>
             <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
         </div>
         """
-        
-        # Market Drivers
         html += f'<h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin:40px 0 15px;">Market Drivers & Insights</h2>'
         html += f'<h3 style="font-size:22px; color:{DARK}; margin-bottom:15px;">{xtag(raw, "MARKET_HEADLINE")}</h3>'
         html += f'<p>{xtag(raw, "DEPTH")}</p>'
         
-        # Quick Flow
         html += f"""
         <div style="background:#fffbeb; border:1px solid #fde68a; padding:20px; border-radius:8px; margin:35px 0;">
             <strong style="font-size:18px; color:#d97706; text-transform:uppercase;">💡 Quick Flow:</strong>
             <p style="font-size:18px; font-weight:bold; color:{DARK}; margin:10px 0 0;">{xtag(raw, "QUICK_FLOW")}</p>
         </div>
         """
-        
-        # Bull / Bear Case 나란히 배치
         html += f"""
         <div style="display:flex; flex-wrap:wrap; gap:20px; margin:35px 0;">
             <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:10px; padding:24px;">
@@ -328,11 +304,7 @@ def build_html(tier, cat, raw, title, author, tf, slug, exc, kw):
             </div>
         </div>
         """
-        
-        # Quick Hits
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
-        
-        # Pro-Only Insight & DO/DONT
         html += f"""
         <div style="background:#ffffff; border:2px solid #3b82f6; padding:28px; border-radius:10px; margin:35px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
             <h3 style="margin-top:0; color:#1e40af; font-size:22px;">💎 Pro-Only Insight</h3>
@@ -346,10 +318,8 @@ def build_html(tier, cat, raw, title, author, tf, slug, exc, kw):
         </div>
         """
     
-    # 3. Footer & P.S. (공통)
-    tw = xtag(raw, "KEY_TAKEAWAY") 
+    tw = xtag(raw, "KEY_TAKEAWAY") if tier == "premium" else xtag(raw, "BULL_CASE")
     ps = xtag(raw, "PS")
-    
     html += f"""
     <hr style="border:0; height:1px; background:{BORDER}; margin:45px 0;">
     <h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin-bottom:15px;">Today's Warm Insight</h2>
@@ -367,7 +337,7 @@ def build_html(tier, cat, raw, title, author, tf, slug, exc, kw):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════
-# 🎨 MODERN THUMBNAIL (Milk Road Style)
+# 🎨 MILK ROAD STYLE FLAT THUMBNAIL (100% Vector-like)
 # ═══════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename):
@@ -379,16 +349,66 @@ def get_font(url, filename):
         except: pass
     return filename
 
+def _draw_flat_icon(draw, icon_type, cx, cy, S):
+    """밀크로드 스타일의 강렬하고 거대한 플랫 벡터 아이콘을 그립니다."""
+    if icon_type == "Economy":
+        # 황금 동전 (Coin)
+        r = 130 * S
+        draw.ellipse([cx-r+15*S, cy-r+15*S, cx+r+15*S, cy+r+15*S], fill="#00000040") # Drop shadow
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="#f59e0b") # Base
+        draw.ellipse([cx-r*0.75, cy-r*0.75, cx+r*0.75, cy+r*0.75], fill="#fbbf24") # Inner
+        draw.rectangle([cx-15*S, cy-r*0.5, cx+15*S, cy+r*0.5], fill="#b45309") # $ pillar
+        draw.chord([cx-r*0.4, cy-r*0.4, cx+r*0.4, cy], start=90, end=270, fill="#b45309")
+        draw.chord([cx-r*0.4, cy, cx+r*0.4, cy+r*0.4], start=270, end=90, fill="#b45309")
+    elif icon_type == "Politics":
+        # 지구본 (Globe)
+        r = 140 * S
+        draw.ellipse([cx-r+15*S, cy-r+15*S, cx+r+15*S, cy+r+15*S], fill="#00000040")
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="#1e40af")
+        draw.ellipse([cx-r*0.4, cy-r, cx+r*0.4, cy+r], outline="#60a5fa", width=12*S)
+        draw.ellipse([cx-r*0.8, cy-r, cx+r*0.8, cy+r], outline="#60a5fa", width=12*S)
+        draw.line([(cx-r, cy), (cx+r, cy)], fill="#60a5fa", width=12*S)
+        draw.line([(cx-r*0.85, cy-r*0.5), (cx+r*0.85, cy-r*0.5)], fill="#60a5fa", width=12*S)
+        draw.line([(cx-r*0.85, cy+r*0.5), (cx+r*0.85, cy+r*0.5)], fill="#60a5fa", width=12*S)
+    elif icon_type == "Tech":
+        # 마이크로칩 (Chip)
+        r = 110 * S
+        draw.rounded_rectangle([cx-r+15*S, cy-r+15*S, cx+r+15*S, cy+r+15*S], radius=20*S, fill="#00000040")
+        draw.rounded_rectangle([cx-r, cy-r, cx+r, cy+r], radius=20*S, fill="#2e1065")
+        draw.rounded_rectangle([cx-r*0.6, cy-r*0.6, cx+r*0.6, cy+r*0.6], radius=10*S, fill="#4c1d95")
+        for p in [-0.7, -0.3, 0.3, 0.7]:
+            draw.line([(cx+p*r, cy-r*1.3), (cx+p*r, cy-r)], fill="#a78bfa", width=15*S)
+            draw.line([(cx+p*r, cy+r), (cx+p*r, cy+r*1.3)], fill="#a78bfa", width=15*S)
+            draw.line([(cx-r*1.3, cy+p*r), (cx-r, cy+p*r)], fill="#a78bfa", width=15*S)
+            draw.line([(cx+r, cy+p*r), (cx+r*1.3, cy+p*r)], fill="#a78bfa", width=15*S)
+    elif icon_type == "Health":
+        # 방패 속의 십자가 (Shield & Cross)
+        r = 130 * S
+        pts = [(cx-r, cy-r), (cx+r, cy-r), (cx+r, cy+r*0.2), (cx, cy+r*1.2), (cx-r, cy+r*0.2)]
+        shadow = [(x+15*S, y+15*S) for x, y in pts]
+        draw.polygon(shadow, fill="#00000040")
+        draw.polygon(pts, fill="#064e3b")
+        cr = 50 * S
+        draw.rectangle([cx-cr*0.3, cy-cr, cx+cr*0.3, cy+cr*0.8], fill="#34d399")
+        draw.rectangle([cx-cr, cy-cr*0.3, cx+cr, cy+cr*0.1], fill="#34d399")
+    else: # Energy
+        # 벼락 (Lightning Bolt)
+        r = 130 * S
+        draw.ellipse([cx-r+15*S, cy-r+15*S, cx+r+15*S, cy+r+15*S], fill="#00000040")
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill="#1e293b")
+        pts = [(cx+10*S, cy-90*S), (cx-50*S, cy+10*S), (cx, cy+10*S), (cx-20*S, cy+90*S), (cx+60*S, cy-20*S), (cx+10*S, cy-20*S)]
+        draw.polygon(pts, fill="#fbbf24")
+
 def make_thumbnail(title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
     
     STYLES = {
-        "Economy":  {"bg": "#1e3a8a", "acc": "#3b82f6", "text": "#bfdbfe"}, 
-        "Politics": {"bg": "#7f1d1d", "acc": "#ef4444", "text": "#fecaca"}, 
-        "Tech":     {"bg": "#4c1d95", "acc": "#8b5cf6", "text": "#e9d5ff"}, 
-        "Health":   {"bg": "#064e3b", "acc": "#10b981", "text": "#a7f3d0"}, 
-        "Energy":   {"bg": "#78350f", "acc": "#f59e0b", "text": "#fde68a"}, 
+        "Economy":  {"bg": "#0f172a", "acc": "#2563eb"}, # Dark Blue / Bright Blue
+        "Politics": {"bg": "#0f172a", "acc": "#dc2626"}, # Dark Blue / Red
+        "Tech":     {"bg": "#0f172a", "acc": "#7c3aed"}, # Dark Blue / Purple
+        "Health":   {"bg": "#0f172a", "acc": "#059669"}, # Dark Blue / Green
+        "Energy":   {"bg": "#0f172a", "acc": "#d97706"}, # Dark Blue / Amber
     }
     style = STYLES.get(cat, STYLES["Economy"])
     
@@ -408,44 +428,35 @@ def make_thumbnail(title_text, cat, tier):
     font_badge = lf(fr_path, 28)
     font_logo  = lf(fs_path, 40)
 
-    # 우측 미니멀 차트 배경
-    cx, cy = w * 0.75, h * 0.5
-    chart_w, chart_h = w * 0.4, h * 0.5
-    points = []
-    import math
-    for i in range(10):
-        px = cx - chart_w/2 + (chart_w * i / 9)
-        py = cy + (math.sin(i) * chart_h/3) + (i * 20 * SCALE if tier=="premium" else -i * 20 * SCALE)
-        points.append((px, py))
-    
-    draw.line(points, fill=style["acc"], width=15*SCALE, joint="curve")
-    for px, py in points:
-        draw.ellipse([px-10*SCALE, py-10*SCALE, px+10*SCALE, py+10*SCALE], fill="#ffffff", outline=style["acc"], width=5*SCALE)
+    # 1. 밀크로드 스타일 우측 사선 배경 (Slanted Split)
+    pts = [(w*0.50, 0), (w, 0), (w, h), (w*0.40, h)]
+    draw.polygon(pts, fill=style["acc"])
+    # 입체감용 그림자 사선
+    pts_shadow = [(w*0.47, 0), (w*0.50, 0), (w*0.40, h), (w*0.37, h)]
+    draw.polygon(pts_shadow, fill="#00000050")
 
-    # 좌측 텍스트 영역 가독성 그라데이션
-    for x in range(int(w * 0.6)):
-        alpha = int(255 * (1 - (x / (w * 0.6))))
-        draw.line([(x, 0), (x, h)], fill=(0, 0, 0, int(alpha*0.7))) 
+    # 2. 우측 중앙 거대 아이콘 (Flat Vector Art)
+    _draw_flat_icon(draw, cat, w*0.75, h*0.5, SCALE)
 
-    # 뱃지 (Category / Date)
-    pad = 60 * SCALE
+    # 3. 뱃지 (Category / Date)
+    pad = 70 * SCALE
     date_str = datetime.datetime.utcnow().strftime("%b %d, %Y").upper()
     badge_text = f"  {cat.upper()}  |  {date_str}  "
     draw.rounded_rectangle([pad, pad, pad + draw.textlength(badge_text, font=font_badge) + 40*SCALE, pad + 60*SCALE], radius=10*SCALE, fill="#000000")
-    draw.text((pad + 20*SCALE, pad + 12*SCALE), badge_text, font=font_badge, fill=style["text"])
+    draw.text((pad + 20*SCALE, pad + 12*SCALE), badge_text, font=font_badge, fill="#ffffff")
     
-    # VIP / PRO 뱃지
+    # 4. VIP / PRO 뱃지
     tier_text = " VIP REPORT " if tier == "vip" else " PRO REPORT "
     tier_bg = GOLD if tier == "vip" else "#3b82f6"
     tier_w = draw.textlength(tier_text, font=font_badge)
     draw.rounded_rectangle([w - pad - tier_w - 40*SCALE, pad, w - pad, pad + 60*SCALE], radius=10*SCALE, fill=tier_bg)
     draw.text((w - pad - tier_w - 20*SCALE, pad + 12*SCALE), tier_text, font=font_badge, fill="#ffffff")
 
-    # 메인 타이틀 자동 줄바꿈
+    # 5. 메인 타이틀 자동 줄바꿈
     clean_title = _clean_seo_title(title_text).replace('"', '').replace("'", "")
     words = clean_title.upper().split()
     lines, current_line = [], []
-    max_w = w * 0.6 
+    max_w = w * 0.55 # 좌측 55% 영역만 사용
     
     for word in words:
         test_line = " ".join(current_line + [word])
@@ -463,8 +474,8 @@ def make_thumbnail(title_text, cat, tier):
         draw.text((pad, y_pos), line, font=font_title, fill="#ffffff")
         y_pos += 100 * SCALE
 
-    # 하단 로고
-    draw.text((pad, h - pad - 40*SCALE), "WARM INSIGHT", font=font_logo, fill=style["text"])
+    # 6. 하단 로고
+    draw.text((pad, h - pad - 40*SCALE), "WARM INSIGHT", font=font_logo, fill="#94a3b8")
 
     img = img.resize((W, H), Image.LANCZOS)
     buf = io.BytesIO()
@@ -472,13 +483,13 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# PROMPTS 
+# PROMPTS
 # ═══════════════════════════════════════════════
 def _make_vip_prompt(news_text, cat):
     return f"""You are a veteran financial analyst. Write a VIP deep-dive on {cat}.
 Respond ONLY with XML tags.
 
-<TITLE>Headline, max 90 chars.</TITLE>
+<TITLE>Headline, max 90 chars. DO NOT mention specific stock tickers in the title.</TITLE>
 <SEO_KEYWORD>focus keyphrase</SEO_KEYWORD>
 <EXECUTIVE_SUMMARY>3 sentences core thesis.</EXECUTIVE_SUMMARY>
 
@@ -505,7 +516,6 @@ Format exactly: Sector Name | Number
 News: {news_text[:3000]}"""
 
 def _make_premium_prompt(news_text, cat):
-    # 🚨 대표님이 원하시던 '풀-스펙 PRO 프롬프트' 완벽 복원
     return f"""You are Warm Insight's senior analyst. Write a PRO newsletter on {cat}.
 Respond ONLY with XML tags. Fill every tag richly.
 
@@ -541,20 +551,17 @@ News: {news_text[:3000]}"""
 # PUBLISHER & DYNAMIC PIPELINE
 # ═══════════════════════════════════════════════
 def fetch_news_pool(cat, max_items=20):
-    """🚨 RSS에서 가능한 많은 뉴스를 모아 리스트로 반환"""
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
     for url in feeds:
         try:
             d = feedparser.parse(url)
-            for e in d.entries[:8]: # 많이 긁어옵니다
+            for e in d.entries[:8]: 
                 title = getattr(e, 'title', '').strip()
                 summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
                 if title: items.add(f"• {title}: {summary}")
         except: pass
-    
-    items_list = list(items)
-    random.shuffle(items_list)
+    items_list = sorted(list(items)) 
     return items_list[:max_items]
 
 def _upload_image(img_bytes, filename):
@@ -564,18 +571,40 @@ def _upload_image(img_bytes, filename):
     except: pass
     return None
 
+# 🚨 해결 1: 워드프레스 태그(Tag)를 강제로 생성 및 할당하여 뱃지가 "Free"로 뜨는 문제 100% 원천 차단
+def get_or_create_wp_tag(tag_name):
+    slug = tag_name.lower()
+    try:
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r2.status_code in (200, 201): return r2.json()["id"]
+    except: pass
+    return None
+
+# 🚨 해결 2: 슬러그(Slug) 일치 검색을 통해 유령 카테고리 문제 완벽 해결
+def get_or_create_wp_category(cat_name):
+    slug = cat_name.lower()
+    try:
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r2.status_code in (200, 201): return r2.json()["id"]
+    except: pass
+    return None
+
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
+    cat_id = get_or_create_wp_category(cat) # 🚨 정확한 카테고리 ID 매칭
     
-    cat_id = None
-    try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", params={"search": cat}, auth=(WP_USER, WP_APP_PASS))
-        if r.status_code == 200: cat_id = r.json()[0]["id"]
-    except: pass
+    # 🚨 VIP / Pro 태그 매칭 (워드프레스 뱃지 연동용)
+    tag_name = "VIP" if tier == "vip" else "Pro"
+    tag_id = get_or_create_wp_tag(tag_name)
 
     post_data = {"title": title, "content": html, "status": "publish", "slug": slug}
     if media_id: post_data["featured_media"] = media_id
     if cat_id: post_data["categories"] = [cat_id]
+    if tag_id: post_data["tags"] = [tag_id] # 🚨 태그 주입!
 
     try:
         r = requests.post(f"{WP_URL}/wp-json/wp/v2/posts", json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30)
@@ -590,11 +619,10 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
 
 def run_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v32 Pipeline (Dynamic Pooling & Full PRO) | Category: {cat}")
+    print(f"🚀 Starting v33 Pipeline (Milk Road UI & WP Tag Sync) | Category: {cat}")
     
     if not check_env_vars() or not verify_wp_credentials(): return
     
-    # 🚨 1. 뉴스 풀링 (가져올 수 있는 만큼 긁어옴)
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
     print(f"   📥 Fetched {total_news} total news items from RSS.")
@@ -603,13 +631,11 @@ def run_pipeline():
         print("   🛑 Not enough news today. Aborting to maintain quality.")
         return
         
-    # 🚨 2. 동적 분배 (정확히 절반으로 쪼개서 VIP와 PRO에 공평하게 할당)
     mid = total_news // 2
     news_map = {
         "vip": "\n".join(all_news[:mid]),
         "premium": "\n".join(all_news[mid:])
     }
-    print(f"   ✂️ Split news: {mid} for VIP, {total_news - mid} for PRO. 100% Independent Topics.")
     
     for tier in TIERS:
         print(f"\n--- Processing {tier.upper()} ---")
@@ -621,7 +647,7 @@ def run_pipeline():
         if raw:
             title = xtag(raw, "TITLE")
             kw = xtag(raw, "SEO_KEYWORD")
-            exc = xtag(raw, "EXECUTIVE_SUMMARY")
+            exc = xtag(raw, "EXECUTIVE_SUMMARY") if tier == "vip" else xtag(raw, "EXCERPT")
             slug = make_slug(kw, title, cat)
             
             author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
