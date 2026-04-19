@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v39 (Warmy Robot Restored + v38 Full Spec)
-# v38 대비 변경점 (최소 변경 원칙):
-#   1) make_thumbnail() → Warmy 로봇 캐릭터 + 밝은 배경 (4/12 이전 스타일)
-#   2) publish() → 타이틀에 [👑 VIP] / [💎 Pro] 접두사 복원
-#   3) _clean_seo_title() → 새 접두사 인식 추가
-#   ※ 나머지 build_html, 프롬프트, 데이터빌더 등은 v38 원본 그대로 유지
+# Warm Insight Auto Poster — v40.1 (Energy Author Update)
+# v40 대비 변경점:
+#   1) Energy 카테고리 담당자 'Alexander Vance'로 독립 배정
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -58,12 +55,13 @@ CAT_RELATED = {
     "Health":   ["Economy", "Politics"],
     "Energy":   ["Economy", "Politics"],
 }
+# 🚨 Energy 카테고리 담당자 독립 배정 적용
 VIP_AUTHORS = {
     "Economy":  "Oliver Grant & The Warm Insight Panel",
     "Politics": "Elena Vasquez & The Warm Insight Panel",
     "Tech":     "Marcus Chen & The Warm Insight Panel",
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
-    "Energy":   "Oliver Grant & The Warm Insight Panel",
+    "Energy":   "Alexander Vance & The Warm Insight Panel",
 }
 RSS_FEEDS = {
     "Economy": [
@@ -102,7 +100,7 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE (v38 원본)
+# 🛡️ SYSTEM UTILS & API ENGINE
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -165,13 +163,12 @@ def make_slug(kw, title, cat):
     return f"{slug}-{datetime.datetime.utcnow().strftime('%m%d%H%M')}"
 
 def _clean_seo_title(title):
-    # v39: 새 접두사 패턴도 인식
     for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] "]:
         title = title.replace(p, "")
     return title.strip()
 
 # ═══════════════════════════════════════════════
-# 📰 NEWS POOLING (v38 원본)
+# 📰 NEWS POOLING
 # ═══════════════════════════════════════════════
 def fetch_news_pool(cat, max_items=30):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
@@ -189,7 +186,7 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🎨 TWO-PART PROMPTS (v38 원본 — 1200줄 퀄리티 보장)
+# 🎨 TWO-PART PROMPTS (1200줄 퀄리티 보장)
 # ═══════════════════════════════════════════════
 VIP_P1 = """You are Warm Insight's senior analyst. Write PART 1 of a VIP deep-dive on {cat}.
 Audience: Sophisticated investors paying premium.
@@ -277,7 +274,7 @@ News Context:
 {news}"""
 
 # ═══════════════════════════════════════════════
-# 📊 VISUAL DATA BUILDERS (v38 원본 — 펼친 HTML 구조 유지)
+# 📊 VISUAL DATA BUILDERS
 # ═══════════════════════════════════════════════
 def _build_data_table(raw_data, title="Market Data Overview"):
     if not raw_data: return ""
@@ -373,7 +370,7 @@ def _build_pie_chart(s, b, c, accent):
     return pie
 
 # ═══════════════════════════════════════════════
-# 📎 ENGAGEMENT & FOOTER BUILDERS (v39 추가 — 사진4 퀄리티 복원)
+# 📎 ENGAGEMENT & FOOTER BUILDERS
 # ═══════════════════════════════════════════════
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
@@ -381,7 +378,6 @@ SOCIAL_LINKS = {
 }
 
 def _build_upgrade_cta():
-    """PRO 글 하단 VIP 업그레이드 버튼"""
     return f"""
     <div style="text-align:center; margin:45px 0;">
         <a href="{SITE_URL}/warm-insight-vip-membership/" style="display:inline-block; background:{GOLD}; color:#fff; padding:16px 40px; border-radius:10px; font-size:18px; font-weight:bold; text-decoration:none; letter-spacing:0.5px;">
@@ -391,10 +387,7 @@ def _build_upgrade_cta():
     """
 
 def _build_social_share(title, slug):
-    """공유 섹션 (Found this useful?)"""
     url = f"{SITE_URL}/{slug}/"
-    et = title.replace(" ", "%20").replace("&", "%26")[:100]
-    eu = url.replace(":", "%3A").replace("/", "%2F")
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
@@ -410,7 +403,6 @@ def _build_social_share(title, slug):
     """
 
 def _build_branded_footer():
-    """Warm Insight 브랜드 다크 푸터"""
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
@@ -435,7 +427,6 @@ def _build_branded_footer():
     """
 
 def _build_internal_links(cat):
-    """Explore More from Warm Insight 내부 링크"""
     pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
     related = CAT_RELATED.get(cat, ["Economy", "Tech"])
     html = f"""
@@ -451,7 +442,6 @@ def _build_internal_links(cat):
     return html
 
 def _build_author_bio(cat):
-    """저자 바이오 섹션 (아바타 + 이름 + 소개)"""
     author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
     first_name = author.split("&")[0].strip().split()[-1]
     return f"""
@@ -470,7 +460,7 @@ def _build_author_bio(cat):
     """
 
 # ═══════════════════════════════════════════════
-# 🎨 HTML BUILDERS (v38 원본 — 펼친 구조 유지, 압축 금지)
+# 🎨 HTML BUILDERS
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
@@ -621,11 +611,9 @@ def build_html(tier, cat, raw, author, tf, title):
         </div>
         """
     
-    # ── PRO 전용: VIP 업그레이드 CTA ──
     if tier == "premium":
         html += _build_upgrade_cta()
 
-    # ── 공통 Footer (v39: 사진4 퀄리티 복원 — 5개 섹션 추가) ──
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), xtag(raw, "TITLE"), cat)
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
@@ -640,7 +628,6 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
 
-    # ── v39 추가: 사진4에 있었던 engagement 섹션들 ──
     html += _build_social_share(title, slug)
     html += _build_branded_footer()
     html += _build_internal_links(cat)
@@ -655,7 +642,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 v39 변경: Warmy 로봇 썸네일 복원 (4/12 이전 작동 버전)
+# 🤖 Warmy 로봇 썸네일 엔진 (절대 변경 금지)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename):
@@ -668,14 +655,9 @@ def get_font(url, filename):
     return filename
 
 def make_thumbnail(title_text, cat, tier):
-    """
-    v39: 4월 12일 이전 작동 확인된 Warmy 로봇 + 밝은 배경 스타일 복원.
-    v38의 다크 배경 + Apple 이모지 방식은 폐기.
-    """
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
 
-    # 카테고리별 밝은 배경 + 악센트 색상
     CAT_STYLES = {
         "Economy":  {"bg": "#0ea5e9", "acc": "#fde047"},
         "Politics": {"bg": "#dc2626", "acc": "#fde047"},
@@ -688,7 +670,6 @@ def make_thumbnail(title_text, cat, tier):
     img = Image.new("RGBA", (w, h), style["bg"])
     draw = ImageDraw.Draw(img)
 
-    # 폰트 다운로드
     ft_path = get_font(
         "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf",
         "fonts/BebasNeue-Regular.ttf"
@@ -698,16 +679,14 @@ def make_thumbnail(title_text, cat, tier):
         try: return ImageFont.truetype(p, s * SCALE)
         except: return ImageFont.load_default()
 
-    ft = lf(ft_path, 85)   # 타이틀
-    fs = lf(ft_path, 34)   # 푸터
-    fb = lf(ft_path, 30)   # 뱃지
+    ft = lf(ft_path, 85)
+    fs = lf(ft_path, 34)
+    fb = lf(ft_path, 30)
 
-    # ── 1. 배경 차트 라인 (VIP: 빨강 하락선 / PRO: 초록 상승선) ──
     if tier == "vip":
         ex, ey = w * 0.75, h * 0.55
         draw.line([(w * 0.4, h * 0.35), (ex, ey)], fill="#ef4444", width=8 * SCALE)
         draw.polygon([(ex, ey), (ex - 25 * SCALE, ey - 5 * SCALE), (ex - 5 * SCALE, ey - 25 * SCALE)], fill="#ef4444")
-        # 경고 삼각형
         tx, ty = w * 0.45, h * 0.25
         draw.polygon([(tx, ty - 30 * SCALE), (tx - 30 * SCALE, ty + 20 * SCALE), (tx + 30 * SCALE, ty + 20 * SCALE)], fill="#fde047")
         draw.line([(tx, ty - 10 * SCALE), (tx, ty + 5 * SCALE)], fill="#1e293b", width=6 * SCALE)
@@ -716,7 +695,6 @@ def make_thumbnail(title_text, cat, tier):
         ex, ey = w * 0.8, h * 0.35
         draw.line([(w * 0.4, h * 0.45), (w * 0.6, h * 0.4), (ex, ey)], fill="#4ade80", width=6 * SCALE)
         draw.polygon([(ex, ey), (ex - 25 * SCALE, ey + 5 * SCALE), (ex - 5 * SCALE, ey + 25 * SCALE)], fill="#4ade80")
-        # 지구본
         gx, gy = w * 0.65, h * 0.2
         gr = 35 * SCALE
         draw.ellipse([(gx - gr, gy - gr), (gx + gr, gy + gr)], outline="#ffffff60", width=4 * SCALE)
@@ -724,56 +702,42 @@ def make_thumbnail(title_text, cat, tier):
         draw.line([(gx - gr, gy), (gx + gr, gy)], fill="#ffffff60", width=4 * SCALE)
         draw.line([(gx, gy - gr), (gx, gy + gr)], fill="#ffffff60", width=4 * SCALE)
 
-    # ── 2. 🤖 Warmy 로봇 캐릭터 ──
     cx = w * 0.85
     cy = h * 0.7
     S = SCALE
 
-    # 다리
     draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
     draw.ellipse([cx + 15 * S, cy + 60 * S, cx + 45 * S, cy + 90 * S], fill="#047857")
-    # 팔
     draw.rounded_rectangle([cx - 85 * S, cy - 10 * S, cx - 50 * S, cy + 15 * S], radius=12 * S, fill="#10b981")
     draw.rounded_rectangle([cx + 50 * S, cy - 30 * S, cx + 85 * S, cy - 5 * S], radius=12 * S, fill="#10b981")
-    # 몸통
     draw.rounded_rectangle([cx - 50 * S, cy - 70 * S, cx + 50 * S, cy + 70 * S], radius=25 * S, fill="#10b981")
-    # 눈 (흰자 + 동공)
     draw.ellipse([cx - 25 * S, cy - 30 * S, cx - 5 * S, cy - 10 * S], fill="#ffffff")
     draw.ellipse([cx + 5 * S, cy - 30 * S, cx + 25 * S, cy - 10 * S], fill="#ffffff")
     draw.ellipse([cx - 18 * S, cy - 22 * S, cx - 10 * S, cy - 14 * S], fill="#1e293b")
     draw.ellipse([cx + 12 * S, cy - 22 * S, cx + 20 * S, cy - 14 * S], fill="#1e293b")
-    # 볼터치
     draw.ellipse([cx - 40 * S, cy + 5 * S, cx - 25 * S, cy + 20 * S], fill="#f472b6")
     draw.ellipse([cx + 25 * S, cy + 5 * S, cx + 40 * S, cy + 20 * S], fill="#f472b6")
-    # 입
     draw.rounded_rectangle([cx - 25 * S, cy + 30 * S, cx + 25 * S, cy + 50 * S], radius=8 * S, fill="#ffffff")
 
-    # ── 3. 카테고리별 악세사리 ──
     if cat == "Economy":
-        # 빨간 넥타이
         draw.polygon([
             (cx - 5 * S, cy + 55 * S), (cx + 5 * S, cy + 55 * S),
             (cx + 8 * S, cy + 80 * S), (cx, cy + 90 * S), (cx - 8 * S, cy + 80 * S)
         ], fill="#ef4444")
     elif cat == "Politics":
-        # 뿔테 안경
         draw.rectangle([cx - 35 * S, cy - 35 * S, cx + 35 * S, cy - 5 * S], outline="#1e293b", width=4 * S)
         draw.line([(cx - 5 * S, cy - 20 * S), (cx + 5 * S, cy - 20 * S)], fill="#1e293b", width=4 * S)
     elif cat == "Tech":
-        # 파란 안테나
         draw.line([(cx, cy - 70 * S), (cx, cy - 110 * S)], fill="#94a3b8", width=6 * S)
         draw.ellipse([(cx - 12 * S, cy - 125 * S), (cx + 12 * S, cy - 100 * S)], fill="#60a5fa")
     elif cat == "Health":
-        # 간호사/의사 모자
         draw.rounded_rectangle([cx - 35 * S, cy - 95 * S, cx + 35 * S, cy - 65 * S], radius=5 * S, fill="#ffffff")
         draw.rectangle([cx - 5 * S, cy - 90 * S, cx + 5 * S, cy - 70 * S], fill="#ef4444")
         draw.rectangle([cx - 15 * S, cy - 85 * S, cx + 15 * S, cy - 75 * S], fill="#ef4444")
     elif cat == "Energy":
-        # 노란 안전모
         draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
         draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
 
-    # ── 4. VIP 전용 왕관 ──
     if tier == "vip":
         cx_c = cx + 25 * S
         cy_c = cy - 65 * S
@@ -784,15 +748,12 @@ def make_thumbnail(title_text, cat, tier):
             (cx_c + 25 * S, cy_c + 5 * S)
         ], fill="#fde047")
 
-    # ── 5. 하단 반투명 바 ──
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000040")
 
-    # ── 6. 상단 뱃지 (카테고리 + 날짜 + 티어) ──
     date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
     draw.text((40 * SCALE, 44 * SCALE), date_badge, font=fb, fill="#ffffff")
     date_w = draw.textlength(date_badge, font=fb)
 
-    # 카테고리 뱃지 (둥근 흰색 캡슐)
     cat_w = draw.textlength(cat.upper(), font=fb)
     bx = 40 * SCALE + date_w + 30 * SCALE
     draw.rounded_rectangle(
@@ -801,7 +762,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * SCALE, 44 * SCALE), cat.upper(), font=fb, fill="#1e293b")
 
-    # VIP/PRO 뱃지 (우상단)
     tl = "VIP" if tier == "vip" else "PRO"
     t_bg = "#b8974d" if tier == "vip" else "#ffffff"
     t_tc = "#ffffff" if tier == "vip" else "#1e293b"
@@ -812,11 +772,10 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((w - 40 * SCALE - tier_w - 30 * SCALE, 44 * SCALE), tl, font=fb, fill=t_tc)
 
-    # ── 7. 타이틀 텍스트 (최대 3줄) ──
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
-    mw = w - 400 * SCALE  # 캐릭터 침범 방지
+    mw = w - 400 * SCALE
 
     for word in words:
         t = " ".join(line + [word])
@@ -833,7 +792,6 @@ def make_thumbnail(title_text, cat, tier):
 
     y = 180 * SCALE
     for i, ln in enumerate(lines[:3]):
-        # 2번째 줄은 카테고리 악센트 색상으로 강조
         color = style["acc"] if i == 1 else "#ffffff"
         draw.text((40 * SCALE, y), ln, font=ft, fill=color)
         try:
@@ -842,13 +800,11 @@ def make_thumbnail(title_text, cat, tier):
         except:
             y += 100 * SCALE
 
-    # ── 8. 하단 푸터 ──
     draw.text((40 * SCALE, h - 60 * SCALE), "WARM INSIGHT", font=fs, fill="#ffffff")
     tagline = "AI-Driven Global Market Analysis"
     tw_t = draw.textlength(tagline, font=fs)
     draw.text((w - 40 * SCALE - tw_t, h - 60 * SCALE), tagline, font=fs, fill="#ffffff")
 
-    # ── 최종 변환 ──
     img = img.convert("RGB")
     img = img.resize((W, H), Image.LANCZOS)
     buf = io.BytesIO()
@@ -856,7 +812,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# PUBLISHER (v39 변경: 타이틀 접두사 복원)
+# PUBLISHER (🚨 작성자 매칭 로직 유지)
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
@@ -894,13 +850,25 @@ def get_or_create_wp_tag(tag_name):
     except: pass
     return None
 
-def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
+def get_wp_author_id(author_full_string):
+    search_name = author_full_string.split("&")[0].strip()
+    try:
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200:
+            users = r.json()
+            if len(users) > 0:
+                return users[0]["id"]
+    except: pass
+    return None 
+
+def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
     tag_name = "VIP" if tier == "vip" else "Pro"
     tag_id = get_or_create_wp_tag(tag_name)
+    
+    author_id = get_wp_author_id(author_name)
 
-    # ✅ v39: 타이틀에 티어 접두사 복원 (4/12까지 작동했던 방식)
     prefix = "👑 VIP" if tier == "vip" else "💎 Pro"
     display_title = f"[{prefix}] {title}"
 
@@ -910,6 +878,9 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
         "status": "publish",
         "slug": slug,
     }
+    
+    if author_id: post_data["author"] = author_id
+    
     if media_id: post_data["featured_media"] = media_id
     if cat_id: post_data["categories"] = [cat_id]
     if tag_id: post_data["tags"] = [tag_id] 
@@ -941,11 +912,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
     return False
 
 # ═══════════════════════════════════════════════
-# 🔄 PIPELINE (v38 원본)
+# 🔄 PIPELINE
 # ═══════════════════════════════════════════════
 def run_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v39 Pipeline (Warmy Robot + v38 Full Spec) | Category: {cat}")
+    print(f"🚀 Starting v40.1 Pipeline (Energy Author Updated) | Category: {cat}")
     
     if not check_env_vars() or not verify_wp_credentials(): return
     
@@ -995,7 +966,7 @@ def run_pipeline():
             print("    🖌️ Generating Warmy Robot Thumbnail...")
             img_bytes = make_thumbnail(title, cat, tier)
             
-            publish(title, html, exc, kw, cat, slug, tier, img_bytes)
+            publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
             time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
