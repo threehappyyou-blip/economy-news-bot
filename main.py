@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v28 (Uncompressed & Safe Models)
+# Warm Insight Auto Poster — v29 (Ultimate Master & Bug Fix)
 # ═══════════════════════════════════════════════════════════════
 import os, json, time, random, re, datetime, io
 import urllib.request
@@ -18,7 +18,6 @@ WP_USER        = os.environ.get("WP_USERNAME", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASSWORD", "")
 SITE_URL       = "https://warminsight.com"
 
-# ✅ V28: 대표님의 원래 안정적인 모델 세팅으로 원상 복구했습니다.
 MODEL          = "gemini-2.5-flash"
 MODEL_FALLBACK = "gemini-2.0-flash" 
 
@@ -28,12 +27,10 @@ SOCIAL_LINKS = {
     "linkedin": "",
 }
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
-
 TIERS       = ["premium", "vip"]
-# SEO 최적화: 검색 결과에 특수문자(이모지)가 노출되지 않도록 텍스트로만 구성
-TIER_LABELS = {"premium": "PRO", "vip": "VIP"}
+TIER_LABELS = {"premium": "PRO", "vip": "VIP"} # SEO 최적화 (이모지 제거)
 
-# 디자인 시스템 — 통일된 폰트/색상
+# 디자인 시스템
 F = "font-size:17px;line-height:1.85;color:#334155;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;"
 GOLD   = "#b8974d"
 AMBER  = "#f59e0b"
@@ -172,10 +169,8 @@ def sanitize(html):
 # 📱 MOBILE RESPONSIVE CSS INJECTOR
 # ═══════════════════════════════════════════════
 def _build_global_css():
-    """모바일 환경에서 표와 박스가 깨지지 않도록 자동으로 크기를 조절하는 CSS"""
     return """
     <style>
-    /* Warm Insight Responsive System */
     .wi-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 35px 0; }
     .wi-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 30px 0; }
     .wi-card-pad { padding: 40px 20px; }
@@ -185,12 +180,10 @@ def _build_global_css():
     .wi-radar-td1 { padding: 14px 0; font-size: 15px; color: #334155; line-height: 1.6; }
     .wi-radar-td2 { padding: 14px 0 14px 16px; text-align: center; width: 65px; vertical-align: middle; }
     
-    /* 스마트폰 화면(768px 이하)일 때 작동하는 레이아웃 변형 로직 */
     @media (max-width: 768px) {
         .wi-grid-2 { grid-template-columns: 1fr; gap: 15px; margin: 25px 0; }
         .wi-card-pad { padding: 24px 16px !important; margin: 20px auto !important; }
         .wi-text-huge { font-size: 48px !important; }
-        
         .wi-radar-tr { display: flex; flex-direction: column; padding: 12px 0; }
         .wi-radar-td1 { padding: 0 0 10px 0 !important; }
         .wi-radar-td2 { padding: 0 !important; width: 100% !important; text-align: left !important; display: flex; align-items: center; gap: 10px; }
@@ -204,7 +197,6 @@ def _build_global_css():
 # SEO BUILDERS
 # ═══════════════════════════════════════════════
 def _clean_seo_title(title):
-    # 구글 SEO 랭킹을 위해 메타 데이터에서 [PRO], [VIP] 태그를 완벽하게 제거합니다.
     for p in ["[PRO] ", "[VIP] ", "[PRO]", "[VIP]"]:
         title = title.replace(p, "")
     return title.strip()
@@ -273,7 +265,6 @@ def _build_faq_schema(raw):
 def _vip_header(author, impact, sector_tag, cat):
     date_str = datetime.datetime.utcnow().strftime("%B %d, %Y at %I:%M %p") + " (UTC)"
     impact_c = {"HIGH": "#dc2626", "MEDIUM": "#f59e0b", "LOW": "#10b981"}.get(impact.upper(), "#f59e0b")
-    
     return (
         f'<div style="margin-bottom:28px;border-bottom:2px solid {BORDER};padding-bottom:22px;">'
         f'<p style="font-size:15px;color:{MUTED};margin:0 0 12px;">'
@@ -319,9 +310,7 @@ def _vip_market_dashboard(dashboard_data):
             f'{item.get("desc","")[:60]}</p>'
             f'</div>'
         )
-    return (
-        f'<div class="wi-grid-4" style="background:{DARK};border-radius:12px;padding:20px;">{cells}</div>'
-    )
+    return f'<div class="wi-grid-4" style="background:{DARK};border-radius:12px;padding:20px;">{cells}</div>'
 
 def _vip_fear_greed(score):
     try:
@@ -329,17 +318,11 @@ def _vip_fear_greed(score):
     except (ValueError, TypeError):
         s = 50
     s = max(0, min(100, s))
-    
-    if s <= 25:
-        label, color = "EXTREME FEAR", "#dc2626"
-    elif s <= 45:
-        label, color = "FEAR", "#ea580c"
-    elif s <= 55:
-        label, color = "NEUTRAL", "#eab308"
-    elif s <= 75:
-        label, color = "GREED", "#84cc16"
-    else:
-        label, color = "EXTREME GREED", "#10b981"
+    if s <= 25: label, color = "EXTREME FEAR", "#dc2626"
+    elif s <= 45: label, color = "FEAR", "#ea580c"
+    elif s <= 55: label, color = "NEUTRAL", "#eab308"
+    elif s <= 75: label, color = "GREED", "#84cc16"
+    else: label, color = "EXTREME GREED", "#10b981"
         
     return (
         f'<div style="background:#fff;border:1px solid {BORDER};border-radius:10px;'
@@ -356,8 +339,7 @@ def _vip_fear_greed(score):
     )
 
 def _vip_executive_summary(text):
-    if not text:
-        return ""
+    if not text: return ""
     return (
         f'<h2 style="font-size:24px;color:{DARK};margin:35px 0 16px;border-bottom:2px solid {GOLD};'
         f'padding-bottom:8px;display:inline-block;">Executive Summary</h2>'
@@ -365,8 +347,7 @@ def _vip_executive_summary(text):
     )
 
 def _vip_plain_english(text):
-    if not text:
-        return ""
+    if not text: return ""
     return (
         f'<div style="background:#faf5ff;border-left:4px solid #8b5cf6;border-radius:0 10px 10px 0;'
         f'padding:24px;margin:30px 0;">'
@@ -398,8 +379,7 @@ def _vip_market_drivers(macro, herd, contrarian):
     return html
 
 def _vip_quick_flow(text):
-    if not text:
-        return ""
+    if not text: return ""
     return (
         f'<div style="background:#fffbeb;border-left:4px solid {AMBER};border-radius:0 10px 10px 0;'
         f'padding:24px;margin:30px 0;">'
@@ -409,8 +389,7 @@ def _vip_quick_flow(text):
     )
 
 def _vip_key_indicators(indicators):
-    if not indicators:
-        return ""
+    if not indicators: return ""
     colors = ["#f59e0b", "#f97316", "#10b981"]
     
     cards = '<div class="wi-grid-4">'
@@ -449,8 +428,7 @@ def _vip_key_indicators(indicators):
     return cards + bars
 
 def _vip_sector_radar(sectors):
-    if not sectors:
-        return ""
+    if not sectors: return ""
     html = (
         f'<div style="background:#fff;border:1px solid {AMBER};border-radius:10px;'
         f'padding:24px;margin:30px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05);">'
@@ -459,12 +437,9 @@ def _vip_sector_radar(sectors):
     )
     for sec in sectors[:5]:
         s = sec.get("sentiment", "NEUTRAL").upper()
-        if s == "BULLISH":
-            color, label, bg = "#10b981", "BULL", "#ecfdf5"
-        elif s == "BEARISH":
-            color, label, bg = "#ef4444", "BEAR", "#fef2f2"
-        else:
-            color, label, bg = "#f59e0b", "NEUT", "#fffbeb"
+        if s == "BULLISH": color, label, bg = "#10b981", "BULL", "#ecfdf5"
+        elif s == "BEARISH": color, label, bg = "#ef4444", "BEAR", "#fef2f2"
+        else: color, label, bg = "#f59e0b", "NEUT", "#fffbeb"
             
         html += (
             f'<tr class="wi-radar-tr">'
@@ -479,8 +454,7 @@ def _vip_sector_radar(sectors):
     return html
 
 def _vip_bull_bear(bull, bear):
-    if not bull and not bear:
-        return ""
+    if not bull and not bear: return ""
     html = '<div class="wi-grid-2">'
     if bull:
         html += (
@@ -525,8 +499,7 @@ def _vip_deep_analysis(technical, macro_flows, smart_money):
     return html
 
 def _vip_titans_playbook(title_text, content):
-    if not content:
-        return ""
+    if not content: return ""
     return (
         f'<h2 style="font-size:24px;color:{DARK};margin:40px 0 8px;border-bottom:2px solid {GOLD};'
         f'padding-bottom:8px;display:inline-block;">The Titans Playbook</h2>'
@@ -538,8 +511,7 @@ def _vip_titans_playbook(title_text, content):
     )
 
 def _vip_action_items(acts):
-    if not acts:
-        return ""
+    if not acts: return ""
     return (
         f'<div style="background:#eff6ff;border:2px solid #93c5fd;border-radius:10px;'
         f'padding:24px;margin:35px 0;box-shadow:0 2px 4px rgba(0,0,0,0.05);">'
@@ -552,7 +524,6 @@ def _vip_action_items(acts):
 # ═══════════════════════════════════════════════
 def _pro_header(author, impact, sector_tag):
     now = datetime.datetime.utcnow()
-    # 이모지 제거 & 깔끔한 텍스트 라벨 적용
     return (
         f'<div style="margin-bottom:24px;border-bottom:2px solid {BORDER};padding-bottom:20px;">'
         f'<p style="font-size:15px;color:{MUTED};margin:0 0 12px;">'
@@ -579,8 +550,7 @@ def _pro_sentiment_badge(sent):
     )
 
 def _pro_key_takeaways(text):
-    if not text:
-        return ""
+    if not text: return ""
     return (
         f'<div style="background:#f0f9ff;border-left:4px solid #3b82f6;border-radius:0 10px 10px 0;'
         f'padding:24px;margin:30px 0;">'
@@ -732,7 +702,6 @@ def analyze(raw1, raw2, cat, tier):
     tw = xtag(full, "TW")
     ps = xtag(full, "PS")
     
-    # 워드프레스 제목에 들어갈 때는 깔끔한 텍스트 라벨 (이모지 없음) 적용
     title = ("[" + TIER_LABELS.get(tier, tier) + "] " + tr if tr else f"({tier.upper()}) {cat} Insight")
     slug = make_slug(kw, tr or cat, cat)
 
@@ -786,7 +755,7 @@ def analyze(raw1, raw2, cat, tier):
     return title, html, exc, kw, slug, tier, full, faq_schema
 
 # ═══════════════════════════════════════════════
-# ⬇️ 폰트 자동 다운로드
+# ⬇️ 폰트 자동 다운로드 (썸네일 깨짐 방지용)
 # ═══════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename):
@@ -839,7 +808,7 @@ def make_thumbnail(title_text, cat, tier):
     fs = lf(fs_path, 34)
     fb = lf(fs_path, 30)
 
-    # 1. 🌟 배경 차트 라인 (VIP / PRO 구분)
+    # 1. 🌟 배경 차트 라인
     if tier == "vip":
         ex, ey = w*0.75, h*0.55
         draw.line([(w*0.4, h*0.35), (ex, ey)], fill="#ef4444", width=8*SCALE)
@@ -859,7 +828,7 @@ def make_thumbnail(title_text, cat, tier):
         draw.line([(gx-gr, gy), (gx+gr, gy)], fill="#ffffff60", width=4*SCALE)
         draw.line([(gx, gy-gr), (gx, gy+gr)], fill="#ffffff60", width=4*SCALE)
 
-    # 2. 🤖 파이썬 자체 로봇 캐릭터 (모든 등급 공통 기본 몸체)
+    # 2. 🤖 파이썬 자체 로봇 캐릭터
     cx, cy = w * 0.85, h * 0.7
     S = SCALE
     
@@ -877,7 +846,7 @@ def make_thumbnail(title_text, cat, tier):
     draw.ellipse([cx + 25*S, cy + 5*S, cx + 40*S, cy + 20*S], fill="#f472b6")
     draw.rounded_rectangle([cx - 25*S, cy + 30*S, cx + 25*S, cy + 50*S], radius=8*S, fill="#ffffff")
     
-    # 3. 🎓 카테고리별 전용 악세사리 부착
+    # 3. 🎓 카테고리별 전용 악세사리
     if cat == "Economy":
         draw.polygon([(cx-5*S, cy+55*S), (cx+5*S, cy+55*S), (cx+8*S, cy+80*S), (cx, cy+90*S), (cx-8*S, cy+80*S)], fill="#ef4444")
     elif cat == "Politics":
@@ -894,7 +863,7 @@ def make_thumbnail(title_text, cat, tier):
         draw.chord([cx - 55*S, cy - 110*S, cx + 55*S, cy - 30*S], start=180, end=0, fill="#f59e0b")
         draw.line([(cx - 65*S, cy - 70*S), (cx + 65*S, cy - 70*S)], fill="#f59e0b", width=8*S)
 
-    # 4. 👑 VIP 전용 노란색 왕관 부착 (VIP일 때만 실행)
+    # 4. 👑 VIP 왕관
     if tier == "vip":
         cx_c, cy_c = cx + 25*S, cy - 65*S
         draw.polygon([(cx_c-15*S, cy_c), (cx_c-25*S, cy_c-30*S), (cx_c, cy_c-15*S), 
@@ -904,7 +873,7 @@ def make_thumbnail(title_text, cat, tier):
     # 5. 하단 반투명 바
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000040")
     
-    # 6. 상단 뱃지 (카테고리 & 등급)
+    # 6. 상단 뱃지
     date_badge = datetime.datetime.utcnow().strftime("%Y. %m. %d")
     date_w = draw.textlength(date_badge, font=fb)
     draw.text((40 * SCALE, 44 * SCALE), date_badge, font=fb, fill="#ffffff80")
@@ -921,8 +890,8 @@ def make_thumbnail(title_text, cat, tier):
     draw.rounded_rectangle([(w - 40 * SCALE - tier_w - 60 * SCALE, 36 * SCALE), (w - 40 * SCALE, 86 * SCALE)], radius=25*SCALE, fill=t_bg)
     draw.text((w - 40 * SCALE - tier_w - 30 * SCALE, 44 * SCALE), tl, font=fb, fill=t_tc)
     
-    # 7. 타이틀 텍스트 그리기
-    clean_title = re.sub(r'\[.*?\]\s*', '', title_text).split(':')[0] 
+    # 7. 타이틀 텍스트 그리기 
+    clean_title = _clean_seo_title(title_text).split(':')[0] 
     words = clean_title.upper().split()
     lines, line = [], []
     mw = w - 400 * SCALE 
@@ -958,6 +927,92 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
+# WORDPRESS PUBLISHER
+# ═══════════════════════════════════════════════
+def _upload_image(img_bytes, filename):
+    try:
+        resp = requests.post(
+            f"{WP_URL}/wp-json/wp/v2/media",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"',
+                     "Content-Type": "image/jpeg"},
+            data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30)
+        if resp.status_code in (200, 201):
+            d = resp.json()
+            return d.get("id"), d.get("source_url", "")
+    except Exception as e:
+        print(f"   ⚠️  Image upload: {e}")
+    return None, ""
+
+def _get_category_id(cat_name):
+    try:
+        resp = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/categories",
+            params={"search": cat_name, "per_page": 10},
+            auth=(WP_USER, WP_APP_PASS), timeout=10)
+        if resp.status_code == 200:
+            for c in resp.json():
+                if c["name"].lower() == cat_name.lower():
+                    return c["id"]
+    except:
+        pass
+    return None
+
+def publish(title, html, exc, kw, cat, slug, tier, img_bytes, full_raw, faq_schema):
+    media_id, img_url = None, ""
+    if img_bytes:
+        media_id, img_url = _upload_image(img_bytes, f"{slug[:40]}.jpg")
+        if media_id:
+            print(f"   🖼  Thumbnail uploaded: {img_url}")
+            
+    seo_title = _clean_seo_title(title)
+    full_content = _build_jsonld(title, exc, kw, cat, slug, img_url) + faq_schema + html
+    cat_id = _get_category_id(cat)
+
+    post_data = {
+        "title": title, 
+        "content": full_content, 
+        "excerpt": exc,
+        "status": "publish", 
+        "slug": slug
+    }
+    if cat_id:
+        post_data["categories"] = [cat_id]
+    if media_id:
+        post_data["featured_media"] = media_id
+    if kw:
+        post_data["meta"] = {
+            "rank_math_title": (seo_title + " | Warm Insight")[:60],
+            "rank_math_description": (exc[:120] + f" Expert {cat.lower()} analysis.")[:155],
+            "rank_math_focus_keyword": kw,
+        }
+
+    delay = random.randint(3, 12)
+    print(f"   ⏳ Publish delay: {delay}s …")
+    time.sleep(delay)
+
+    for attempt in range(1, 4):
+        try:
+            resp = requests.post(
+                f"{WP_URL}/wp-json/wp/v2/posts", json=post_data,
+                auth=(WP_USER, WP_APP_PASS), timeout=30)
+            if resp.status_code in (200, 201):
+                print(f"   ✅ Published [{tier.upper()}] {title}")
+                print(f"      URL: {resp.json().get('link', '')}")
+                return True
+            if 400 <= resp.status_code < 500:
+                print(f"   ❌ Publish failed {resp.status_code}: {resp.text[:300]}")
+                return False
+            print(f"   ⚠️  {resp.status_code} — retry {attempt}/3")
+            time.sleep(15 * attempt)
+        except requests.exceptions.Timeout:
+            print(f"   ⚠️  Timeout — retry {attempt}/3")
+            time.sleep(10)
+        except Exception as e:
+            print(f"   ❌ {e}")
+            return False
+    return False
+
+# ═══════════════════════════════════════════════
 # NEWS FETCHER
 # ═══════════════════════════════════════════════
 def fetch_news(cat, max_items=8):
@@ -990,7 +1045,6 @@ def check_duplicate(title):
         if resp.status_code == 200:
             for p in resp.json():
                 wp_title = p.get("title", {}).get("rendered", "")
-                
                 tier_label = title.split(']')[0] + "]" if "]" in title else ""
                 if search_kw.lower() in wp_title.lower() and tier_label in wp_title:
                     return True
@@ -998,7 +1052,7 @@ def check_duplicate(title):
     return False
 
 # ═══════════════════════════════════════════════
-# GEMINI API (🔥 서버 다운 대비 3중 재시도 방탄모드)
+# GEMINI API
 # ═══════════════════════════════════════════════
 def call_gemini(prompt, retries=3):
     client = _get_gemini_client()
@@ -1018,7 +1072,7 @@ def call_gemini(prompt, retries=3):
     return ""
 
 # ═══════════════════════════════════════════════
-# PROMPTS — VIP (Universal Audience)
+# PROMPTS — VIP
 # ═══════════════════════════════════════════════
 FAQ_TAGS = (
     "<FAQ_1_Q>question</FAQ_1_Q><FAQ_1_A>answer</FAQ_1_A>\n"
@@ -1077,14 +1131,14 @@ Respond with ONLY these XML tags. Fill EVERY tag with substantive content:
 <MARKET_4_DIR>UP or DOWN or SIDEWAYS</MARKET_4_DIR>
 <MARKET_4_DESC>Short reason</MARKET_4_DESC>
 
-<IND_1_NAME>Key indicator name relevant to this story</IND_1_NAME>
-<IND_1_PCT>Number 0-100 representing outlook strength</IND_1_PCT>
+<IND_1_NAME>Key indicator name</IND_1_NAME>
+<IND_1_PCT>Number 0-100</IND_1_PCT>
 <IND_2_NAME>Second indicator</IND_2_NAME>
 <IND_2_PCT>Number 0-100</IND_2_PCT>
 <IND_3_NAME>Third indicator</IND_3_NAME>
 <IND_3_PCT>Number 0-100</IND_3_PCT>
 
-<SECTOR_1_NAME>Relevant sector ETF or index (e.g. Industrials XLI)</SECTOR_1_NAME>
+<SECTOR_1_NAME>Relevant sector ETF/index</SECTOR_1_NAME>
 <SECTOR_1_SENT>BULLISH or BEARISH or NEUTRAL</SECTOR_1_SENT>
 <SECTOR_1_DESC>1 sentence why</SECTOR_1_DESC>
 <SECTOR_2_NAME>Second sector</SECTOR_2_NAME>
@@ -1101,16 +1155,16 @@ Respond with ONLY these XML tags. Fill EVERY tag with substantive content:
 <MACRO_FLOWS>1-2 paragraphs: Global capital flows, yield curves, credit conditions, currency dynamics. 150-200 words.</MACRO_FLOWS>
 <SMART_MONEY>1-2 paragraphs: How are institutional investors, hedge funds, sovereign wealth funds positioning? 150-200 words.</SMART_MONEY>
 
-<TITANS_TITLE>A compelling title for the playbook section (e.g. "Fear vs. Greed" or "The Rate Cut Gambit")</TITANS_TITLE>
+<TITANS_TITLE>A compelling title for the playbook section</TITANS_TITLE>
 <TITANS_BODY>2-3 paragraphs: Deep strategic analysis connecting all threads. What is the meta-narrative? 200-300 words.</TITANS_BODY>
 
 <ACTION_ITEMS>3-5 concrete investor action items as HTML: <ul><li>specific actionable steps with ticker symbols and ETF names</li></ul></ACTION_ITEMS>
-<TW>One memorable market wisdom sentence (original, not a cliche)</TW>
+<TW>One memorable market wisdom sentence</TW>
 <PS>Compelling one-line P.S. from a veteran investor perspective</PS>
 {FAQ_TAGS}"""
 
 # ═══════════════════════════════════════════════
-# PROMPTS — PREMIUM (Universal Audience)
+# PROMPTS — PREMIUM
 # ═══════════════════════════════════════════════
 def _make_premium_prompt(news_text, cat):
     return f"""You are Warm Insight's senior analyst, a 30-year expert blending global economics, humanities, and psychology. Write a Premium newsletter article on {cat} for a universal audience.
@@ -1183,7 +1237,7 @@ def run_pipeline():
     cat = get_current_task()
     now = datetime.datetime.utcnow()
     print(f"\n{'═'*54}")
-    print(f"🚀 Warm Insight v28 | {cat} | VIP + Pro | {now:%H:%M} UTC")
+    print(f"🚀 Warm Insight v29 | {cat} | VIP + Pro | {now:%H:%M} UTC")
     print(f"{'═'*54}")
 
     if not check_env_vars():
