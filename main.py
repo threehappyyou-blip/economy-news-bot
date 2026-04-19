@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v35 (Imagen 3 AI Background + Overlay)
+# Warm Insight Auto Poster — v35.1 (Imagen 3 & Bug Fixed Edition)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io
 import urllib.request
@@ -98,6 +98,24 @@ CAT_ALLOC = {
     "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
     "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
 }
+
+# ═══════════════════════════════════════════════
+# 🛡️ SYSTEM UTILS & CHECKS (🚨 복구 완료된 함수)
+# ═══════════════════════════════════════════════
+def check_env_vars():
+    missing = [v for v, k in zip(["GEMINI_API_KEY", "WP_USERNAME", "WP_APP_PASSWORD"], [GEMINI_API_KEY, WP_USER, WP_APP_PASS]) if not k]
+    if missing:
+        print(f"❌ Missing Secrets: {missing}")
+        return False
+    return True
+
+def verify_wp_credentials():
+    try:
+        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), timeout=10)
+        if resp.status_code == 200: return True
+    except: pass
+    print("❌ WP Auth Failed. Check your App Password.")
+    return False
 
 # ═══════════════════════════════════════════════
 # 🛡️ API ENGINE (JITTER BACKOFF SURVIVAL)
@@ -539,7 +557,6 @@ def get_font(url, filename):
     return filename
 
 def generate_ai_background(client, cat):
-    """구글 Imagen 3를 사용하여 텍스트가 없는 고품질 3D 배경을 생성합니다."""
     prompt = f"Abstract 3D cinematic rendering representing global {cat}, professional financial tone, highly detailed, 8k resolution, clean composition, NO text, NO words."
     print(f"    🎨 Requesting Imagen 3 AI background for {cat}...")
     
@@ -566,37 +583,30 @@ def generate_ai_background(client, cat):
             else:
                 print(f"    ⚠️ Imagen error: {err[:100]}")
                 time.sleep(5)
-    print("    ❌ Failed to generate AI background after retries.")
     return None
 
 def make_thumbnail(client, title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
     
-    # AI 이미지 생성 시도
     ai_img_bytes = generate_ai_background(client, cat)
     
     if ai_img_bytes:
         base_img = Image.open(io.BytesIO(ai_img_bytes)).convert("RGBA")
         base_img = base_img.resize((w, h), Image.LANCZOS)
     else:
-        # 실패 시 사용할 안전한 폴백 다크 배경
         base_img = Image.new("RGBA", (w, h), "#0f172a")
 
-    # 가독성을 위한 그라데이션 오버레이 생성 (왼쪽에서 오른쪽으로 페이드아웃)
     overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw_ov = ImageDraw.Draw(overlay)
     
     for x in range(int(w * 0.7)):
-        # 비선형(곡선)으로 자연스럽게 어두워지게 처리하여 텍스트가 무조건 보이도록 함
         alpha = int(240 * (1 - (x / (w * 0.7))) ** 1.2) 
         draw_ov.line([(x, 0), (x, h)], fill=(0, 0, 0, alpha))
     
-    # 합성
     img = Image.alpha_composite(base_img, overlay)
     draw = ImageDraw.Draw(img)
     
-    # 폰트 세팅
     font_url_bebas = "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf"
     font_url_roboto = "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Bold.ttf"
     fs_path = get_font(font_url_bebas, "fonts/BebasNeue-Regular.ttf")
@@ -612,27 +622,23 @@ def make_thumbnail(client, title_text, cat, tier):
 
     pad = 70 * SCALE
     
-    # 뱃지 (Category / Date)
     date_str = datetime.datetime.utcnow().strftime("%b %d, %Y").upper()
     badge_text = f"  {cat.upper()}  |  {date_str}  "
     badge_w = draw.textlength(badge_text, font=font_badge)
     
-    # 반투명 뱃지 배경
     draw.rounded_rectangle([pad, pad, pad + badge_w + 40*SCALE, pad + 60*SCALE], radius=10*SCALE, fill="#000000CC")
     draw.text((pad + 20*SCALE, pad + 12*SCALE), badge_text, font=font_badge, fill="#ffffff")
     
-    # VIP / PRO 뱃지
     tier_text = " VIP REPORT " if tier == "vip" else " PRO REPORT "
     tier_bg = GOLD if tier == "vip" else "#3b82f6"
     tier_w = draw.textlength(tier_text, font=font_badge)
     draw.rounded_rectangle([w - pad - tier_w - 40*SCALE, pad, w - pad, pad + 60*SCALE], radius=10*SCALE, fill=tier_bg)
     draw.text((w - pad - tier_w - 20*SCALE, pad + 12*SCALE), tier_text, font=font_badge, fill="#ffffff")
 
-    # 메인 타이틀
     clean_title = _clean_seo_title(title_text).replace('"', '').replace("'", "")
     words = clean_title.upper().split()
     lines, current_line = [], []
-    max_w = w * 0.6  # 좌측 60% 영역만 사용
+    max_w = w * 0.6  
     
     for word in words:
         test_line = " ".join(current_line + [word])
@@ -647,15 +653,11 @@ def make_thumbnail(client, title_text, cat, tier):
 
     y_pos = h * 0.35
     for i, line in enumerate(lines[:4]): 
-        # 타이틀 두 번째 줄에 포인트를 주어 세련미 강화
         t_color = GOLD if (i == 1 and tier == "vip") else ("#60a5fa" if (i == 1 and tier == "premium") else "#ffffff")
-        
-        # 텍스트에 얇은 검은색 그림자를 주어 가독성을 200% 보장
         draw.text((pad + 4*SCALE, y_pos + 4*SCALE), line, font=font_title, fill="#000000")
         draw.text((pad, y_pos), line, font=font_title, fill=t_color)
         y_pos += 100 * SCALE
 
-    # 하단 로고
     draw.text((pad, h - pad - 40*SCALE), "WARM INSIGHT", font=font_logo, fill="#cbd5e1")
 
     img = img.convert("RGB")
@@ -719,7 +721,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
 
 def run_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v35 Pipeline (Imagen 3 AI Backgrounds + Text Overlay) | Category: {cat}")
+    print(f"🚀 Starting v35.1 Pipeline (Bug Fixed) | Category: {cat}")
     
     if not check_env_vars() or not verify_wp_credentials(): return
     client = _get_gemini_client()
