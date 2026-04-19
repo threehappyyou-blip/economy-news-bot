@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v37 (HTML2Image Thumbnail & Full-Spec UI Restored)
+# Warm Insight Auto Poster — v38 (3D Asset Compositing & Full-Spec Restored)
 # ═══════════════════════════════════════════════════════════════
-import os, sys, traceback, time, random, re, datetime
+import os, sys, traceback, time, random, re, datetime, io, math
+import urllib.request
 import requests
 import feedparser
+from PIL import Image, ImageDraw, ImageFont
 from google import genai
-from html2image import Html2Image
 
 # ═══════════════════════════════════════════════
 # CONFIG
@@ -19,30 +20,80 @@ WP_APP_PASS    = os.environ.get("WP_APP_PASSWORD", "")
 SITE_URL       = "https://warminsight.com"
 
 MODEL_PRI = {
-    "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash"],
-    "Premium": ["gemini-2.5-flash", "gemini-2.5-pro"],
+    "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
+    "Premium": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"],
 }
+FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
 TIERS       = ["premium", "vip"]
 TIER_LABELS = {"premium": "PRO", "vip": "VIP"} 
+TIER_SLEEP  = {"premium": 45, "vip": 60}
 
-# UI 디자인 시스템 (과거 완벽했던 버전 복구)
-F = "font-size:17px;line-height:1.85;color:#334155;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
+F = "font-size:18px;line-height:1.8;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"
 GOLD   = "#b8974d"
 AMBER  = "#f59e0b"
-DARK   = "#0f172a"
+DARK   = "#1a252c"
 SLATE  = "#334155"
 MUTED  = "#64748b"
 BORDER = "#e2e8f0"
 BG_LIGHT = "#f8fafc"
 
+PILLAR_PAGES = {
+    "Economy":  {"url": SITE_URL + "/category/economy/",  "anchor": "Economy Analysis"},
+    "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "Politics & Policy"},
+    "Tech":     {"url": SITE_URL + "/category/tech/",     "anchor": "Tech & Innovation"},
+    "Health":   {"url": SITE_URL + "/category/health/",   "anchor": "Health & Markets"},
+    "Energy":   {"url": SITE_URL + "/category/energy/",   "anchor": "Energy & Resources"},
+}
+CAT_RELATED = {
+    "Economy":  ["Tech", "Energy"],
+    "Politics": ["Economy", "Tech"],
+    "Tech":     ["Economy", "Health"],
+    "Health":   ["Economy", "Politics"],
+    "Energy":   ["Economy", "Politics"],
+}
+VIP_AUTHORS = {
+    "Economy":  "Oliver Grant & The Warm Insight Panel",
+    "Politics": "Elena Vasquez & The Warm Insight Panel",
+    "Tech":     "Marcus Chen & The Warm Insight Panel",
+    "Health":   "Sarah Mitchell & The Warm Insight Panel",
+    "Energy":   "Oliver Grant & The Warm Insight Panel",
+}
 RSS_FEEDS = {
-    "Economy": ["https://feeds.reuters.com/reuters/businessNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"],
-    "Politics": ["https://feeds.reuters.com/Reuters/PoliticsNews", "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"],
-    "Tech": ["https://feeds.reuters.com/reuters/technologyNews", "https://techcrunch.com/feed/"],
-    "Health": ["https://feeds.reuters.com/reuters/healthNews", "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"],
-    "Energy": ["https://oilprice.com/rss/main", "https://feeds.reuters.com/reuters/environment"],
+    "Economy": [
+        "https://feeds.reuters.com/reuters/businessNews",
+        "https://finance.yahoo.com/news/rssindex",
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"
+    ],
+    "Politics": [
+        "https://feeds.reuters.com/Reuters/PoliticsNews",
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"
+    ],
+    "Tech": [
+        "https://feeds.reuters.com/reuters/technologyNews",
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",
+        "https://techcrunch.com/feed/"
+    ],
+    "Health": [
+        "https://feeds.reuters.com/reuters/healthNews",
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
+    ],
+    "Energy": [
+        "https://oilprice.com/rss/main",
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",
+        "https://feeds.reuters.com/reuters/environment"
+    ],
+}
+
+CAT_ALLOC = {
+    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
+    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
+    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
+    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
+    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
 }
 
 # ═══════════════════════════════════════════════
@@ -54,6 +105,21 @@ def _get_gemini_client():
     if _gemini_client is None: _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     return _gemini_client
 
+def check_env_vars():
+    missing = [v for v, k in zip(["GEMINI_API_KEY", "WP_USERNAME", "WP_APP_PASSWORD"], [GEMINI_API_KEY, WP_USER, WP_APP_PASS]) if not k]
+    if missing:
+        print(f"❌ Missing Secrets: {missing}")
+        return False
+    return True
+
+def verify_wp_credentials():
+    try:
+        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), timeout=10)
+        if resp.status_code == 200: return True
+    except: pass
+    print("❌ WP Auth Failed. Check your App Password.")
+    return False
+
 def call_gemini(client, model, prompt, retries=5):
     for i in range(1, retries + 1):
         try:
@@ -61,7 +127,7 @@ def call_gemini(client, model, prompt, retries=5):
             if r.text: return str(r.text)
         except Exception as e:
             err = str(e)
-            if "404" in err: return None
+            if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
                 print(f"    ⏳ 503 Overload. Jitter Wait {wait:.1f}s...")
@@ -73,7 +139,7 @@ def call_gemini(client, model, prompt, retries=5):
 
 def gem_fb(tier, prompt):
     client = _get_gemini_client()
-    for m in MODEL_PRI.get(tier, ["gemini-2.5-flash"]):
+    for m in MODEL_PRI.get(tier, FAST_MODELS):
         print(f"    [AI] Trying {m}...")
         r = call_gemini(client, m, prompt)
         if r: return r
@@ -100,87 +166,89 @@ def _clean_seo_title(title):
 # ═══════════════════════════════════════════════
 # 📰 NEWS POOLING
 # ═══════════════════════════════════════════════
-def fetch_news_pool(cat, max_items=20):
+def fetch_news_pool(cat, max_items=30):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
     for url in feeds:
         try:
             d = feedparser.parse(url)
-            for e in d.entries[:8]: 
+            for e in d.entries[:10]: 
                 title = getattr(e, 'title', '').strip()
                 summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
-                if title: items.add(f"• {title}: {summary}")
+                if title and len(title) > 10: items.add(f"• {title}: {summary}")
         except: pass
     items_list = list(items)
     random.shuffle(items_list)
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🎨 PROMPTS (과거 1200줄 시절의 완벽한 스펙 복구)
+# 🎨 TWO-PART PROMPTS (1200-Line Quality Restored)
 # ═══════════════════════════════════════════════
 VIP_P1 = """You are Warm Insight's senior analyst. Write PART 1 of a VIP deep-dive on {cat}.
-Respond ONLY with XML tags. Do not use placeholders.
+Audience: Sophisticated investors paying premium.
+Write REAL, deep analysis paragraphs. Do not use placeholders.
 
-<TITLE>Institutional title, max 90 chars. No tickers.</TITLE>
+<TITLE>Institutional title, max 90 chars. No tickers in title.</TITLE>
 <SEO_KEYWORD>focus keyphrase</SEO_KEYWORD>
 <IMPACT>HIGH, MEDIUM, or LOW</IMPACT>
 
-<BIG_NUMBER>A striking statistic (e.g. "5.2%" or "$4T")</BIG_NUMBER>
-<BIG_NUMBER_DESC>1 sentence explaining why this number shifts the market.</BIG_NUMBER_DESC>
+<DATA_TABLE>
+Extract 3-4 key market metrics from the news.
+Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight
+</DATA_TABLE>
 
-<FEAR_GREED>Score 0-100</FEAR_GREED>
+<HEATMAP>
+Invent 3-4 sector risk levels (0-100%) based on the news.
+Format exactly: Sector Name | Number
+</HEATMAP>
 
-<MARKET_DASHBOARD>
-Extract 4 market indicators (e.g., S&P 500, 10Y Yield).
-Format: Name | UP or DOWN or SIDEWAYS | 1 sentence reason
-</MARKET_DASHBOARD>
+<EXECUTIVE_SUMMARY>3 powerful sentences summarizing the systemic shift.</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>3-4 sentences using a vivid, memorable analogy for non-experts.</PLAIN_ENGLISH>
+<HEADLINE>Analytical headline for market drivers</HEADLINE>
 
-<EXECUTIVE_SUMMARY>3 sentences summarizing systemic shift.</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>3 sentences using a vivid analogy.</PLAIN_ENGLISH>
-
-<MACRO>2 full paragraphs on global forces and central banks.</MACRO>
-<HERD>1 paragraph on retail cognitive bias.</HERD>
-<CONTRARIAN>1 paragraph on smart money moves.</CONTRARIAN>
-
-<QUICK_FLOW>Chain of events with arrows ➡️</QUICK_FLOW>
+<MACRO><strong>🧐 MACRO:</strong> Systems view. Global forces. Write 2 full, rich paragraphs (150+ words).</MACRO>
+<HERD><strong>🐑 HERD:</strong> Cognitive bias and retail panic. Write 1 full paragraph (80+ words).</HERD>
+<CONTRARIAN><strong>🦅 CONTRARIAN:</strong> 2nd-order thinking. Smart money moves. Write 1 full paragraph (80+ words).</CONTRARIAN>
+<QUICK_FLOW>Chain of events with arrows ➡️ (5-6 steps)</QUICK_FLOW>
 
 News Context:
 {news}"""
 
 VIP_P2 = """You are Warm Insight's senior analyst. Write PART 2 of the VIP strategy for {cat}.
-Context from Part 1: {ctx}
+Write REAL, deep analysis paragraphs. Do not use placeholders.
 
-<BULL_CASE>Bullish scenario. Full paragraph.</BULL_CASE>
-<BEAR_CASE>Bearish scenario. Full paragraph.</BEAR_CASE>
+Context from Part 1:
+{ctx}
 
-<SECTOR_RADAR>
-List 4 specific sectors.
-Format: Sector Name | BULLISH or BEARISH or NEUTRAL | 1 sentence why
-</SECTOR_RADAR>
+<BULL_CASE>Bullish scenario. Full paragraph (80+ words).</BULL_CASE>
+<BEAR_CASE>Bearish scenario. Full paragraph (80+ words).</BEAR_CASE>
 
-<VIP_T1>1. The Generational Bargain (Fear vs Greed). Full paragraph.</VIP_T1>
-<VIP_T2>2. Asset Allocation Seesaw. Full paragraph.</VIP_T2>
-<VIP_T3>3. The Global Shield. Full paragraph.</VIP_T3>
-<VIP_T4>4. Survival Mechanics. Full paragraph.</VIP_T4>
+<VIP_T1>1. The Generational Bargain (Fear vs Greed): Explain the current market sentiment balance. Full paragraph.</VIP_T1>
+<VIP_T2>2. The {alloc} Seesaw (Asset Allocation): How to deploy capital now. Full paragraph mentioning specific ETF sectors.</VIP_T2>
+<VIP_T3>3. The Global Shield: Compare US vs International exposure. Full paragraph.</VIP_T3>
+<VIP_T4>4. Survival Mechanics: DCA and risk management. Full paragraph.</VIP_T4>
 
 <VIP_DO>2 specific actions with ETF sectors and triggers.</VIP_DO>
 <VIP_DONT>1 critical mistake to avoid.</VIP_DONT>
 
-<TAKEAWAY>One profound insight.</TAKEAWAY>
+<TAKEAWAY>One calming, profound insight.</TAKEAWAY>
 <PS>Historical perspective in 2-3 sentences.</PS>"""
 
-PROMPT_PREMIUM = """You are Warm Insight's senior analyst. Write a PRO newsletter on {cat}.
-Respond ONLY with XML tags. 600-800 words total.
+PROMPT_PREMIUM = """You are Warm Insight's senior analyst. Write a PRO newsletter on {cat} for an intermediate audience.
+Write REAL, deep analysis paragraphs. Do not use placeholders. Total length should be 600-800 words.
 
-<TITLE>Compelling headline, max 80 chars. No tickers.</TITLE>
+<TITLE>Compelling headline, max 80 chars. No tickers in title.</TITLE>
+<EXCERPT>2 sentence SEO summary.</EXCERPT>
 <SEO_KEYWORD>focus keyphrase</SEO_KEYWORD>
 <IMPACT>HIGH, MEDIUM, or LOW</IMPACT>
 
-<BIG_NUMBER>A striking statistic (e.g. "5.2%")</BIG_NUMBER>
-<BIG_NUMBER_DESC>1 sentence explaining why this number shifts the market.</BIG_NUMBER_DESC>
+<DATA_TABLE>
+Extract 3-4 key market metrics from the news.
+Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight
+</DATA_TABLE>
 
 <EXECUTIVE_SUMMARY>3 sentences capturing the core thesis.</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>3-4 sentences using a vivid, relatable analogy.</PLAIN_ENGLISH>
+<PLAIN_ENGLISH>3-4 sentences using a vivid, relatable analogy (e.g., "Think of it like...").</PLAIN_ENGLISH>
 
 <HEADLINE>Analytical headline for drivers</HEADLINE>
 <DEPTH><strong>🧐 WHY:</strong> Deeper structural pattern (3-4 sentences).<br><br><strong>🐑 HERD TRAP:</strong> Cognitive bias (2-3 sentences).</DEPTH>
@@ -189,9 +257,9 @@ Respond ONLY with XML tags. 600-800 words total.
 <BULL_CASE>3-4 sentences optimistic outlook.</BULL_CASE>
 <BEAR_CASE>3-4 sentences pessimistic outlook.</BEAR_CASE>
 
-<QUICK_HITS>3 bullet points of other relevant news. 1 sentence per line.</QUICK_HITS>
+<QUICK_HITS>3 bullet points of other relevant news from the context. 1 sentence per line.</QUICK_HITS>
 
-<PRO_INSIGHT>1-2 paragraphs cross-sector connection.</PRO_INSIGHT>
+<PRO_INSIGHT><strong>💎 Pro-Only Insight:</strong> 1-2 paragraphs cross-sector connection and second-order thinking. Name sectors.</PRO_INSIGHT>
 <PRO_DO>1 specific action with reasoning.</PRO_DO>
 <PRO_DONT>1 specific mistake to avoid.</PRO_DONT>
 
@@ -202,195 +270,239 @@ News Context:
 {news}"""
 
 # ═══════════════════════════════════════════════
-# 📊 FULL-SPEC UI BUILDERS (과거 UI 100% 복원)
+# 📊 VISUAL DATA BUILDERS (HTML Tables/Bars)
 # ═══════════════════════════════════════════════
-def _ui_big_number(num, desc):
-    if not num: return ""
-    return f"""
-    <div style="background:#fff; border:1px solid {AMBER}; border-radius:10px; margin:30px auto; text-align:center; max-width:600px; padding:40px 20px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.08);">
-        <p style="font-weight:900; color:#ea580c; margin:0; line-height:1; font-family:Impact,sans-serif; font-size:72px;">{num}</p>
-        <p style="font-size:16px; color:#475569; margin:16px 0 0; line-height:1.6;">{desc}</p>
-    </div>
-    """
-
-def _ui_fear_greed(score_str):
-    try: s = int(re.sub(r'[^0-9]', '', score_str))
-    except: s = 50
-    s = max(0, min(100, s))
-    if s <= 25: label, color = "EXTREME FEAR", "#dc2626"
-    elif s <= 45: label, color = "FEAR", "#ea580c"
-    elif s <= 55: label, color = "NEUTRAL", "#eab308"
-    elif s <= 75: label, color = "GREED", "#84cc16"
-    else: label, color = "EXTREME GREED", "#10b981"
+def _build_data_table(raw_data, title="Market Data Overview"):
+    if not raw_data: return ""
+    lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
+    if not lines: return ""
     
-    return f"""
-    <div style="background:#fff; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:30px 0; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-        <p style="font-size:18px; font-weight:700; color:{DARK}; margin:0 0 16px;">🧭 Fear & Greed Meter</p>
-        <div style="display:flex; gap:2px; height:16px; border-radius:8px; overflow:hidden; margin-bottom:10px;">
-            <div style="flex:25; background:#dc2626;"></div><div style="flex:20; background:#ea580c;"></div>
-            <div style="flex:10; background:#eab308;"></div><div style="flex:20; background:#84cc16;"></div>
-            <div style="flex:25; background:#10b981;"></div>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:12px; color:{MUTED}; margin-bottom:12px;">
-            <span>Fear</span><span>Greed</span>
-        </div>
-        <p style="text-align:center; font-size:24px; font-weight:800; color:{color}; margin:0;">{s} – {label}</p>
-    </div>
-    """
-
-def _ui_dashboard(raw_data):
-    if not raw_data: return ""
-    lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
-    if not lines: return ""
-    cells = ""
-    for line in lines[:4]:
-        p = line.split('|')
-        if len(p) >= 3:
-            name, dr, desc = p[0].strip(), p[1].strip().upper(), p[2].strip()
-            color, arrow = ("#10b981", "▲") if "UP" in dr else (("#ef4444", "▼") if "DOWN" in dr else ("#64748b", "—"))
-            cells += f"""
-            <div style="text-align:center; padding:16px 10px; background:#1e293b; border-radius:8px; min-width:120px; flex:1;">
-                <p style="font-size:12px; color:#94a3b8; margin:0 0 8px; font-weight:600; text-transform:uppercase;">{name}</p>
-                <p style="font-size:24px; font-weight:800; color:{color}; margin:0;">{arrow} {dr}</p>
-                <p style="font-size:11px; color:#64748b; margin:6px 0 0;">{desc}</p>
-            </div>
-            """
-    return f'<div style="display:flex; flex-wrap:wrap; gap:10px; background:{DARK}; border-radius:12px; padding:20px; margin:30px 0;">{cells}</div>'
-
-def _ui_radar(raw_data):
-    if not raw_data: return ""
-    lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
-    if not lines: return ""
     html = f"""
-    <div style="background:#fff; border:1px solid {AMBER}; border-radius:10px; padding:24px; margin:30px 0; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-        <p style="font-size:20px; font-weight:700; color:#d97706; margin:0 0 20px;">🎯 Sector Radar</p>
-        <table style="width:100%; border-collapse:collapse;">
+    <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px; display:inline-block;">📊 {title}</h3>
+        <div style="overflow-x:auto; margin-top:15px;">
+        <table style="width:100%; border-collapse:collapse; font-family:-apple-system,sans-serif;">
+            <thead>
+                <tr style="background:{BG_LIGHT}; text-align:left; border-bottom:2px solid {BORDER};">
+                    <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px; white-space:nowrap;">Asset/Metric</th>
+                    <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px; white-space:nowrap;">Status</th>
+                    <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px; white-space:nowrap;">Trend</th>
+                    <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px;">Key Insight</th>
+                </tr>
+            </thead>
+            <tbody>
     """
-    for line in lines[:4]:
-        p = line.split('|')
-        if len(p) >= 3:
-            name, sent, desc = p[0].strip(), p[1].strip().upper(), p[2].strip()
-            if "BULL" in sent: color, label, bg = "#10b981", "BULL", "#ecfdf5"
-            elif "BEAR" in sent: color, label, bg = "#ef4444", "BEAR", "#fef2f2"
-            else: color, label, bg = "#f59e0b", "NEUT", "#fffbeb"
+    for line in lines[:5]:
+        parts = [p.strip() for p in line.split('|')]
+        if len(parts) >= 4:
+            asset, value, trend, insight = parts[:4]
+            t_upper = trend.upper()
+            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢" 
+            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴" 
+            else: t_color, t_icon = "#f59e0b", "🟡"
             
             html += f"""
-            <tr style="border-bottom:1px solid {BORDER};">
-                <td style="padding:14px 0; font-size:15px; color:{DARK};"><strong>{name}</strong> – <span style="color:{MUTED}">{desc}</span></td>
-                <td style="padding:14px 0 14px 16px; text-align:right;">
-                    <div style="background:{bg}; padding:8px; border-radius:6px; border:1px solid {color}40; display:inline-block; text-align:center;">
-                        <span style="font-size:11px; font-weight:800; color:{color};">{label}</span>
-                    </div>
-                </td>
-            </tr>
+                <tr style="border-bottom:1px solid {BORDER};">
+                    <td style="padding:14px; font-weight:600; color:{DARK};">{asset}</td>
+                    <td style="padding:14px; color:{SLATE}; font-family:monospace; font-size:15px; font-weight:bold;">{value}</td>
+                    <td style="padding:14px; font-weight:bold; color:{t_color};">{t_icon} {trend.upper()}</td>
+                    <td style="padding:14px; color:{MUTED}; font-size:15px; line-height:1.6;">{insight}</td>
+                </tr>
             """
-    html += '</table></div>'
+    html += "</tbody></table></div></div>"
     return html
 
-def _ui_plain_english(text):
-    if not text: return ""
+def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
+    if not raw_data: return ""
+    lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
+    if not lines: return ""
+    
+    html = f"""
+    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;">
+        <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px;">🌡️ {title}</h3>
+    """
+    colors = ["#dc2626", "#ea580c", "#ca8a04", "#059669", "#3b82f6"]
+    
+    for i, line in enumerate(lines[:5]):
+        parts = [p.strip() for p in line.split('|')]
+        if len(parts) >= 2:
+            name = parts[0]
+            try: pct = int(re.sub(r'[^0-9]', '', parts[1]))
+            except: pct = 50
+            pct = max(0, min(100, pct))
+            c = colors[0] if pct > 75 else (colors[1] if pct > 50 else (colors[3] if pct < 30 else colors[2]))
+            
+            html += f"""
+            <div style="margin-top:18px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span style="font-weight:600; font-size:15px; color:{DARK};">{name}</span>
+                    <span style="font-weight:900; font-size:15px; color:{c};">{pct}%</span>
+                </div>
+                <div style="background:#e2e8f0; height:12px; border-radius:6px; overflow:hidden;">
+                    <div style="background:{c}; height:100%; width:{pct}%; border-radius:6px;"></div>
+                </div>
+            </div>
+            """
+    html += "</div>"
+    return html
+
+def _build_quick_hits(raw_data):
+    if not raw_data: return ""
+    lines = [l.strip() for l in raw_data.split('\n') if l.strip()]
+    if not lines: return ""
+    items = "".join(f'<li style="margin-bottom:12px; color:{SLATE};">{l.replace("-", "").replace("*", "").strip()}</li>' for l in lines[:3])
     return f"""
-    <div style="background:#faf5ff; border-left:4px solid #8b5cf6; border-radius:0 10px 10px 0; padding:24px; margin:30px 0;">
-        <p style="font-size:18px; font-weight:700; color:#4c1d95; margin:0 0 12px;">💡 In Plain English</p>
-        <p style="font-size:16px; line-height:1.75; color:{SLATE}; margin:0;">{text}</p>
+    <div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;">
+        <h3 style="margin-top:0; font-size:20px; color:{DARK}; text-transform:uppercase; letter-spacing:1px;">⚡ Quick Hits</h3>
+        <ul style="{F} margin:0; padding-left:20px;">{items}</ul>
     </div>
     """
 
-def _ui_bull_bear(bull, bear):
-    if not bull and not bear: return ""
-    return f"""
-    <div style="display:flex; flex-wrap:wrap; gap:20px; margin:35px 0;">
-        <div style="flex:1; min-width:250px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:24px;">
-            <p style="font-size:18px; font-weight:700; color:#065f46; margin:0 0 12px;">🐂 Market Bull</p>
-            <p style="font-size:15px; line-height:1.75; color:#064e3b; margin:0;">{bull}</p>
-        </div>
-        <div style="flex:1; min-width:250px; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:24px;">
-            <p style="font-size:18px; font-weight:700; color:#991b1b; margin:0 0 12px;">🐻 Market Bear</p>
-            <p style="font-size:15px; line-height:1.75; color:#7f1d1d; margin:0;">{bear}</p>
-        </div>
-    </div>
-    """
+def _build_pie_chart(s, b, c, accent):
+    circ = 565.49
+    sd, bd, cd = circ*s/100, circ*b/100, circ*c/100
+    pie = f'<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;"><circle cx="100" cy="100" r="90" fill="none" stroke="{accent}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/><circle cx="100" cy="100" r="90" fill="none" stroke="#64748b" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/><circle cx="100" cy="100" r="90" fill="none" stroke="#b8974d" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/><text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text><text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg>'
+    pie += f'<div style="display:flex;justify-content:center;gap:20px;"><span style="color:{accent};font-weight:bold;">● Stocks {s}%</span><span style="color:#64748b;font-weight:bold;">● Safe {b}%</span><span style="color:#b8974d;font-weight:bold;">● Cash {c}%</span></div>'
+    return pie
 
 # ═══════════════════════════════════════════════
-# 🎨 HTML INTEGRATION
+# 🎨 HTML BUILDERS
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
+    
     badge = "VIP EXCLUSIVE" if tier == "vip" else "PRO EXCLUSIVE"
     badge_bg = GOLD if tier == "vip" else "#3b82f6"
     
     html += f"""
-    <div style="margin-bottom:28px; border-bottom:2px solid {BORDER}; padding-bottom:22px;">
-        <p style="font-size:15px; color:{MUTED}; margin:0 0 12px;">
-            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf} 
-            <span style="background:{badge_bg}; color:#fff; padding:4px 12px; border-radius:4px; font-size:11px; font-weight:800; letter-spacing:1.5px; margin-left:10px;">{badge}</span>
+    <div style="border-top:4px solid {badge_bg}; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
+        <p style="margin:0; font-size:15px; color:{MUTED};">
+            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf}
+            <span style="background:{badge_bg}; color:#fff; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">{badge}</span>
         </p>
     </div>
     """
     
-    html += _ui_big_number(xtag(raw, "BIG_NUMBER"), xtag(raw, "BIG_NUMBER_DESC"))
-    
     if tier == "vip":
-        html += f'<h2 style="font-size:24px; color:{DARK}; margin:35px 0 16px; border-bottom:2px solid {GOLD}; padding-bottom:8px; display:inline-block;">Executive Summary</h2>'
-        html += f'<p style="font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
+        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
+        html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
         
-        html += _ui_fear_greed(xtag(raw, "FEAR_GREED"))
-        html += _ui_dashboard(xtag(raw, "MARKET_DASHBOARD"))
-        html += _ui_plain_english(xtag(raw, "PLAIN_ENGLISH"))
-        
-        html += f'<h2 style="font-size:24px; color:{DARK}; margin:40px 0 20px; border-bottom:2px solid {GOLD}; padding-bottom:8px; display:inline-block;">Market Drivers</h2>'
-        
-        # 3가지 드라이버
-        html += f'<div style="background:#eff6ff; border-left:4px solid #3b82f6; border-radius:0 10px 10px 0; padding:20px 24px; margin:16px 0;"><p style="font-size:14px; font-weight:800; color:#3b82f6; margin:0 0 10px; letter-spacing:1px;">🧭 MACRO</p><p style="margin:0;">{xtag(raw, "MACRO")}</p></div>'
-        html += f'<div style="background:#faf5ff; border-left:4px solid #8b5cf6; border-radius:0 10px 10px 0; padding:20px 24px; margin:16px 0;"><p style="font-size:14px; font-weight:800; color:#8b5cf6; margin:0 0 10px; letter-spacing:1px;">🐑 HERD</p><p style="margin:0;">{xtag(raw, "HERD")}</p></div>'
-        html += f'<div style="background:#ecfdf5; border-left:4px solid #059669; border-radius:0 10px 10px 0; padding:20px 24px; margin:16px 0;"><p style="font-size:14px; font-weight:800; color:#059669; margin:0 0 10px; letter-spacing:1px;">🏛️ CONTRARIAN</p><p style="margin:0;">{xtag(raw, "CONTRARIAN")}</p></div>'
+        html += _build_data_table(xtag(raw, "DATA_TABLE"), "Institutional Market Dashboard")
+        html += _build_progress_bars(xtag(raw, "HEATMAP"), "Systemic Risk Heatmap")
         
         html += f"""
-        <div style="background:#fffbeb; border-left:4px solid {AMBER}; border-radius:0 10px 10px 0; padding:24px; margin:30px 0;">
-            <p style="font-size:18px; font-weight:700; color:#92400e; margin:0 0 12px;">🔗 Quick Flow</p>
-            <p style="font-size:16px; line-height:2.2; color:{SLATE}; margin:0;">{xtag(raw, "QUICK_FLOW")}</p>
+        <div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
+            <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Viral Social Insights</p>
+            <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
         </div>
         """
         
-        html += _ui_radar(xtag(raw, "SECTOR_RADAR"))
-        html += _ui_bull_bear(xtag(raw, "BULL_CASE"), xtag(raw, "BEAR_CASE"))
-        
-        html += f'<h2 style="font-size:24px; color:{DARK}; margin:40px 0 8px; border-bottom:2px solid {GOLD}; padding-bottom:8px; display:inline-block;">The Titans Playbook</h2>'
-        html += f'<div style="border-left:4px solid {GOLD}; padding:24px; margin:20px 0; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-radius:0 10px 10px 0;"><h3 style="font-size:20px; color:#92400e; margin:0 0 14px;">1. The Generational Bargain</h3><p style="margin:0;">{xtag(raw, "VIP_T1")}</p></div>'
-        html += f'<div style="border-left:4px solid {GOLD}; padding:24px; margin:20px 0; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-radius:0 10px 10px 0;"><h3 style="font-size:20px; color:#92400e; margin:0 0 14px;">2. Asset Allocation Seesaw</h3><p style="margin:0;">{xtag(raw, "VIP_T2")}</p></div>'
-        html += f'<div style="border-left:4px solid {GOLD}; padding:24px; margin:20px 0; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-radius:0 10px 10px 0;"><h3 style="font-size:20px; color:#92400e; margin:0 0 14px;">3. The Global Shield</h3><p style="margin:0;">{xtag(raw, "VIP_T3")}</p></div>'
+        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Deep Flow</h2>'
+        html += f'<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>'
         
         html += f"""
-        <div style="background:#eff6ff; border:2px solid #93c5fd; border-radius:10px; padding:24px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-            <p style="font-size:18px; font-weight:700; color:#1e3a5f; margin:0 0 14px;">⚡ Investor Action Items</p>
-            <p style="margin:0 0 10px; color:#065f46;"><strong>🟢 DO:</strong> {xtag(raw, "VIP_DO")}</p>
-            <p style="margin:0; color:#991b1b;"><strong>🔴 DON'T:</strong> {xtag(raw, "VIP_DONT")}</p>
+        <div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {badge_bg}; padding:30px; border-radius:8px; margin:30px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+            <p>{xtag(raw, "MACRO")}</p>
+            <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
+            <p>{xtag(raw, "HERD")}</p>
+            <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
+            <p>{xtag(raw, "CONTRARIAN")}</p>
+        </div>
+        """
+        
+        html += f"""
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
+            <strong style="color:#92400e; font-size:20px;">🔗 Institutional Flow:</strong><br>
+            <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
         </div>
         """
 
-    else: # Premium (PRO)
-        html += f'<h2 style="font-size:24px; color:{DARK}; margin:35px 0 16px; border-bottom:2px solid #3b82f6; padding-bottom:8px; display:inline-block;">Executive Summary</h2>'
-        html += f'<p style="font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
-        
-        html += _ui_plain_english(xtag(raw, "PLAIN_ENGLISH"))
-        
-        html += f'<h2 style="font-size:24px; color:{DARK}; margin:40px 0 20px; border-bottom:2px solid #3b82f6; padding-bottom:8px; display:inline-block;">Market Drivers</h2>'
-        html += f'<h3 style="font-size:22px; color:{DARK}; margin-bottom:15px;">{xtag(raw, "HEADLINE")}</h3>'
-        html += f'<p>{xtag(raw, "DEPTH")}</p>'
-        
         html += f"""
-        <div style="background:#fffbeb; border-left:4px solid {AMBER}; border-radius:0 10px 10px 0; padding:24px; margin:30px 0;">
-            <p style="font-size:18px; font-weight:700; color:#92400e; margin:0 0 12px;">🔗 Quick Flow</p>
-            <p style="font-size:16px; line-height:2.2; color:{SLATE}; margin:0;">{xtag(raw, "QUICK_FLOW")}</p>
+        <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
+            <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
+                <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Institutional Bull</h4>
+                <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
+            </div>
+            <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
+                <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Institutional Bear</h4>
+                <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
+            </div>
+        </div>
+        """
+
+        al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
+        pie = _build_pie_chart(al["s"], al["b"], al["c"], GOLD)
+        
+        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block; margin-top:30px;">The Titan\'s Playbook</h2>'
+        html += f"""
+        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:25px;">
+            <h3 style="margin-top:0; font-size:22px; color:{DARK};">1. The Generational Bargain</h3>
+            <p>{xtag(raw, "VIP_T1")}</p>
+        </div>
+        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:25px;">
+            <h3 style="margin-top:0; font-size:22px; color:{DARK};">2. Asset Allocation Seesaw</h3>
+            {pie}
+            <p style="margin-top:20px;">{xtag(raw, "VIP_T2")}</p>
+        </div>
+        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:25px;">
+            <h3 style="margin-top:0; font-size:22px; color:{DARK};">3. The Global Shield</h3>
+            <p>{xtag(raw, "VIP_T3")}</p>
+        </div>
+        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:40px;">
+            <h3 style="margin-top:0; font-size:22px; color:{DARK};">4. Survival Mechanics</h3>
+            <p>{xtag(raw, "VIP_T4")}</p>
         </div>
         """
         
-        html += _ui_bull_bear(xtag(raw, "BULL_CASE"), xtag(raw, "BEAR_CASE"))
+        html += f"""
+        <div style="background:#1e293b; padding:40px; border-radius:12px; margin:45px 0;">
+            <h3 style="color:{GOLD}; margin-top:0; font-size:26px; border-bottom:2px solid #475569; padding-bottom:15px;">✅ VIP Action Plan</h3>
+            <div style="background:#ecfdf5; border:2px solid #10b981; padding:20px; border-radius:8px; margin:25px 0 15px;">
+                <p style="margin:0; color:#065f46; font-size:18px;"><strong>🟢 DO (Action):</strong> {xtag(raw, "VIP_DO")}</p>
+            </div>
+            <div style="background:#fef2f2; border:2px solid #ef4444; padding:20px; border-radius:8px;">
+                <p style="margin:0; color:#7f1d1d; font-size:18px;"><strong>🔴 DON'T (Avoid):</strong> {xtag(raw, "VIP_DONT")}</p>
+            </div>
+        </div>
+        """
+
+    else: 
+        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid #3b82f6; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
+        html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
         
-        lines = [l.strip() for l in xtag(raw, "QUICK_HITS").split('\n') if l.strip()]
-        if lines:
-            items = "".join(f'<li style="margin-bottom:10px;">{l.replace("-", "").replace("*", "").strip()}</li>' for l in lines[:3])
-            html += f'<div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:35px 0;"><h3 style="margin-top:0; font-size:18px; color:{DARK};">⚡ Quick Hits</h3><ul style="margin:0; padding-left:20px;">{items}</ul></div>'
+        html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Movers Dashboard")
+        
+        html += f"""
+        <div style="background:#f4f4f5; border-left:5px solid #8b5cf6; padding:25px; border-radius:8px; margin:40px 0;">
+            <h3 style="margin-top:0; font-size:20px; color:{DARK}; margin-bottom:12px;">📱 Viral Social Insights</h3>
+            <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
+        </div>
+        """
+        
+        html += f'<h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin:45px 0 20px;">Market Drivers & Insights</h2>'
+        html += f'<h3 style="font-size:24px; color:{DARK}; margin-bottom:15px;">{xtag(raw, "HEADLINE")}</h3>'
+        html += f'<p>{xtag(raw, "DEPTH")}</p>'
+        
+        html += f"""
+        <div style="background:#fffbeb; border:1px solid #fde68a; padding:25px; border-radius:8px; margin:40px 0;">
+            <strong style="font-size:18px; color:#d97706; text-transform:uppercase;">💡 Quick Flow:</strong>
+            <p style="font-size:19px; font-weight:bold; color:{DARK}; margin:12px 0 0;">{xtag(raw, "QUICK_FLOW")}</p>
+        </div>
+        """
+        
+        html += f"""
+        <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
+            <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
+                <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
+                <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
+            </div>
+            <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
+                <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
+                <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
+            </div>
+        </div>
+        """
+        html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         html += f"""
         <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:8px; margin:45px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
@@ -424,88 +536,129 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════
-# 🖼️ HTML2IMAGE THUMBNAIL (Milk Road Style)
+# 🎨 3D ASSET COMPOSITING THUMBNAIL ENGINE (v38)
 # ═══════════════════════════════════════════════
-def get_svg_icon(cat):
-    # 밀크로드 스타일의 고화질 SVG 아이콘
-    icons = {
-        "Economy": '<svg viewBox="0 0 24 24" fill="#fbbf24"><circle cx="12" cy="12" r="10" fill="#f59e0b"/><circle cx="12" cy="12" r="7" fill="#fbbf24"/><path d="M12 6v12m-3-9h6m-6 4h6" stroke="#b45309" stroke-width="2" stroke-linecap="round"/></svg>',
-        "Politics": '<svg viewBox="0 0 24 24" fill="#3b82f6"><circle cx="12" cy="12" r="10" fill="#1e40af"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="#60a5fa" stroke-width="1.5" fill="none"/></svg>',
-        "Tech": '<svg viewBox="0 0 24 24" fill="#8b5cf6"><rect x="4" y="4" width="16" height="16" rx="2" fill="#4c1d95"/><rect x="8" y="8" width="8" height="8" rx="1" fill="#8b5cf6"/><path d="M12 2v2m0 16v2m-10-10h2m16 0h2" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round"/></svg>',
-        "Health": '<svg viewBox="0 0 24 24" fill="#10b981"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#064e3b"/><path d="M12 8v8m-4-4h8" stroke="#34d399" stroke-width="3" stroke-linecap="round"/></svg>',
-        "Energy": '<svg viewBox="0 0 24 24" fill="#f59e0b"><circle cx="12" cy="12" r="10" fill="#1e293b"/><path d="M13 3l-6 10h5l-1 8 6-10h-5l1-8z" fill="#fbbf24"/></svg>'
-    }
-    return icons.get(cat, icons["Economy"])
+def get_asset(url, filename):
+    if not os.path.exists(filename):
+        try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response, open(filename, 'wb') as out_file:
+                out_file.write(response.read())
+        except Exception as e: print(f"Asset error: {e}")
+    return filename
 
 def make_thumbnail(title_text, cat, tier):
-    # HTML/CSS 기반의 완벽한 렌더링
+    W, H, SCALE = 1200, 630, 2
+    w, h = W * SCALE, H * SCALE
+    
+    # 🚨 3D Apple Emoji Assets 다운로드 (밀크로드 퀄리티 달성)
+    ASSETS = {
+        "Economy": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Apple-Color-Emoji-Images/master/Images/Objects/Money%20Bag.png",
+        "Politics": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Apple-Color-Emoji-Images/master/Images/Travel%20and%20Places/Globe%20Showing%20Americas.png",
+        "Tech": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Apple-Color-Emoji-Images/master/Images/Smileys%20and%20People/Robot.png",
+        "Health": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Apple-Color-Emoji-Images/master/Images/Symbols/Heart%20Decoration.png",
+        "Energy": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Apple-Color-Emoji-Images/master/Images/Travel%20and%20Places/High%20Voltage.png",
+    }
+    
     STYLES = {
-        "Economy":  {"bg": "#0f172a", "acc": "#2563eb", "tbg": "#1e3a8a"}, 
-        "Politics": {"bg": "#0f172a", "acc": "#dc2626", "tbg": "#7f1d1d"}, 
-        "Tech":     {"bg": "#0f172a", "acc": "#7c3aed", "tbg": "#4c1d95"}, 
-        "Health":   {"bg": "#0f172a", "acc": "#059669", "tbg": "#064e3b"}, 
-        "Energy":   {"bg": "#0f172a", "acc": "#d97706", "tbg": "#78350f"}, 
+        "Economy":  {"bg": "#0f172a", "acc": "#2563eb"}, 
+        "Politics": {"bg": "#0f172a", "acc": "#dc2626"}, 
+        "Tech":     {"bg": "#0f172a", "acc": "#7c3aed"}, 
+        "Health":   {"bg": "#0f172a", "acc": "#059669"}, 
+        "Energy":   {"bg": "#0f172a", "acc": "#d97706"}, 
     }
     style = STYLES.get(cat, STYLES["Economy"])
-    tier_label = "VIP REPORT" if tier == "vip" else "PRO REPORT"
-    tier_bg = GOLD if tier == "vip" else "#3b82f6"
-    date_str = datetime.datetime.utcnow().strftime("%b %d, %Y").upper()
     
-    clean_title = _clean_seo_title(title_text).replace('"', '').replace("'", "")
+    img = Image.new("RGB", (w, h), style["bg"])
+    draw = ImageDraw.Draw(img)
     
-    html_content = f"""
-    <html><head>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        body {{ width: 1200px; height: 630px; margin: 0; padding: 0; background: {style['bg']}; font-family: 'Inter', sans-serif; overflow: hidden; display: flex; color: white; }}
-        .bg-slant {{ position: absolute; right: 0; top: 0; width: 55%; height: 100%; background: {style['acc']}; clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%); z-index: 1; }}
-        .bg-slant-shadow {{ position: absolute; right: 0; top: 0; width: 58%; height: 100%; background: rgba(0,0,0,0.3); clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%); z-index: 0; }}
-        .content {{ position: relative; z-index: 2; padding: 70px; width: 100%; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(90deg, {style['tbg']} 40%, transparent); }}
-        .top-bar {{ display: flex; justify-content: space-between; align-items: center; width: 100%; padding-right: 140px; box-sizing: border-box; }}
-        .badges {{ display: flex; gap: 15px; }}
-        .badge {{ background: rgba(0,0,0,0.8); padding: 10px 25px; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; display:flex; align-items:center; }}
-        .badge-tier {{ background: {tier_bg}; color: #fff; }}
-        .title {{ font-family: 'Bebas Neue', sans-serif; font-size: 95px; line-height: 1.05; text-transform: uppercase; width: 65%; text-shadow: 2px 4px 10px rgba(0,0,0,0.5); margin-top: -40px; }}
-        .logo {{ font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: #cbd5e1; letter-spacing: 2px; }}
-        .icon-container {{ position: absolute; right: 12%; top: 50%; transform: translateY(-50%); z-index: 3; filter: drop-shadow(10px 20px 25px rgba(0,0,0,0.5)); }}
-        .icon-container svg {{ width: 350px; height: 350px; transform: rotate(15deg); }}
-    </style>
-    </head><body>
-        <div class="bg-slant-shadow"></div>
-        <div class="bg-slant"></div>
-        <div class="content">
-            <div class="top-bar">
-                <div class="badge">{cat.upper()} &nbsp;|&nbsp; {date_str}</div>
-                <div class="badge badge-tier">{tier_label}</div>
-            </div>
-            <div class="title">{clean_title}</div>
-            <div class="logo">WARM INSIGHT</div>
-        </div>
-        <div class="icon-container">
-            {get_svg_icon(cat)}
-        </div>
-    </body></html>
-    """
+    font_url_bebas = "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf"
+    font_url_roboto = "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto-Bold.ttf"
+    fs_path = get_asset(font_url_bebas, "fonts/BebasNeue-Regular.ttf")
+    fr_path = get_asset(font_url_roboto, "fonts/Roboto-Bold.ttf")
     
-    try:
-        # html2image 라이브러리를 사용하여 렌더링 (Github Actions 환경 대응 플래그 적용)
-        hti = Html2Image(custom_flags=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'])
-        hti.output_path = '/tmp' if os.path.exists('/tmp') else '.'
-        filename = f"thumb_{random.randint(1000,9999)}.jpg"
-        hti.screenshot(html_str=html_content, save_as=filename, size=(1200, 630))
+    def lf(p, s):
+        try: return ImageFont.truetype(p, s * SCALE)
+        except: return ImageFont.load_default()
         
-        filepath = os.path.join(hti.output_path, filename)
-        with open(filepath, 'rb') as f:
-            img_bytes = f.read()
-        os.remove(filepath) # 임시 파일 삭제
-        return img_bytes
-    except Exception as e:
-        print(f"    ⚠️ html2image failed: {e}")
-        # 실패 시 단색 배경으로 fallback
-        img = Image.new("RGB", (1200, 630), style["bg"])
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=90)
-        return buf.getvalue()
+    font_title = lf(fs_path, 95)
+    font_badge = lf(fr_path, 28)
+    font_logo  = lf(fs_path, 40)
+
+    # 1. 사선(Slanted) 배경
+    pts = [(w*0.50, 0), (w, 0), (w, h), (w*0.40, h)]
+    draw.polygon(pts, fill=style["acc"])
+    pts_shadow = [(w*0.47, 0), (w*0.50, 0), (w*0.40, h), (w*0.37, h)]
+    draw.polygon(pts_shadow, fill="#00000050")
+
+    # 2. 🚨 고화질 3D 에셋 합성 (밀크로드 스타일 완성)
+    icon_url = ASSETS.get(cat, ASSETS["Economy"])
+    icon_path = get_asset(icon_url, f"assets/{cat}.png")
+    
+    if os.path.exists(icon_path):
+        try:
+            icon = Image.open(icon_path).convert("RGBA")
+            ir = int(350 * SCALE)
+            icon = icon.resize((ir, ir), Image.LANCZOS)
+            ix, iy = int(w*0.75 - ir/2), int(h*0.5 - ir/2)
+            
+            # 자연스러운 그림자 추가
+            shadow = Image.new("RGBA", (ir, ir), (0,0,0,0))
+            shadow_draw = ImageDraw.Draw(shadow)
+            shadow_draw.ellipse([ir*0.2, ir*0.8, ir*0.8, ir*0.95], fill=(0,0,0,100))
+            img.paste(shadow, (ix, iy + int(20*SCALE)), mask=shadow)
+            
+            # 3D 에셋 붙이기
+            img.paste(icon, (ix, iy), mask=icon)
+        except Exception as e: print(f"Icon paste error: {e}")
+
+    # 3. 뱃지 (Category / Date)
+    pad = 70 * SCALE
+    date_str = datetime.datetime.utcnow().strftime("%b %d, %Y").upper()
+    badge_text = f"  {cat.upper()}  |  {date_str}  "
+    badge_w = draw.textlength(badge_text, font=font_badge)
+    
+    draw.rounded_rectangle([pad, pad, pad + badge_w + 40*SCALE, pad + 60*SCALE], radius=10*SCALE, fill="#000000")
+    draw.text((pad + 20*SCALE, pad + 12*SCALE), badge_text, font=font_badge, fill="#ffffff")
+    
+    tier_text = " VIP REPORT " if tier == "vip" else " PRO REPORT "
+    tier_bg = GOLD if tier == "vip" else "#3b82f6"
+    tier_w = draw.textlength(tier_text, font=font_badge)
+    draw.rounded_rectangle([w - pad - tier_w - 40*SCALE, pad, w - pad, pad + 60*SCALE], radius=10*SCALE, fill=tier_bg)
+    draw.text((w - pad - tier_w - 20*SCALE, pad + 12*SCALE), tier_text, font=font_badge, fill="#ffffff")
+
+    # 4. 거대 타이포그래피
+    clean_title = _clean_seo_title(title_text).replace('"', '').replace("'", "")
+    words = clean_title.upper().split()
+    lines, current_line = [], []
+    max_w = w * 0.55 
+    
+    for word in words:
+        test_line = " ".join(current_line + [word])
+        try: tw = draw.textlength(test_line, font=font_title)
+        except: tw = len(test_line) * 50 * SCALE
+        
+        if tw <= max_w: current_line.append(word)
+        else:
+            lines.append(" ".join(current_line))
+            current_line = [word]
+    if current_line: lines.append(" ".join(current_line))
+
+    y_pos = h * 0.35
+    for line in lines[:4]: 
+        # 그림자를 주어 가독성 확보
+        draw.text((pad + 4*SCALE, y_pos + 4*SCALE), line, font=font_title, fill="#000000")
+        draw.text((pad, y_pos), line, font=font_title, fill="#ffffff")
+        y_pos += 100 * SCALE
+
+    # 하단 로고
+    draw.text((pad, h - pad - 40*SCALE), "WARM INSIGHT", font=font_logo, fill="#94a3b8")
+
+    img = img.resize((W, H), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=95)
+    return buf.getvalue()
 
 # ═══════════════════════════════════════════════
 # PUBLISHER 
@@ -570,7 +723,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes):
 
 def run_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v37 Pipeline (Full-Spec & HTML2Image Thumbnail) | Category: {cat}")
+    print(f"🚀 Starting v38 Pipeline (3D Asset Engine + Full Spec) | Category: {cat}")
     
     if not check_env_vars() or not verify_wp_credentials(): return
     
@@ -617,7 +770,7 @@ def run_pipeline():
             
             html = build_html(tier, cat, raw, author, tf, title)
             
-            print("    🖌️ Generating HTML2Image Thumbnail...")
+            print("    🖌️ Generating 3D Asset Thumbnail...")
             img_bytes = make_thumbnail(title, cat, tier)
             
             publish(title, html, exc, kw, cat, slug, tier, img_bytes)
