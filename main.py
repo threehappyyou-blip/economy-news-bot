@@ -373,6 +373,103 @@ def _build_pie_chart(s, b, c, accent):
     return pie
 
 # ═══════════════════════════════════════════════
+# 📎 ENGAGEMENT & FOOTER BUILDERS (v39 추가 — 사진4 퀄리티 복원)
+# ═══════════════════════════════════════════════
+SOCIAL_LINKS = {
+    "youtube": "https://www.youtube.com/@WarmInsightyou",
+    "x": "https://x.com/warminsight",
+}
+
+def _build_upgrade_cta():
+    """PRO 글 하단 VIP 업그레이드 버튼"""
+    return f"""
+    <div style="text-align:center; margin:45px 0;">
+        <a href="{SITE_URL}/warm-insight-vip-membership/" style="display:inline-block; background:{GOLD}; color:#fff; padding:16px 40px; border-radius:10px; font-size:18px; font-weight:bold; text-decoration:none; letter-spacing:0.5px;">
+            🔒 Want institutional analysis? <strong>Upgrade to VIP</strong>
+        </a>
+    </div>
+    """
+
+def _build_social_share(title, slug):
+    """공유 섹션 (Found this useful?)"""
+    url = f"{SITE_URL}/{slug}/"
+    et = title.replace(" ", "%20").replace("&", "%26")[:100]
+    eu = url.replace(":", "%3A").replace("/", "%2F")
+    si = ""
+    if SOCIAL_LINKS.get("youtube"):
+        si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
+    if SOCIAL_LINKS.get("x"):
+        si += f'<a href="{SOCIAL_LINKS["x"]}" target="_blank" style="display:inline-block; background:#000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">𝕏 Follow</a>'
+    return f"""
+    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:28px; margin:40px 0; text-align:center;">
+        <p style="font-size:20px; font-weight:bold; color:{DARK}; margin:0 0 10px;">Found this useful? Share the insight.</p>
+        <p style="font-size:15px; color:{MUTED}; margin:0 0 18px;">Forward to a friend who wants smarter market analysis.</p>
+        <div style="margin-bottom:14px;">{si}</div>
+        <p style="margin:0;"><a href="{SITE_URL}" style="color:{GOLD}; font-weight:600; text-decoration:underline;">Subscribe at warminsight.com</a></p>
+    </div>
+    """
+
+def _build_branded_footer():
+    """Warm Insight 브랜드 다크 푸터"""
+    si = ""
+    if SOCIAL_LINKS.get("youtube"):
+        si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
+    if SOCIAL_LINKS.get("x"):
+        si += f'<a href="{SOCIAL_LINKS["x"]}" target="_blank" style="display:inline-block; background:#000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">𝕏 Follow</a>'
+    return f"""
+    <div style="background:{DARK}; padding:35px; border-radius:10px; margin-top:30px;">
+        <p style="font-size:24px; font-weight:bold; color:{GOLD}; margin:0 0 12px; text-align:center;">Warm Insight</p>
+        <p style="font-size:14px; color:#94a3b8; text-align:center; margin:0 0 16px;">AI-Driven Global Market Analysis</p>
+        <div style="text-align:center; margin-bottom:16px;">{si}</div>
+        <div style="text-align:center; margin-bottom:16px; font-size:13px;">
+            <a href="{SITE_URL}/about-us/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">About</a>
+            <a href="{SITE_URL}/privacy-policy/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">Privacy</a>
+            <a href="{SITE_URL}/terms/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">Terms</a>
+            <a href="{SITE_URL}/warm-insight-vip-membership/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">VIP</a>
+        </div>
+        <p style="font-size:13px; color:#64748b; margin:0; text-align:center;">
+            All analysis is for informational purposes only. Not financial advice.<br>
+            &copy; 2026 Warm Insight. All rights reserved.
+        </p>
+    </div>
+    """
+
+def _build_internal_links(cat):
+    """Explore More from Warm Insight 내부 링크"""
+    pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
+    related = CAT_RELATED.get(cat, ["Economy", "Tech"])
+    html = f"""
+    <div style="margin:35px 0; padding:20px 24px; background:{BG_LIGHT}; border-left:4px solid {GOLD}; border-radius:0 10px 10px 0;">
+        <p style="margin:0 0 12px; font-size:16px; font-weight:700; color:{DARK};">Explore More from Warm Insight</p>
+        <p style="margin:0 0 8px;"><a href="{pillar['url']}" style="color:{GOLD}; text-decoration:underline; font-weight:600;">{pillar['anchor']}</a></p>
+    """
+    for rc in related[:2]:
+        rp = PILLAR_PAGES.get(rc)
+        if rp:
+            html += f'        <p style="margin:0 0 8px;"><a href="{rp["url"]}" style="color:{MUTED}; text-decoration:underline;">{rc} Analysis</a></p>\n'
+    html += "    </div>"
+    return html
+
+def _build_author_bio(cat):
+    """저자 바이오 섹션 (아바타 + 이름 + 소개)"""
+    author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
+    first_name = author.split("&")[0].strip().split()[-1]
+    return f"""
+    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:35px 0; display:flex; gap:20px; align-items:center;">
+        <div style="min-width:56px; height:56px; border-radius:50%; background:{GOLD}; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff;">
+            {first_name[0]}
+        </div>
+        <div>
+            <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">{author}</p>
+            <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
+                Senior analyst at Warm Insight with deep expertise in global macro-trends, geopolitics, and asset strategy. 
+                Our insights combine analytical intelligence for everyday investors.
+            </p>
+        </div>
+    </div>
+    """
+
+# ═══════════════════════════════════════════════
 # 🎨 HTML BUILDERS (v38 원본 — 펼친 구조 유지, 압축 금지)
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, author, tf, title):
@@ -524,7 +621,12 @@ def build_html(tier, cat, raw, author, tf, title):
         </div>
         """
     
-    # ── 공통 Footer (v38 원본) ──
+    # ── PRO 전용: VIP 업그레이드 CTA ──
+    if tier == "premium":
+        html += _build_upgrade_cta()
+
+    # ── 공통 Footer (v39: 사진4 퀄리티 복원 — 5개 섹션 추가) ──
+    slug = make_slug(xtag(raw, "SEO_KEYWORD"), xtag(raw, "TITLE"), cat)
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
     html += f"""
@@ -536,6 +638,15 @@ def build_html(tier, cat, raw, author, tf, title):
             <strong style="color:{badge_bg};">P.S.</strong> {ps}
         </p>
     </div>
+    """
+
+    # ── v39 추가: 사진4에 있었던 engagement 섹션들 ──
+    html += _build_social_share(title, slug)
+    html += _build_branded_footer()
+    html += _build_internal_links(cat)
+    html += _build_author_bio(cat)
+
+    html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: This article is for informational purposes only. All decisions are your own.
     </p>
