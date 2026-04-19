@@ -4,3 +4,10 @@ google-genai
 PyJWT
 requests
 Pillow
+feedparser
+pytz
+google-genai
+PyJWT
+requests
+Pillow
+html2image
