@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.1 (Energy Author Update)
-# v40 대비 변경점:
-#   1) Energy 카테고리 담당자 'Alexander Vance'로 독립 배정
+# Warm Insight Auto Poster — v40.2 (Strict Tag Compliance Update)
+# v40.2 대비 변경점:
+#   1) gemini-2.5-flash의 XML 태그 생략 버그(빈칸 현상) 완벽 해결
+#   2) System Instruction 및 max_output_tokens(8192) 강제 주입
+#   3) 프롬프트 템플릿 구조를 AI가 절대 태그를 빼먹을 수 없도록 개조
+#   4) Energy 카테고리 담당자 'Alexander Vance' 독립 배정 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -11,6 +14,7 @@ import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
+from google.genai import types
 
 # ═══════════════════════════════════════════════
 # CONFIG
@@ -123,10 +127,17 @@ def verify_wp_credentials():
     print("❌ WP Auth Failed. Check your App Password.")
     return False
 
+# 🚨 AI가 태그를 무시하지 못하도록 System Instruction과 Token Limit 강제 주입
 def call_gemini(client, model, prompt, retries=5):
+    sys_inst = "You are an elite financial analyst. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested (e.g., <TITLE>...</TITLE>, <VIP_T1>...</VIP_T1>). DO NOT omit any requested XML tags. Failure to include tags will break the system."
+    config = types.GenerateContentConfig(
+        system_instruction=sys_inst,
+        temperature=0.7,
+        max_output_tokens=8192
+    )
     for i in range(1, retries + 1):
         try:
-            r = client.models.generate_content(model=model, contents=prompt)
+            r = client.models.generate_content(model=model, contents=prompt, config=config)
             if r.text: return str(r.text)
         except Exception as e:
             err = str(e)
@@ -150,7 +161,13 @@ def gem_fb(tier, prompt):
 
 def xtag(raw, tag):
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL | re.IGNORECASE)
-    return m.group(1).strip() if m else ""
+    if m:
+        res = m.group(1).strip()
+        # AI가 태그 안에 마크다운(```)을 넣을 경우를 대비해 청소
+        res = re.sub(r"^```(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
+        res = re.sub(r"\n```$", "", res)
+        return res.strip()
+    return ""
 
 def sanitize(html):
     html = re.sub(r"<script(?!\s+type=['\"]application/ld\+json['\"])[^>]*>.*?</script>", "", html, flags=re.DOTALL)
@@ -186,92 +203,97 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🎨 TWO-PART PROMPTS (1200줄 퀄리티 보장)
+# 🎨 TWO-PART PROMPTS (태그 누락 방지용 구조 개조)
 # ═══════════════════════════════════════════════
 VIP_P1 = """You are Warm Insight's senior analyst. Write PART 1 of a VIP deep-dive on {cat}.
 Audience: Sophisticated investors paying premium.
-Write REAL, deep analysis paragraphs. Do not use placeholders.
 
-<TITLE>Institutional title, max 90 chars. No tickers in title.</TITLE>
-<SEO_KEYWORD>focus keyphrase</SEO_KEYWORD>
-<IMPACT>HIGH, MEDIUM, or LOW</IMPACT>
+News Context:
+{news}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below. Do not miss any tags!
+
+<TITLE>(Write Institutional title here, max 90 chars. No tickers)</TITLE>
+<SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
+<IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 
 <DATA_TABLE>
-Extract 3-4 key market metrics from the news.
-Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight
+(Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight)
 </DATA_TABLE>
 
 <HEATMAP>
-Invent 3-4 sector risk levels (0-100%) based on the news.
-Format exactly: Sector Name | Number
+(Invent 3-4 sector risk levels (0-100%) based on news. Format exactly: Sector Name | Number)
 </HEATMAP>
 
-<EXECUTIVE_SUMMARY>3 powerful sentences summarizing the systemic shift.</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>3-4 sentences using a vivid, memorable analogy for non-experts.</PLAIN_ENGLISH>
-<HEADLINE>Analytical headline for market drivers</HEADLINE>
+<EXECUTIVE_SUMMARY>(Write 3 powerful sentences summarizing the systemic shift)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(Write 3-4 sentences using a vivid, memorable analogy for non-experts)</PLAIN_ENGLISH>
+<HEADLINE>(Write Analytical headline for market drivers here)</HEADLINE>
 
-<MACRO><strong>🧐 MACRO:</strong> Systems view. Global forces. Write 2 full, rich paragraphs (150+ words).</MACRO>
-<HERD><strong>🐑 HERD:</strong> Cognitive bias and retail panic. Write 1 full paragraph (80+ words).</HERD>
-<CONTRARIAN><strong>🦅 CONTRARIAN:</strong> 2nd-order thinking. Smart money moves. Write 1 full paragraph (80+ words).</CONTRARIAN>
-<QUICK_FLOW>Chain of events with arrows ➡️ (5-6 steps)</QUICK_FLOW>
-
-News Context:
-{news}"""
+<MACRO>(Write 2 full paragraphs (150+ words) on Global forces)</MACRO>
+<HERD>(Write 1 full paragraph (80+ words) on Cognitive bias and retail panic)</HERD>
+<CONTRARIAN>(Write 1 full paragraph (80+ words) on Smart money moves)</CONTRARIAN>
+<QUICK_FLOW>(Write Chain of events with arrows ➡️ 5-6 steps)</QUICK_FLOW>"""
 
 VIP_P2 = """You are Warm Insight's senior analyst. Write PART 2 of the VIP strategy for {cat}.
-Write REAL, deep analysis paragraphs. Do not use placeholders.
 
 Context from Part 1:
 {ctx}
 
-<BULL_CASE>Bullish scenario. Full paragraph (80+ words).</BULL_CASE>
-<BEAR_CASE>Bearish scenario. Full paragraph (80+ words).</BEAR_CASE>
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below. Do not miss any tags!
 
-<VIP_T1>1. The Generational Bargain (Fear vs Greed): Explain the current market sentiment balance. Full paragraph.</VIP_T1>
-<VIP_T2>2. The {alloc} Seesaw (Asset Allocation): How to deploy capital now. Full paragraph mentioning specific ETF sectors.</VIP_T2>
-<VIP_T3>3. The Global Shield: Compare US vs International exposure. Full paragraph.</VIP_T3>
-<VIP_T4>4. Survival Mechanics: DCA and risk management. Full paragraph.</VIP_T4>
+<BULL_CASE>(Write Bullish scenario. Full paragraph 80+ words)</BULL_CASE>
+<BEAR_CASE>(Write Bearish scenario. Full paragraph 80+ words)</BEAR_CASE>
 
-<VIP_DO>2 specific actions with ETF sectors and triggers.</VIP_DO>
-<VIP_DONT>1 critical mistake to avoid.</VIP_DONT>
+<VIP_T1>(Write a full paragraph explaining the current market sentiment balance: Fear vs Greed)</VIP_T1>
+<VIP_T2>(Write a full paragraph on how to deploy capital now, mentioning specific ETF sectors)</VIP_T2>
+<VIP_T3>(Write a full paragraph comparing US vs International exposure)</VIP_T3>
+<VIP_T4>(Write a full paragraph on DCA and risk management)</VIP_T4>
 
-<TAKEAWAY>One calming, profound insight.</TAKEAWAY>
-<PS>Historical perspective in 2-3 sentences.</PS>"""
+<VIP_DO>(Write 2 specific actions with ETF sectors and triggers)</VIP_DO>
+<VIP_DONT>(Write 1 critical mistake to avoid)</VIP_DONT>
 
-PROMPT_PREMIUM = """You are Warm Insight's senior analyst. Write a PRO newsletter on {cat} for an intermediate audience.
-Write REAL, deep analysis paragraphs. Do not use placeholders. Total length should be 600-800 words.
+<TAKEAWAY>(Write One calming, profound insight)</TAKEAWAY>
+<PS>(Write Historical perspective in 2-3 sentences)</PS>"""
 
-<TITLE>Compelling headline, max 80 chars. No tickers in title.</TITLE>
-<EXCERPT>2 sentence SEO summary.</EXCERPT>
-<SEO_KEYWORD>focus keyphrase</SEO_KEYWORD>
-<IMPACT>HIGH, MEDIUM, or LOW</IMPACT>
-
-<DATA_TABLE>
-Extract 3-4 key market metrics from the news.
-Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight
-</DATA_TABLE>
-
-<EXECUTIVE_SUMMARY>3 sentences capturing the core thesis.</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>3-4 sentences using a vivid, relatable analogy (e.g., "Think of it like...").</PLAIN_ENGLISH>
-
-<HEADLINE>Analytical headline for drivers</HEADLINE>
-<DEPTH><strong>🧐 WHY:</strong> Deeper structural pattern (3-4 sentences).<br><br><strong>🐑 HERD TRAP:</strong> Cognitive bias (2-3 sentences).</DEPTH>
-<QUICK_FLOW>Chain of events with arrows ➡️</QUICK_FLOW>
-
-<BULL_CASE>3-4 sentences optimistic outlook.</BULL_CASE>
-<BEAR_CASE>3-4 sentences pessimistic outlook.</BEAR_CASE>
-
-<QUICK_HITS>3 bullet points of other relevant news from the context. 1 sentence per line.</QUICK_HITS>
-
-<PRO_INSIGHT><strong>💎 Pro-Only Insight:</strong> 1-2 paragraphs cross-sector connection and second-order thinking. Name sectors.</PRO_INSIGHT>
-<PRO_DO>1 specific action with reasoning.</PRO_DO>
-<PRO_DONT>1 specific mistake to avoid.</PRO_DONT>
-
-<TAKEAWAY>The bottom line insight.</TAKEAWAY>
-<PS>One-line veteran advice.</PS>
+PROMPT_PREMIUM = """You are Warm Insight's senior analyst. Write a PRO newsletter on {cat} for an intermediate audience. Total length should be 600-800 words.
 
 News Context:
-{news}"""
+{news}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below. Do not miss any tags!
+
+<TITLE>(Write Compelling headline here, max 80 chars. No tickers)</TITLE>
+<EXCERPT>(Write 2 sentence SEO summary here)</EXCERPT>
+<SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
+<IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
+
+<DATA_TABLE>
+(Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight)
+</DATA_TABLE>
+
+<EXECUTIVE_SUMMARY>(Write 3 sentences capturing the core thesis)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(Write 3-4 sentences using a vivid, relatable analogy)</PLAIN_ENGLISH>
+
+<HEADLINE>(Write Analytical headline for drivers here)</HEADLINE>
+<DEPTH>(Write 3-4 sentences on deeper structural pattern, followed by 2-3 sentences on Herd Trap)</DEPTH>
+<QUICK_FLOW>(Write Chain of events with arrows ➡️)</QUICK_FLOW>
+
+<BULL_CASE>(Write 3-4 sentences optimistic outlook)</BULL_CASE>
+<BEAR_CASE>(Write 3-4 sentences pessimistic outlook)</BEAR_CASE>
+
+<QUICK_HITS>
+(Write 3 bullet points of other relevant news. 1 sentence per line)
+</QUICK_HITS>
+
+<PRO_INSIGHT>(Write 1-2 paragraphs cross-sector connection and second-order thinking. Name sectors)</PRO_INSIGHT>
+<PRO_DO>(Write 1 specific action with reasoning)</PRO_DO>
+<PRO_DONT>(Write 1 specific mistake to avoid)</PRO_DONT>
+
+<TAKEAWAY>(Write The bottom line insight here)</TAKEAWAY>
+<PS>(Write One-line veteran advice here)</PS>"""
 
 # ═══════════════════════════════════════════════
 # 📊 VISUAL DATA BUILDERS
@@ -373,8 +395,8 @@ def _build_pie_chart(s, b, c, accent):
 # 📎 ENGAGEMENT & FOOTER BUILDERS
 # ═══════════════════════════════════════════════
 SOCIAL_LINKS = {
-    "youtube": "https://www.youtube.com/@WarmInsightyou",
-    "x": "https://x.com/warminsight",
+    "youtube": "[https://www.youtube.com/@WarmInsightyou](https://www.youtube.com/@WarmInsightyou)",
+    "x": "[https://x.com/warminsight](https://x.com/warminsight)",
 }
 
 def _build_upgrade_cta():
@@ -496,11 +518,11 @@ def build_html(tier, cat, raw, author, tf, title):
         
         html += f"""
         <div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {badge_bg}; padding:30px; border-radius:8px; margin:30px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
-            <p>{xtag(raw, "MACRO")}</p>
+            <p><strong>🧐 MACRO:</strong> {xtag(raw, "MACRO")}</p>
             <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
-            <p>{xtag(raw, "HERD")}</p>
+            <p><strong>🐑 HERD:</strong> {xtag(raw, "HERD")}</p>
             <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
-            <p>{xtag(raw, "CONTRARIAN")}</p>
+            <p><strong>🦅 CONTRARIAN:</strong> {xtag(raw, "CONTRARIAN")}</p>
         </div>
         """
         
@@ -617,6 +639,7 @@ def build_html(tier, cat, raw, author, tf, title):
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), xtag(raw, "TITLE"), cat)
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
+    
     html += f"""
     <hr style="border:0; height:1px; background:{BORDER}; margin:50px 0;">
     <h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin-bottom:20px;">Today's Warm Insight</h2>
@@ -671,7 +694,7 @@ def make_thumbnail(title_text, cat, tier):
     draw = ImageDraw.Draw(img)
 
     ft_path = get_font(
-        "https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf",
+        "[https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf](https://github.com/google/fonts/raw/main/ofl/bebasneue/BebasNeue-Regular.ttf)",
         "fonts/BebasNeue-Regular.ttf"
     )
 
@@ -812,7 +835,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# PUBLISHER (🚨 작성자 매칭 로직 유지)
+# PUBLISHER
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
@@ -916,7 +939,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.1 Pipeline (Energy Author Updated) | Category: {cat}")
+    print(f"🚀 Starting v40.2 Pipeline (Strict Tag Format Update) | Category: {cat}")
     
     if not check_env_vars() or not verify_wp_credentials(): return
     
