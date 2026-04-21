@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.3 (Thumbnail Font Bulletproof Update)
-# v40.3 대비 변경점:
-#   1) 썸네일 폰트 다운로드 차단 시 발생하는 '11px 먼지 폰트' 오류 완벽 해결
-#   2) 폰트 다운로드 주소 변경 및 손상된 폰트 파일 검증 로직 추가
-#   3) 다운로드 실패 시 Ubuntu 서버 기본 굵은 폰트(DejaVu) 3중 강제 백업 적용
-#   4) v40.2의 최고 품질 AI 프롬프트 및 XML 태그 강제 로직 100% 유지
+# Warm Insight Auto Poster — v40.4 (The Daily Catalyst Integration)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -66,7 +61,9 @@ VIP_AUTHORS = {
     "Tech":     "Marcus Chen & The Warm Insight Panel",
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
     "Energy":   "Alexander Vance & The Warm Insight Panel",
+    "The Daily Catalyst": "Warm Insight Philosophical Desk" # 철학 전용 담당자
 }
+
 RSS_FEEDS = {
     "Economy": [
         "https://feeds.reuters.com/reuters/businessNews",
@@ -127,8 +124,10 @@ def verify_wp_credentials():
     print("❌ WP Auth Failed. Check your App Password.")
     return False
 
-def call_gemini(client, model, prompt, retries=5):
-    sys_inst = "You are an elite financial analyst. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested (e.g., <TITLE>...</TITLE>, <VIP_T1>...</VIP_T1>). DO NOT omit any requested XML tags. Failure to include tags will break the system."
+def call_gemini(client, model, prompt, sys_inst=None, retries=5):
+    if not sys_inst:
+        sys_inst = "You are an elite financial analyst. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested. DO NOT omit any requested XML tags. Failure to include tags will break the system."
+    
     config = types.GenerateContentConfig(
         system_instruction=sys_inst,
         temperature=0.7,
@@ -150,11 +149,11 @@ def call_gemini(client, model, prompt, retries=5):
             elif i < retries: time.sleep(5 * i)
     return None
 
-def gem_fb(tier, prompt):
+def gem_fb(tier, prompt, sys_inst=None):
     client = _get_gemini_client()
     for m in MODEL_PRI.get(tier, FAST_MODELS):
         print(f"    [AI] Trying {m}...")
-        r = call_gemini(client, m, prompt)
+        r = call_gemini(client, m, prompt, sys_inst)
         if r: return r
     return ""
 
@@ -201,100 +200,113 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🎨 TWO-PART PROMPTS (태그 누락 방지용)
+# 🧠 PHILOSOPHY DATABASE & PROMPTS (The Daily Catalyst)
+# ═══════════════════════════════════════════════
+PHILOSOPHY_TOPICS = [
+    "돈을 짝사랑하지 말고 행동으로 사랑하라 (Love money through action, not just unrequited longing)",
+    "부를 담을 심리적 그릇과 책임의 무게 (The psychological vessel of wealth and the weight of responsibility)",
+    "자발적 피로: 성장을 위한 쾌락적 고통 (Voluntary fatigue: The pleasurable pain of chosen growth)",
+    "환경적 결핍을 폭발적 성장의 무기로 삼아라 (Weaponize environmental lack for explosive growth)",
+    "소비자에서 생산자로: 읽기에서 쓰기로의 전환 (From consumer to producer: The shift from reading to writing)",
+    "스스로 설정한 인지적 연봉 상한선을 파괴하라 (Destroy the cognitive salary cap you set for yourself)",
+    "핑계의 소거: 타협 없는 성장의 시작 (The elimination of excuses: The beginning of uncompromising growth)"
+]
+
+PHILOSOPHY_SYS_INST = """You are an elite philosophical life strategist and writer, heavily influenced by classical literature and pragmatic wealth philosophies. 
+Your objective is to create a daily insight post that delivers profound, unfiltered truths about personal growth, wealth accumulation, and psychological resilience. 
+You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
+Your writing must be direct, concise, and unapologetic. Use short, plain sentences. Do not sugar-coat reality.
+NEVER use the following words or phrases: 'dive into', 'unleash', 'game-changing', 'buckle up', 'embark on this journey', 'delve', 'explore', 'supercharge', 'basically', 'in conclusion'.
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the following theme:
+THEME: {theme}
+
+When interpreting concepts like 'dirt spoon' or poverty, frame it as a 'systemic disadvantage that must be weaponized for explosive growth'. 
+When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaustion that comes from total, self-directed immersion in a meaningful task'.
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Write a punchy, 3-to-6 word title)</TITLE>
+<SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
+<ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme)</ANCHOR>
+<REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses and logically argue for voluntary fatigue and action.)</REFLECTION>
+<CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
+"""
+
+# ═══════════════════════════════════════════════
+# 🎨 TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 VIP_P1 = """You are Warm Insight's senior analyst. Write PART 1 of a VIP deep-dive on {cat}.
 Audience: Sophisticated investors paying premium.
-
 News Context:
 {news}
-
 OUTPUT FORMAT REQUIREMENT:
-You MUST output your response by wrapping your content EXACTLY in the XML tags listed below. Do not miss any tags!
-
+You MUST wrap your content EXACTLY in the XML tags listed below. Do not miss any tags!
 <TITLE>(Write Institutional title here, max 90 chars. No tickers)</TITLE>
 <SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
-
 <DATA_TABLE>
 (Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight)
 </DATA_TABLE>
-
 <HEATMAP>
 (Invent 3-4 sector risk levels (0-100%) based on news. Format exactly: Sector Name | Number)
 </HEATMAP>
-
 <EXECUTIVE_SUMMARY>(Write 3 powerful sentences summarizing the systemic shift)</EXECUTIVE_SUMMARY>
 <PLAIN_ENGLISH>(Write 3-4 sentences using a vivid, memorable analogy for non-experts)</PLAIN_ENGLISH>
 <HEADLINE>(Write Analytical headline for market drivers here)</HEADLINE>
-
 <MACRO>(Write 2 full paragraphs (150+ words) on Global forces)</MACRO>
 <HERD>(Write 1 full paragraph (80+ words) on Cognitive bias and retail panic)</HERD>
 <CONTRARIAN>(Write 1 full paragraph (80+ words) on Smart money moves)</CONTRARIAN>
 <QUICK_FLOW>(Write Chain of events with arrows ➡️ 5-6 steps)</QUICK_FLOW>"""
 
 VIP_P2 = """You are Warm Insight's senior analyst. Write PART 2 of the VIP strategy for {cat}.
-
 Context from Part 1:
 {ctx}
-
 OUTPUT FORMAT REQUIREMENT:
-You MUST output your response by wrapping your content EXACTLY in the XML tags listed below. Do not miss any tags!
-
+You MUST wrap your content EXACTLY in the XML tags listed below.
 <BULL_CASE>(Write Bullish scenario. Full paragraph 80+ words)</BULL_CASE>
 <BEAR_CASE>(Write Bearish scenario. Full paragraph 80+ words)</BEAR_CASE>
-
 <VIP_T1>(Write a full paragraph explaining the current market sentiment balance: Fear vs Greed)</VIP_T1>
 <VIP_T2>(Write a full paragraph on how to deploy capital now, mentioning specific ETF sectors)</VIP_T2>
 <VIP_T3>(Write a full paragraph comparing US vs International exposure)</VIP_T3>
 <VIP_T4>(Write a full paragraph on DCA and risk management)</VIP_T4>
-
 <VIP_DO>(Write 2 specific actions with ETF sectors and triggers)</VIP_DO>
 <VIP_DONT>(Write 1 critical mistake to avoid)</VIP_DONT>
-
 <TAKEAWAY>(Write One calming, profound insight)</TAKEAWAY>
 <PS>(Write Historical perspective in 2-3 sentences)</PS>"""
 
 PROMPT_PREMIUM = """You are Warm Insight's senior analyst. Write a PRO newsletter on {cat} for an intermediate audience. Total length should be 600-800 words.
-
 News Context:
 {news}
-
 OUTPUT FORMAT REQUIREMENT:
-You MUST output your response by wrapping your content EXACTLY in the XML tags listed below. Do not miss any tags!
-
+You MUST wrap your content EXACTLY in the XML tags listed below.
 <TITLE>(Write Compelling headline here, max 80 chars. No tickers)</TITLE>
 <EXCERPT>(Write 2 sentence SEO summary here)</EXCERPT>
 <SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
-
 <DATA_TABLE>
 (Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight)
 </DATA_TABLE>
-
 <EXECUTIVE_SUMMARY>(Write 3 sentences capturing the core thesis)</EXECUTIVE_SUMMARY>
 <PLAIN_ENGLISH>(Write 3-4 sentences using a vivid, relatable analogy)</PLAIN_ENGLISH>
-
 <HEADLINE>(Write Analytical headline for drivers here)</HEADLINE>
 <DEPTH>(Write 3-4 sentences on deeper structural pattern, followed by 2-3 sentences on Herd Trap)</DEPTH>
 <QUICK_FLOW>(Write Chain of events with arrows ➡️)</QUICK_FLOW>
-
 <BULL_CASE>(Write 3-4 sentences optimistic outlook)</BULL_CASE>
 <BEAR_CASE>(Write 3-4 sentences pessimistic outlook)</BEAR_CASE>
-
 <QUICK_HITS>
 (Write 3 bullet points of other relevant news. 1 sentence per line)
 </QUICK_HITS>
-
 <PRO_INSIGHT>(Write 1-2 paragraphs cross-sector connection and second-order thinking. Name sectors)</PRO_INSIGHT>
 <PRO_DO>(Write 1 specific action with reasoning)</PRO_DO>
 <PRO_DONT>(Write 1 specific mistake to avoid)</PRO_DONT>
-
 <TAKEAWAY>(Write The bottom line insight here)</TAKEAWAY>
 <PS>(Write One-line veteran advice here)</PS>"""
 
 # ═══════════════════════════════════════════════
-# 📊 VISUAL DATA BUILDERS
+# 📊 VISUAL DATA BUILDERS & HTML
 # ═══════════════════════════════════════════════
 def _build_data_table(raw_data, title="Market Data Overview"):
     if not raw_data: return ""
@@ -446,6 +458,7 @@ def _build_branded_footer():
     """
 
 def _build_internal_links(cat):
+    if cat == "The Daily Catalyst": return ""
     pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
     related = CAT_RELATED.get(cat, ["Economy", "Tech"])
     html = f"""
@@ -479,7 +492,68 @@ def _build_author_bio(cat):
     """
 
 # ═══════════════════════════════════════════════
-# 🎨 HTML BUILDERS
+# 🎨 HTML BUILDER (PHILOSOPHY 3-PART STRUCTURE)
+# ═══════════════════════════════════════════════
+def build_philosophy_html(raw, author, tf, title):
+    html = f"<div style=\"{F}\">\n"
+    
+    html += f"""
+    <div style="border-top:4px solid {GOLD}; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
+        <p style="margin:0; font-size:15px; color:{MUTED};">
+            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf}
+            <span style="background:{DARK}; color:{GOLD}; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">DAILY INSIGHT</span>
+        </p>
+    </div>
+    """
+    
+    # 1. The Anchor
+    html += f"""
+    <div style="text-align:center; margin:50px 0;">
+        <span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span>
+        <h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin:10px 0; font-weight:600; line-height:1.4;">
+            {xtag(raw, "ANCHOR")}
+        </h2>
+        <span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span>
+    </div>
+    """
+    
+    # 2. The Reflection
+    html += f"""
+    <div style="margin:40px 0;">
+        <h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3>
+        <div style="color:{SLATE}; font-size:18px; line-height:1.8;">
+            {xtag(raw, "REFLECTION").replace("\n", "<br><br>")}
+        </div>
+    </div>
+    """
+    
+    # 3. The Catalyst (Actionable Prompt)
+    html += f"""
+    <div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.05);">
+        <p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p>
+        <p style="font-size:22px; font-weight:700; color:#92400e; margin:0 0 20px; line-height:1.4;">
+            {xtag(raw, "CATALYST")}
+        </p>
+        <p style="font-size:15px; color:#b45309; margin:0; font-style:italic;">
+            Don't just read. Take out a pen and write your answer now.
+        </p>
+    </div>
+    """
+    
+    slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "catalyst")
+    html += _build_social_share(title, slug)
+    html += _build_branded_footer()
+    
+    html += f"""
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+        Disclaimer: This article is for informational purposes only.
+    </p>
+    </div>
+    """
+    return sanitize(html)
+
+# ═══════════════════════════════════════════════
+# 🎨 HTML BUILDER (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
@@ -662,17 +736,15 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 Warmy 로봇 썸네일 엔진 (🚨 v40.3: 폰트 에러 100% 방지 철벽 코드)
+# 🤖 Warmy 로봇 썸네일 엔진 
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
-    # 폰트가 없거나 파일 용량이 비정상적으로 작을 경우(오류 파일) 다시 다운로드
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
         try:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             print(f"    📥 Downloading font from {url}...")
-            # Github 차단을 피하기 위해 requests 사용 및 안정적인 timeout 설정
             resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
-            resp.raise_for_status() # 404, 403 에러 발생 시 즉시 중단
+            resp.raise_for_status() 
             with open(filename, 'wb') as f:
                 f.write(resp.content)
             print("    ✅ Font downloaded successfully.")
@@ -690,25 +762,21 @@ def make_thumbnail(title_text, cat, tier):
         "Tech":     {"bg": "#6366f1", "acc": "#a78bfa"},
         "Health":   {"bg": "#059669", "acc": "#fef08a"},
         "Energy":   {"bg": "#d97706", "acc": "#fef3c7"},
+        "The Daily Catalyst": {"bg": "#0f172a", "acc": "#b8974d"}, # 철학 전용 프리미엄 다크/골드 테마
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
     img = Image.new("RGBA", (w, h), style["bg"])
     draw = ImageDraw.Draw(img)
 
-    # 🚨 더 안정적인 Github Raw 주소로 교체
     ft_path = get_font(
         "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf",
         "fonts/BebasNeue-Regular.ttf"
     )
 
     def lf(p, s):
-        try: 
-            # 메인 폰트 로드 시도
-            return ImageFont.truetype(p, s * SCALE)
+        try: return ImageFont.truetype(p, s * SCALE)
         except: 
-            # 🚨 3중 강제 백업 (Ubuntu 서버 내장 폰트)
-            # 만약 다운로드에 실패하더라도 절대 11px 초소형 폰트가 나오지 않도록 굵은 시스템 폰트로 대체
             fallbacks = [
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
                 "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
@@ -720,67 +788,54 @@ def make_thumbnail(title_text, cat, tier):
                 except: pass
             return ImageFont.load_default()
 
-    # 폰트 스케일 적용
     ft = lf(ft_path, 85)
     fs = lf(ft_path, 34)
     fb = lf(ft_path, 30)
 
-    if tier == "vip":
-        ex, ey = w * 0.75, h * 0.55
-        draw.line([(w * 0.4, h * 0.35), (ex, ey)], fill="#ef4444", width=8 * SCALE)
-        draw.polygon([(ex, ey), (ex - 25 * SCALE, ey - 5 * SCALE), (ex - 5 * SCALE, ey - 25 * SCALE)], fill="#ef4444")
-        tx, ty = w * 0.45, h * 0.25
-        draw.polygon([(tx, ty - 30 * SCALE), (tx - 30 * SCALE, ty + 20 * SCALE), (tx + 30 * SCALE, ty + 20 * SCALE)], fill="#fde047")
-        draw.line([(tx, ty - 10 * SCALE), (tx, ty + 5 * SCALE)], fill="#1e293b", width=6 * SCALE)
-        draw.ellipse([(tx - 4 * SCALE, ty + 10 * SCALE), (tx + 4 * SCALE, ty + 18 * SCALE)], fill="#1e293b")
-    else:
-        ex, ey = w * 0.8, h * 0.35
-        draw.line([(w * 0.4, h * 0.45), (w * 0.6, h * 0.4), (ex, ey)], fill="#4ade80", width=6 * SCALE)
-        draw.polygon([(ex, ey), (ex - 25 * SCALE, ey + 5 * SCALE), (ex - 5 * SCALE, ey + 25 * SCALE)], fill="#4ade80")
-        gx, gy = w * 0.65, h * 0.2
-        gr = 35 * SCALE
-        draw.ellipse([(gx - gr, gy - gr), (gx + gr, gy + gr)], outline="#ffffff60", width=4 * SCALE)
-        draw.ellipse([(gx - gr / 3, gy - gr), (gx + gr / 3, gy + gr)], outline="#ffffff60", width=4 * SCALE)
-        draw.line([(gx - gr, gy), (gx + gr, gy)], fill="#ffffff60", width=4 * SCALE)
-        draw.line([(gx, gy - gr), (gx, gy + gr)], fill="#ffffff60", width=4 * SCALE)
-
+    # 카테고리별 일러스트레이션
     cx = w * 0.85
     cy = h * 0.7
     S = SCALE
 
-    draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
-    draw.ellipse([cx + 15 * S, cy + 60 * S, cx + 45 * S, cy + 90 * S], fill="#047857")
-    draw.rounded_rectangle([cx - 85 * S, cy - 10 * S, cx - 50 * S, cy + 15 * S], radius=12 * S, fill="#10b981")
-    draw.rounded_rectangle([cx + 50 * S, cy - 30 * S, cx + 85 * S, cy - 5 * S], radius=12 * S, fill="#10b981")
-    draw.rounded_rectangle([cx - 50 * S, cy - 70 * S, cx + 50 * S, cy + 70 * S], radius=25 * S, fill="#10b981")
-    draw.ellipse([cx - 25 * S, cy - 30 * S, cx - 5 * S, cy - 10 * S], fill="#ffffff")
-    draw.ellipse([cx + 5 * S, cy - 30 * S, cx + 25 * S, cy - 10 * S], fill="#ffffff")
-    draw.ellipse([cx - 18 * S, cy - 22 * S, cx - 10 * S, cy - 14 * S], fill="#1e293b")
-    draw.ellipse([cx + 12 * S, cy - 22 * S, cx + 20 * S, cy - 14 * S], fill="#1e293b")
-    draw.ellipse([cx - 40 * S, cy + 5 * S, cx - 25 * S, cy + 20 * S], fill="#f472b6")
-    draw.ellipse([cx + 25 * S, cy + 5 * S, cx + 40 * S, cy + 20 * S], fill="#f472b6")
-    draw.rounded_rectangle([cx - 25 * S, cy + 30 * S, cx + 25 * S, cy + 50 * S], radius=8 * S, fill="#ffffff")
+    if cat == "The Daily Catalyst":
+        draw.rectangle([cx - 50*S, cy - 80*S, cx + 50*S, cy + 80*S], outline="#b8974d", width=6*S)
+        draw.line([(cx - 25*S, cy - 40*S), (cx + 25*S, cy - 40*S)], fill="#b8974d", width=6*S)
+        draw.ellipse([(cx - 15*S, cy - 10*S), (cx + 15*S, cy + 20*S)], outline="#b8974d", width=6*S)
+    else:
+        # 기존 로봇 그리기
+        draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
+        draw.ellipse([cx + 15 * S, cy + 60 * S, cx + 45 * S, cy + 90 * S], fill="#047857")
+        draw.rounded_rectangle([cx - 85 * S, cy - 10 * S, cx - 50 * S, cy + 15 * S], radius=12 * S, fill="#10b981")
+        draw.rounded_rectangle([cx + 50 * S, cy - 30 * S, cx + 85 * S, cy - 5 * S], radius=12 * S, fill="#10b981")
+        draw.rounded_rectangle([cx - 50 * S, cy - 70 * S, cx + 50 * S, cy + 70 * S], radius=25 * S, fill="#10b981")
+        draw.ellipse([cx - 25 * S, cy - 30 * S, cx - 5 * S, cy - 10 * S], fill="#ffffff")
+        draw.ellipse([cx + 5 * S, cy - 30 * S, cx + 25 * S, cy - 10 * S], fill="#ffffff")
+        draw.ellipse([cx - 18 * S, cy - 22 * S, cx - 10 * S, cy - 14 * S], fill="#1e293b")
+        draw.ellipse([cx + 12 * S, cy - 22 * S, cx + 20 * S, cy - 14 * S], fill="#1e293b")
+        draw.ellipse([cx - 40 * S, cy + 5 * S, cx - 25 * S, cy + 20 * S], fill="#f472b6")
+        draw.ellipse([cx + 25 * S, cy + 5 * S, cx + 40 * S, cy + 20 * S], fill="#f472b6")
+        draw.rounded_rectangle([cx - 25 * S, cy + 30 * S, cx + 25 * S, cy + 50 * S], radius=8 * S, fill="#ffffff")
 
-    if cat == "Economy":
-        draw.polygon([
-            (cx - 5 * S, cy + 55 * S), (cx + 5 * S, cy + 55 * S),
-            (cx + 8 * S, cy + 80 * S), (cx, cy + 90 * S), (cx - 8 * S, cy + 80 * S)
-        ], fill="#ef4444")
-    elif cat == "Politics":
-        draw.rectangle([cx - 35 * S, cy - 35 * S, cx + 35 * S, cy - 5 * S], outline="#1e293b", width=4 * S)
-        draw.line([(cx - 5 * S, cy - 20 * S), (cx + 5 * S, cy - 20 * S)], fill="#1e293b", width=4 * S)
-    elif cat == "Tech":
-        draw.line([(cx, cy - 70 * S), (cx, cy - 110 * S)], fill="#94a3b8", width=6 * S)
-        draw.ellipse([(cx - 12 * S, cy - 125 * S), (cx + 12 * S, cy - 100 * S)], fill="#60a5fa")
-    elif cat == "Health":
-        draw.rounded_rectangle([cx - 35 * S, cy - 95 * S, cx + 35 * S, cy - 65 * S], radius=5 * S, fill="#ffffff")
-        draw.rectangle([cx - 5 * S, cy - 90 * S, cx + 5 * S, cy - 70 * S], fill="#ef4444")
-        draw.rectangle([cx - 15 * S, cy - 85 * S, cx + 15 * S, cy - 75 * S], fill="#ef4444")
-    elif cat == "Energy":
-        draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
-        draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
+        if cat == "Economy":
+            draw.polygon([
+                (cx - 5 * S, cy + 55 * S), (cx + 5 * S, cy + 55 * S),
+                (cx + 8 * S, cy + 80 * S), (cx, cy + 90 * S), (cx - 8 * S, cy + 80 * S)
+            ], fill="#ef4444")
+        elif cat == "Politics":
+            draw.rectangle([cx - 35 * S, cy - 35 * S, cx + 35 * S, cy - 5 * S], outline="#1e293b", width=4 * S)
+            draw.line([(cx - 5 * S, cy - 20 * S), (cx + 5 * S, cy - 20 * S)], fill="#1e293b", width=4 * S)
+        elif cat == "Tech":
+            draw.line([(cx, cy - 70 * S), (cx, cy - 110 * S)], fill="#94a3b8", width=6 * S)
+            draw.ellipse([(cx - 12 * S, cy - 125 * S), (cx + 12 * S, cy - 100 * S)], fill="#60a5fa")
+        elif cat == "Health":
+            draw.rounded_rectangle([cx - 35 * S, cy - 95 * S, cx + 35 * S, cy - 65 * S], radius=5 * S, fill="#ffffff")
+            draw.rectangle([cx - 5 * S, cy - 90 * S, cx + 5 * S, cy - 70 * S], fill="#ef4444")
+            draw.rectangle([cx - 15 * S, cy - 85 * S, cx + 15 * S, cy - 75 * S], fill="#ef4444")
+        elif cat == "Energy":
+            draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
+            draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
 
-    if tier == "vip":
+    if tier == "vip" and cat != "The Daily Catalyst":
         cx_c = cx + 25 * S
         cy_c = cy - 65 * S
         draw.polygon([
@@ -789,6 +844,8 @@ def make_thumbnail(title_text, cat, tier):
             (cx_c + 20 * S, cy_c - 10 * S), (cx_c + 35 * S, cy_c - 25 * S),
             (cx_c + 25 * S, cy_c + 5 * S)
         ], fill="#fde047")
+    elif tier == "vip" and cat == "The Daily Catalyst":
+        draw.ellipse([(cx - 100*S, cy - 100*S), (cx + 100*S, cy + 100*S)], outline="#b8974d", width=2*S)
 
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000040")
 
@@ -821,7 +878,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((w - 40 * SCALE - tier_w - 30 * SCALE, 44 * SCALE), tl, font=fb, fill=t_tc)
 
-    # 텍스트 줄바꿈 로직 (이전의 아름다운 레이아웃 유지)
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
@@ -879,7 +935,7 @@ def _upload_image(img_bytes, filename):
     return None
 
 def get_or_create_wp_category(cat_name):
-    slug = cat_name.lower()
+    slug = cat_name.lower().replace(" ", "-")
     try:
         r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0:
@@ -891,7 +947,7 @@ def get_or_create_wp_category(cat_name):
     return None
 
 def get_or_create_wp_tag(tag_name):
-    slug = tag_name.lower()
+    slug = tag_name.lower().replace(" ", "-")
     try:
         r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0:
@@ -940,7 +996,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     seo_title = _clean_seo_title(title)
     post_data["meta"] = {
         "rank_math_title": (seo_title + " | " + cat + " | Warm Insight")[:60],
-        "rank_math_description": ((exc or "")[:120] + f" Expert {cat.lower()} analysis.")[:155],
+        "rank_math_description": ((exc or "")[:120] + f" Insightful {cat.lower()} analysis.")[:155],
         "rank_math_focus_keyword": kw or "",
         "is_premium": "yes",
         "pms_content_restrict": "1",
@@ -964,12 +1020,40 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     return False
 
 # ═══════════════════════════════════════════════
-# 🔄 PIPELINE
+# 🔄 PIPELINES
 # ═══════════════════════════════════════════════
-def run_pipeline():
-    cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.3 Pipeline (Thumbnail Bulletproof Update) | Category: {cat}")
+def run_philosophy_pipeline():
+    cat = "The Daily Catalyst"
+    print(f"🚀 Starting v40.4 Catalyst Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
     
+    theme = random.choice(PHILOSOPHY_TOPICS)
+    print(f"   💡 Selected Theme: {theme}")
+    
+    tier = "premium" 
+    
+    print("    [AI] Calling Philosophy Generation...")
+    raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
+    
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "ANCHOR")
+        slug = make_slug(kw, title, cat)
+        
+        author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_philosophy_html(raw, author, tf, title)
+        
+        print("    🖌️ Generating Philosophy Thumbnail...")
+        img_bytes = make_thumbnail(title, cat, tier)
+        
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
+
+def run_news_pipeline():
+    cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
+    print(f"🚀 Starting v40.4 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
@@ -1022,4 +1106,7 @@ def run_pipeline():
             time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
-    run_pipeline()
+    if len(sys.argv) > 1 and sys.argv[1] == "philosophy":
+        run_philosophy_pipeline()
+    else:
+        run_news_pipeline()
