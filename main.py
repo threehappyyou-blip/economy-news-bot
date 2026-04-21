@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.4 (The Daily Catalyst Integration / Syntax Fix)
+# Warm Insight Auto Poster — v40.5 (Title Emoji Removal Update)
+# v40.5 대비 변경점:
+#   1) 모든 포스트 발행 시 제목 앞의 [💎 Pro], [👑 VIP] 이모지 및 접두사 완전 제거
+#   2) 깔끔한 원본 제목(Clean Title)으로 워드프레스에 직접 발행되도록 수정
+#   3) 기존 The Daily Catalyst 철학 기능 및 썸네일 방어막 100% 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -517,7 +521,7 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
-    # 2. The Reflection (🚨 SyntaxError 수정 부분: 밖에서 미리 replace 실행)
+    # 2. The Reflection
     reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
@@ -730,7 +734,7 @@ def build_html(tier, cat, raw, author, tf, title):
 
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
-        Disclaimer: This article is for informational purposes only. All decisions are your own.
+        Disclaimer: This article is for informational purposes only.
     </p>
     </div>
     """
@@ -978,8 +982,8 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     
     author_id = get_wp_author_id(author_name)
 
-    prefix = "👑 VIP" if tier == "vip" else "💎 Pro"
-    display_title = f"[{prefix}] {title}"
+    # 🚨 v40.5 핵심 변경점: 접두사(이모지 등)를 완전히 제거하고 원본 제목만 사용합니다.
+    display_title = title
 
     post_data = {
         "title": display_title,
@@ -1025,7 +1029,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.4 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.5 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1054,7 +1058,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.4 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.5 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
