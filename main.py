@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.4 (The Daily Catalyst Integration)
+# Warm Insight Auto Poster — v40.4 (The Daily Catalyst Integration / Syntax Fix)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -61,7 +61,7 @@ VIP_AUTHORS = {
     "Tech":     "Marcus Chen & The Warm Insight Panel",
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
     "Energy":   "Alexander Vance & The Warm Insight Panel",
-    "The Daily Catalyst": "Warm Insight Philosophical Desk" # 철학 전용 담당자
+    "The Daily Catalyst": "Warm Insight Philosophical Desk"
 }
 
 RSS_FEEDS = {
@@ -517,12 +517,13 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
-    # 2. The Reflection
+    # 2. The Reflection (🚨 SyntaxError 수정 부분: 밖에서 미리 replace 실행)
+    reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
         <h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3>
         <div style="color:{SLATE}; font-size:18px; line-height:1.8;">
-            {xtag(raw, "REFLECTION").replace("\n", "<br><br>")}
+            {reflection_text}
         </div>
     </div>
     """
