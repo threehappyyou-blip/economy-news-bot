@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.5 (Title Emoji Removal Update)
-# v40.5 대비 변경점:
-#   1) 모든 포스트 발행 시 제목 앞의 [💎 Pro], [👑 VIP] 이모지 및 접두사 완전 제거
-#   2) 깔끔한 원본 제목(Clean Title)으로 워드프레스에 직접 발행되도록 수정
-#   3) 기존 The Daily Catalyst 철학 기능 및 썸네일 방어막 100% 유지
+# Warm Insight Auto Poster — v40.6 (Foundation & SEO Pipeline Update)
+# v40.6 대비 변경점:
+#   1) "Foundation" (초보자 입문/용어 사전) 전용 파이프라인 추가
+#   2) 검색 엔진(SEO) 노출에 최적화된 쉽고 친절한 프롬프트 엔진 탑재
+#   3) 기존 뉴스레터(News) 및 철학(Catalyst) 기능 100% 보존 (독립 실행)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -65,7 +65,8 @@ VIP_AUTHORS = {
     "Tech":     "Marcus Chen & The Warm Insight Panel",
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
     "Energy":   "Alexander Vance & The Warm Insight Panel",
-    "The Daily Catalyst": "Warm Insight Philosophical Desk"
+    "The Daily Catalyst": "Warm Insight Philosophical Desk",
+    "Foundation": "Warm Insight Education Team" # 기초 교육 전용 담당자
 }
 
 RSS_FEEDS = {
@@ -204,7 +205,44 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 PHILOSOPHY DATABASE & PROMPTS (The Daily Catalyst)
+# 🧠 1. FOUNDATION (SEO 초보자 가이드) DATABASE & PROMPTS (NEW!)
+# ═══════════════════════════════════════════════
+FOUNDATION_TOPICS = [
+    "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
+    "Dollar Cost Averaging (DCA): How to Invest Safely in Volatile Markets",
+    "Understanding Inflation: How it Affects Your Savings and Investments",
+    "Bull Market vs Bear Market: Simple Explanations for Beginners",
+    "Asset Allocation 101: Why You Shouldn't Put All Your Eggs in One Basket",
+    "Compound Interest Explained: The Magic of Growing Your Wealth Over Time",
+    "What are Dividends? Building a Passive Income Stream",
+    "Growth Stocks vs Value Stocks: Which Investing Style is Right for You?",
+    "Understanding Interest Rates: How the Federal Reserve Moves the Market",
+    "The Difference Between Stocks and Bonds: A Beginner's Overview"
+]
+
+FOUNDATION_SYS_INST = """You are a friendly, highly skilled financial educator for Warm Insight.
+Your goal is to write a comprehensive, easy-to-understand 'Evergreen SEO Guide' for absolute beginners.
+Tone: Encouraging, clear, jargon-free. Use analogies and simple examples.
+Your writing must rank well on Google by answering common beginner questions clearly.
+Do NOT use overly complex institutional jargon.
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic:
+TOPIC: {theme}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Write a clear, SEO-friendly title targeting beginners, max 80 chars)</TITLE>
+<SEO_KEYWORD>(Write the primary search keyword, e.g., "What is an ETF")</SEO_KEYWORD>
+<EXCERPT>(Write a 2-sentence meta description summarizing the guide for Google search results)</EXCERPT>
+<DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an easy everyday analogy. e.g., "Think of it like a fruit basket...")</DEFINITION>
+<WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care about this concept and how it builds wealth.)</WHY_MATTERS>
+<HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, actionable steps for a beginner to start using this concept today. Format as a bulleted list or numbered steps within the paragraph.)</HOW_TO_START>
+"""
+
+# ═══════════════════════════════════════════════
+# 🧠 2. PHILOSOPHY DATABASE & PROMPTS (The Daily Catalyst)
 # ═══════════════════════════════════════════════
 PHILOSOPHY_TOPICS = [
     "돈을 짝사랑하지 말고 행동으로 사랑하라 (Love money through action, not just unrequited longing)",
@@ -240,7 +278,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🎨 TWO-PART PROMPTS (REGULAR NEWS)
+# 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 VIP_P1 = """You are Warm Insight's senior analyst. Write PART 1 of a VIP deep-dive on {cat}.
 Audience: Sophisticated investors paying premium.
@@ -462,7 +500,7 @@ def _build_branded_footer():
     """
 
 def _build_internal_links(cat):
-    if cat == "The Daily Catalyst": return ""
+    if cat in ["The Daily Catalyst", "Foundation"]: return ""
     pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
     related = CAT_RELATED.get(cat, ["Economy", "Tech"])
     html = f"""
@@ -496,7 +534,60 @@ def _build_author_bio(cat):
     """
 
 # ═══════════════════════════════════════════════
-# 🎨 HTML BUILDER (PHILOSOPHY 3-PART STRUCTURE)
+# 🎨 1. HTML BUILDER (FOUNDATION / SEO)
+# ═══════════════════════════════════════════════
+def build_foundation_html(raw, author, tf, title):
+    html = f"<div style=\"{F}\">\n"
+    
+    # 뱃지를 [FREE GUIDE] 같은 형태로 친절하게 표시
+    html += f"""
+    <div style="border-top:4px solid #10b981; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
+        <p style="margin:0; font-size:15px; color:{MUTED};">
+            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf}
+            <span style="background:#10b981; color:#fff; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">BEGINNER'S GUIDE</span>
+        </p>
+    </div>
+    """
+    
+    html += f"""
+    <div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;">
+        <h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it? (Definition)</h3>
+        <div style="color:#064e3b; font-size:18px; line-height:1.8;">
+            {xtag(raw, "DEFINITION").replace("\n", "<br><br>")}
+        </div>
+    </div>
+    """
+    
+    html += f"""
+    <div style="margin:40px 0;">
+        <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3>
+        <p>{xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")}</p>
+    </div>
+    """
+    
+    html += f"""
+    <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3>
+        <div style="color:{SLATE}; font-size:18px; line-height:1.8;">
+            {xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")}
+        </div>
+    </div>
+    """
+    
+    slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "foundation")
+    html += _build_social_share(title, slug)
+    html += _build_branded_footer()
+    
+    html += f"""
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+        Disclaimer: Educational content only.
+    </p>
+    </div>
+    """
+    return sanitize(html)
+
+# ═══════════════════════════════════════════════
+# 🎨 2. HTML BUILDER (PHILOSOPHY 3-PART STRUCTURE)
 # ═══════════════════════════════════════════════
 def build_philosophy_html(raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
@@ -510,7 +601,6 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
-    # 1. The Anchor
     html += f"""
     <div style="text-align:center; margin:50px 0;">
         <span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span>
@@ -521,7 +611,6 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
-    # 2. The Reflection
     reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
@@ -532,7 +621,6 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
-    # 3. The Catalyst (Actionable Prompt)
     html += f"""
     <div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.05);">
         <p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p>
@@ -558,7 +646,7 @@ def build_philosophy_html(raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════
-# 🎨 HTML BUILDER (REGULAR NEWS)
+# 🎨 3. HTML BUILDER (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
@@ -693,7 +781,6 @@ def build_html(tier, cat, raw, author, tf, title):
                 <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
             </div>
         </div>
-        """
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         html += f"""
@@ -734,7 +821,7 @@ def build_html(tier, cat, raw, author, tf, title):
 
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
-        Disclaimer: This article is for informational purposes only.
+        Disclaimer: This article is for informational purposes only. All decisions are your own.
     </p>
     </div>
     """
@@ -767,7 +854,8 @@ def make_thumbnail(title_text, cat, tier):
         "Tech":     {"bg": "#6366f1", "acc": "#a78bfa"},
         "Health":   {"bg": "#059669", "acc": "#fef08a"},
         "Energy":   {"bg": "#d97706", "acc": "#fef3c7"},
-        "The Daily Catalyst": {"bg": "#0f172a", "acc": "#b8974d"}, # 철학 전용 프리미엄 다크/골드 테마
+        "The Daily Catalyst": {"bg": "#0f172a", "acc": "#b8974d"}, 
+        "Foundation": {"bg": "#10b981", "acc": "#ffffff"} # 기초 가이드 전용 초록색 테마 추가
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
@@ -797,7 +885,6 @@ def make_thumbnail(title_text, cat, tier):
     fs = lf(ft_path, 34)
     fb = lf(ft_path, 30)
 
-    # 카테고리별 일러스트레이션
     cx = w * 0.85
     cy = h * 0.7
     S = SCALE
@@ -806,6 +893,12 @@ def make_thumbnail(title_text, cat, tier):
         draw.rectangle([cx - 50*S, cy - 80*S, cx + 50*S, cy + 80*S], outline="#b8974d", width=6*S)
         draw.line([(cx - 25*S, cy - 40*S), (cx + 25*S, cy - 40*S)], fill="#b8974d", width=6*S)
         draw.ellipse([(cx - 15*S, cy - 10*S), (cx + 15*S, cy + 20*S)], outline="#b8974d", width=6*S)
+    elif cat == "Foundation":
+        # Foundation 썸네일 아이콘 (책/가이드 모양)
+        draw.rectangle([cx - 60*S, cy - 60*S, cx + 60*S, cy + 60*S], outline="#ffffff", width=8*S)
+        draw.line([(cx - 30*S, cy - 20*S), (cx + 30*S, cy - 20*S)], fill="#ffffff", width=6*S)
+        draw.line([(cx - 30*S, cy + 10*S), (cx + 30*S, cy + 10*S)], fill="#ffffff", width=6*S)
+        draw.line([(cx - 30*S, cy + 40*S), (cx + 30*S, cy + 40*S)], fill="#ffffff", width=6*S)
     else:
         # 기존 로봇 그리기
         draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
@@ -840,7 +933,7 @@ def make_thumbnail(title_text, cat, tier):
             draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
             draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
 
-    if tier == "vip" and cat != "The Daily Catalyst":
+    if tier == "vip" and cat not in ["The Daily Catalyst", "Foundation"]:
         cx_c = cx + 25 * S
         cy_c = cy - 65 * S
         draw.polygon([
@@ -870,9 +963,15 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * SCALE, 44 * SCALE), cat.upper(), font=fb, fill="#1e293b")
 
-    tl = "VIP" if tier == "vip" else "PRO"
-    t_bg = "#b8974d" if tier == "vip" else "#ffffff"
-    t_tc = "#ffffff" if tier == "vip" else "#1e293b"
+    # Foundation은 티어 표시를 'FREE GUIDE'로 출력
+    if cat == "Foundation":
+        tl = "FREE GUIDE"
+        t_bg = "#ffffff"
+        t_tc = "#1e293b"
+    else:
+        tl = "VIP" if tier == "vip" else "PRO"
+        t_bg = "#b8974d" if tier == "vip" else "#ffffff"
+        t_tc = "#ffffff" if tier == "vip" else "#1e293b"
     
     try: tier_w = draw.textlength(tl, font=fb)
     except: tier_w = len(tl) * 15 * SCALE
@@ -982,7 +1081,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     
     author_id = get_wp_author_id(author_name)
 
-    # 🚨 v40.5 핵심 변경점: 접두사(이모지 등)를 완전히 제거하고 원본 제목만 사용합니다.
+    # 🚨 v40.5 유지: 접두사 없이 깔끔한 제목 발행
     display_title = title
 
     post_data = {
@@ -999,12 +1098,17 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     if tag_id: post_data["tags"] = [tag_id] 
     
     seo_title = _clean_seo_title(title)
+    
+    # 기초가이드(Foundation)는 모든 사람이 볼 수 있도록 잠금 해제 설정
+    is_premium = "no" if cat == "Foundation" else "yes"
+    pms_restrict = "0" if cat == "Foundation" else "1"
+
     post_data["meta"] = {
         "rank_math_title": (seo_title + " | " + cat + " | Warm Insight")[:60],
         "rank_math_description": ((exc or "")[:120] + f" Insightful {cat.lower()} analysis.")[:155],
         "rank_math_focus_keyword": kw or "",
-        "is_premium": "yes",
-        "pms_content_restrict": "1",
+        "is_premium": is_premium,
+        "pms_content_restrict": pms_restrict,
         "post_tier": tier.upper(),
     }
 
@@ -1027,9 +1131,39 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 # 🔄 PIPELINES
 # ═══════════════════════════════════════════════
+def run_foundation_pipeline():
+    cat = "Foundation"
+    print(f"🚀 Starting v40.6 SEO Foundation Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+    
+    theme = random.choice(FOUNDATION_TOPICS)
+    print(f"   💡 Selected Topic: {theme}")
+    
+    # 기초 가이드는 모두 무료로 볼 수 있게 세팅 (프롬프트는 'premium' 경로를 타지만 위 publish에서 잠금을 해제함)
+    tier = "premium" 
+    
+    print("    [AI] Calling Foundation Guide Generation...")
+    raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
+    
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        
+        author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_foundation_html(raw, author, tf, title)
+        
+        print("    🖌️ Generating Foundation Thumbnail...")
+        img_bytes = make_thumbnail(title, cat, tier)
+        
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
+
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.5 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.6 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1058,7 +1192,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.5 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.6 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
@@ -1111,7 +1245,11 @@ def run_news_pipeline():
             time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "philosophy":
-        run_philosophy_pipeline()
+    # 명령어에 따라 파이프라인 스위치 작동
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "philosophy":
+            run_philosophy_pipeline()
+        elif sys.argv[1] == "foundation":
+            run_foundation_pipeline()
     else:
         run_news_pipeline()
