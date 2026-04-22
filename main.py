@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.6 (Foundation & SEO Pipeline Update)
-# v40.6 대비 변경점:
-#   1) "Foundation" (초보자 입문/용어 사전) 전용 파이프라인 추가
-#   2) 검색 엔진(SEO) 노출에 최적화된 쉽고 친절한 프롬프트 엔진 탑재
-#   3) 기존 뉴스레터(News) 및 철학(Catalyst) 기능 100% 보존 (독립 실행)
+# Warm Insight Auto Poster — v40.7 (Cinematic AI Thumbnail & Badge Fix)
+# v40.7 대비 변경점:
+#   1) [VIP], [Pro] 텍스트 복구 (이모지는 제외)하여 프론트엔드 Free 오류 완벽 해결
+#   2) Google Imagen 3 API를 연동하여 초고화질 실사/3D 시네마틱 썸네일 자동 생성 도입
+#   3) AI 이미지 생성 실패 시 기존 일러스트로 자동 우회하는 철벽 방어 로직 추가
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -66,7 +66,7 @@ VIP_AUTHORS = {
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
     "Energy":   "Alexander Vance & The Warm Insight Panel",
     "The Daily Catalyst": "Warm Insight Philosophical Desk",
-    "Foundation": "Warm Insight Education Team" # 기초 교육 전용 담당자
+    "Foundation": "Warm Insight Education Team" 
 }
 
 RSS_FEEDS = {
@@ -182,7 +182,7 @@ def make_slug(kw, title, cat):
     return f"{slug}-{datetime.datetime.utcnow().strftime('%m%d%H%M')}"
 
 def _clean_seo_title(title):
-    for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] "]:
+    for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] ", "[VIP] ", "[Pro] "]:
         title = title.replace(p, "")
     return title.strip()
 
@@ -205,7 +205,7 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 1. FOUNDATION (SEO 초보자 가이드) DATABASE & PROMPTS (NEW!)
+# 🧠 1. FOUNDATION (SEO 초보자 가이드) DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
 FOUNDATION_TOPICS = [
     "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
@@ -539,7 +539,6 @@ def _build_author_bio(cat):
 def build_foundation_html(raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
     
-    # 뱃지를 [FREE GUIDE] 같은 형태로 친절하게 표시
     html += f"""
     <div style="border-top:4px solid #10b981; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
         <p style="margin:0; font-size:15px; color:{MUTED};">
@@ -781,6 +780,7 @@ def build_html(tier, cat, raw, author, tf, title):
                 <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
             </div>
         </div>
+        """
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         html += f"""
@@ -828,7 +828,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 Warmy 로봇 썸네일 엔진 
+# 🤖 🚨 초고화질 AI 시네마틱 썸네일 엔진 (구글 Imagen 3 연동)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -855,13 +855,115 @@ def make_thumbnail(title_text, cat, tier):
         "Health":   {"bg": "#059669", "acc": "#fef08a"},
         "Energy":   {"bg": "#d97706", "acc": "#fef3c7"},
         "The Daily Catalyst": {"bg": "#0f172a", "acc": "#b8974d"}, 
-        "Foundation": {"bg": "#10b981", "acc": "#ffffff"} # 기초 가이드 전용 초록색 테마 추가
+        "Foundation": {"bg": "#10b981", "acc": "#ffffff"} 
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    img = Image.new("RGBA", (w, h), style["bg"])
+    # 카테고리별 초고화질 AI 생성 프롬프트 (DALL-E 3 / Imagen 3 용)
+    AI_PROMPTS = {
+        "Economy": "A highly realistic, cinematic 3D macro photography of gold bars, glowing stock market charts, and elegant business objects on a dark premium desk. Depth of field, volumetric lighting, 8k resolution, highly detailed, luxurious, no text.",
+        "Politics": "A highly realistic, cinematic 3D macro photography of a glowing translucent globe and elegant golden chess pieces on a dark mahogany board. Dramatic lighting, geopolitical strategy concept, 8k resolution, luxurious, no text.",
+        "Tech": "A highly realistic, cinematic 3D macro photography of glowing futuristic microchips, fiber optic cables, and neon blue and purple lights. Cyberpunk aesthetic, depth of field, 8k resolution, no text.",
+        "Health": "A highly realistic, cinematic 3D photography of a glowing blue DNA helix inside a clean, modern laboratory glass vial. Soft medical lighting, high-tech, depth of field, 8k resolution, no text.",
+        "Energy": "A highly realistic, cinematic 3D photography of glowing golden oil drops, futuristic solar panels, and bright energy streaks in the background. Highly detailed, 8k resolution, no text.",
+        "The Daily Catalyst": "A highly realistic, cinematic 3D photography of an ancient marble bust next to a glowing golden hourglass on a dark premium desk. Dark academia, philosophical vibe, highly realistic, 8k resolution, no text.",
+        "Foundation": "A highly realistic, cinematic 3D photography of neat stacks of shiny gold coins, a premium leather bound journal, and a luxury pen on a dark wooden desk. Soft golden lighting, wealth building concept, 8k resolution, no text."
+    }
+
+    img = None
+    use_ai_bg = False
+
+    try:
+        print(f"    [AI] Requesting Cinematic 3D Background for {cat}...")
+        client = _get_gemini_client()
+        result = client.models.generate_images(
+            model='imagen-3.0-generate-001',
+            prompt=AI_PROMPTS.get(cat, AI_PROMPTS["Economy"]),
+            config=types.GenerateImagesConfig(
+                number_of_images=1,
+                aspect_ratio="16:9",
+                output_mime_type="image/jpeg"
+            )
+        )
+        bg_bytes = result.generated_images[0].image.image_bytes
+        img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
+        img = img.resize((w, h), Image.LANCZOS)
+        use_ai_bg = True
+        print("    ✅ AI Cinematic Background Generated!")
+    except Exception as e:
+        print(f"    ⚠️ AI Image Gen skipped/failed. Using vector fallback. ({e})")
+        img = Image.new("RGBA", (w, h), style["bg"])
+
     draw = ImageDraw.Draw(img)
 
+    # 🚨 AI 배경 성공 여부에 따라 다르게 그리기
+    if use_ai_bg:
+        # AI 배경 위에 글씨가 잘 보이도록 고급스러운 어두운 그라데이션 박스 오버레이 씌우기
+        draw.rectangle([(0, 0), (w, h)], fill="#1a252c80") # 반투명 블랙 덮기
+    else:
+        # 기존 로봇/벡터 그래픽 (API 실패 시 철벽 방어용)
+        cx = w * 0.85
+        cy = h * 0.7
+        S = SCALE
+
+        if cat == "The Daily Catalyst":
+            draw.rectangle([cx - 50*S, cy - 80*S, cx + 50*S, cy + 80*S], outline="#b8974d", width=6*S)
+            draw.line([(cx - 25*S, cy - 40*S), (cx + 25*S, cy - 40*S)], fill="#b8974d", width=6*S)
+            draw.ellipse([(cx - 15*S, cy - 10*S), (cx + 15*S, cy + 20*S)], outline="#b8974d", width=6*S)
+        elif cat == "Foundation":
+            draw.rectangle([cx - 60*S, cy - 60*S, cx + 60*S, cy + 60*S], outline="#ffffff", width=8*S)
+            draw.line([(cx - 30*S, cy - 20*S), (cx + 30*S, cy - 20*S)], fill="#ffffff", width=6*S)
+            draw.line([(cx - 30*S, cy + 10*S), (cx + 30*S, cy + 10*S)], fill="#ffffff", width=6*S)
+            draw.line([(cx - 30*S, cy + 40*S), (cx + 30*S, cy + 40*S)], fill="#ffffff", width=6*S)
+        else:
+            draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
+            draw.ellipse([cx + 15 * S, cy + 60 * S, cx + 45 * S, cy + 90 * S], fill="#047857")
+            draw.rounded_rectangle([cx - 85 * S, cy - 10 * S, cx - 50 * S, cy + 15 * S], radius=12 * S, fill="#10b981")
+            draw.rounded_rectangle([cx + 50 * S, cy - 30 * S, cx + 85 * S, cy - 5 * S], radius=12 * S, fill="#10b981")
+            draw.rounded_rectangle([cx - 50 * S, cy - 70 * S, cx + 50 * S, cy + 70 * S], radius=25 * S, fill="#10b981")
+            draw.ellipse([cx - 25 * S, cy - 30 * S, cx - 5 * S, cy - 10 * S], fill="#ffffff")
+            draw.ellipse([cx + 5 * S, cy - 30 * S, cx + 25 * S, cy - 10 * S], fill="#ffffff")
+            draw.ellipse([cx - 18 * S, cy - 22 * S, cx - 10 * S, cy - 14 * S], fill="#1e293b")
+            draw.ellipse([cx + 12 * S, cy - 22 * S, cx + 20 * S, cy - 14 * S], fill="#1e293b")
+            draw.ellipse([cx - 40 * S, cy + 5 * S, cx - 25 * S, cy + 20 * S], fill="#f472b6")
+            draw.ellipse([cx + 25 * S, cy + 5 * S, cx + 40 * S, cy + 20 * S], fill="#f472b6")
+            draw.rounded_rectangle([cx - 25 * S, cy + 30 * S, cx + 25 * S, cy + 50 * S], radius=8 * S, fill="#ffffff")
+
+            if cat == "Economy":
+                draw.polygon([
+                    (cx - 5 * S, cy + 55 * S), (cx + 5 * S, cy + 55 * S),
+                    (cx + 8 * S, cy + 80 * S), (cx, cy + 90 * S), (cx - 8 * S, cy + 80 * S)
+                ], fill="#ef4444")
+            elif cat == "Politics":
+                draw.rectangle([cx - 35 * S, cy - 35 * S, cx + 35 * S, cy - 5 * S], outline="#1e293b", width=4 * S)
+                draw.line([(cx - 5 * S, cy - 20 * S), (cx + 5 * S, cy - 20 * S)], fill="#1e293b", width=4 * S)
+            elif cat == "Tech":
+                draw.line([(cx, cy - 70 * S), (cx, cy - 110 * S)], fill="#94a3b8", width=6 * S)
+                draw.ellipse([(cx - 12 * S, cy - 125 * S), (cx + 12 * S, cy - 100 * S)], fill="#60a5fa")
+            elif cat == "Health":
+                draw.rounded_rectangle([cx - 35 * S, cy - 95 * S, cx + 35 * S, cy - 65 * S], radius=5 * S, fill="#ffffff")
+                draw.rectangle([cx - 5 * S, cy - 90 * S, cx + 5 * S, cy - 70 * S], fill="#ef4444")
+                draw.rectangle([cx - 15 * S, cy - 85 * S, cx + 15 * S, cy - 75 * S], fill="#ef4444")
+            elif cat == "Energy":
+                draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
+                draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
+
+        if tier == "vip" and cat not in ["The Daily Catalyst", "Foundation"]:
+            cx_c = cx + 25 * S
+            cy_c = cy - 65 * S
+            draw.polygon([
+                (cx_c - 15 * S, cy_c), (cx_c - 25 * S, cy_c - 30 * S),
+                (cx_c, cy_c - 15 * S), (cx_c + 15 * S, cy_c - 35 * S),
+                (cx_c + 20 * S, cy_c - 10 * S), (cx_c + 35 * S, cy_c - 25 * S),
+                (cx_c + 25 * S, cy_c + 5 * S)
+            ], fill="#fde047")
+        elif tier == "vip" and cat == "The Daily Catalyst":
+            draw.ellipse([(cx - 100*S, cy - 100*S), (cx + 100*S, cy + 100*S)], outline="#b8974d", width=2*S)
+
+    # 하단 검은색 띠 (공통)
+    draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000060")
+
+    # 폰트 불러오기
     ft_path = get_font(
         "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf",
         "fonts/BebasNeue-Regular.ttf"
@@ -885,68 +987,7 @@ def make_thumbnail(title_text, cat, tier):
     fs = lf(ft_path, 34)
     fb = lf(ft_path, 30)
 
-    cx = w * 0.85
-    cy = h * 0.7
-    S = SCALE
-
-    if cat == "The Daily Catalyst":
-        draw.rectangle([cx - 50*S, cy - 80*S, cx + 50*S, cy + 80*S], outline="#b8974d", width=6*S)
-        draw.line([(cx - 25*S, cy - 40*S), (cx + 25*S, cy - 40*S)], fill="#b8974d", width=6*S)
-        draw.ellipse([(cx - 15*S, cy - 10*S), (cx + 15*S, cy + 20*S)], outline="#b8974d", width=6*S)
-    elif cat == "Foundation":
-        # Foundation 썸네일 아이콘 (책/가이드 모양)
-        draw.rectangle([cx - 60*S, cy - 60*S, cx + 60*S, cy + 60*S], outline="#ffffff", width=8*S)
-        draw.line([(cx - 30*S, cy - 20*S), (cx + 30*S, cy - 20*S)], fill="#ffffff", width=6*S)
-        draw.line([(cx - 30*S, cy + 10*S), (cx + 30*S, cy + 10*S)], fill="#ffffff", width=6*S)
-        draw.line([(cx - 30*S, cy + 40*S), (cx + 30*S, cy + 40*S)], fill="#ffffff", width=6*S)
-    else:
-        # 기존 로봇 그리기
-        draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
-        draw.ellipse([cx + 15 * S, cy + 60 * S, cx + 45 * S, cy + 90 * S], fill="#047857")
-        draw.rounded_rectangle([cx - 85 * S, cy - 10 * S, cx - 50 * S, cy + 15 * S], radius=12 * S, fill="#10b981")
-        draw.rounded_rectangle([cx + 50 * S, cy - 30 * S, cx + 85 * S, cy - 5 * S], radius=12 * S, fill="#10b981")
-        draw.rounded_rectangle([cx - 50 * S, cy - 70 * S, cx + 50 * S, cy + 70 * S], radius=25 * S, fill="#10b981")
-        draw.ellipse([cx - 25 * S, cy - 30 * S, cx - 5 * S, cy - 10 * S], fill="#ffffff")
-        draw.ellipse([cx + 5 * S, cy - 30 * S, cx + 25 * S, cy - 10 * S], fill="#ffffff")
-        draw.ellipse([cx - 18 * S, cy - 22 * S, cx - 10 * S, cy - 14 * S], fill="#1e293b")
-        draw.ellipse([cx + 12 * S, cy - 22 * S, cx + 20 * S, cy - 14 * S], fill="#1e293b")
-        draw.ellipse([cx - 40 * S, cy + 5 * S, cx - 25 * S, cy + 20 * S], fill="#f472b6")
-        draw.ellipse([cx + 25 * S, cy + 5 * S, cx + 40 * S, cy + 20 * S], fill="#f472b6")
-        draw.rounded_rectangle([cx - 25 * S, cy + 30 * S, cx + 25 * S, cy + 50 * S], radius=8 * S, fill="#ffffff")
-
-        if cat == "Economy":
-            draw.polygon([
-                (cx - 5 * S, cy + 55 * S), (cx + 5 * S, cy + 55 * S),
-                (cx + 8 * S, cy + 80 * S), (cx, cy + 90 * S), (cx - 8 * S, cy + 80 * S)
-            ], fill="#ef4444")
-        elif cat == "Politics":
-            draw.rectangle([cx - 35 * S, cy - 35 * S, cx + 35 * S, cy - 5 * S], outline="#1e293b", width=4 * S)
-            draw.line([(cx - 5 * S, cy - 20 * S), (cx + 5 * S, cy - 20 * S)], fill="#1e293b", width=4 * S)
-        elif cat == "Tech":
-            draw.line([(cx, cy - 70 * S), (cx, cy - 110 * S)], fill="#94a3b8", width=6 * S)
-            draw.ellipse([(cx - 12 * S, cy - 125 * S), (cx + 12 * S, cy - 100 * S)], fill="#60a5fa")
-        elif cat == "Health":
-            draw.rounded_rectangle([cx - 35 * S, cy - 95 * S, cx + 35 * S, cy - 65 * S], radius=5 * S, fill="#ffffff")
-            draw.rectangle([cx - 5 * S, cy - 90 * S, cx + 5 * S, cy - 70 * S], fill="#ef4444")
-            draw.rectangle([cx - 15 * S, cy - 85 * S, cx + 15 * S, cy - 75 * S], fill="#ef4444")
-        elif cat == "Energy":
-            draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
-            draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
-
-    if tier == "vip" and cat not in ["The Daily Catalyst", "Foundation"]:
-        cx_c = cx + 25 * S
-        cy_c = cy - 65 * S
-        draw.polygon([
-            (cx_c - 15 * S, cy_c), (cx_c - 25 * S, cy_c - 30 * S),
-            (cx_c, cy_c - 15 * S), (cx_c + 15 * S, cy_c - 35 * S),
-            (cx_c + 20 * S, cy_c - 10 * S), (cx_c + 35 * S, cy_c - 25 * S),
-            (cx_c + 25 * S, cy_c + 5 * S)
-        ], fill="#fde047")
-    elif tier == "vip" and cat == "The Daily Catalyst":
-        draw.ellipse([(cx - 100*S, cy - 100*S), (cx + 100*S, cy + 100*S)], outline="#b8974d", width=2*S)
-
-    draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000040")
-
+    # 상단 뱃지 텍스트 렌더링
     date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
     draw.text((40 * SCALE, 44 * SCALE), date_badge, font=fb, fill="#ffffff")
     
@@ -985,7 +1026,7 @@ def make_thumbnail(title_text, cat, tier):
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
-    mw = w - 400 * SCALE
+    mw = w - 100 * SCALE if use_ai_bg else w - 400 * SCALE
 
     for word in words:
         t = " ".join(line + [word])
@@ -1001,7 +1042,8 @@ def make_thumbnail(title_text, cat, tier):
 
     y = 180 * SCALE
     for i, ln in enumerate(lines[:3]):
-        color = style["acc"] if i == 1 else "#ffffff"
+        # 배경이 사진일 땐 흰색이 제일 가독성이 좋음
+        color = "#ffffff" if use_ai_bg else (style["acc"] if i == 1 else "#ffffff")
         draw.text((40 * SCALE, y), ln, font=ft, fill=color)
         try:
             bb = draw.textbbox((0, 0), ln, font=ft)
@@ -1076,13 +1118,20 @@ def get_wp_author_id(author_full_string):
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
+    
+    # 🚨 수정됨: 이모지 없이 순수 텍스트로 태그 설정 (Free 오류 방지)
     tag_name = "VIP" if tier == "vip" else "Pro"
     tag_id = get_or_create_wp_tag(tag_name)
     
     author_id = get_wp_author_id(author_name)
 
-    # 🚨 v40.5 유지: 접두사 없이 깔끔한 제목 발행
-    display_title = title
+    # 🚨 수정됨: 제목 앞에도 이모지 없이 [VIP], [Pro] 삽입
+    if cat == "Foundation":
+        display_title = title
+    elif tier == "vip":
+        display_title = f"[VIP] {title}"
+    else:
+        display_title = f"[Pro] {title}"
 
     post_data = {
         "title": display_title,
@@ -1099,7 +1148,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     
     seo_title = _clean_seo_title(title)
     
-    # 기초가이드(Foundation)는 모든 사람이 볼 수 있도록 잠금 해제 설정
     is_premium = "no" if cat == "Foundation" else "yes"
     pms_restrict = "0" if cat == "Foundation" else "1"
 
@@ -1133,13 +1181,12 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.6 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.7 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
     print(f"   💡 Selected Topic: {theme}")
     
-    # 기초 가이드는 모두 무료로 볼 수 있게 세팅 (프롬프트는 'premium' 경로를 타지만 위 publish에서 잠금을 해제함)
     tier = "premium" 
     
     print("    [AI] Calling Foundation Guide Generation...")
@@ -1163,7 +1210,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.6 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.7 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1192,7 +1239,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.6 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.7 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
@@ -1245,7 +1292,6 @@ def run_news_pipeline():
             time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
-    # 명령어에 따라 파이프라인 스위치 작동
     if len(sys.argv) > 1:
         if sys.argv[1] == "philosophy":
             run_philosophy_pipeline()
