@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.7 (Cinematic AI Thumbnail & Badge Fix)
-# v40.7 대비 변경점:
-#   1) [VIP], [Pro] 텍스트 복구 (이모지는 제외)하여 프론트엔드 Free 오류 완벽 해결
-#   2) Google Imagen 3 API를 연동하여 초고화질 실사/3D 시네마틱 썸네일 자동 생성 도입
-#   3) AI 이미지 생성 실패 시 기존 일러스트로 자동 우회하는 철벽 방어 로직 추가
+# Warm Insight Auto Poster — v40.8 (Foundation Syntax Fix & Cinematic AI)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -548,27 +544,31 @@ def build_foundation_html(raw, author, tf, title):
     </div>
     """
     
+    # 🚨 SyntaxError 완벽 해결: 줄바꿈 처리를 f-string 바깥에서 먼저 진행
+    def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;">
         <h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it? (Definition)</h3>
         <div style="color:#064e3b; font-size:18px; line-height:1.8;">
-            {xtag(raw, "DEFINITION").replace("\n", "<br><br>")}
+            {def_text}
         </div>
     </div>
     """
     
+    why_text = xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
         <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3>
-        <p>{xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")}</p>
+        <p>{why_text}</p>
     </div>
     """
     
+    how_text = xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3>
         <div style="color:{SLATE}; font-size:18px; line-height:1.8;">
-            {xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")}
+            {how_text}
         </div>
     </div>
     """
@@ -859,7 +859,7 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 카테고리별 초고화질 AI 생성 프롬프트 (DALL-E 3 / Imagen 3 용)
+    # 카테고리별 초고화질 AI 생성 프롬프트
     AI_PROMPTS = {
         "Economy": "A highly realistic, cinematic 3D macro photography of gold bars, glowing stock market charts, and elegant business objects on a dark premium desk. Depth of field, volumetric lighting, 8k resolution, highly detailed, luxurious, no text.",
         "Politics": "A highly realistic, cinematic 3D macro photography of a glowing translucent globe and elegant golden chess pieces on a dark mahogany board. Dramatic lighting, geopolitical strategy concept, 8k resolution, luxurious, no text.",
@@ -896,12 +896,9 @@ def make_thumbnail(title_text, cat, tier):
 
     draw = ImageDraw.Draw(img)
 
-    # 🚨 AI 배경 성공 여부에 따라 다르게 그리기
     if use_ai_bg:
-        # AI 배경 위에 글씨가 잘 보이도록 고급스러운 어두운 그라데이션 박스 오버레이 씌우기
-        draw.rectangle([(0, 0), (w, h)], fill="#1a252c80") # 반투명 블랙 덮기
+        draw.rectangle([(0, 0), (w, h)], fill="#1a252c80")
     else:
-        # 기존 로봇/벡터 그래픽 (API 실패 시 철벽 방어용)
         cx = w * 0.85
         cy = h * 0.7
         S = SCALE
@@ -960,10 +957,8 @@ def make_thumbnail(title_text, cat, tier):
         elif tier == "vip" and cat == "The Daily Catalyst":
             draw.ellipse([(cx - 100*S, cy - 100*S), (cx + 100*S, cy + 100*S)], outline="#b8974d", width=2*S)
 
-    # 하단 검은색 띠 (공통)
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000060")
 
-    # 폰트 불러오기
     ft_path = get_font(
         "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf",
         "fonts/BebasNeue-Regular.ttf"
@@ -987,7 +982,6 @@ def make_thumbnail(title_text, cat, tier):
     fs = lf(ft_path, 34)
     fb = lf(ft_path, 30)
 
-    # 상단 뱃지 텍스트 렌더링
     date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
     draw.text((40 * SCALE, 44 * SCALE), date_badge, font=fb, fill="#ffffff")
     
@@ -1004,7 +998,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * SCALE, 44 * SCALE), cat.upper(), font=fb, fill="#1e293b")
 
-    # Foundation은 티어 표시를 'FREE GUIDE'로 출력
     if cat == "Foundation":
         tl = "FREE GUIDE"
         t_bg = "#ffffff"
@@ -1042,7 +1035,6 @@ def make_thumbnail(title_text, cat, tier):
 
     y = 180 * SCALE
     for i, ln in enumerate(lines[:3]):
-        # 배경이 사진일 땐 흰색이 제일 가독성이 좋음
         color = "#ffffff" if use_ai_bg else (style["acc"] if i == 1 else "#ffffff")
         draw.text((40 * SCALE, y), ln, font=ft, fill=color)
         try:
@@ -1119,13 +1111,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
     
-    # 🚨 수정됨: 이모지 없이 순수 텍스트로 태그 설정 (Free 오류 방지)
     tag_name = "VIP" if tier == "vip" else "Pro"
     tag_id = get_or_create_wp_tag(tag_name)
     
     author_id = get_wp_author_id(author_name)
 
-    # 🚨 수정됨: 제목 앞에도 이모지 없이 [VIP], [Pro] 삽입
     if cat == "Foundation":
         display_title = title
     elif tier == "vip":
@@ -1181,7 +1171,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.7 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.8 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1210,7 +1200,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.7 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.8 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1239,7 +1229,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.7 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.8 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
