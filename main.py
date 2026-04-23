@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.13 (Explaining Mascot & Badge Fix)
-# v40.13 대비 변경점:
-#   1) 썸네일 내 VIP/PRO 뱃지 누락 완벽 복구 및 사이즈/가독성 업그레이드
-#   2) 로봇 마스코트 포즈를 '설명하고 가리키는' 안내자 형태로 전면 개편 (AI & Pillow 모두 적용)
+# Warm Insight Auto Poster — v40.14 (Mascot & Classic Badges Restored)
+# v40.14 대비 변경점:
+#   1) 밀크로드 웨이브 배경 + 설명하는 로봇 레이아웃은 100% 유지
+#   2) 좌측 상단: [날짜] + [카테고리 캡슐] 기존 디자인으로 완벽 복구
+#   3) 우측 상단: 길고 못생겼던 뱃지를 기존의 심플한 [VIP], [PRO] 캡슐로 복구
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -830,7 +831,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (설명하는 로봇 & 뱃지 강화)
+# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (클래식 뱃지 복원)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -850,7 +851,6 @@ def make_thumbnail(title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
 
-    # 밀크로드 스타일 투톤 컬러 조합
     CAT_STYLES = {
         "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
         "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
@@ -862,7 +862,6 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 1. 밀크로드 스타일: 세련된 화이트 로봇 마스코트가 "설명하는 포즈(explaining, pointing)"로 생성되도록 AI 프롬프트 강화
     AI_PROMPTS = {
         "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek, cute white robot mascot standing enthusiastically and pointing at a floating stock market chart, acting as a friendly guide. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
         "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing globe or chess piece, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
@@ -895,18 +894,13 @@ def make_thumbnail(title_text, cat, tier):
         print("    ✅ AI Explaining Mascot Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
-        # 🚨 AI 실패 시 밀크로드 스타일 커스텀 벡터 드로잉 엔진 작동
         img = Image.new("RGBA", (w, h), style["bg1"])
         draw = ImageDraw.Draw(img)
         
-        # 거대한 원(Wave)을 우측에 그려 밀크로드 특유의 곡선 그라데이션 느낌 연출
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
-        
-        # 떠다니는 장식용 빛망울 추가
         draw.ellipse([w*0.8, h*0.1, w*0.9, h*0.2], fill="#ffffff15")
         draw.ellipse([w*0.4, h*0.8, w*0.45, h*0.9], fill="#ffffff10")
 
-        # 카테고리별 맞춤형 미니멀 아이콘 그리기 (우측 중앙에서 살짝 왼쪽)
         cx = w * 0.85
         cy = h * 0.65
         S = SCALE
@@ -952,36 +946,26 @@ def make_thumbnail(title_text, cat, tier):
             draw.line([(cx_p+20*S, cy_p-20*S), (cx_p+50*S, cy_p-20*S)], fill="#ffffff", width=5*S)
             draw.line([(cx_p-50*S, cy_p+10*S), (cx_p-20*S, cy_p+10*S)], fill="#ffffff", width=5*S)
 
-        # 🚨 2. "설명하는 포즈(Explaining Pose)"로 전면 수정된 화이트 둥근 로봇 마스코트
-        draw.ellipse([cx - 40*S, cy + 65*S, cx + 40*S, cy + 85*S], fill="#00000030") # 그림자
-        # 몸통 (라운드 스퀘어)
+        draw.ellipse([cx - 40*S, cy + 65*S, cx + 40*S, cy + 85*S], fill="#00000030") 
         draw.rounded_rectangle([cx - 40*S, cy - 30*S, cx + 40*S, cy + 70*S], radius=15*S, fill="#f8fafc", outline="#cbd5e1", width=4*S)
-        # 머리
         draw.rounded_rectangle([cx - 50*S, cy - 100*S, cx + 50*S, cy - 35*S], radius=20*S, fill="#f8fafc", outline="#cbd5e1", width=4*S)
-        # 얼굴(바이저)
         draw.rounded_rectangle([cx - 40*S, cy - 85*S, cx + 40*S, cy - 45*S], radius=10*S, fill="#0f172a")
-        # 반짝이는 친근한 눈
         draw.line([(cx - 25*S, cy - 65*S), (cx - 10*S, cy - 65*S)], fill="#38bdf8", width=6*S)
         draw.line([(cx + 10*S, cy - 65*S), (cx + 25*S, cy - 65*S)], fill="#38bdf8", width=6*S)
-        # 안테나
         draw.line([(cx, cy - 100*S), (cx, cy - 120*S)], fill="#cbd5e1", width=4*S)
         draw.ellipse([cx - 8*S, cy - 130*S, cx + 8*S, cy - 114*S], fill="#f59e0b")
-        # 뺨
         draw.ellipse([cx - 30*S, cy - 50*S, cx - 20*S, cy - 40*S], fill="#fca5a5")
         draw.ellipse([cx + 20*S, cy - 50*S, cx + 30*S, cy - 40*S], fill="#fca5a5")
         
-        # 🚨 [가장 중요한 변화] 팔 포즈: 왼쪽 팔은 위로 들어 아이콘/글씨를 열정적으로 가리키는(설명하는) 포즈
-        # 왼쪽 팔 (위로 뻗어 가리킴)
         draw.line([(cx - 35*S, cy + 10*S), (cx - 70*S, cy - 20*S)], fill="#f8fafc", width=12*S) 
-        draw.line([(cx - 70*S, cy - 20*S), (cx - 85*S, cy - 20*S)], fill="#cbd5e1", width=12*S) # 손(포인터)
-        # 오른쪽 팔 (단정하게 내리거나 태블릿을 든 모습)
+        draw.line([(cx - 70*S, cy - 20*S), (cx - 85*S, cy - 20*S)], fill="#cbd5e1", width=12*S) 
         draw.line([(cx + 35*S, cy + 10*S), (cx + 45*S, cy + 40*S)], fill="#f8fafc", width=12*S)
 
-    # 하단 검은색 반투명 띠 (공통)
     draw = ImageDraw.Draw(img)
+    if use_ai_bg:
+        draw.rectangle([(0, 0), (w, h)], fill="#1a252c70")
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000060")
 
-    # 폰트 불러오기
     ft_path = get_font(
         "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf",
         "fonts/BebasNeue-Regular.ttf"
@@ -1003,44 +987,55 @@ def make_thumbnail(title_text, cat, tier):
 
     ft = lf(ft_path, 85)
     fs = lf(ft_path, 34)
-    fb = lf(ft_path, 28)
-    
-    # 🚨 VIP/PRO 뱃지 전용 거대한 폰트 세팅
-    f_badge = lf(ft_path, 40)
+    fb = lf(ft_path, 30)
 
     S = SCALE
 
-    # 상단 좌측 [NEWSLETTER] 기본 뱃지
-    draw.rounded_rectangle([40*S, 40*S, 190*S, 85*S], radius=22*S, fill="#ffffff30")
-    draw.text((60*S, 48*S), "NEWSLETTER", font=fb, fill="#ffffff")
-
-    # 🚨 3. 상단 우측에 큼지막하고 선명한 [VIP], [PRO] 컬러 뱃지 복구!
-    if cat == "Foundation":
-        badge_txt = " FREE GUIDE "
-        badge_bg = "#10b981"
-    elif cat == "The Daily Catalyst":
-        badge_txt = " DAILY "
-        badge_bg = "#b8974d"
-    else:
-        badge_txt = " VIP EXCLUSIVE " if tier == "vip" else " PRO ONLY "
-        badge_bg = "#f59e0b" if tier == "vip" else "#3b82f6"
-
-    try: bw = draw.textlength(badge_txt, font=f_badge)
-    except: bw = len(badge_txt) * 20 * S
+    # 🚨 좌측 상단: 오리지널 [날짜] 및 [카테고리] 뱃지 완벽 복구
+    date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
+    draw.text((40 * S, 44 * S), date_badge, font=fb, fill="#ffffff")
     
-    # 우측 상단 좌표 계산
-    bx = w - 40*S - bw - 40*S
-    by = 40*S
-    # 뱃지 배경 그리기
-    draw.rounded_rectangle([bx, by, bx + bw + 40*S, by + 65*S], radius=32*S, fill=badge_bg)
-    # 뱃지 텍스트 그리기
-    draw.text((bx + 20*S, by + 12*S), badge_txt, font=f_badge, fill="#ffffff")
+    try: date_w = draw.textlength(date_badge, font=fb)
+    except: date_w = len(date_badge) * 15 * S
 
-    # 제목 줄바꿈 처리
+    try: cat_w = draw.textlength(cat.upper(), font=fb)
+    except: cat_w = len(cat) * 15 * S
+    
+    bx = 40 * S + date_w + 30 * S
+    draw.rounded_rectangle(
+        [(bx, 36 * S), (bx + cat_w + 60 * S, 86 * S)],
+        radius=25 * S, fill="#ffffff"
+    )
+    draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
+
+    # 🚨 우측 상단: 오리지널의 심플하고 예쁜 [VIP] / [PRO] 뱃지 완벽 복구
+    if cat == "Foundation":
+        tl = "FREE GUIDE"
+        t_bg = "#ffffff"
+        t_tc = "#1e293b"
+    elif cat == "The Daily Catalyst":
+        tl = "DAILY"
+        t_bg = "#ffffff"
+        t_tc = "#1e293b"
+    else:
+        tl = "VIP" if tier == "vip" else "PRO"
+        t_bg = "#b8974d" if tier == "vip" else "#ffffff"
+        t_tc = "#ffffff" if tier == "vip" else "#1e293b"
+    
+    try: tier_w = draw.textlength(tl, font=fb)
+    except: tier_w = len(tl) * 15 * S
+    
+    draw.rounded_rectangle(
+        [(w - 40 * S - tier_w - 60 * S, 36 * S), (w - 40 * S, 86 * S)],
+        radius=25 * S, fill=t_bg
+    )
+    draw.text((w - 40 * S - tier_w - 30 * S, 44 * S), tl, font=fb, fill=t_tc)
+
+    # 중앙 제목 텍스트 렌더링
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
-    mw = w - 100 * SCALE if use_ai_bg else w - 450 * SCALE
+    mw = w - 450 * SCALE
 
     for word in words:
         t = " ".join(line + [word])
@@ -1054,25 +1049,19 @@ def make_thumbnail(title_text, cat, tier):
             line = [word]
     if line: lines.append(" ".join(line))
 
-    # 제목 텍스트 및 고급스러운 드롭 섀도우(그림자) 추가
     y = 160 * SCALE
     for i, ln in enumerate(lines[:4]):
-        # 그림자 효과
         draw.text((40 * S + 4 * S, y + 4 * S), ln, font=ft, fill="#00000060")
-        # 메인 텍스트
         color = "#ffffff" if use_ai_bg else (style.get("acc", "#ffffff") if i == 1 else "#ffffff")
         draw.text((40 * S, y), ln, font=ft, fill=color)
-        
         try:
             bb = draw.textbbox((0, 0), ln, font=ft)
             y += (bb[3] - bb[1]) + 15 * S
         except:
             y += 100 * S
 
-    # 하단 정보 및 브랜드명
-    date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
-    draw.text((40 * S, h - 70 * S), f"WARM INSIGHT  |  {date_bottom}", font=fs, fill="#ffffff80")
-    
+    # 하단 띠 정보
+    draw.text((40 * S, h - 70 * S), "WARM INSIGHT", font=fs, fill="#ffffff80")
     tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
     try: tw_t = draw.textlength(tagline, font=fs)
     except: tw_t = len(tagline) * 15 * S
@@ -1143,7 +1132,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     
     author_id = get_wp_author_id(author_name)
 
-    # 🚨 v40.10: Foundation과 The Daily Catalyst는 뱃지 없이 순수 제목만 발행! 나머지는 [VIP], [Pro] 유지
     if cat in ["Foundation", "The Daily Catalyst"]:
         display_title = title
     elif tier == "vip":
