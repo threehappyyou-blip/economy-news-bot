@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.12 (Sleek Mascot Thumbnail Update)
-# v40.12 대비 변경점:
-#   1) 밀크로드 벤치마킹: 못생긴 로봇 제거 대신 '세련된 미니멀 화이트 로봇'으로 전면 디자인 개편
-#   2) 기존 기능(뱃지 수정, 에러 방지, 카테고리 분리 등) 100% 완전 유지
+# Warm Insight Auto Poster — v40.13 (Explaining Mascot & Badge Fix)
+# v40.13 대비 변경점:
+#   1) 썸네일 내 VIP/PRO 뱃지 누락 완벽 복구 및 사이즈/가독성 업그레이드
+#   2) 로봇 마스코트 포즈를 '설명하고 가리키는' 안내자 형태로 전면 개편 (AI & Pillow 모두 적용)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -830,7 +830,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (완전 개조)
+# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (설명하는 로봇 & 뱃지 강화)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -862,22 +862,22 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 1. 밀크로드 스타일: 세련된 화이트 로봇 마스코트가 포함된 AI 이미지 프롬프트
+    # 🚨 1. 밀크로드 스타일: 세련된 화이트 로봇 마스코트가 "설명하는 포즈(explaining, pointing)"로 생성되도록 AI 프롬프트 강화
     AI_PROMPTS = {
-        "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek, futuristic cute white robot mascot holding a rising stock market chart. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot holding a glowing globe or chess piece. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "Tech": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot interacting with a glowing microchip. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "Health": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot looking at a glowing DNA helix. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot holding a bright lightning bolt. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot reading a classic book. Dark premium colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot holding a gold coin and a guide book. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words."
+        "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek, cute white robot mascot standing enthusiastically and pointing at a floating stock market chart, acting as a friendly guide. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing globe or chess piece, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "Tech": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing microchip, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "Health": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing DNA helix, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a bright lightning bolt, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot enthusiastically presenting a classic book, acting as a friendly guide. Dark premium colors, clean gradient background. No text, no words.",
+        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot enthusiastically pointing at a gold coin and a guide book, acting as a friendly educational guide. Vibrant colors, clean gradient background. No text, no words."
     }
 
     img = None
     use_ai_bg = False
 
     try:
-        print(f"    [AI] Requesting Milk-Road Style Vector Background for {cat}...")
+        print(f"    [AI] Requesting Explaining Mascot Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-001',
@@ -892,7 +892,7 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Vector Background Generated!")
+        print("    ✅ AI Explaining Mascot Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         # 🚨 AI 실패 시 밀크로드 스타일 커스텀 벡터 드로잉 엔진 작동
@@ -910,17 +910,15 @@ def make_thumbnail(title_text, cat, tier):
         cx = w * 0.85
         cy = h * 0.65
         S = SCALE
-        cx_p = cx - 100 * S
+        cx_p = cx - 120 * S
         cy_p = cy
 
         if cat == "Economy":
-            # 상승하는 바 차트와 코인
             draw.rectangle([cx_p-60*S, cy_p+20*S, cx_p-20*S, cy_p+80*S], fill="#38bdf8")
             draw.rectangle([cx_p-10*S, cy_p-20*S, cx_p+30*S, cy_p+80*S], fill="#38bdf8")
             draw.rectangle([cx_p+40*S, cy_p-60*S, cx_p+80*S, cy_p+80*S], fill="#fde047")
             draw.line([cx_p-80*S, cy_p+40*S, cx_p*S, cy_p-20*S, cx_p+90*S, cy_p-90*S], fill="#ffffff", width=8*S)
         elif cat == "Politics":
-            # 정부 청사/기둥
             draw.polygon([(cx_p, cy_p-80*S), (cx_p-80*S, cy_p-20*S), (cx_p+80*S, cy_p-20*S)], fill="#fca5a5")
             draw.rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p], fill="#ef4444")
             draw.rectangle([cx_p-60*S, cy_p, cx_p-40*S, cy_p+80*S], fill="#fca5a5")
@@ -928,7 +926,6 @@ def make_thumbnail(title_text, cat, tier):
             draw.rectangle([cx_p+40*S, cy_p, cx_p+60*S, cy_p+80*S], fill="#fca5a5")
             draw.rectangle([cx_p-80*S, cy_p+80*S, cx_p+80*S, cy_p+100*S], fill="#ef4444")
         elif cat == "Tech":
-            # 마이크로칩
             draw.rounded_rectangle([cx_p-60*S, cy_p-60*S, cx_p+60*S, cy_p+60*S], radius=15*S, fill="#818cf8")
             draw.rectangle([cx_p-30*S, cy_p-30*S, cx_p+30*S, cy_p+30*S], fill="#312e81")
             for offset in [-40, 0, 40]:
@@ -937,60 +934,48 @@ def make_thumbnail(title_text, cat, tier):
                 draw.line([(cx_p-60*S, cy_p+offset*S), (cx_p-90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
                 draw.line([(cx_p+60*S, cy_p+offset*S), (cx_p+90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
         elif cat == "Health":
-            # 십자가와 심장 박동
             draw.rounded_rectangle([cx_p-20*S, cy_p-70*S, cx_p+20*S, cy_p+70*S], radius=10*S, fill="#a7f3d0")
             draw.rounded_rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p+20*S], radius=10*S, fill="#a7f3d0")
             draw.line([(cx_p-100*S, cy_p+100*S), (cx_p-50*S, cy_p+100*S), (cx_p-25*S, cy_p+50*S), (cx_p+25*S, cy_p+150*S), (cx_p+50*S, cy_p+100*S), (cx_p+100*S, cy_p+100*S)], fill="#ffffff", width=6*S)
         elif cat == "Energy":
-            # 번개
             draw.polygon([(cx_p+30*S, cy_p-90*S), (cx_p-50*S, cy_p+10*S), (cx_p+10*S, cy_p+10*S), (cx_p-30*S, cy_p+90*S), (cx_p+50*S, cy_p-10*S), (cx_p-10*S, cy_p-10*S)], fill="#fde047")
         elif cat == "The Daily Catalyst":
-            # 빛나는 두뇌/통찰력
             draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
             draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
             draw.line([(cx_p-30*S, cy_p-100*S), (cx_p-20*S, cy_p-80*S)], fill="#fde047", width=6*S)
             draw.line([(cx_p+30*S, cy_p-100*S), (cx_p+20*S, cy_p-80*S)], fill="#fde047", width=6*S)
             draw.line([(cx_p, cy_p-110*S), (cx_p, cy_p-85*S)], fill="#fde047", width=6*S)
         elif cat == "Foundation":
-            # 교육용 책 모양
             draw.rectangle([cx_p-70*S, cy_p-50*S, cx_p, cy_p+70*S], fill="#6ee7b7", outline="#ffffff", width=6*S)
             draw.rectangle([cx_p, cy_p-50*S, cx_p+70*S, cy_p+70*S], fill="#34d399", outline="#ffffff", width=6*S)
             draw.line([(cx_p-50*S, cy_p-20*S), (cx_p-20*S, cy_p-20*S)], fill="#ffffff", width=5*S)
             draw.line([(cx_p+20*S, cy_p-20*S), (cx_p+50*S, cy_p-20*S)], fill="#ffffff", width=5*S)
             draw.line([(cx_p-50*S, cy_p+10*S), (cx_p-20*S, cy_p+10*S)], fill="#ffffff", width=5*S)
 
-        # 🚨 2. 밀크로드 스타일의 세련된 "미니멀 화이트 로봇 마스코트" 전면 교체! (우측)
-        # 로봇 그림자
-        draw.ellipse([cx - 40*S, cy + 65*S, cx + 40*S, cy + 85*S], fill="#00000030")
-        # 로봇 몸통 (애플/테슬라 스타일의 부드러운 라운드 화이트 바디)
-        draw.rounded_rectangle([cx - 45*S, cy - 50*S, cx + 45*S, cy + 70*S], radius=20*S, fill="#f8fafc", outline="#e2e8f0", width=4*S)
-        # 로봇 화면 (다크 글래스 바이저)
-        draw.rounded_rectangle([cx - 35*S, cy - 35*S, cx + 35*S, cy - 5*S], radius=8*S, fill="#0f172a")
-        # 로봇 눈 (빛나는 블루)
-        draw.ellipse([cx - 18*S, cy - 25*S, cx - 6*S, cy - 13*S], fill="#22d3ee")
-        draw.ellipse([cx + 6*S, cy - 25*S, cx + 18*S, cy - 13*S], fill="#22d3ee")
-        # 로봇 안테나
-        draw.line([(cx, cy - 50*S), (cx, cy - 80*S)], fill="#cbd5e1", width=4*S)
-        draw.ellipse([cx - 8*S, cy - 90*S, cx + 8*S, cy - 74*S], fill="#f59e0b") # 포인트 라이트
-        # 로봇 뺨 (귀여움 한 스푼)
-        draw.ellipse([cx - 28*S, cy + 5*S, cx - 18*S, cy + 15*S], fill="#fca5a5")
-        draw.ellipse([cx + 18*S, cy + 5*S, cx + 28*S, cy + 15*S], fill="#fca5a5")
-        # 로봇 팔 (플랫하고 모던한 스타일)
-        draw.rounded_rectangle([cx - 65*S, cy + 10*S, cx - 45*S, cy + 35*S], radius=8*S, fill="#e2e8f0")
-        draw.rounded_rectangle([cx + 45*S, cy + 10*S, cx + 65*S, cy + 35*S], radius=8*S, fill="#e2e8f0")
-
-        # VIP 딱지 (옵션)
-        if tier == "vip" and cat not in ["The Daily Catalyst", "Foundation"]:
-            cx_c = cx + 25 * S
-            cy_c = cy - 75 * S
-            draw.polygon([
-                (cx_c - 15 * S, cy_c), (cx_c - 25 * S, cy_c - 30 * S),
-                (cx_c, cy_c - 15 * S), (cx_c + 15 * S, cy_c - 35 * S),
-                (cx_c + 20 * S, cy_c - 10 * S), (cx_c + 35 * S, cy_c - 25 * S),
-                (cx_c + 25 * S, cy_c + 5 * S)
-            ], fill="#fde047")
-        elif tier == "vip" and cat == "The Daily Catalyst":
-            pass
+        # 🚨 2. "설명하는 포즈(Explaining Pose)"로 전면 수정된 화이트 둥근 로봇 마스코트
+        draw.ellipse([cx - 40*S, cy + 65*S, cx + 40*S, cy + 85*S], fill="#00000030") # 그림자
+        # 몸통 (라운드 스퀘어)
+        draw.rounded_rectangle([cx - 40*S, cy - 30*S, cx + 40*S, cy + 70*S], radius=15*S, fill="#f8fafc", outline="#cbd5e1", width=4*S)
+        # 머리
+        draw.rounded_rectangle([cx - 50*S, cy - 100*S, cx + 50*S, cy - 35*S], radius=20*S, fill="#f8fafc", outline="#cbd5e1", width=4*S)
+        # 얼굴(바이저)
+        draw.rounded_rectangle([cx - 40*S, cy - 85*S, cx + 40*S, cy - 45*S], radius=10*S, fill="#0f172a")
+        # 반짝이는 친근한 눈
+        draw.line([(cx - 25*S, cy - 65*S), (cx - 10*S, cy - 65*S)], fill="#38bdf8", width=6*S)
+        draw.line([(cx + 10*S, cy - 65*S), (cx + 25*S, cy - 65*S)], fill="#38bdf8", width=6*S)
+        # 안테나
+        draw.line([(cx, cy - 100*S), (cx, cy - 120*S)], fill="#cbd5e1", width=4*S)
+        draw.ellipse([cx - 8*S, cy - 130*S, cx + 8*S, cy - 114*S], fill="#f59e0b")
+        # 뺨
+        draw.ellipse([cx - 30*S, cy - 50*S, cx - 20*S, cy - 40*S], fill="#fca5a5")
+        draw.ellipse([cx + 20*S, cy - 50*S, cx + 30*S, cy - 40*S], fill="#fca5a5")
+        
+        # 🚨 [가장 중요한 변화] 팔 포즈: 왼쪽 팔은 위로 들어 아이콘/글씨를 열정적으로 가리키는(설명하는) 포즈
+        # 왼쪽 팔 (위로 뻗어 가리킴)
+        draw.line([(cx - 35*S, cy + 10*S), (cx - 70*S, cy - 20*S)], fill="#f8fafc", width=12*S) 
+        draw.line([(cx - 70*S, cy - 20*S), (cx - 85*S, cy - 20*S)], fill="#cbd5e1", width=12*S) # 손(포인터)
+        # 오른쪽 팔 (단정하게 내리거나 태블릿을 든 모습)
+        draw.line([(cx + 35*S, cy + 10*S), (cx + 45*S, cy + 40*S)], fill="#f8fafc", width=12*S)
 
     # 하단 검은색 반투명 띠 (공통)
     draw = ImageDraw.Draw(img)
@@ -1018,19 +1003,44 @@ def make_thumbnail(title_text, cat, tier):
 
     ft = lf(ft_path, 85)
     fs = lf(ft_path, 34)
-    fb = lf(ft_path, 28) # 뱃지 글씨 굵기 세련되게 조절
+    fb = lf(ft_path, 28)
+    
+    # 🚨 VIP/PRO 뱃지 전용 거대한 폰트 세팅
+    f_badge = lf(ft_path, 40)
 
     S = SCALE
 
-    # 🚨 상단 [NEWSLETTER] 뱃지 그리기 (밀크로드 스타일)
+    # 상단 좌측 [NEWSLETTER] 기본 뱃지
     draw.rounded_rectangle([40*S, 40*S, 190*S, 85*S], radius=22*S, fill="#ffffff30")
     draw.text((60*S, 48*S), "NEWSLETTER", font=fb, fill="#ffffff")
+
+    # 🚨 3. 상단 우측에 큼지막하고 선명한 [VIP], [PRO] 컬러 뱃지 복구!
+    if cat == "Foundation":
+        badge_txt = " FREE GUIDE "
+        badge_bg = "#10b981"
+    elif cat == "The Daily Catalyst":
+        badge_txt = " DAILY "
+        badge_bg = "#b8974d"
+    else:
+        badge_txt = " VIP EXCLUSIVE " if tier == "vip" else " PRO ONLY "
+        badge_bg = "#f59e0b" if tier == "vip" else "#3b82f6"
+
+    try: bw = draw.textlength(badge_txt, font=f_badge)
+    except: bw = len(badge_txt) * 20 * S
+    
+    # 우측 상단 좌표 계산
+    bx = w - 40*S - bw - 40*S
+    by = 40*S
+    # 뱃지 배경 그리기
+    draw.rounded_rectangle([bx, by, bx + bw + 40*S, by + 65*S], radius=32*S, fill=badge_bg)
+    # 뱃지 텍스트 그리기
+    draw.text((bx + 20*S, by + 12*S), badge_txt, font=f_badge, fill="#ffffff")
 
     # 제목 줄바꿈 처리
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
-    mw = w - 450 * SCALE # 제목이 우측 아이콘을 침범하지 않도록 넓이 제한
+    mw = w - 100 * SCALE if use_ai_bg else w - 450 * SCALE
 
     for word in words:
         t = " ".join(line + [word])
@@ -1049,7 +1059,7 @@ def make_thumbnail(title_text, cat, tier):
     for i, ln in enumerate(lines[:4]):
         # 그림자 효과
         draw.text((40 * S + 4 * S, y + 4 * S), ln, font=ft, fill="#00000060")
-        # 메인 텍스트 (두 번째 줄 포인트 컬러 적용)
+        # 메인 텍스트
         color = "#ffffff" if use_ai_bg else (style.get("acc", "#ffffff") if i == 1 else "#ffffff")
         draw.text((40 * S, y), ln, font=ft, fill=color)
         
@@ -1060,9 +1070,10 @@ def make_thumbnail(title_text, cat, tier):
             y += 100 * S
 
     # 하단 정보 및 브랜드명
-    draw.text((40 * S, h - 70 * S), "WARM INSIGHT", font=fs, fill="#ffffff80")
-    tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
+    date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
+    draw.text((40 * S, h - 70 * S), f"WARM INSIGHT  |  {date_bottom}", font=fs, fill="#ffffff80")
     
+    tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
     try: tw_t = draw.textlength(tagline, font=fs)
     except: tw_t = len(tagline) * 15 * S
     draw.text((w - 40 * S - tw_t, h - 70 * S), tagline, font=fs, fill="#ffffff80")
@@ -1132,7 +1143,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
     
     author_id = get_wp_author_id(author_name)
 
-    # 🚨 v40.10: Foundation과 The Daily Catalyst는 순수 제목만 발행, 나머지는 태그 유지
+    # 🚨 v40.10: Foundation과 The Daily Catalyst는 뱃지 없이 순수 제목만 발행! 나머지는 [VIP], [Pro] 유지
     if cat in ["Foundation", "The Daily Catalyst"]:
         display_title = title
     elif tier == "vip":
@@ -1188,7 +1199,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.12 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.13 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1217,7 +1228,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.12 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.13 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1246,7 +1257,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.12 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.13 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
