@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.8 (Foundation Syntax Fix & Cinematic AI)
+# Warm Insight Auto Poster — v40.9 (Ultimate Syntax Fix & Cinematic AI)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -544,7 +544,7 @@ def build_foundation_html(raw, author, tf, title):
     </div>
     """
     
-    # 🚨 SyntaxError 완벽 해결: 줄바꿈 처리를 f-string 바깥에서 먼저 진행
+    # 🚨 SyntaxError 방지: 변수 먼저 치환 후 주입
     def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;">
@@ -610,6 +610,7 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
+    # 🚨 SyntaxError 방지: 변수 먼저 치환 후 주입
     reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
@@ -1171,7 +1172,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.8 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.9 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1200,7 +1201,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.8 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.9 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1229,7 +1230,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.8 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.9 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
