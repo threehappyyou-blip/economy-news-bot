@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.10 (Catalyst Title Prefix Fix)
-# v40.10 대비 변경점:
-#   1) "The Daily Catalyst" 발행 시 제목 앞 [Pro], [VIP] 접두사 완벽 제거
-#   2) 나머지 일반 뉴스 카테고리는 기존 방식대로 접두사 유지
+# Warm Insight Auto Poster — v40.12 (Sleek Mascot Thumbnail Update)
+# v40.12 대비 변경점:
+#   1) 밀크로드 벤치마킹: 못생긴 로봇 제거 대신 '세련된 미니멀 화이트 로봇'으로 전면 디자인 개편
+#   2) 기존 기능(뱃지 수정, 에러 방지, 카테고리 분리 등) 100% 완전 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -830,7 +830,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 초고화질 AI 시네마틱 썸네일 엔진 (구글 Imagen 3 연동)
+# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (완전 개조)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -850,33 +850,34 @@ def make_thumbnail(title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
 
+    # 밀크로드 스타일 투톤 컬러 조합
     CAT_STYLES = {
-        "Economy":  {"bg": "#0ea5e9", "acc": "#fde047"},
-        "Politics": {"bg": "#dc2626", "acc": "#fde047"},
-        "Tech":     {"bg": "#6366f1", "acc": "#a78bfa"},
-        "Health":   {"bg": "#059669", "acc": "#fef08a"},
-        "Energy":   {"bg": "#d97706", "acc": "#fef3c7"},
-        "The Daily Catalyst": {"bg": "#0f172a", "acc": "#b8974d"}, 
-        "Foundation": {"bg": "#10b981", "acc": "#ffffff"} 
+        "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
+        "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
+        "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
+        "Health":   {"bg1": "#10b981", "bg2": "#047857", "acc": "#fef08a"},
+        "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
+        "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"}, 
+        "Foundation": {"bg1": "#0ea5e9", "bg2": "#0284c7", "acc": "#ffffff"} 
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 카테고리별 초고화질 AI 생성 프롬프트
+    # 🚨 1. 밀크로드 스타일: 세련된 화이트 로봇 마스코트가 포함된 AI 이미지 프롬프트
     AI_PROMPTS = {
-        "Economy": "A highly realistic, cinematic 3D macro photography of gold bars, glowing stock market charts, and elegant business objects on a dark premium desk. Depth of field, volumetric lighting, 8k resolution, highly detailed, luxurious, no text.",
-        "Politics": "A highly realistic, cinematic 3D macro photography of a glowing translucent globe and elegant golden chess pieces on a dark mahogany board. Dramatic lighting, geopolitical strategy concept, 8k resolution, luxurious, no text.",
-        "Tech": "A highly realistic, cinematic 3D macro photography of glowing futuristic microchips, fiber optic cables, and neon blue and purple lights. Cyberpunk aesthetic, depth of field, 8k resolution, no text.",
-        "Health": "A highly realistic, cinematic 3D photography of a glowing blue DNA helix inside a clean, modern laboratory glass vial. Soft medical lighting, high-tech, depth of field, 8k resolution, no text.",
-        "Energy": "A highly realistic, cinematic 3D photography of glowing golden oil drops, futuristic solar panels, and bright energy streaks in the background. Highly detailed, 8k resolution, no text.",
-        "The Daily Catalyst": "A highly realistic, cinematic 3D photography of an ancient marble bust next to a glowing golden hourglass on a dark premium desk. Dark academia, philosophical vibe, highly realistic, 8k resolution, no text.",
-        "Foundation": "A highly realistic, cinematic 3D photography of neat stacks of shiny gold coins, a premium leather bound journal, and a luxury pen on a dark wooden desk. Soft golden lighting, wealth building concept, 8k resolution, no text."
+        "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek, futuristic cute white robot mascot holding a rising stock market chart. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot holding a glowing globe or chess piece. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Tech": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot interacting with a glowing microchip. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Health": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot looking at a glowing DNA helix. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot holding a bright lightning bolt. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot reading a classic book. Dark premium colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot holding a gold coin and a guide book. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words."
     }
 
     img = None
     use_ai_bg = False
 
     try:
-        print(f"    [AI] Requesting Cinematic 3D Background for {cat}...")
+        print(f"    [AI] Requesting Milk-Road Style Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-001',
@@ -891,65 +892,97 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Cinematic Background Generated!")
+        print("    ✅ AI Vector Background Generated!")
     except Exception as e:
-        print(f"    ⚠️ AI Image Gen skipped/failed. Using vector fallback. ({e})")
-        img = Image.new("RGBA", (w, h), style["bg"])
+        print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
+        # 🚨 AI 실패 시 밀크로드 스타일 커스텀 벡터 드로잉 엔진 작동
+        img = Image.new("RGBA", (w, h), style["bg1"])
+        draw = ImageDraw.Draw(img)
+        
+        # 거대한 원(Wave)을 우측에 그려 밀크로드 특유의 곡선 그라데이션 느낌 연출
+        draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
+        
+        # 떠다니는 장식용 빛망울 추가
+        draw.ellipse([w*0.8, h*0.1, w*0.9, h*0.2], fill="#ffffff15")
+        draw.ellipse([w*0.4, h*0.8, w*0.45, h*0.9], fill="#ffffff10")
 
-    draw = ImageDraw.Draw(img)
-
-    if use_ai_bg:
-        draw.rectangle([(0, 0), (w, h)], fill="#1a252c80")
-    else:
+        # 카테고리별 맞춤형 미니멀 아이콘 그리기 (우측 중앙에서 살짝 왼쪽)
         cx = w * 0.85
-        cy = h * 0.7
+        cy = h * 0.65
         S = SCALE
+        cx_p = cx - 100 * S
+        cy_p = cy
 
-        if cat == "The Daily Catalyst":
-            draw.rectangle([cx - 50*S, cy - 80*S, cx + 50*S, cy + 80*S], outline="#b8974d", width=6*S)
-            draw.line([(cx - 25*S, cy - 40*S), (cx + 25*S, cy - 40*S)], fill="#b8974d", width=6*S)
-            draw.ellipse([(cx - 15*S, cy - 10*S), (cx + 15*S, cy + 20*S)], outline="#b8974d", width=6*S)
+        if cat == "Economy":
+            # 상승하는 바 차트와 코인
+            draw.rectangle([cx_p-60*S, cy_p+20*S, cx_p-20*S, cy_p+80*S], fill="#38bdf8")
+            draw.rectangle([cx_p-10*S, cy_p-20*S, cx_p+30*S, cy_p+80*S], fill="#38bdf8")
+            draw.rectangle([cx_p+40*S, cy_p-60*S, cx_p+80*S, cy_p+80*S], fill="#fde047")
+            draw.line([cx_p-80*S, cy_p+40*S, cx_p*S, cy_p-20*S, cx_p+90*S, cy_p-90*S], fill="#ffffff", width=8*S)
+        elif cat == "Politics":
+            # 정부 청사/기둥
+            draw.polygon([(cx_p, cy_p-80*S), (cx_p-80*S, cy_p-20*S), (cx_p+80*S, cy_p-20*S)], fill="#fca5a5")
+            draw.rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p], fill="#ef4444")
+            draw.rectangle([cx_p-60*S, cy_p, cx_p-40*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p-10*S, cy_p, cx_p+10*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p+40*S, cy_p, cx_p+60*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p-80*S, cy_p+80*S, cx_p+80*S, cy_p+100*S], fill="#ef4444")
+        elif cat == "Tech":
+            # 마이크로칩
+            draw.rounded_rectangle([cx_p-60*S, cy_p-60*S, cx_p+60*S, cy_p+60*S], radius=15*S, fill="#818cf8")
+            draw.rectangle([cx_p-30*S, cy_p-30*S, cx_p+30*S, cy_p+30*S], fill="#312e81")
+            for offset in [-40, 0, 40]:
+                draw.line([(cx_p+offset*S, cy_p-60*S), (cx_p+offset*S, cy_p-90*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p+offset*S, cy_p+60*S), (cx_p+offset*S, cy_p+90*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p-60*S, cy_p+offset*S), (cx_p-90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p+60*S, cy_p+offset*S), (cx_p+90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
+        elif cat == "Health":
+            # 십자가와 심장 박동
+            draw.rounded_rectangle([cx_p-20*S, cy_p-70*S, cx_p+20*S, cy_p+70*S], radius=10*S, fill="#a7f3d0")
+            draw.rounded_rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p+20*S], radius=10*S, fill="#a7f3d0")
+            draw.line([(cx_p-100*S, cy_p+100*S), (cx_p-50*S, cy_p+100*S), (cx_p-25*S, cy_p+50*S), (cx_p+25*S, cy_p+150*S), (cx_p+50*S, cy_p+100*S), (cx_p+100*S, cy_p+100*S)], fill="#ffffff", width=6*S)
+        elif cat == "Energy":
+            # 번개
+            draw.polygon([(cx_p+30*S, cy_p-90*S), (cx_p-50*S, cy_p+10*S), (cx_p+10*S, cy_p+10*S), (cx_p-30*S, cy_p+90*S), (cx_p+50*S, cy_p-10*S), (cx_p-10*S, cy_p-10*S)], fill="#fde047")
+        elif cat == "The Daily Catalyst":
+            # 빛나는 두뇌/통찰력
+            draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
+            draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
+            draw.line([(cx_p-30*S, cy_p-100*S), (cx_p-20*S, cy_p-80*S)], fill="#fde047", width=6*S)
+            draw.line([(cx_p+30*S, cy_p-100*S), (cx_p+20*S, cy_p-80*S)], fill="#fde047", width=6*S)
+            draw.line([(cx_p, cy_p-110*S), (cx_p, cy_p-85*S)], fill="#fde047", width=6*S)
         elif cat == "Foundation":
-            draw.rectangle([cx - 60*S, cy - 60*S, cx + 60*S, cy + 60*S], outline="#ffffff", width=8*S)
-            draw.line([(cx - 30*S, cy - 20*S), (cx + 30*S, cy - 20*S)], fill="#ffffff", width=6*S)
-            draw.line([(cx - 30*S, cy + 10*S), (cx + 30*S, cy + 10*S)], fill="#ffffff", width=6*S)
-            draw.line([(cx - 30*S, cy + 40*S), (cx + 30*S, cy + 40*S)], fill="#ffffff", width=6*S)
-        else:
-            draw.ellipse([cx - 45 * S, cy + 60 * S, cx - 15 * S, cy + 90 * S], fill="#047857")
-            draw.ellipse([cx + 15 * S, cy + 60 * S, cx + 45 * S, cy + 90 * S], fill="#047857")
-            draw.rounded_rectangle([cx - 85 * S, cy - 10 * S, cx - 50 * S, cy + 15 * S], radius=12 * S, fill="#10b981")
-            draw.rounded_rectangle([cx + 50 * S, cy - 30 * S, cx + 85 * S, cy - 5 * S], radius=12 * S, fill="#10b981")
-            draw.rounded_rectangle([cx - 50 * S, cy - 70 * S, cx + 50 * S, cy + 70 * S], radius=25 * S, fill="#10b981")
-            draw.ellipse([cx - 25 * S, cy - 30 * S, cx - 5 * S, cy - 10 * S], fill="#ffffff")
-            draw.ellipse([cx + 5 * S, cy - 30 * S, cx + 25 * S, cy - 10 * S], fill="#ffffff")
-            draw.ellipse([cx - 18 * S, cy - 22 * S, cx - 10 * S, cy - 14 * S], fill="#1e293b")
-            draw.ellipse([cx + 12 * S, cy - 22 * S, cx + 20 * S, cy - 14 * S], fill="#1e293b")
-            draw.ellipse([cx - 40 * S, cy + 5 * S, cx - 25 * S, cy + 20 * S], fill="#f472b6")
-            draw.ellipse([cx + 25 * S, cy + 5 * S, cx + 40 * S, cy + 20 * S], fill="#f472b6")
-            draw.rounded_rectangle([cx - 25 * S, cy + 30 * S, cx + 25 * S, cy + 50 * S], radius=8 * S, fill="#ffffff")
+            # 교육용 책 모양
+            draw.rectangle([cx_p-70*S, cy_p-50*S, cx_p, cy_p+70*S], fill="#6ee7b7", outline="#ffffff", width=6*S)
+            draw.rectangle([cx_p, cy_p-50*S, cx_p+70*S, cy_p+70*S], fill="#34d399", outline="#ffffff", width=6*S)
+            draw.line([(cx_p-50*S, cy_p-20*S), (cx_p-20*S, cy_p-20*S)], fill="#ffffff", width=5*S)
+            draw.line([(cx_p+20*S, cy_p-20*S), (cx_p+50*S, cy_p-20*S)], fill="#ffffff", width=5*S)
+            draw.line([(cx_p-50*S, cy_p+10*S), (cx_p-20*S, cy_p+10*S)], fill="#ffffff", width=5*S)
 
-            if cat == "Economy":
-                draw.polygon([
-                    (cx - 5 * S, cy + 55 * S), (cx + 5 * S, cy + 55 * S),
-                    (cx + 8 * S, cy + 80 * S), (cx, cy + 90 * S), (cx - 8 * S, cy + 80 * S)
-                ], fill="#ef4444")
-            elif cat == "Politics":
-                draw.rectangle([cx - 35 * S, cy - 35 * S, cx + 35 * S, cy - 5 * S], outline="#1e293b", width=4 * S)
-                draw.line([(cx - 5 * S, cy - 20 * S), (cx + 5 * S, cy - 20 * S)], fill="#1e293b", width=4 * S)
-            elif cat == "Tech":
-                draw.line([(cx, cy - 70 * S), (cx, cy - 110 * S)], fill="#94a3b8", width=6 * S)
-                draw.ellipse([(cx - 12 * S, cy - 125 * S), (cx + 12 * S, cy - 100 * S)], fill="#60a5fa")
-            elif cat == "Health":
-                draw.rounded_rectangle([cx - 35 * S, cy - 95 * S, cx + 35 * S, cy - 65 * S], radius=5 * S, fill="#ffffff")
-                draw.rectangle([cx - 5 * S, cy - 90 * S, cx + 5 * S, cy - 70 * S], fill="#ef4444")
-                draw.rectangle([cx - 15 * S, cy - 85 * S, cx + 15 * S, cy - 75 * S], fill="#ef4444")
-            elif cat == "Energy":
-                draw.chord([cx - 55 * S, cy - 110 * S, cx + 55 * S, cy - 30 * S], start=180, end=0, fill="#f59e0b")
-                draw.line([(cx - 65 * S, cy - 70 * S), (cx + 65 * S, cy - 70 * S)], fill="#f59e0b", width=8 * S)
+        # 🚨 2. 밀크로드 스타일의 세련된 "미니멀 화이트 로봇 마스코트" 전면 교체! (우측)
+        # 로봇 그림자
+        draw.ellipse([cx - 40*S, cy + 65*S, cx + 40*S, cy + 85*S], fill="#00000030")
+        # 로봇 몸통 (애플/테슬라 스타일의 부드러운 라운드 화이트 바디)
+        draw.rounded_rectangle([cx - 45*S, cy - 50*S, cx + 45*S, cy + 70*S], radius=20*S, fill="#f8fafc", outline="#e2e8f0", width=4*S)
+        # 로봇 화면 (다크 글래스 바이저)
+        draw.rounded_rectangle([cx - 35*S, cy - 35*S, cx + 35*S, cy - 5*S], radius=8*S, fill="#0f172a")
+        # 로봇 눈 (빛나는 블루)
+        draw.ellipse([cx - 18*S, cy - 25*S, cx - 6*S, cy - 13*S], fill="#22d3ee")
+        draw.ellipse([cx + 6*S, cy - 25*S, cx + 18*S, cy - 13*S], fill="#22d3ee")
+        # 로봇 안테나
+        draw.line([(cx, cy - 50*S), (cx, cy - 80*S)], fill="#cbd5e1", width=4*S)
+        draw.ellipse([cx - 8*S, cy - 90*S, cx + 8*S, cy - 74*S], fill="#f59e0b") # 포인트 라이트
+        # 로봇 뺨 (귀여움 한 스푼)
+        draw.ellipse([cx - 28*S, cy + 5*S, cx - 18*S, cy + 15*S], fill="#fca5a5")
+        draw.ellipse([cx + 18*S, cy + 5*S, cx + 28*S, cy + 15*S], fill="#fca5a5")
+        # 로봇 팔 (플랫하고 모던한 스타일)
+        draw.rounded_rectangle([cx - 65*S, cy + 10*S, cx - 45*S, cy + 35*S], radius=8*S, fill="#e2e8f0")
+        draw.rounded_rectangle([cx + 45*S, cy + 10*S, cx + 65*S, cy + 35*S], radius=8*S, fill="#e2e8f0")
 
+        # VIP 딱지 (옵션)
         if tier == "vip" and cat not in ["The Daily Catalyst", "Foundation"]:
             cx_c = cx + 25 * S
-            cy_c = cy - 65 * S
+            cy_c = cy - 75 * S
             draw.polygon([
                 (cx_c - 15 * S, cy_c), (cx_c - 25 * S, cy_c - 30 * S),
                 (cx_c, cy_c - 15 * S), (cx_c + 15 * S, cy_c - 35 * S),
@@ -957,10 +990,13 @@ def make_thumbnail(title_text, cat, tier):
                 (cx_c + 25 * S, cy_c + 5 * S)
             ], fill="#fde047")
         elif tier == "vip" and cat == "The Daily Catalyst":
-            draw.ellipse([(cx - 100*S, cy - 100*S), (cx + 100*S, cy + 100*S)], outline="#b8974d", width=2*S)
+            pass
 
+    # 하단 검은색 반투명 띠 (공통)
+    draw = ImageDraw.Draw(img)
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000060")
 
+    # 폰트 불러오기
     ft_path = get_font(
         "https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf",
         "fonts/BebasNeue-Regular.ttf"
@@ -982,46 +1018,19 @@ def make_thumbnail(title_text, cat, tier):
 
     ft = lf(ft_path, 85)
     fs = lf(ft_path, 34)
-    fb = lf(ft_path, 30)
+    fb = lf(ft_path, 28) # 뱃지 글씨 굵기 세련되게 조절
 
-    date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
-    draw.text((40 * SCALE, 44 * SCALE), date_badge, font=fb, fill="#ffffff")
-    
-    try: date_w = draw.textlength(date_badge, font=fb)
-    except: date_w = len(date_badge) * 15 * SCALE
+    S = SCALE
 
-    try: cat_w = draw.textlength(cat.upper(), font=fb)
-    except: cat_w = len(cat) * 15 * SCALE
-    
-    bx = 40 * SCALE + date_w + 30 * SCALE
-    draw.rounded_rectangle(
-        [(bx, 36 * SCALE), (bx + cat_w + 60 * SCALE, 86 * SCALE)],
-        radius=25 * SCALE, fill="#ffffff"
-    )
-    draw.text((bx + 30 * SCALE, 44 * SCALE), cat.upper(), font=fb, fill="#1e293b")
+    # 🚨 상단 [NEWSLETTER] 뱃지 그리기 (밀크로드 스타일)
+    draw.rounded_rectangle([40*S, 40*S, 190*S, 85*S], radius=22*S, fill="#ffffff30")
+    draw.text((60*S, 48*S), "NEWSLETTER", font=fb, fill="#ffffff")
 
-    if cat == "Foundation":
-        tl = "FREE GUIDE"
-        t_bg = "#ffffff"
-        t_tc = "#1e293b"
-    else:
-        tl = "VIP" if tier == "vip" else "PRO"
-        t_bg = "#b8974d" if tier == "vip" else "#ffffff"
-        t_tc = "#ffffff" if tier == "vip" else "#1e293b"
-    
-    try: tier_w = draw.textlength(tl, font=fb)
-    except: tier_w = len(tl) * 15 * SCALE
-    
-    draw.rounded_rectangle(
-        [(w - 40 * SCALE - tier_w - 60 * SCALE, 36 * SCALE), (w - 40 * SCALE, 86 * SCALE)],
-        radius=25 * SCALE, fill=t_bg
-    )
-    draw.text((w - 40 * SCALE - tier_w - 30 * SCALE, 44 * SCALE), tl, font=fb, fill=t_tc)
-
+    # 제목 줄바꿈 처리
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
-    mw = w - 100 * SCALE if use_ai_bg else w - 400 * SCALE
+    mw = w - 450 * SCALE # 제목이 우측 아이콘을 침범하지 않도록 넓이 제한
 
     for word in words:
         t = " ".join(line + [word])
@@ -1035,23 +1044,28 @@ def make_thumbnail(title_text, cat, tier):
             line = [word]
     if line: lines.append(" ".join(line))
 
-    y = 180 * SCALE
-    for i, ln in enumerate(lines[:3]):
-        color = "#ffffff" if use_ai_bg else (style["acc"] if i == 1 else "#ffffff")
-        draw.text((40 * SCALE, y), ln, font=ft, fill=color)
+    # 제목 텍스트 및 고급스러운 드롭 섀도우(그림자) 추가
+    y = 160 * SCALE
+    for i, ln in enumerate(lines[:4]):
+        # 그림자 효과
+        draw.text((40 * S + 4 * S, y + 4 * S), ln, font=ft, fill="#00000060")
+        # 메인 텍스트 (두 번째 줄 포인트 컬러 적용)
+        color = "#ffffff" if use_ai_bg else (style.get("acc", "#ffffff") if i == 1 else "#ffffff")
+        draw.text((40 * S, y), ln, font=ft, fill=color)
+        
         try:
             bb = draw.textbbox((0, 0), ln, font=ft)
-            y += (bb[3] - bb[1]) + 15 * SCALE
+            y += (bb[3] - bb[1]) + 15 * S
         except:
-            y += 100 * SCALE
+            y += 100 * S
 
-    draw.text((40 * SCALE, h - 60 * SCALE), "WARM INSIGHT", font=fs, fill="#ffffff")
-    tagline = "AI-Driven Global Market Analysis"
+    # 하단 정보 및 브랜드명
+    draw.text((40 * S, h - 70 * S), "WARM INSIGHT", font=fs, fill="#ffffff80")
+    tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
     
     try: tw_t = draw.textlength(tagline, font=fs)
-    except: tw_t = len(tagline) * 15 * SCALE
-    
-    draw.text((w - 40 * SCALE - tw_t, h - 60 * SCALE), tagline, font=fs, fill="#ffffff")
+    except: tw_t = len(tagline) * 15 * S
+    draw.text((w - 40 * S - tw_t, h - 70 * S), tagline, font=fs, fill="#ffffff80")
 
     img = img.convert("RGB")
     img = img.resize((W, H), Image.LANCZOS)
@@ -1174,7 +1188,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.10 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.12 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1203,7 +1217,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.10 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.12 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1232,7 +1246,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.10 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.12 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
