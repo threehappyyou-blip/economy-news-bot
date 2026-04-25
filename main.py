@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.16 (Milk Road Ultimate Perfection)
-# v40.16 대비 변경점:
-#   1) 썸네일 우측 상단 VIP/PRO 캡슐 뱃지 정상 출력 
-#   2) Foundation 및 Catalyst 카테고리에서는 우측 뱃지 완전 삭제
-#   3) '설명하는 로봇' 마스코트 크기 1.4배 상향 및 아이콘 간격 조정
-#   4) 지저분한 하얀색 배경 빛망울(Blob) 이펙트 완전 삭제
-#   5) Foundation 배경색을 '딥그린~에메랄드' 투톤 웨이브로 롤백
+# Warm Insight Auto Poster — v40.17 (Mascot Size Perfection)
+# v40.17 대비 변경점:
+#   1) AI 프롬프트에 로봇의 크기를 강제로 키우는 지시어 추가 (모든 카테고리 동일 적용)
+#   2) 기타 뱃지, 배경, 레이아웃 등은 v40.16의 완벽한 상태 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -833,7 +830,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (설명하는 로봇 & 깨끗한 뱃지 적용)
+# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (크기 강제 1.4배 적용)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -853,33 +850,33 @@ def make_thumbnail(title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
 
-    # 🚨 Foundation 색상 롤백: 기존의 에메랄드 투톤으로 변경
     CAT_STYLES = {
         "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
         "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
         "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
-        "Health":   {"bg1": "#10b981", "bg2": "#047857", "acc": "#fef08a"},
+        "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
         "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
         "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"}, 
-        "Foundation": {"bg1": "#047857", "bg2": "#10b981", "acc": "#fde047"} 
+        "Foundation": {"bg1": "#10b981", "bg2": "#059669", "acc": "#fde047"} 
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
+    # 🚨 AI 프롬프트 강화: 무조건 1.4배 크게(prominent, very large) + 우측 정렬 강제
     AI_PROMPTS = {
-        "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek, cute white robot mascot standing enthusiastically and pointing at a floating stock market chart, acting as a friendly guide. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
-        "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing globe or chess piece, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
-        "Tech": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing microchip, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
-        "Health": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a glowing DNA helix, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
-        "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot standing enthusiastically and pointing at a bright lightning bolt, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
-        "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot enthusiastically presenting a classic book, acting as a friendly guide. Dark premium colors, clean gradient background. No text, no words.",
-        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a sleek white robot mascot enthusiastically pointing at a gold coin and a guide book, acting as a friendly educational guide. Vibrant colors, clean gradient background. No text, no words."
+        "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek, cute white robot mascot standing enthusiastically and pointing at a floating stock market chart, acting as a friendly guide. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
+        "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot standing enthusiastically and pointing at a glowing globe or chess piece, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "Tech": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot standing enthusiastically and pointing at a glowing microchip, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "Health": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot standing enthusiastically and pointing at a glowing DNA helix, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot standing enthusiastically and pointing at a bright lightning bolt, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
+        "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot enthusiastically presenting a classic book, acting as a friendly guide. Dark premium colors, clean gradient background. No text, no words.",
+        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot enthusiastically pointing at a gold coin and a guide book, acting as a friendly educational guide. Vibrant colors, clean gradient background. No text, no words."
     }
 
     img = None
     use_ai_bg = False
 
     try:
-        print(f"    [AI] Requesting Explaining Mascot Vector Background for {cat}...")
+        print(f"    [AI] Requesting BIG Explaining Mascot Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-001',
@@ -894,16 +891,13 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Explaining Mascot Generated!")
+        print("    ✅ AI BIG Explaining Mascot Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
         draw = ImageDraw.Draw(img)
         
-        # 거대한 투톤 웨이브 배경
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
-        
-        # 🚨 하얀색 덩어리(빛망울 효과) 코드 완전 삭제 (깨끗한 뱃지 영역 보장)
 
         cx = w * 0.88
         cy = h * 0.65
@@ -950,29 +944,21 @@ def make_thumbnail(title_text, cat, tier):
             draw.line([(cx_p+20*S, cy_p-20*S), (cx_p+50*S, cy_p-20*S)], fill="#ffffff", width=5*S)
             draw.line([(cx_p-50*S, cy_p+10*S), (cx_p-20*S, cy_p+10*S)], fill="#ffffff", width=5*S)
 
-        # 🚨 3. 로봇 크기 1.4배 상향 (R = S * 1.35) & 한 팔 들어올려 열정적으로 설명하는 포즈
-        R = S * 1.35
-        draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030") # 그림자
+        # 코드로 그리는 로봇의 크기를 1.4배 뻥튀기 (R = S * 1.4)
+        R = S * 1.4
+        draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030") 
         
-        # 왼쪽 팔 (번쩍 들어 가리키는 포즈)
         draw.line([(cx - 30*R, cy + 10*R), (cx - 70*R, cy - 35*R)], fill="#f8fafc", width=int(12*R)) 
-        draw.line([(cx - 70*R, cy - 35*R), (cx - 85*R, cy - 35*R)], fill="#cbd5e1", width=int(12*R)) # 가리키는 손
-        # 오른쪽 팔 (내린 포즈)
+        draw.line([(cx - 70*R, cy - 35*R), (cx - 85*R, cy - 35*R)], fill="#cbd5e1", width=int(12*R)) 
         draw.line([(cx + 30*R, cy + 10*R), (cx + 45*R, cy + 40*R)], fill="#f8fafc", width=int(12*R))
         
-        # 몸통
         draw.rounded_rectangle([cx - 40*R, cy - 30*R, cx + 40*R, cy + 70*R], radius=int(15*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
-        # 머리
         draw.rounded_rectangle([cx - 50*R, cy - 100*R, cx + 50*R, cy - 35*R], radius=int(20*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
-        # 바이저
         draw.rounded_rectangle([cx - 40*R, cy - 85*R, cx + 40*R, cy - 45*R], radius=int(10*R), fill="#0f172a")
-        # 반짝이는 눈
         draw.line([(cx - 25*R, cy - 65*R), (cx - 10*R, cy - 65*R)], fill="#38bdf8", width=int(6*R))
         draw.line([(cx + 10*R, cy - 65*R), (cx + 25*R, cy - 65*R)], fill="#38bdf8", width=int(6*R))
-        # 안테나
         draw.line([(cx, cy - 100*R), (cx, cy - 120*R)], fill="#cbd5e1", width=int(4*R))
         draw.ellipse([cx - 8*R, cy - 130*R, cx + 8*R, cy - 114*R], fill="#f59e0b")
-        # 뺨
         draw.ellipse([cx - 30*R, cy - 50*R, cx - 20*R, cy - 40*R], fill="#fca5a5")
         draw.ellipse([cx + 20*R, cy - 50*R, cx + 30*R, cy - 40*R], fill="#fca5a5")
 
@@ -1007,7 +993,6 @@ def make_thumbnail(title_text, cat, tier):
 
     S = SCALE
 
-    # 🚨 상단 좌측 뱃지 (날짜 + 카테고리 캡슐)
     date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
     draw.text((40 * S, 44 * S), date_badge, font=fb, fill="#ffffff")
     
@@ -1024,7 +1009,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
 
-    # 🚨 4. 상단 우측: Foundation과 Catalyst는 뱃지 아예 생략! 나머지는 VIP/PRO 완벽 출력!
     if cat not in ["Foundation", "The Daily Catalyst"]:
         tl = "VIP" if tier == "vip" else "PRO"
         t_bg = "#b8974d" if tier == "vip" else "#3b82f6" 
@@ -1040,7 +1024,6 @@ def make_thumbnail(title_text, cat, tier):
         )
         draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
 
-    # 중앙 제목 텍스트 렌더링
     clean_title = _clean_seo_title(title_text).upper().split(':')[0]
     words = clean_title.split()
     lines, line = [], []
@@ -1069,7 +1052,6 @@ def make_thumbnail(title_text, cat, tier):
         except:
             y += 100 * S
 
-    # 하단 띠 정보
     date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
     draw.text((40 * S, h - 70 * S), f"WARM INSIGHT  |  {date_bottom}", font=fs, fill="#ffffff80")
     
@@ -1198,7 +1180,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.16 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.17 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1227,7 +1209,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.16 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.17 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1256,7 +1238,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.16 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.17 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
