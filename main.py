@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.17 (Custom Author Assignment)
-# v40.17 대비 변경점:
-#   1) Foundation 및 Catalyst의 기본 작성자 이름을 추천받은 이름으로 변경
-#   2) 워드프레스 사용자 검색(get_wp_author_id) 로직을 정확히 매칭되도록 유지
+# Warm Insight Auto Poster — v40.18 (Thumbnail Title Extractor Fix)
+# v40.18 대비 변경점:
+#   1) 썸네일 제목 생성 시 콜론(:) 기준으로 잘리던 버그 완벽 수정 (실제 제목 노출)
+#   2) AI가 제목에 'Warm Insight:'를 붙일 경우 해당 단어만 스마트하게 제거
+#   3) 거대한 로봇, 밀크로드 배경, 뱃지 등 v40.17의 썸네일 퀄리티 100% 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -58,15 +59,14 @@ CAT_RELATED = {
     "Energy":   ["Economy", "Politics"],
 }
 
-# 🚨 변경점: 추천받은 이름으로 Catalyst와 Foundation 작성자 업데이트
 VIP_AUTHORS = {
     "Economy":  "Oliver Grant & The Warm Insight Panel",
     "Politics": "Elena Vasquez & The Warm Insight Panel",
     "Tech":     "Marcus Chen & The Warm Insight Panel",
     "Health":   "Sarah Mitchell & The Warm Insight Panel",
     "Energy":   "Alexander Vance & The Warm Insight Panel",
-    "The Daily Catalyst": "Arthur Sterling", # 철학/인사이트 담당
-    "Foundation": "Clara Bennett"            # 기초 교육 가이드 담당
+    "The Daily Catalyst": "Arthur Sterling", 
+    "Foundation": "Clara Bennett"            
 }
 
 RSS_FEEDS = {
@@ -831,7 +831,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (크기 강제 1.4배 & 뱃지 수정)
+# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (완벽 수정본)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -851,7 +851,6 @@ def make_thumbnail(title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
 
-    # 🚨 1. Foundation 색상을 딥그린~에메랄드그린 투톤으로 롤백 적용 완료
     CAT_STYLES = {
         "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
         "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
@@ -863,7 +862,6 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # AI 프롬프트 (모든 카테고리 로봇 크기 강제 1.4배 유지)
     AI_PROMPTS = {
         "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek, cute white robot mascot standing enthusiastically and pointing at a floating stock market chart, acting as a friendly guide. Vibrant colors, clean gradient background, perfect for a newsletter thumbnail. No text, no words.",
         "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large (taking up 40% of the right side) sleek white robot mascot standing enthusiastically and pointing at a glowing globe or chess piece, acting as a friendly guide. Vibrant colors, clean gradient background. No text, no words.",
@@ -900,8 +898,6 @@ def make_thumbnail(title_text, cat, tier):
         draw = ImageDraw.Draw(img)
         
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
-        
-        # 🚨 Foundation 등에서 보이던 이상한 하얀 덩어리(빛망울) 코드를 완전히 삭제함!
 
         cx = w * 0.88
         cy = h * 0.65
@@ -948,7 +944,6 @@ def make_thumbnail(title_text, cat, tier):
             draw.line([(cx_p+20*S, cy_p-20*S), (cx_p+50*S, cy_p-20*S)], fill="#ffffff", width=5*S)
             draw.line([(cx_p-50*S, cy_p+10*S), (cx_p-20*S, cy_p+10*S)], fill="#ffffff", width=5*S)
 
-        # 코드로 그리는 로봇의 크기를 1.4배 뻥튀기 (R = S * 1.4) 및 설명하는 포즈 적용
         R = S * 1.4
         draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030") 
         
@@ -1013,7 +1008,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
 
-    # 🚨 4. 우측 상단 VIP/PRO 캡슐 복구 (Foundation과 Catalyst는 생성하지 않음)
     if cat not in ["Foundation", "The Daily Catalyst"]:
         tl = "VIP" if tier == "vip" else "PRO"
         t_bg = "#b8974d" if tier == "vip" else "#3b82f6" 
@@ -1029,7 +1023,11 @@ def make_thumbnail(title_text, cat, tier):
         )
         draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
 
-    clean_title = _clean_seo_title(title_text).upper().split(':')[0]
+    # 🚨 썸네일 제목(타이틀) 추출 로직 버그 픽스 완료!
+    clean_title = _clean_seo_title(title_text).upper()
+    # 썸네일에 WARM INSIGHT: 라는 글자가 겹쳐서 나오지 않도록 스마트하게 필터링
+    clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
+    
     words = clean_title.split()
     lines, line = [], []
     mw = w - 100 * SCALE if use_ai_bg else w - 380 * SCALE
@@ -1185,7 +1183,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.16 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.18 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1214,7 +1212,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.16 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.18 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1243,7 +1241,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.16 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.18 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
