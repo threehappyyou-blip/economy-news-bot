@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.19 (Hide X/Twitter Button)
-# v40.19 대비 변경점:
-#   1) 사용하지 않는 X(트위터) 소셜 공유 버튼 숨김 처리
-#   2) v40.18의 썸네일 제목 필터링 및 밀크로드 디자인 100% 유지
+# Warm Insight Auto Poster — v40.20 (Syntax String Quote Fix)
+# v40.20 대비 변경점:
+#   1) 일반 뉴스(PRO) 렌더링 구간에서 누락되었던 HTML 닫기 따옴표(""") 추가 (SyntaxError 완벽 해결)
+#   2) v40.19의 X(트위터) 버튼 숨김 처리 유지
+#   3) 밀크로드 썸네일 디자인, 1.4배 로봇 확대 모두 100% 정상 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -710,7 +711,8 @@ def build_html(tier, cat, raw, author, tf, title):
             </div>
         </div>
         """
-
+        html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
+        
         al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
         pie = _build_pie_chart(al["s"], al["b"], al["c"], GOLD)
         
@@ -782,6 +784,7 @@ def build_html(tier, cat, raw, author, tf, title):
                 <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
             </div>
         </div>
+        """
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         html += f"""
@@ -1021,9 +1024,7 @@ def make_thumbnail(title_text, cat, tier):
         )
         draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
 
-    # 🚨 중복/잘림 문제 완벽 해결: 원본 전체 제목 사용 + 불필요한 Prefix 스마트 제거
     clean_title = _clean_seo_title(title_text).upper()
-    # AI가 'Warm Insight:' 혹은 'Warm Insight -'를 붙이면 썸네일에서는 지움
     clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
     
     words = clean_title.split()
@@ -1181,7 +1182,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name):
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.18 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.20 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1210,7 +1211,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.18 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.20 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1239,7 +1240,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.18 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.20 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
