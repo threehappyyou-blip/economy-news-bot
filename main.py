@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.18 (Thumbnail Title Extractor Fix)
-# v40.18 대비 변경점:
-#   1) 썸네일 제목 생성 시 콜론(:) 기준으로 잘리던 버그 완벽 수정 (실제 제목 노출)
-#   2) AI가 제목에 'Warm Insight:'를 붙일 경우 해당 단어만 스마트하게 제거
-#   3) 거대한 로봇, 밀크로드 배경, 뱃지 등 v40.17의 썸네일 퀄리티 100% 유지
+# Warm Insight Auto Poster — v40.19 (Hide X/Twitter Button)
+# v40.19 대비 변경점:
+#   1) 사용하지 않는 X(트위터) 소셜 공유 버튼 숨김 처리
+#   2) v40.18의 썸네일 제목 필터링 및 밀크로드 디자인 100% 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -448,7 +447,7 @@ def _build_pie_chart(s, b, c, accent):
 # ═══════════════════════════════════════════════
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
-    "x": "https://x.com/warminsight",
+    # "x": "https://x.com/warminsight", # X(트위터) 임시 비활성화
 }
 
 def _build_upgrade_cta():
@@ -783,7 +782,6 @@ def build_html(tier, cat, raw, author, tf, title):
                 <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
             </div>
         </div>
-        """
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         html += f"""
@@ -831,7 +829,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 (완벽 수정본)
+# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -1023,9 +1021,9 @@ def make_thumbnail(title_text, cat, tier):
         )
         draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
 
-    # 🚨 썸네일 제목(타이틀) 추출 로직 버그 픽스 완료!
+    # 🚨 중복/잘림 문제 완벽 해결: 원본 전체 제목 사용 + 불필요한 Prefix 스마트 제거
     clean_title = _clean_seo_title(title_text).upper()
-    # 썸네일에 WARM INSIGHT: 라는 글자가 겹쳐서 나오지 않도록 스마트하게 필터링
+    # AI가 'Warm Insight:' 혹은 'Warm Insight -'를 붙이면 썸네일에서는 지움
     clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
     
     words = clean_title.split()
