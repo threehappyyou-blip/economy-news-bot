@@ -2,8 +2,8 @@ name: Warm Insight Philosophy Poster
 
 on:
   schedule:
-    # 매일 UTC 22:00 실행 (미국 뉴욕 서머타임(EDT) 기준 오후 6시 / 표준시(EST) 기준 오후 5시)
-    - cron: '0 22 * * *'
+    # 매일 UTC 12:00, 16:00, 22:00 실행 (뉴욕 EST: 오전 7시, 11시, 오후 5시 / EDT: 오전 8시, 12시, 오후 6시)
+    - cron: '0 12,16,22 * * *'
   workflow_dispatch: # 수동으로 버튼을 눌러서 즉시 실행할 수 있게 함
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
 
     - name: Run Philosophy Bot
       env:
-        PYTHONUNBUFFERED: "1"          # 실시간 로그 출력
+        PYTHONUNBUFFERED: "1"       # 실시간 로그 출력
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         WP_URL: ${{ secrets.WP_URL }}
         WP_USERNAME: ${{ secrets.WP_USERNAME }}
