@@ -2,8 +2,8 @@ name: Warm Insight Foundation Poster
 
 on:
   schedule:
-    # 매일 UTC 12:00 실행 (미국 뉴욕 표준시 EST 기준 오전 7시 / 서머타임 EDT 기준 오전 8시)
-    - cron: '0 12 * * *'
+    # 매일 UTC 12:00, 16:00, 22:00 실행 (뉴욕 EST: 오전 7시, 11시, 오후 5시 / EDT: 오전 8시, 12시, 오후 6시)
+    - cron: '0 12,16,22 * * *'
   workflow_dispatch:
 
 jobs:
@@ -31,5 +31,5 @@ jobs:
         WP_URL: ${{ secrets.WP_URL }}
         WP_USERNAME: ${{ secrets.WP_USERNAME }}
         WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-      # 🚨 끝에 'foundation' 이라고 적혀있어야 기초 가이드를 작성합니다.
+      # 🚨 끝에 'foundation' 이라고 적혀있어야만 기초 가이드를 작성합니다.
       run: python main.py foundation
