@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.32 (Infographic Layout Perfect Patch)
+# Warm Insight Auto Poster — v40.33 (SNS Copywriting Patch)
 # 변경점:
-#   1) [인포그래픽] 제목 라인 수에 따라 배지(Badge)와 차트 텍스트가 겹치는 현상 완벽 해결
-#   2) [인포그래픽] 차트 텍스트 반경 축소 및 배지 너비 동적 조절 적용
-#   3) v40.31의 모든 기능(이메일 이중 첨부, 줄바꿈, 카테고리 컬러) 유지
+#   1) [이메일] 본문 텍스트를 인스타그램 등 모든 SNS에 복사/붙여넣기 좋도록 최적화
+#      (Link in bio 안내 문구 추가 및 텍스트 레이아웃 개선)
+#   2) v40.32의 모든 기능(이중 첨부, 줄바꿈, 겹침 방지 등) 100% 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -133,6 +133,7 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         for item in data_points:
             list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
 
+        # 🚨 수정: 인스타그램 등 다목적 SNS 업로드를 위한 카피라이팅 적용
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
             
@@ -153,7 +154,8 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
                     {list_html}
                 </div>
 
-                Visit <a href="https://warminsight.com/" style="color:#10b981; font-weight:bold; text-decoration:underline;">https://warminsight.com/</a> for our daily deep-dive analysis ✅
+                Read the full deep-dive analysis at <a href="{link}" style="color:#10b981; font-weight:bold; text-decoration:none;">warminsight.com</a> ✅<br>
+                <span style="color: #71717a; font-size: 14px; font-style: italic;">*(Instagram: Click the link in our bio!)*</span>
                 <br><br>#investing #finance #stockmarket #{cat.lower()}
             </div>
 
@@ -162,7 +164,7 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
             </a>
             
             <p style="text-align: center; color: #71717a; font-size: 13px; margin-top: 15px;">
-                *⬇️ 하단의 첨부파일을 클릭하시면 인포그래픽 이미지를 다운로드 하실 수 있습니다.
+                *⬇️ 하단의 첨부파일을 클릭하시면 SNS 업로드용 이미지를 쉽게 다운로드 하실 수 있습니다.
             </p>
 
             <div style="margin-top: 15px; text-align: center;">
@@ -1172,7 +1174,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일) - v40.32 수정!
+# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일)
 # ═══════════════════════════════════════════════
 def generate_vip_infographic_style(raw_content, cat):
     print("   🎨 Generating Data-Driven Portfolio Infographic...")
@@ -1245,7 +1247,6 @@ def generate_vip_infographic_style(raw_content, cat):
         
     badge_y = y_text + 20
 
-    # 🚨 수정: IMPACT 배지의 길이를 텍스트에 맞게 동적으로 계산하고 중앙에 배치
     try:
         bbox = draw.textbbox((0, 0), badge_text, font=font_sub)
         bw = bbox[2] - bbox[0]
@@ -1257,7 +1258,6 @@ def generate_vip_infographic_style(raw_content, cat):
     draw.rounded_rectangle([bx1, badge_y, bx2, badge_y+70], radius=35, fill="#6ee7b7")
     draw.text(((bx1+bx2)/2, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
 
-    # 🚨 수정: 제목 때문에 배지가 내려오더라도 차트 글씨와 안 겹치게 중심축(cy)을 훨씬 아래로 밀어냄
     cx, cy = 540, badge_y + 460
     r_outer = 350
     r_inner = 160
@@ -1274,7 +1274,6 @@ def generate_vip_infographic_style(raw_content, cat):
     draw.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
     draw.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
 
-    # 🚨 수정: 텍스트 렌더링 반경을 줄여서 차트에 밀착시킴 (450 -> 420)
     text_radius = 420
     for i, item in enumerate(data_points):
         ang_deg = -90 + (i * 72) + 36
@@ -1412,7 +1411,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.32 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.33 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1441,7 +1440,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.32 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.33 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1470,7 +1469,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.32 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.33 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
