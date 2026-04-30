@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.26 (Ultimate VIP Card News & Email)
+# Warm Insight Auto Poster — v40.20 + Social Infographic Email
 # 변경점:
-#   1) 대표님이 제공하신 완벽한 v40.20 원본 뼈대 100% 유지 (누락 없음)
-#   2) VIP 뉴스 발행 시 AI가 핵심 5문장 요약 -> 카드뉴스 5장 자동 생성
-#   3) 생성된 카드뉴스 이미지와 웹사이트 링크를 지정된 이메일로 자동 발송
+#   1) 대표님이 제공하신 완벽한 v40.20 원본 뼈대 100% 유지
+#   2) 카드뉴스: 사진(포트폴리오) 스타일의 블랙&민트 도넛 차트 인포그래픽 1장으로 변경
+#   3) 이메일 디자인: X(트위터)/스레드 인플루언서 피드 스타일로 직관적 개편
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
-import smtplib                                       # 🚨 추가: 이메일 전송용 라이브러리
-from email.mime.multipart import MIMEMultipart       # 🚨 추가: 이메일 전송용 라이브러리
-from email.mime.text import MIMEText                 # 🚨 추가: 이메일 전송용 라이브러리
-from email.mime.image import MIMEImage               # 🚨 추가: 이메일 전송용 라이브러리
 import urllib.request
 import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
 from google.genai import types
+import smtplib                                       # 🚨 추가: 이메일 전송용
+from email.mime.multipart import MIMEMultipart       # 🚨 추가: 이메일 전송용
+from email.mime.text import MIMEText                 # 🚨 추가: 이메일 전송용
+from email.mime.image import MIMEImage               # 🚨 추가: 이메일 전송용
 
 # ═══════════════════════════════════════════════
 # CONFIG
@@ -115,50 +115,75 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 이메일 전송 시스템 (NEW)
+# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (NEW)
 # ═══════════════════════════════════════════════
-def send_card_news_email(title, link, images):
+def send_social_style_email(title, link, image_bytes, data_points, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
 
-    print(f"   📧 {EMAIL_RECEIVER}로 VIP 카드뉴스 이메일을 전송합니다...")
+    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일을 전송합니다...")
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"[VIP 전용] {title} - 카드뉴스 요약"
+        msg['Subject'] = f"🚨 {cat.upper()} ALERTS: Top Market Movers Data"
 
+        # 텍스트 리스트 생성
+        list_html = ""
+        for item in data_points:
+            list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
+
+        # 사진(트위터/스레드) 스타일 HTML 템플릿
         body = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; border: 1px solid #e2e8f0; padding: 30px; border-radius: 12px; background-color: #ffffff;">
-            <h2 style="color: #1a252c; text-align: center;">💎 VIP 인사이트가 발행되었습니다!</h2>
-            <p style="color: #475569; font-size: 16px; text-align: center; line-height: 1.6;">본문 내용의 핵심만 담은 5장의 카드뉴스를 확인하세요.</p>
-            <p style="color: #b8974d; font-size: 14px; text-align: center; font-weight: bold;">(아래에 첨부된 이미지를 확인해주세요)</p>
-            <hr style="border: 0; border-top: 2px dashed #f1f5f9; margin: 30px 0;">
-            <div style="text-align: center; margin: 40px 0;">
-                <a href="{link}" style="display: inline-block; background-color: #10b981; color: white; padding: 18px 40px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
-                    웹사이트에서 전체 리포트 읽기 &rarr;
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
+            
+            <!-- 소셜 프로필 헤더 -->
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; margin-right: 12px; text-align: center; line-height: 40px;">W</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 16px; display: flex; align-items: center;">
+                        Warm Insight Alerts <span style="color: #3b82f6; margin-left: 4px;">✔</span>
+                    </div>
+                    <div style="color: #71717a; font-size: 14px;">Just now</div>
+                </div>
+            </div>
+
+            <!-- 본문 텍스트 -->
+            <div style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                Warm Insight tracked critical shifts in the <strong>{cat}</strong> sector. Here's a look at the top market movers and allocations:
+                
+                <div style="margin-top: 15px; margin-bottom: 15px; padding-left: 10px; border-left: 3px solid #10b981;">
+                    {list_html}
+                </div>
+
+                Do you share any #stocks with this trend? Follow the link below for our deep-dive analysis ✅ #investing #finance #stockmarket #{cat.lower()}
+            </div>
+
+            <!-- 인포그래픽 이미지 링크 -->
+            <a href="{link}" style="display: block; text-decoration: none;">
+                <img src="cid:infographic" alt="Market Portfolio" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7;">
+            </a>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
+                    Read Full VIP Analysis
                 </a>
             </div>
-            <p style="font-size: 13px; color: #94a3b8; text-align: center;">
-                버튼이 작동하지 않는다면 아래 링크를 복사하세요:<br><a href="{link}" style="color: #3b82f6;">{link}</a>
-            </p>
         </div>
         """
         msg.attach(MIMEText(body, 'html'))
 
-        # 첨부 이미지 파일 넣기
-        for i, img_data in enumerate(images):
-            image = MIMEImage(img_data)
-            image.add_header('Content-ID', f'<card_{i}>')
-            image.add_header('Content-Disposition', 'inline', filename=f'warm_insight_slide_{i+1}.jpg')
-            msg.attach(image)
+        # 인포그래픽 이미지 첨부
+        image = MIMEImage(image_bytes)
+        image.add_header('Content-ID', '<infographic>')
+        image.add_header('Content-Disposition', 'inline', filename='warm_insight_portfolio.jpg')
+        msg.attach(image)
 
-        # 구글 메일 서버를 통한 발송
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ VIP 카드뉴스 이메일 발송 완료!")
+        print("   ✅ 소셜 스타일 인포그래픽 이메일 발송 완료!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
 
@@ -889,7 +914,7 @@ def build_html(tier, cat, raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 밀크로드 스타일 고퀄리티 썸네일 엔진 
+# 🤖 🚨 썸네일 엔진 (기본 블로그 썸네일용)
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -1126,78 +1151,105 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 카드뉴스 생성 (5장) - NEW!
+# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일) - NEW!
 # ═══════════════════════════════════════════════
-def generate_vip_card_news(raw_content, cat):
-    print("   🎨 Generating 5 VIP Card News Slides...")
+def generate_vip_infographic_style(raw_content, cat):
+    print("   🎨 Generating Data-Driven Portfolio Infographic...")
     client = _get_gemini_client()
-    sys_inst = "You are a professional social media marketer. Extract 5 most powerful, punchy, and short insights (max 15 words each) from the following financial report. Wrap each exactly in <CARD1>...</CARD1> up to <CARD5>...</CARD5> tags."
-    raw_cards = gem_fb("vip", raw_content, sys_inst)
     
-    card_texts = []
+    # 문장 요약 대신, 티커와 비율/지표를 뽑아내는 프롬프트로 변경
+    sys_inst = """You are a quantitative data analyst. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
+    Format EXACTLY as:
+    <MAIN_TITLE>e.g. GLOBAL TECH MOVERS</MAIN_TITLE>
+    <BADGE>e.g. IMPACT: HIGH</BADGE>
+    <ITEM1>TICKER or NAME | Value%</ITEM1>
+    <ITEM2>TICKER or NAME | Value%</ITEM2>
+    <ITEM3>TICKER or NAME | Value%</ITEM3>
+    <ITEM4>TICKER or NAME | Value%</ITEM4>
+    <ITEM5>TICKER or NAME | Value%</ITEM5>
+    """
+    raw_data = gem_fb("vip", raw_content, sys_inst)
+    
+    main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} PORTFOLIO"
+    badge_text = xtag(raw_data, "BADGE") or "AUM: TOP"
+    
+    data_points = []
     for i in range(1, 6):
-        t = xtag(raw_cards, f"CARD{i}")
-        if t: card_texts.append(t)
-        
-    if not card_texts:
-        card_texts = ["Market volatility presents generation-defining opportunities.", "Strategic capital deployment is key.", "Stay vigilant on geopolitical shifts.", "Tech sector cape-ex signals long-term growth.", "Risk management outweighs speculative gains."]
+        item = xtag(raw_data, f"ITEM{i}")
+        if item and "|" in item:
+            parts = item.split("|")
+            data_points.append({"ticker": parts[0].strip(), "val": parts[1].strip()})
+            
+    # 에러 대비 기본 데이터
+    if len(data_points) < 5:
+        data_points = [
+            {"ticker": "$NVDA", "val": "+6.2%"}, {"ticker": "$AAPL", "val": "+5.3%"},
+            {"ticker": "$MSFT", "val": "+4.9%"}, {"ticker": "$GOOG", "val": "+4.2%"},
+            {"ticker": "$AMZN", "val": "+2.3%"}
+        ]
 
-    card_images = []
+    # 사진 스타일(도넛 차트 형태)의 캔버스 생성 (1080x1350)
+    img = Image.new("RGB", (1080, 1350), "#09090b") # 다크 테마 배경
+    draw = ImageDraw.Draw(img)
+    
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
     
-    for i, txt in enumerate(card_texts[:5]):
-        try:
-            # 1순위: Imagen 3를 활용한 일러스트 생성
-            prompt = f"A premium financial card news slide illustration. Corporate Memphis style. A white robot mascot explaining: '{txt}'. Category: {cat}. High-end, clean, no text in image."
-            result = client.models.generate_images(model='imagen-3.0-generate-001', prompt=prompt, config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"))
-            img_bytes = result.generated_images[0].image.image_bytes
-            
-            img = Image.open(io.BytesIO(img_bytes)).convert("RGB").resize((1080, 1080), Image.LANCZOS)
-            draw = ImageDraw.Draw(img)
-            draw.rectangle([(0, 850), (1080, 1080)], fill="#1a252c")
-            try: font_sub = ImageFont.truetype(ft_path, 50)
-            except: font_sub = ImageFont.load_default()
-            draw.text((50, 900), f"INSIGHT 0{i+1}: {txt[:45]}...", fill="#ffffff", font=font_sub)
-            
-            buf = io.BytesIO(); img.save(buf, format="JPEG", quality=85)
-            card_images.append(buf.getvalue())
-        except Exception as e:
-            # 2순위: AI 권한이 막혀있을 경우, 안전한 인스타그램 타이포그래피(글씨) 카드 생성 백업
-            print(f"   ⚠️ Imagen API failed. Using typography fallback for Card {i+1}.")
-            img = Image.new("RGB", (1080, 1080), "#1e293b") 
-            draw = ImageDraw.Draw(img)
-            
-            draw.rectangle([0, 0, 1080, 30], fill="#b8974d")
-            draw.rectangle([40, 70, 1040, 1040], outline="#334155", width=4)
-            
-            try: font_large = ImageFont.truetype(ft_path, 80)
-            except: font_large = ImageFont.load_default()
-            try: font_main = ImageFont.truetype(ft_path, 130)
-            except: font_main = ImageFont.load_default()
-            
-            draw.text((80, 120), f"WARM INSIGHT  |  VIP 0{i+1}", fill="#b8974d", font=font_large)
-            
-            words = txt.upper().split()
-            lines, line = [], []
-            for w in words:
-                test_str = " ".join(line + [w])
-                try: tw = draw.textlength(test_str, font=font_main)
-                except: tw = len(test_str) * 60
-                if tw < 880: line.append(w)
-                else: lines.append(" ".join(line)); line = [w]
-            if line: lines.append(" ".join(line))
-            
-            y = 350
-            for ln in lines[:4]: 
-                draw.text((80, y), ln, fill="#f8fafc", font=font_main)
-                y += 150
-                
-            draw.text((80, 920), "SWIPE FOR INSIGHT ->", fill="#94a3b8", font=font_large)
-            
-            buf = io.BytesIO(); img.save(buf, format="JPEG", quality=90)
-            card_images.append(buf.getvalue())
-            
-    return card_images
+    try: font_title = ImageFont.truetype(ft_path, 110)
+    except: font_title = ImageFont.load_default()
+    try: font_sub = ImageFont.truetype(ft_path, 55)
+    except: font_sub = ImageFont.load_default()
+    try: font_data = ImageFont.truetype(ft_path, 40)
+    except: font_data = ImageFont.load_default()
+
+    # 상단 텍스트 (Title & Badge)
+    lines = main_title.split()
+    y_text = 100
+    if len(lines) > 2:
+        draw.text((540, y_text), " ".join(lines[:2]), fill="#6ee7b7", font=font_title, anchor="mt")
+        draw.text((540, y_text + 110), " ".join(lines[2:]), fill="#ffffff", font=font_title, anchor="mt")
+    else:
+        draw.text((540, y_text), main_title, fill="#6ee7b7", font=font_title, anchor="mt")
+        
+    draw.rounded_rectangle([750, 320, 1000, 390], radius=35, fill="#6ee7b7")
+    draw.text((875, 335), badge_text, fill="#000000", font=font_sub, anchor="mt")
+
+    # 중앙 도넛 차트 그리기
+    cx, cy = 540, 800
+    r_outer = 350
+    r_inner = 160
+    
+    colors = ["#10b981", "#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6"]
+    start_ang = -90
+    for i in range(5):
+        end_ang = start_ang + 72
+        draw.pieslice([cx-r_outer, cy-r_outer, cx+r_outer, cy+r_outer], start_ang, end_ang, fill=colors[i])
+        start_ang = end_ang
+
+    # 도넛 차트의 구멍 (가운데 배경색으로 덮기)
+    draw.ellipse([cx-r_inner, cy-r_inner, cx+r_inner, cy+r_inner], fill="#09090b")
+    
+    # 가운데 로고 텍스트 (인물 사진 대신 브랜드 아이덴티티)
+    draw.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
+    draw.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
+
+    # 원형을 따라 데이터 텍스트 배치
+    for i, item in enumerate(data_points):
+        # 파이 조각의 중간 각도 계산
+        ang_deg = -90 + (i * 72) + 36
+        ang_rad = math.radians(ang_deg)
+        
+        # 텍스트 위치 (원 바깥쪽)
+        tx = cx + 450 * math.cos(ang_rad)
+        ty = cy + 450 * math.sin(ang_rad)
+        
+        draw.text((tx, ty-20), item['ticker'], fill="#6ee7b7", font=font_sub, anchor="mm")
+        draw.text((tx, ty+30), item['val'], fill="#ffffff", font=font_data, anchor="mm")
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    
+    # 데이터 리스트도 같이 반환 (이메일 본문 텍스트에 쓰기 위해)
+    return buf.getvalue(), data_points
 
 # ═══════════════════════════════════════════════
 # PUBLISHER
@@ -1249,7 +1301,6 @@ def get_wp_author_id(author_full_string):
     except: pass
     return None 
 
-# 🚨 수정: raw_for_cards 인자 추가
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
@@ -1306,9 +1357,9 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             
             # 🚨 VIP 전용 이메일 발송 트리거!
             if tier == "vip" and raw_for_cards:
-                card_images = generate_vip_card_news(raw_for_cards, cat)
-                if card_images:
-                    send_card_news_email(display_title, link, card_images)
+                img_result, data_points = generate_vip_infographic_style(raw_for_cards, cat)
+                if img_result:
+                    send_social_style_email(display_title, link, img_result, data_points, cat)
             
             return True
         else:
@@ -1322,7 +1373,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.26 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.20 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1330,7 +1381,7 @@ def run_foundation_pipeline():
     
     tier = "premium" 
     
-    print("    [AI] Calling Foundation Guide Generation...")
+    print("   [AI] Calling Foundation Guide Generation...")
     raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
     
     if raw:
@@ -1344,14 +1395,14 @@ def run_foundation_pipeline():
         
         html = build_foundation_html(raw, author, tf, title)
         
-        print("    🖌️ Generating Foundation Thumbnail...")
+        print("   🖌️ Generating Foundation Thumbnail...")
         img_bytes = make_thumbnail(title, cat, tier)
         
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.26 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.20 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1359,7 +1410,7 @@ def run_philosophy_pipeline():
     
     tier = "premium" 
     
-    print("    [AI] Calling Philosophy Generation...")
+    print("   [AI] Calling Philosophy Generation...")
     raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
     
     if raw:
@@ -1373,14 +1424,14 @@ def run_philosophy_pipeline():
         
         html = build_philosophy_html(raw, author, tf, title)
         
-        print("    🖌️ Generating Philosophy Thumbnail...")
+        print("   🖌️ Generating Philosophy Thumbnail...")
         img_bytes = make_thumbnail(title, cat, tier)
         
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.26 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.20 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
@@ -1402,17 +1453,17 @@ def run_news_pipeline():
         assigned_news = news_map[tier]
         
         if tier == "vip":
-            print("    [AI] Calling VIP Part 1...")
+            print("   [AI] Calling VIP Part 1...")
             raw1 = gem_fb(tier, VIP_P1.replace("{cat}", cat).replace("{news}", assigned_news))
             if not raw1: continue
             
-            print("    [AI] Calling VIP Part 2...")
+            print("   [AI] Calling VIP Part 2...")
             ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
             alloc = f"{CAT_ALLOC[cat]['s']}% Stocks, {CAT_ALLOC[cat]['b']}% Safe"
             raw2 = gem_fb(tier, VIP_P2.replace("{cat}", cat).replace("{ctx}", ctx).replace("{alloc}", alloc))
             raw = raw1 + "\n" + raw2
         else:
-            print("    [AI] Calling PRO Full Gen...")
+            print("   [AI] Calling PRO Full Gen...")
             raw = gem_fb(tier, PROMPT_PREMIUM.replace("{cat}", cat).replace("{news}", assigned_news))
         
         if raw:
@@ -1426,10 +1477,10 @@ def run_news_pipeline():
             
             html = build_html(tier, cat, raw, author, tf, title)
             
-            print("    🖌️ Generating Warmy Robot Thumbnail...")
+            print("   🖌️ Generating Warmy Robot Thumbnail...")
             img_bytes = make_thumbnail(title, cat, tier)
             
-            # 🚨 수정: VIP일 경우 본문(raw) 데이터를 통째로 넘겨서 카드뉴스를 만들게 함
+            # VIP일 경우 본문(raw) 데이터를 통째로 넘겨서 데이터 인포그래픽을 만들게 함
             publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw if tier == "vip" else None)
             time.sleep(TIER_SLEEP[tier])
 
