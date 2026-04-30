@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.30 (UI/UX Perfect Patch)
+# Warm Insight Auto Poster — v40.31 (Email Attachment & Layout Patch)
 # 변경점:
-#   1) [파이차트] 5개 카테고리별(Economy, Politics 등) 고유 컬러 테마 적용
-#   2) [Catalyst] AI 태그 혼입 방지 및 텍스트 Bold(font-weight:900) 절대 유지
-#   3) [이메일] 텍스트 내 웹사이트 링크 직접 삽입 및 이미지 다운로드 첨부(Attachment) 최적화
-#   4) [인포그래픽] 도넛 차트 텍스트 겹침 방지 (티커 8글자 강제 절삭)
+#   1) [이메일] 본문 노출(Inline)과 별개로 다운로드 전용 정식 첨부파일(Attachment) 이중 전송
+#   2) [인포그래픽] 메인 타이틀 텍스트가 길 경우 캔버스 밖으로 짤리지 않게 자동 줄바꿈 로직 추가
+#   3) v40.30의 모든 기능(카테고리 컬러, 링크, BOLD 고정 등) 완벽 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -134,7 +133,6 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         for item in data_points:
             list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
 
-        # 🚨 수정: 이메일 본문에 웹사이트 링크 명시 및 다운로드 안내 추가
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
             
@@ -164,7 +162,7 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
             </a>
             
             <p style="text-align: center; color: #71717a; font-size: 13px; margin-top: 15px;">
-                *You can download and share the infographic image below.
+                *⬇️ 하단의 첨부파일을 클릭하시면 인포그래픽 이미지를 다운로드 하실 수 있습니다.
             </p>
 
             <div style="margin-top: 15px; text-align: center;">
@@ -176,11 +174,16 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         """
         msg.attach(MIMEText(body, 'html'))
 
-        # 🚨 수정: 인포그래픽 이미지를 다운로드 받기 쉽도록 attachment 처리
-        image = MIMEImage(image_bytes)
-        image.add_header('Content-ID', '<infographic>')
-        image.add_header('Content-Disposition', 'attachment', filename='warm_insight_portfolio.jpg')
-        msg.attach(image)
+        # 🚨 이중 첨부 시스템: 1. 이메일 본문 노출용 (Inline)
+        image_inline = MIMEImage(image_bytes)
+        image_inline.add_header('Content-ID', '<infographic>')
+        image_inline.add_header('Content-Disposition', 'inline', filename='warm_insight_inline.jpg')
+        msg.attach(image_inline)
+
+        # 🚨 이중 첨부 시스템: 2. 다운로드 전용 첨부파일 (Attachment)
+        image_attach = MIMEImage(image_bytes)
+        image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_CardNews.jpg')
+        msg.attach(image_attach)
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
@@ -520,14 +523,13 @@ def _build_quick_hits(raw_data):
     </div>
     """
 
-# 🚨 수정: 파이차트의 색상을 카테고리(Economy 등)에 따라 5가지 고유 테마로 자동 변경
 def _build_pie_chart(s, b, c, cat):
     cat_colors = {
-        "Economy": ("#2563eb", "#60a5fa", "#dbeafe"),   # Blue Theme
-        "Politics": ("#dc2626", "#f87171", "#fee2e2"),  # Red Theme
-        "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"),      # Purple Theme
-        "Health": ("#059669", "#34d399", "#d1fae5"),    # Green Theme
-        "Energy": ("#d97706", "#fbbf24", "#fef3c7")     # Orange Theme
+        "Economy": ("#2563eb", "#60a5fa", "#dbeafe"),
+        "Politics": ("#dc2626", "#f87171", "#fee2e2"),
+        "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"),
+        "Health": ("#059669", "#34d399", "#d1fae5"),
+        "Energy": ("#d97706", "#fbbf24", "#fef3c7")
     }
     c_s, c_b, c_c = cat_colors.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
     
@@ -723,7 +725,6 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
-    # 🚨 수정: AI가 생성한 태그를 강제로 벗겨내고 절대적인 BOLD 타이포그래피(font-weight:900) 강제 적용
     catalyst_raw = xtag(raw, "CATALYST")
     catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw) 
     
@@ -818,7 +819,6 @@ def build_html(tier, cat, raw, author, tf, title):
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
-        # 🚨 파이차트에 현재 카테고리(cat)를 넘겨주어 전용 컬러가 적용되도록 수정
         pie = _build_pie_chart(al["s"], al["b"], al["c"], cat)
         
         html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block; margin-top:30px;">The Titan\'s Playbook</h2>'
@@ -1180,7 +1180,6 @@ def generate_vip_infographic_style(raw_content, cat):
     print("   🎨 Generating Data-Driven Portfolio Infographic...")
     client = _get_gemini_client()
     
-    # 🚨 수정: 인포그래픽 텍스트 겹침 현상 방지를 위해 AI에게 '최대 8글자' 강력 통제
     sys_inst = """You are a quantitative data analyst. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
     CRITICAL: TICKER MUST BE SHORT (Max 8 chars, e.g. $AAPL, $VIX, Gold, Oil). Do NOT output long descriptive names.
     Format EXACTLY as:
@@ -1203,10 +1202,8 @@ def generate_vip_infographic_style(raw_content, cat):
         if item and "|" in item:
             parts = item.split("|")
             raw_ticker = parts[0].strip()
-            # 🚨 수정: AI가 규칙을 무시하고 길게 쓸 경우 파이썬 레벨에서 강제로 8글자로 잘라버립니다 (오버랩 완벽 방지)
             if len(raw_ticker) > 10:
                 raw_ticker = raw_ticker[:8] + ".."
-                
             data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
             
     if len(data_points) < 5:
@@ -1228,18 +1225,31 @@ def generate_vip_infographic_style(raw_content, cat):
     try: font_data = ImageFont.truetype(ft_path, 40)
     except: font_data = ImageFont.load_default()
 
-    lines = main_title.split()
-    y_text = 100
-    if len(lines) > 2:
-        draw.text((540, y_text), " ".join(lines[:2]), fill="#6ee7b7", font=font_title, anchor="mt")
-        draw.text((540, y_text + 110), " ".join(lines[2:]), fill="#ffffff", font=font_title, anchor="mt")
-    else:
-        draw.text((540, y_text), main_title, fill="#6ee7b7", font=font_title, anchor="mt")
-        
-    draw.rounded_rectangle([750, 320, 1000, 390], radius=35, fill="#6ee7b7")
-    draw.text((875, 335), badge_text, fill="#000000", font=font_sub, anchor="mt")
+    # 🚨 텍스트 길이 초과 시 줄바꿈(Word Wrap) 로직 
+    words = main_title.split()
+    lines, line = [], []
+    for w in words:
+        test_str = " ".join(line + [w])
+        try: tw = draw.textlength(test_str, font=font_title)
+        except: tw = len(test_str) * 55
+        if tw < 980: # 캔버스 폭(1080)보다 약간 작게 여백 설정
+            line.append(w)
+        else:
+            if line: lines.append(" ".join(line))
+            line = [w]
+    if line: lines.append(" ".join(line))
 
-    cx, cy = 540, 800
+    y_text = 100
+    for i, ln in enumerate(lines[:3]): # 최대 3줄까지만 렌더링
+        color = "#6ee7b7" if i == 0 else "#ffffff"
+        draw.text((540, y_text), ln, fill=color, font=font_title, anchor="mt")
+        y_text += 115
+        
+    badge_y = y_text + 20
+    draw.rounded_rectangle([750, badge_y, 1000, badge_y+70], radius=35, fill="#6ee7b7")
+    draw.text((875, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
+
+    cx, cy = 540, badge_y + 400
     r_outer = 350
     r_inner = 160
     
@@ -1391,7 +1401,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.30 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.31 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1420,7 +1430,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.30 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.31 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1449,7 +1459,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.30 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.31 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
