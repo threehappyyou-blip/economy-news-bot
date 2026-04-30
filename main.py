@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.20 + Social Infographic Email
+# Warm Insight Auto Poster — v40.30 (UI/UX Perfect Patch)
 # 변경점:
-#   1) 대표님이 제공하신 완벽한 v40.20 원본 뼈대 100% 유지
-#   2) 카드뉴스: 사진(포트폴리오) 스타일의 블랙&민트 도넛 차트 인포그래픽 1장으로 변경
-#   3) 이메일 디자인: X(트위터)/스레드 인플루언서 피드 스타일로 직관적 개편
+#   1) [파이차트] 5개 카테고리별(Economy, Politics 등) 고유 컬러 테마 적용
+#   2) [Catalyst] AI 태그 혼입 방지 및 텍스트 Bold(font-weight:900) 절대 유지
+#   3) [이메일] 텍스트 내 웹사이트 링크 직접 삽입 및 이미지 다운로드 첨부(Attachment) 최적화
+#   4) [인포그래픽] 도넛 차트 텍스트 겹침 방지 (티커 8글자 강제 절삭)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -14,10 +15,10 @@ import feedparser
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
 from google.genai import types
-import smtplib                                       # 🚨 추가: 이메일 전송용
-from email.mime.multipart import MIMEMultipart       # 🚨 추가: 이메일 전송용
-from email.mime.text import MIMEText                 # 🚨 추가: 이메일 전송용
-from email.mime.image import MIMEImage               # 🚨 추가: 이메일 전송용
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 
 # ═══════════════════════════════════════════════
 # CONFIG
@@ -28,7 +29,7 @@ WP_USER        = os.environ.get("WP_USERNAME", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASSWORD", "")
 SITE_URL       = "https://warminsight.com"
 
-# 🚨 추가: 이메일 발송용 시크릿 키
+# 🚨 이메일 발송용 시크릿 키
 EMAIL_SENDER   = os.environ.get("EMAIL_SENDER", "")
 EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
@@ -115,7 +116,7 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (NEW)
+# ✉️ 소셜 미디어 스타일 이메일 전송 시스템
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes, data_points, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -129,16 +130,14 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         msg['To'] = EMAIL_RECEIVER
         msg['Subject'] = f"🚨 {cat.upper()} ALERTS: Top Market Movers Data"
 
-        # 텍스트 리스트 생성
         list_html = ""
         for item in data_points:
             list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
 
-        # 사진(트위터/스레드) 스타일 HTML 템플릿
+        # 🚨 수정: 이메일 본문에 웹사이트 링크 명시 및 다운로드 안내 추가
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
             
-            <!-- 소셜 프로필 헤더 -->
             <div style="display: flex; align-items: center; margin-bottom: 15px;">
                 <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; margin-right: 12px; text-align: center; line-height: 40px;">W</div>
                 <div>
@@ -149,7 +148,6 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
                 </div>
             </div>
 
-            <!-- 본문 텍스트 -->
             <div style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
                 Warm Insight tracked critical shifts in the <strong>{cat}</strong> sector. Here's a look at the top market movers and allocations:
                 
@@ -157,15 +155,19 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
                     {list_html}
                 </div>
 
-                Do you share any #stocks with this trend? Follow the link below for our deep-dive analysis ✅ #investing #finance #stockmarket #{cat.lower()}
+                Visit <a href="https://warminsight.com/" style="color:#10b981; font-weight:bold; text-decoration:underline;">https://warminsight.com/</a> for our daily deep-dive analysis ✅
+                <br><br>#investing #finance #stockmarket #{cat.lower()}
             </div>
 
-            <!-- 인포그래픽 이미지 링크 -->
             <a href="{link}" style="display: block; text-decoration: none;">
                 <img src="cid:infographic" alt="Market Portfolio" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7;">
             </a>
             
-            <div style="margin-top: 20px; text-align: center;">
+            <p style="text-align: center; color: #71717a; font-size: 13px; margin-top: 15px;">
+                *You can download and share the infographic image below.
+            </p>
+
+            <div style="margin-top: 15px; text-align: center;">
                 <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
                     Read Full VIP Analysis
                 </a>
@@ -174,10 +176,10 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         """
         msg.attach(MIMEText(body, 'html'))
 
-        # 인포그래픽 이미지 첨부
+        # 🚨 수정: 인포그래픽 이미지를 다운로드 받기 쉽도록 attachment 처리
         image = MIMEImage(image_bytes)
         image.add_header('Content-ID', '<infographic>')
-        image.add_header('Content-Disposition', 'inline', filename='warm_insight_portfolio.jpg')
+        image.add_header('Content-Disposition', 'attachment', filename='warm_insight_portfolio.jpg')
         msg.attach(image)
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
@@ -518,11 +520,32 @@ def _build_quick_hits(raw_data):
     </div>
     """
 
-def _build_pie_chart(s, b, c, accent):
+# 🚨 수정: 파이차트의 색상을 카테고리(Economy 등)에 따라 5가지 고유 테마로 자동 변경
+def _build_pie_chart(s, b, c, cat):
+    cat_colors = {
+        "Economy": ("#2563eb", "#60a5fa", "#dbeafe"),   # Blue Theme
+        "Politics": ("#dc2626", "#f87171", "#fee2e2"),  # Red Theme
+        "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"),      # Purple Theme
+        "Health": ("#059669", "#34d399", "#d1fae5"),    # Green Theme
+        "Energy": ("#d97706", "#fbbf24", "#fef3c7")     # Orange Theme
+    }
+    c_s, c_b, c_c = cat_colors.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
+    
     circ = 565.49
     sd, bd, cd = circ*s/100, circ*b/100, circ*c/100
-    pie = f'<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;"><circle cx="100" cy="100" r="90" fill="none" stroke="{accent}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/><circle cx="100" cy="100" r="90" fill="none" stroke="#64748b" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/><circle cx="100" cy="100" r="90" fill="none" stroke="#b8974d" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/><text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text><text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg>'
-    pie += f'<div style="display:flex;justify-content:center;gap:20px;"><span style="color:{accent};font-weight:bold;">● Stocks {s}%</span><span style="color:#64748b;font-weight:bold;">● Safe {b}%</span><span style="color:#b8974d;font-weight:bold;">● Cash {c}%</span></div>'
+    
+    pie = f'<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;">'
+    pie += f'<circle cx="100" cy="100" r="90" fill="none" stroke="{c_s}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/>'
+    pie += f'<circle cx="100" cy="100" r="90" fill="none" stroke="{c_b}" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/>'
+    pie += f'<circle cx="100" cy="100" r="90" fill="none" stroke="{c_c}" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/>'
+    pie += f'<text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text>'
+    pie += f'<text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg>'
+    
+    pie += f'<div style="display:flex;justify-content:center;gap:20px;">'
+    pie += f'<span style="color:{c_s};font-weight:bold;">● Stocks {s}%</span>'
+    pie += f'<span style="color:{c_b};font-weight:bold;">● Safe {b}%</span>'
+    pie += f'<span style="color:{c_c};font-weight:bold;">● Cash {c}%</span></div>'
+    
     return pie
 
 # ═══════════════════════════════════════════════
@@ -530,7 +553,6 @@ def _build_pie_chart(s, b, c, accent):
 # ═══════════════════════════════════════════════
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
-    # "x": "https://x.com/warminsight", # X(트위터) 임시 비활성화
 }
 
 def _build_upgrade_cta():
@@ -546,8 +568,6 @@ def _build_social_share(title, slug):
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
-    if SOCIAL_LINKS.get("x"):
-        si += f'<a href="{SOCIAL_LINKS["x"]}" target="_blank" style="display:inline-block; background:#000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">𝕏 Follow</a>'
     return f"""
     <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:28px; margin:40px 0; text-align:center;">
         <p style="font-size:20px; font-weight:bold; color:{DARK}; margin:0 0 10px;">Found this useful? Share the insight.</p>
@@ -561,8 +581,6 @@ def _build_branded_footer():
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
-    if SOCIAL_LINKS.get("x"):
-        si += f'<a href="{SOCIAL_LINKS["x"]}" target="_blank" style="display:inline-block; background:#000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">𝕏 Follow</a>'
     return f"""
     <div style="background:{DARK}; padding:35px; border-radius:10px; margin-top:30px;">
         <p style="font-size:24px; font-weight:bold; color:{GOLD}; margin:0 0 12px; text-align:center;">Warm Insight</p>
@@ -705,11 +723,15 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
     
+    # 🚨 수정: AI가 생성한 태그를 강제로 벗겨내고 절대적인 BOLD 타이포그래피(font-weight:900) 강제 적용
+    catalyst_raw = xtag(raw, "CATALYST")
+    catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw) 
+    
     html += f"""
     <div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.05);">
         <p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p>
-        <p style="font-size:22px; font-weight:700; color:#92400e; margin:0 0 20px; line-height:1.4;">
-            {xtag(raw, "CATALYST")}
+        <p style="font-size:24px; font-weight:900; color:#92400e; margin:0 0 20px; line-height:1.5;">
+            {catalyst_text}
         </p>
         <p style="font-size:15px; color:#b45309; margin:0; font-style:italic;">
             Don't just read. Take out a pen and write your answer now.
@@ -796,7 +818,8 @@ def build_html(tier, cat, raw, author, tf, title):
         html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
         
         al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
-        pie = _build_pie_chart(al["s"], al["b"], al["c"], GOLD)
+        # 🚨 파이차트에 현재 카테고리(cat)를 넘겨주어 전용 컬러가 적용되도록 수정
+        pie = _build_pie_chart(al["s"], al["b"], al["c"], cat)
         
         html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block; margin-top:30px;">The Titan\'s Playbook</h2>'
         html += f"""
@@ -1151,22 +1174,23 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일) - NEW!
+# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일)
 # ═══════════════════════════════════════════════
 def generate_vip_infographic_style(raw_content, cat):
     print("   🎨 Generating Data-Driven Portfolio Infographic...")
     client = _get_gemini_client()
     
-    # 문장 요약 대신, 티커와 비율/지표를 뽑아내는 프롬프트로 변경
+    # 🚨 수정: 인포그래픽 텍스트 겹침 현상 방지를 위해 AI에게 '최대 8글자' 강력 통제
     sys_inst = """You are a quantitative data analyst. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
+    CRITICAL: TICKER MUST BE SHORT (Max 8 chars, e.g. $AAPL, $VIX, Gold, Oil). Do NOT output long descriptive names.
     Format EXACTLY as:
     <MAIN_TITLE>e.g. GLOBAL TECH MOVERS</MAIN_TITLE>
     <BADGE>e.g. IMPACT: HIGH</BADGE>
-    <ITEM1>TICKER or NAME | Value%</ITEM1>
-    <ITEM2>TICKER or NAME | Value%</ITEM2>
-    <ITEM3>TICKER or NAME | Value%</ITEM3>
-    <ITEM4>TICKER or NAME | Value%</ITEM4>
-    <ITEM5>TICKER or NAME | Value%</ITEM5>
+    <ITEM1>SHORT_TICKER | Value%</ITEM1>
+    <ITEM2>SHORT_TICKER | Value%</ITEM2>
+    <ITEM3>SHORT_TICKER | Value%</ITEM3>
+    <ITEM4>SHORT_TICKER | Value%</ITEM4>
+    <ITEM5>SHORT_TICKER | Value%</ITEM5>
     """
     raw_data = gem_fb("vip", raw_content, sys_inst)
     
@@ -1178,9 +1202,13 @@ def generate_vip_infographic_style(raw_content, cat):
         item = xtag(raw_data, f"ITEM{i}")
         if item and "|" in item:
             parts = item.split("|")
-            data_points.append({"ticker": parts[0].strip(), "val": parts[1].strip()})
+            raw_ticker = parts[0].strip()
+            # 🚨 수정: AI가 규칙을 무시하고 길게 쓸 경우 파이썬 레벨에서 강제로 8글자로 잘라버립니다 (오버랩 완벽 방지)
+            if len(raw_ticker) > 10:
+                raw_ticker = raw_ticker[:8] + ".."
+                
+            data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
             
-    # 에러 대비 기본 데이터
     if len(data_points) < 5:
         data_points = [
             {"ticker": "$NVDA", "val": "+6.2%"}, {"ticker": "$AAPL", "val": "+5.3%"},
@@ -1188,8 +1216,7 @@ def generate_vip_infographic_style(raw_content, cat):
             {"ticker": "$AMZN", "val": "+2.3%"}
         ]
 
-    # 사진 스타일(도넛 차트 형태)의 캔버스 생성 (1080x1350)
-    img = Image.new("RGB", (1080, 1350), "#09090b") # 다크 테마 배경
+    img = Image.new("RGB", (1080, 1350), "#09090b") 
     draw = ImageDraw.Draw(img)
     
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
@@ -1201,7 +1228,6 @@ def generate_vip_infographic_style(raw_content, cat):
     try: font_data = ImageFont.truetype(ft_path, 40)
     except: font_data = ImageFont.load_default()
 
-    # 상단 텍스트 (Title & Badge)
     lines = main_title.split()
     y_text = 100
     if len(lines) > 2:
@@ -1213,7 +1239,6 @@ def generate_vip_infographic_style(raw_content, cat):
     draw.rounded_rectangle([750, 320, 1000, 390], radius=35, fill="#6ee7b7")
     draw.text((875, 335), badge_text, fill="#000000", font=font_sub, anchor="mt")
 
-    # 중앙 도넛 차트 그리기
     cx, cy = 540, 800
     r_outer = 350
     r_inner = 160
@@ -1225,20 +1250,15 @@ def generate_vip_infographic_style(raw_content, cat):
         draw.pieslice([cx-r_outer, cy-r_outer, cx+r_outer, cy+r_outer], start_ang, end_ang, fill=colors[i])
         start_ang = end_ang
 
-    # 도넛 차트의 구멍 (가운데 배경색으로 덮기)
     draw.ellipse([cx-r_inner, cy-r_inner, cx+r_inner, cy+r_inner], fill="#09090b")
     
-    # 가운데 로고 텍스트 (인물 사진 대신 브랜드 아이덴티티)
     draw.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
     draw.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
 
-    # 원형을 따라 데이터 텍스트 배치
     for i, item in enumerate(data_points):
-        # 파이 조각의 중간 각도 계산
         ang_deg = -90 + (i * 72) + 36
         ang_rad = math.radians(ang_deg)
         
-        # 텍스트 위치 (원 바깥쪽)
         tx = cx + 450 * math.cos(ang_rad)
         ty = cy + 450 * math.sin(ang_rad)
         
@@ -1248,7 +1268,6 @@ def generate_vip_infographic_style(raw_content, cat):
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=90)
     
-    # 데이터 리스트도 같이 반환 (이메일 본문 텍스트에 쓰기 위해)
     return buf.getvalue(), data_points
 
 # ═══════════════════════════════════════════════
@@ -1355,7 +1374,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-            # 🚨 VIP 전용 이메일 발송 트리거!
             if tier == "vip" and raw_for_cards:
                 img_result, data_points = generate_vip_infographic_style(raw_for_cards, cat)
                 if img_result:
@@ -1373,7 +1391,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.20 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.30 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1402,7 +1420,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.20 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.30 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1431,7 +1449,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.20 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.30 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
@@ -1480,7 +1498,6 @@ def run_news_pipeline():
             print("   🖌️ Generating Warmy Robot Thumbnail...")
             img_bytes = make_thumbnail(title, cat, tier)
             
-            # VIP일 경우 본문(raw) 데이터를 통째로 넘겨서 데이터 인포그래픽을 만들게 함
             publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw if tier == "vip" else None)
             time.sleep(TIER_SLEEP[tier])
 
