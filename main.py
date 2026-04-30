@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.31 (Email Attachment & Layout Patch)
+# Warm Insight Auto Poster — v40.32 (Infographic Layout Perfect Patch)
 # 변경점:
-#   1) [이메일] 본문 노출(Inline)과 별개로 다운로드 전용 정식 첨부파일(Attachment) 이중 전송
-#   2) [인포그래픽] 메인 타이틀 텍스트가 길 경우 캔버스 밖으로 짤리지 않게 자동 줄바꿈 로직 추가
-#   3) v40.30의 모든 기능(카테고리 컬러, 링크, BOLD 고정 등) 완벽 유지
+#   1) [인포그래픽] 제목 라인 수에 따라 배지(Badge)와 차트 텍스트가 겹치는 현상 완벽 해결
+#   2) [인포그래픽] 차트 텍스트 반경 축소 및 배지 너비 동적 조절 적용
+#   3) v40.31의 모든 기능(이메일 이중 첨부, 줄바꿈, 카테고리 컬러) 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -174,13 +174,11 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         """
         msg.attach(MIMEText(body, 'html'))
 
-        # 🚨 이중 첨부 시스템: 1. 이메일 본문 노출용 (Inline)
         image_inline = MIMEImage(image_bytes)
         image_inline.add_header('Content-ID', '<infographic>')
         image_inline.add_header('Content-Disposition', 'inline', filename='warm_insight_inline.jpg')
         msg.attach(image_inline)
 
-        # 🚨 이중 첨부 시스템: 2. 다운로드 전용 첨부파일 (Attachment)
         image_attach = MIMEImage(image_bytes)
         image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_CardNews.jpg')
         msg.attach(image_attach)
@@ -1174,7 +1172,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일)
+# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일) - v40.32 수정!
 # ═══════════════════════════════════════════════
 def generate_vip_infographic_style(raw_content, cat):
     print("   🎨 Generating Data-Driven Portfolio Infographic...")
@@ -1225,14 +1223,14 @@ def generate_vip_infographic_style(raw_content, cat):
     try: font_data = ImageFont.truetype(ft_path, 40)
     except: font_data = ImageFont.load_default()
 
-    # 🚨 텍스트 길이 초과 시 줄바꿈(Word Wrap) 로직 
+    # 1. 텍스트 길이 초과 시 줄바꿈(Word Wrap) 로직 
     words = main_title.split()
     lines, line = [], []
     for w in words:
         test_str = " ".join(line + [w])
         try: tw = draw.textlength(test_str, font=font_title)
         except: tw = len(test_str) * 55
-        if tw < 980: # 캔버스 폭(1080)보다 약간 작게 여백 설정
+        if tw < 980: 
             line.append(w)
         else:
             if line: lines.append(" ".join(line))
@@ -1246,10 +1244,21 @@ def generate_vip_infographic_style(raw_content, cat):
         y_text += 115
         
     badge_y = y_text + 20
-    draw.rounded_rectangle([750, badge_y, 1000, badge_y+70], radius=35, fill="#6ee7b7")
-    draw.text((875, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
 
-    cx, cy = 540, badge_y + 400
+    # 🚨 수정: IMPACT 배지의 길이를 텍스트에 맞게 동적으로 계산하고 중앙에 배치
+    try:
+        bbox = draw.textbbox((0, 0), badge_text, font=font_sub)
+        bw = bbox[2] - bbox[0]
+    except:
+        bw = len(badge_text) * 30
+        
+    bx2 = 1000
+    bx1 = bx2 - bw - 60
+    draw.rounded_rectangle([bx1, badge_y, bx2, badge_y+70], radius=35, fill="#6ee7b7")
+    draw.text(((bx1+bx2)/2, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
+
+    # 🚨 수정: 제목 때문에 배지가 내려오더라도 차트 글씨와 안 겹치게 중심축(cy)을 훨씬 아래로 밀어냄
+    cx, cy = 540, badge_y + 460
     r_outer = 350
     r_inner = 160
     
@@ -1265,12 +1274,14 @@ def generate_vip_infographic_style(raw_content, cat):
     draw.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
     draw.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
 
+    # 🚨 수정: 텍스트 렌더링 반경을 줄여서 차트에 밀착시킴 (450 -> 420)
+    text_radius = 420
     for i, item in enumerate(data_points):
         ang_deg = -90 + (i * 72) + 36
         ang_rad = math.radians(ang_deg)
         
-        tx = cx + 450 * math.cos(ang_rad)
-        ty = cy + 450 * math.sin(ang_rad)
+        tx = cx + text_radius * math.cos(ang_rad)
+        ty = cy + text_radius * math.sin(ang_rad)
         
         draw.text((tx, ty-20), item['ticker'], fill="#6ee7b7", font=font_sub, anchor="mm")
         draw.text((tx, ty+30), item['val'], fill="#ffffff", font=font_data, anchor="mm")
@@ -1401,7 +1412,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.31 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.32 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1430,7 +1441,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.31 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.32 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1459,7 +1470,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.31 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.32 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
