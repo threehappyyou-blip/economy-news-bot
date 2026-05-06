@@ -605,16 +605,32 @@ def _build_internal_links(cat):
     if cat in ["The Daily Catalyst", "Foundation"]: return ""
     pillar = PILLAR_PAGES.get(cat, PILLAR_PAGES["Economy"])
     related = CAT_RELATED.get(cat, ["Economy", "Tech"])
+    
     html = f"""
-    <div style="margin:35px 0; padding:20px 24px; background:{BG_LIGHT}; border-left:4px solid {GOLD}; border-radius:0 10px 10px 0;">
-        <p style="margin:0 0 12px; font-size:16px; font-weight:700; color:{DARK};">Explore More from Warm Insight</p>
-        <p style="margin:0 0 8px;"><a href="{pillar['url']}" style="color:{GOLD}; text-decoration:underline; font-weight:600;">{pillar['anchor']}</a></p>
+    <div style="margin: 50px 0; padding: 30px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <span style="font-size: 24px; margin-right: 10px;">🧭</span>
+            <h3 style="margin: 0; font-size: 20px; color: #1e293b; font-weight: 800;">Keep Exploring Warm Insight</h3>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+            <a href="{pillar['url']}" style="display: block; padding: 20px; background: #ffffff; border: 2px solid #b8974d; border-radius: 8px; text-decoration: none; transition: transform 0.2s;">
+                <span style="display: block; font-size: 12px; color: #b8974d; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">Main Pillar</span>
+                <strong style="color: #0f172a; font-size: 16px;">{pillar['anchor']} ➔</strong>
+            </a>
     """
     for rc in related[:2]:
         rp = PILLAR_PAGES.get(rc)
         if rp:
-            html += f'        <p style="margin:0 0 8px;"><a href="{rp["url"]}" style="color:{MUTED}; text-decoration:underline;">{rc} Analysis</a></p>\n'
-    html += "    </div>"
+            html += f"""
+            <a href="{rp["url"]}" style="display: block; padding: 20px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; text-decoration: none; transition: transform 0.2s;">
+                <span style="display: block; font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">Related Topic</span>
+                <strong style="color: #334155; font-size: 16px;">{rc} Analysis ➔</strong>
+            </a>
+            """
+    html += """
+        </div>
+    </div>
+    """
     return html
 
 def _build_author_bio(cat):
