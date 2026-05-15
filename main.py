@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.33 (SNS Copywriting Patch)
+# Warm Insight Auto Poster — v40.34 (TikTok & Reels Carousel Patch)
 # 변경점:
-#   1) [이메일] 본문 텍스트를 인스타그램 등 모든 SNS에 복사/붙여넣기 좋도록 최적화
-#      (Link in bio 안내 문구 추가 및 텍스트 레이아웃 개선)
-#   2) v40.32의 모든 기능(이중 첨부, 줄바꿈, 겹침 방지 등) 100% 유지
+#   1) [인포그래픽] 틱톡/인스타 알고리즘 최적화를 위해 1장 -> 3장(Hook, Data, CTA) 슬라이드로 자동 생성
+#   2) [이메일] 3장의 슬라이드를 이메일 본문 노출 및 일괄 다운로드 첨부 처리
+#   3) 기존 v40.33의 모든 핵심 로직(WP 발행, 텍스트 요약 등) 100% 안전하게 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -115,14 +115,14 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 소셜 미디어 스타일 이메일 전송 시스템
+# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (3-Slide 지원)
 # ═══════════════════════════════════════════════
-def send_social_style_email(title, link, image_bytes, data_points, cat):
+def send_social_style_email(title, link, image_bytes_list, data_points, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
 
-    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일을 전송합니다...")
+    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일(슬라이드 {len(image_bytes_list)}장)을 전송합니다...")
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
@@ -133,7 +133,11 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         for item in data_points:
             list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
 
-        # 🚨 수정: 인스타그램 등 다목적 SNS 업로드를 위한 카피라이팅 적용
+        # 이메일 본문에 들어갈 인라인 이미지 태그 생성
+        img_tags = ""
+        for idx in range(len(image_bytes_list)):
+            img_tags += f'<img src="cid:slide_{idx}" alt="Slide {idx+1}" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7; margin-bottom: 12px;">\n'
+
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
             
@@ -160,11 +164,11 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
             </div>
 
             <a href="{link}" style="display: block; text-decoration: none;">
-                <img src="cid:infographic" alt="Market Portfolio" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7;">
+                {img_tags}
             </a>
             
             <p style="text-align: center; color: #71717a; font-size: 13px; margin-top: 15px;">
-                *⬇️ 하단의 첨부파일을 클릭하시면 SNS 업로드용 이미지를 쉽게 다운로드 하실 수 있습니다.
+                *⬇️ 하단의 첨부파일 3장을 다운로드하여 틱톡/인스타 슬라이드로 업로드하세요.
             </p>
 
             <div style="margin-top: 15px; text-align: center;">
@@ -176,19 +180,23 @@ def send_social_style_email(title, link, image_bytes, data_points, cat):
         """
         msg.attach(MIMEText(body, 'html'))
 
-        image_inline = MIMEImage(image_bytes)
-        image_inline.add_header('Content-ID', '<infographic>')
-        image_inline.add_header('Content-Disposition', 'inline', filename='warm_insight_inline.jpg')
-        msg.attach(image_inline)
+        # 인라인 이미지 첨부
+        for idx, img_b in enumerate(image_bytes_list):
+            image_inline = MIMEImage(img_b)
+            image_inline.add_header('Content-ID', f'<slide_{idx}>')
+            image_inline.add_header('Content-Disposition', 'inline', filename=f'slide_inline_{idx}.jpg')
+            msg.attach(image_inline)
 
-        image_attach = MIMEImage(image_bytes)
-        image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_CardNews.jpg')
-        msg.attach(image_attach)
+        # 다운로드용 정식 첨부파일
+        for idx, img_b in enumerate(image_bytes_list):
+            image_attach = MIMEImage(img_b)
+            image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Slide_0{idx+1}.jpg')
+            msg.attach(image_attach)
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 소셜 스타일 인포그래픽 이메일 발송 완료!")
+        print("   ✅ 3단 슬라이드 소셜 인포그래픽 이메일 발송 완료!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
 
@@ -1190,10 +1198,10 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 스타일)
+# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 슬라이드 3종) - v40.34
 # ═══════════════════════════════════════════════
-def generate_vip_infographic_style(raw_content, cat):
-    print("   🎨 Generating Data-Driven Portfolio Infographic...")
+def generate_vip_carousel(raw_content, cat):
+    print("   🎨 Generating 3-Slide Carousel for TikTok/Reels...")
     client = _get_gemini_client()
     
     sys_inst = """You are a quantitative data analyst. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
@@ -1229,9 +1237,6 @@ def generate_vip_infographic_style(raw_content, cat):
             {"ticker": "$AMZN", "val": "+2.3%"}
         ]
 
-    img = Image.new("RGB", (1080, 1350), "#09090b") 
-    draw = ImageDraw.Draw(img)
-    
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
     
     try: font_title = ImageFont.truetype(ft_path, 110)
@@ -1241,12 +1246,12 @@ def generate_vip_infographic_style(raw_content, cat):
     try: font_data = ImageFont.truetype(ft_path, 40)
     except: font_data = ImageFont.load_default()
 
-    # 1. 텍스트 길이 초과 시 줄바꿈(Word Wrap) 로직 
+    # 단어 줄바꿈(Word Wrap) 로직
     words = main_title.split()
     lines, line = [], []
     for w in words:
         test_str = " ".join(line + [w])
-        try: tw = draw.textlength(test_str, font=font_title)
+        try: tw = ImageDraw.Draw(Image.new("RGB", (1,1))).textlength(test_str, font=font_title)
         except: tw = len(test_str) * 55
         if tw < 980: 
             line.append(w)
@@ -1255,24 +1260,44 @@ def generate_vip_infographic_style(raw_content, cat):
             line = [w]
     if line: lines.append(" ".join(line))
 
-    y_text = 100
-    for i, ln in enumerate(lines[:3]): # 최대 3줄까지만 렌더링
+    # --- 📸 [Slide 1] Hook (시선 끌기) ---
+    img1 = Image.new("RGB", (1080, 1350), "#09090b")
+    d1 = ImageDraw.Draw(img1)
+    
+    d1.text((540, 250), "WARM INSIGHT", fill="#10b981", font=font_sub, anchor="mm")
+    
+    y_text = 550
+    for i, ln in enumerate(lines[:3]):
         color = "#6ee7b7" if i == 0 else "#ffffff"
-        draw.text((540, y_text), ln, fill=color, font=font_title, anchor="mt")
+        d1.text((540, y_text), ln, fill=color, font=font_title, anchor="mm")
+        y_text += 120
+        
+    d1.text((540, 1150), "SWIPE FOR DATA ➔", fill="#94a3b8", font=font_sub, anchor="mm")
+    
+    buf1 = io.BytesIO()
+    img1.save(buf1, format="JPEG", quality=90)
+
+    # --- 📸 [Slide 2] Data Chart (기존 포트폴리오 차트) ---
+    img2 = Image.new("RGB", (1080, 1350), "#09090b") 
+    d2 = ImageDraw.Draw(img2)
+    
+    y_text = 100
+    for i, ln in enumerate(lines[:3]): 
+        color = "#6ee7b7" if i == 0 else "#ffffff"
+        d2.text((540, y_text), ln, fill=color, font=font_title, anchor="mt")
         y_text += 115
         
     badge_y = y_text + 20
-
     try:
-        bbox = draw.textbbox((0, 0), badge_text, font=font_sub)
+        bbox = d2.textbbox((0, 0), badge_text, font=font_sub)
         bw = bbox[2] - bbox[0]
     except:
         bw = len(badge_text) * 30
         
     bx2 = 1000
     bx1 = bx2 - bw - 60
-    draw.rounded_rectangle([bx1, badge_y, bx2, badge_y+70], radius=35, fill="#6ee7b7")
-    draw.text(((bx1+bx2)/2, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
+    d2.rounded_rectangle([bx1, badge_y, bx2, badge_y+70], radius=35, fill="#6ee7b7")
+    d2.text(((bx1+bx2)/2, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
 
     cx, cy = 540, badge_y + 460
     r_outer = 350
@@ -1282,29 +1307,41 @@ def generate_vip_infographic_style(raw_content, cat):
     start_ang = -90
     for i in range(5):
         end_ang = start_ang + 72
-        draw.pieslice([cx-r_outer, cy-r_outer, cx+r_outer, cy+r_outer], start_ang, end_ang, fill=colors[i])
+        d2.pieslice([cx-r_outer, cy-r_outer, cx+r_outer, cy+r_outer], start_ang, end_ang, fill=colors[i])
         start_ang = end_ang
 
-    draw.ellipse([cx-r_inner, cy-r_inner, cx+r_inner, cy+r_inner], fill="#09090b")
-    
-    draw.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
-    draw.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
+    d2.ellipse([cx-r_inner, cy-r_inner, cx+r_inner, cy+r_inner], fill="#09090b")
+    d2.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
+    d2.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
 
     text_radius = 420
     for i, item in enumerate(data_points):
         ang_deg = -90 + (i * 72) + 36
         ang_rad = math.radians(ang_deg)
-        
         tx = cx + text_radius * math.cos(ang_rad)
         ty = cy + text_radius * math.sin(ang_rad)
         
-        draw.text((tx, ty-20), item['ticker'], fill="#6ee7b7", font=font_sub, anchor="mm")
-        draw.text((tx, ty+30), item['val'], fill="#ffffff", font=font_data, anchor="mm")
+        d2.text((tx, ty-20), item['ticker'], fill="#6ee7b7", font=font_sub, anchor="mm")
+        d2.text((tx, ty+30), item['val'], fill="#ffffff", font=font_data, anchor="mm")
 
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=90)
+    buf2 = io.BytesIO()
+    img2.save(buf2, format="JPEG", quality=90)
     
-    return buf.getvalue(), data_points
+    # --- 📸 [Slide 3] CTA (행동 유도) ---
+    img3 = Image.new("RGB", (1080, 1350), "#09090b")
+    d3 = ImageDraw.Draw(img3)
+    
+    d3.text((540, 450), "WHAT'S YOUR NEXT MOVE?", fill="#ffffff", font=font_title, anchor="mm")
+    d3.text((540, 600), "READ THE FULL VIP ANALYSIS", fill="#94a3b8", font=font_sub, anchor="mm")
+    
+    d3.rounded_rectangle([290, 800, 790, 920], radius=60, fill="#10b981")
+    d3.text((540, 860), "LINK IN BIO", fill="#ffffff", font=font_title, anchor="mm")
+
+    buf3 = io.BytesIO()
+    img3.save(buf3, format="JPEG", quality=90)
+    
+    # 총 3장의 슬라이드 이미지 리스트 반환
+    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points
 
 # ═══════════════════════════════════════════════
 # PUBLISHER
@@ -1410,10 +1447,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
+            # 🚨 3장짜리 슬라이드 이미지 리스트 수신 및 이메일 전송
             if tier == "vip" and raw_for_cards:
-                img_result, data_points = generate_vip_infographic_style(raw_for_cards, cat)
-                if img_result:
-                    send_social_style_email(display_title, link, img_result, data_points, cat)
+                img_list, data_points = generate_vip_carousel(raw_for_cards, cat)
+                if img_list:
+                    send_social_style_email(display_title, link, img_list, data_points, cat)
             
             return True
         else:
@@ -1427,7 +1465,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.33 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.34 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1456,7 +1494,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.33 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.34 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1485,7 +1523,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.33 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.34 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
