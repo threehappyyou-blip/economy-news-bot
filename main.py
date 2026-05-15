@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.34 (TikTok & Reels Carousel Patch)
+# Warm Insight Auto Poster — v40.35 (Viral Social Caption Patch)
 # 변경점:
-#   1) [인포그래픽] 틱톡/인스타 알고리즘 최적화를 위해 1장 -> 3장(Hook, Data, CTA) 슬라이드로 자동 생성
-#   2) [이메일] 3장의 슬라이드를 이메일 본문 노출 및 일괄 다운로드 첨부 처리
-#   3) 기존 v40.33의 모든 핵심 로직(WP 발행, 텍스트 요약 등) 100% 안전하게 유지
+#   1) [프롬프트] AI가 틱톡/릴스 알고리즘에 맞춘 Hook(후크)과 Question(댓글 유도) 자동 생성
+#   2) [이메일] 이메일 텍스트 본문에 생성된 후크와 질문을 SNS 캡션 형태로 자동 삽입
+#   3) [이메일] 인스타그램 전용 문구를 삭제하고 모든 SNS 호환형 프로필 링크 유도 문구로 수정
+#   4) v40.34의 3단 슬라이드 포맷 및 모든 핵심 로직 100% 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -115,9 +116,9 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (3-Slide 지원)
+# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (3-Slide 지원 및 텍스트 캡션 최적화)
 # ═══════════════════════════════════════════════
-def send_social_style_email(title, link, image_bytes_list, data_points, cat):
+def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
@@ -133,11 +134,11 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat):
         for item in data_points:
             list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
 
-        # 이메일 본문에 들어갈 인라인 이미지 태그 생성
         img_tags = ""
         for idx in range(len(image_bytes_list)):
             img_tags += f'<img src="cid:slide_{idx}" alt="Slide {idx+1}" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7; margin-bottom: 12px;">\n'
 
+        # 🚨 수정: HOOK, QUESTION 자동 적용 및 범용 SNS 카피라이팅 사용
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
             
@@ -152,14 +153,17 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat):
             </div>
 
             <div style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+                <p style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 0;">{hook_text}</p>
                 Warm Insight tracked critical shifts in the <strong>{cat}</strong> sector. Here's a look at the top market movers and allocations:
                 
                 <div style="margin-top: 15px; margin-bottom: 15px; padding-left: 10px; border-left: 3px solid #10b981;">
                     {list_html}
                 </div>
+                
+                <p style="font-weight: bold; color: #0f1419; margin-bottom: 8px;">{question_text}</p>
 
                 Read the full deep-dive analysis at <a href="{link}" style="color:#10b981; font-weight:bold; text-decoration:none;">warminsight.com</a> ✅<br>
-                <span style="color: #71717a; font-size: 14px; font-style: italic;">*(Instagram: Click the link in our bio!)*</span>
+                <span style="color: #71717a; font-size: 14px; font-style: italic;">*(Check the link in our bio/profile!)*</span>
                 <br><br>#investing #finance #stockmarket #{cat.lower()}
             </div>
 
@@ -196,7 +200,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat):
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 3단 슬라이드 소셜 인포그래픽 이메일 발송 완료!")
+        print("   ✅ 3단 슬라이드 텍스트 최적화 이메일 발송 완료!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
 
@@ -1198,17 +1202,21 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 슬라이드 3종) - v40.34
+# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 슬라이드 3종) - v40.35 수정
 # ═══════════════════════════════════════════════
 def generate_vip_carousel(raw_content, cat):
     print("   🎨 Generating 3-Slide Carousel for TikTok/Reels...")
     client = _get_gemini_client()
     
-    sys_inst = """You are a quantitative data analyst. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
+    # 🚨 수정: HOOK(어그로성 제목)과 QUESTION(댓글 유도)을 생성하도록 프롬프트 개편
+    sys_inst = """You are a quantitative data analyst and viral social media expert. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
     CRITICAL: TICKER MUST BE SHORT (Max 8 chars, e.g. $AAPL, $VIX, Gold, Oil). Do NOT output long descriptive names.
+    Also, write a viral HOOK (headline) and an engaging QUESTION for social media captions to maximize TikTok/Reels algorithm engagement.
     Format EXACTLY as:
     <MAIN_TITLE>e.g. GLOBAL TECH MOVERS</MAIN_TITLE>
     <BADGE>e.g. IMPACT: HIGH</BADGE>
+    <HOOK>e.g. Where the Smart Money is Moving NOW 🚨</HOOK>
+    <QUESTION>e.g. Which sector do you think will grow most in 2026? Drop a comment! 👇</QUESTION>
     <ITEM1>SHORT_TICKER | Value%</ITEM1>
     <ITEM2>SHORT_TICKER | Value%</ITEM2>
     <ITEM3>SHORT_TICKER | Value%</ITEM3>
@@ -1219,6 +1227,10 @@ def generate_vip_carousel(raw_content, cat):
     
     main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} PORTFOLIO"
     badge_text = xtag(raw_data, "BADGE") or "AUM: TOP"
+    
+    # 🚨 생성된 후크와 질문 추출
+    hook_text = xtag(raw_data, "HOOK") or f"🚨 Top Market Movers in the {cat} sector!"
+    question_text = xtag(raw_data, "QUESTION") or f"Drop a comment: What is your top pick for {cat}? 👇"
     
     data_points = []
     for i in range(1, 6):
@@ -1246,7 +1258,6 @@ def generate_vip_carousel(raw_content, cat):
     try: font_data = ImageFont.truetype(ft_path, 40)
     except: font_data = ImageFont.load_default()
 
-    # 단어 줄바꿈(Word Wrap) 로직
     words = main_title.split()
     lines, line = [], []
     for w in words:
@@ -1340,8 +1351,8 @@ def generate_vip_carousel(raw_content, cat):
     buf3 = io.BytesIO()
     img3.save(buf3, format="JPEG", quality=90)
     
-    # 총 3장의 슬라이드 이미지 리스트 반환
-    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points
+    # 🚨 이메일 텍스트를 구성하기 위해 생성된 Hook과 Question 문구를 함께 반환
+    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points, hook_text, question_text
 
 # ═══════════════════════════════════════════════
 # PUBLISHER
@@ -1447,11 +1458,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-            # 🚨 3장짜리 슬라이드 이미지 리스트 수신 및 이메일 전송
+            # 🚨 반환받은 HOOK과 QUESTION 텍스트를 이메일 발송 함수로 전달
             if tier == "vip" and raw_for_cards:
-                img_list, data_points = generate_vip_carousel(raw_for_cards, cat)
+                img_list, data_points, hook_text, question_text = generate_vip_carousel(raw_for_cards, cat)
                 if img_list:
-                    send_social_style_email(display_title, link, img_list, data_points, cat)
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text)
             
             return True
         else:
@@ -1465,7 +1476,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.34 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.35 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1494,7 +1505,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.34 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.35 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1523,7 +1534,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.34 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.35 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
