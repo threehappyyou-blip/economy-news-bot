@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.35 (Viral Social Caption Patch)
+# Warm Insight Auto Poster — v40.36 (TikTok Social Footer Patch)
 # 변경점:
-#   1) [프롬프트] AI가 틱톡/릴스 알고리즘에 맞춘 Hook(후크)과 Question(댓글 유도) 자동 생성
-#   2) [이메일] 이메일 텍스트 본문에 생성된 후크와 질문을 SNS 캡션 형태로 자동 삽입
-#   3) [이메일] 인스타그램 전용 문구를 삭제하고 모든 SNS 호환형 프로필 링크 유도 문구로 수정
-#   4) v40.34의 3단 슬라이드 포맷 및 모든 핵심 로직 100% 유지
+#   1) [UI] SOCIAL_LINKS 에 틱톡(@warminsight) 정보 추가
+#   2) [UI] 게시물 및 이메일 하단 글로벌 푸터에 틱톡 검은색 버튼 추가
+#   3) v40.35의 3단 슬라이드 포맷 및 바이럴 캡션 로직 100% 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -138,7 +137,6 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         for idx in range(len(image_bytes_list)):
             img_tags += f'<img src="cid:slide_{idx}" alt="Slide {idx+1}" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7; margin-bottom: 12px;">\n'
 
-        # 🚨 수정: HOOK, QUESTION 자동 적용 및 범용 SNS 카피라이팅 사용
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
             
@@ -565,8 +563,10 @@ def _build_pie_chart(s, b, c, cat):
 # ═══════════════════════════════════════════════
 # 📎 ENGAGEMENT & FOOTER BUILDERS
 # ═══════════════════════════════════════════════
+# 🚨 틱톡 링크 추가 완료
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
+    "tiktok": "https://www.tiktok.com/@warminsight"
 }
 
 def _build_upgrade_cta():
@@ -582,6 +582,9 @@ def _build_social_share(title, slug):
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
+    # 🚨 틱톡 버튼 추가
+    if SOCIAL_LINKS.get("tiktok"):
+        si += f'<a href="{SOCIAL_LINKS["tiktok"]}" target="_blank" style="display:inline-block; background:#000000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">🎵 TikTok</a>'
     return f"""
     <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:28px; margin:40px 0; text-align:center;">
         <p style="font-size:20px; font-weight:bold; color:{DARK}; margin:0 0 10px;">Found this useful? Share the insight.</p>
@@ -595,6 +598,9 @@ def _build_branded_footer():
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
+    # 🚨 틱톡 버튼 추가
+    if SOCIAL_LINKS.get("tiktok"):
+        si += f'<a href="{SOCIAL_LINKS["tiktok"]}" target="_blank" style="display:inline-block; background:#000000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">🎵 TikTok</a>'
     return f"""
     <div style="background:{DARK}; padding:35px; border-radius:10px; margin-top:30px;">
         <p style="font-size:24px; font-weight:bold; color:{GOLD}; margin:0 0 12px; text-align:center;">Warm Insight</p>
@@ -1476,7 +1482,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.35 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.36 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(FOUNDATION_TOPICS)
@@ -1505,7 +1511,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.35 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.36 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     theme = random.choice(PHILOSOPHY_TOPICS)
@@ -1534,7 +1540,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.35 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.36 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     
     all_news = fetch_news_pool(cat)
