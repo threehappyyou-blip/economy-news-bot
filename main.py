@@ -6,6 +6,7 @@
 #   1) [UI] SOCIAL_LINKS 에 틱톡(@warminsight) 정보 추가
 #   2) [UI] 게시물 및 이메일 하단 글로벌 푸터에 틱톡 검은색 버튼 추가
 #   3) v40.35의 3단 슬라이드 포맷 및 바이럴 캡션 로직 100% 유지
+#   4) 🚨 [NEW] 5초 티저 영상(Animated GIF) 자동 생성 및 이메일 본문/첨부 기능 추가
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -115,14 +116,14 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (3-Slide 지원 및 텍스트 캡션 최적화)
+# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (5초 비디오 추가 지원)
 # ═══════════════════════════════════════════════
-def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text):
+def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, video_gif_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
 
-    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일(슬라이드 {len(image_bytes_list)}장)을 전송합니다...")
+    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일(슬라이드 및 영상)을 전송합니다...")
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
@@ -136,6 +137,17 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         img_tags = ""
         for idx in range(len(image_bytes_list)):
             img_tags += f'<img src="cid:slide_{idx}" alt="Slide {idx+1}" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7; margin-bottom: 12px;">\n'
+
+        # 🚨 이메일 본문에 5초 영상(Animated GIF) 표시 영역 추가
+        vid_tag = ""
+        if video_gif_bytes:
+            vid_tag = f"""
+            <div style="margin-bottom: 25px; text-align:center; padding: 20px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
+                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎥 5-Sec Teaser Video</p>
+                <img src="cid:video_teaser" alt="Teaser Video" style="width: 100%; max-width: 400px; border-radius: 12px;">
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 15px;">이메일 하단의 첨부파일에서 영상을 다운로드하여 틱톡/릴스에 바로 업로드하세요.</p>
+            </div>
+            """
 
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
@@ -165,12 +177,14 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
                 <br><br>#investing #finance #stockmarket #{cat.lower()}
             </div>
 
+            {vid_tag}
+
             <a href="{link}" style="display: block; text-decoration: none;">
                 {img_tags}
             </a>
             
             <p style="text-align: center; color: #71717a; font-size: 13px; margin-top: 15px;">
-                *⬇️ 하단의 첨부파일 3장을 다운로드하여 틱톡/인스타 슬라이드로 업로드하세요.
+                *⬇️ 하단의 첨부파일을 다운로드하여 마케팅 자료로 활용하세요.
             </p>
 
             <div style="margin-top: 15px; text-align: center;">
@@ -189,16 +203,27 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
             image_inline.add_header('Content-Disposition', 'inline', filename=f'slide_inline_{idx}.jpg')
             msg.attach(image_inline)
 
-        # 다운로드용 정식 첨부파일
+        # 다운로드용 정식 이미지 첨부파일
         for idx, img_b in enumerate(image_bytes_list):
             image_attach = MIMEImage(img_b)
             image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Slide_0{idx+1}.jpg')
             msg.attach(image_attach)
 
+        # 🚨 동영상(GIF) 인라인 및 첨부파일 추가
+        if video_gif_bytes:
+            vid_inline = MIMEImage(video_gif_bytes, _subtype='gif')
+            vid_inline.add_header('Content-ID', '<video_teaser>')
+            vid_inline.add_header('Content-Disposition', 'inline', filename=f'teaser.gif')
+            msg.attach(vid_inline)
+            
+            vid_attach = MIMEImage(video_gif_bytes, _subtype='gif')
+            vid_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_5Sec_Video.gif')
+            msg.attach(vid_attach)
+
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 3단 슬라이드 텍스트 최적화 이메일 발송 완료!")
+        print("   ✅ 3단 슬라이드 및 5초 영상 이메일 발송 완료!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
 
@@ -563,7 +588,6 @@ def _build_pie_chart(s, b, c, cat):
 # ═══════════════════════════════════════════════
 # 📎 ENGAGEMENT & FOOTER BUILDERS
 # ═══════════════════════════════════════════════
-# 🚨 틱톡 링크 추가 완료
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
     "tiktok": "https://www.tiktok.com/@warminsight"
@@ -582,7 +606,6 @@ def _build_social_share(title, slug):
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
-    # 🚨 틱톡 버튼 추가
     if SOCIAL_LINKS.get("tiktok"):
         si += f'<a href="{SOCIAL_LINKS["tiktok"]}" target="_blank" style="display:inline-block; background:#000000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">🎵 TikTok</a>'
     return f"""
@@ -598,7 +621,6 @@ def _build_branded_footer():
     si = ""
     if SOCIAL_LINKS.get("youtube"):
         si += f'<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>'
-    # 🚨 틱톡 버튼 추가
     if SOCIAL_LINKS.get("tiktok"):
         si += f'<a href="{SOCIAL_LINKS["tiktok"]}" target="_blank" style="display:inline-block; background:#000000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">🎵 TikTok</a>'
     return f"""
@@ -1208,6 +1230,77 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
+# 🎬 [NEW] 5초 티저 영상(Animated GIF) 자동 생성기
+# ═══════════════════════════════════════════════
+def generate_5sec_video_gif(cat, hook_text, data_points):
+    print("   🎥 Generating 5-second Teaser Video (GIF)...")
+    w, h = 800, 800
+    frames = []
+    ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
+    try:
+        f_title = ImageFont.truetype(ft_path, 80)
+        f_sub = ImageFont.truetype(ft_path, 50)
+    except:
+        f_title = ImageFont.load_default()
+        f_sub = ImageFont.load_default()
+
+    def draw_wrapped_text(d, text, font, w_limit, y_start, fill):
+        words = text.split()
+        lines = []
+        curr_line = []
+        for word in words:
+            test_line = " ".join(curr_line + [word])
+            try: tw = d.textlength(test_line, font=font)
+            except: tw = len(test_line) * (font.size // 2)
+            if tw < w_limit: curr_line.append(word)
+            else:
+                if curr_line: lines.append(" ".join(curr_line))
+                curr_line = [word]
+        if curr_line: lines.append(" ".join(curr_line))
+        
+        y = y_start
+        for line in lines:
+            d.text((w//2, y), line, fill=fill, font=font, anchor="mm")
+            y += font.size + 10
+
+    # 1. 시선을 끄는 첫 프레임 (Hook)
+    f1 = Image.new("RGB", (w, h), "#0f172a")
+    d1 = ImageDraw.Draw(f1)
+    d1.text((w//2, h//2 - 100), "🚨 ALERTS:", fill="#10b981", font=f_sub, anchor="mm")
+    draw_wrapped_text(d1, hook_text, f_title, w - 100, h//2, "#ffffff")
+    frames.append(f1)
+
+    # 2. 3초간 보여지는 핵심 데이터 프레임
+    for i in range(3):
+        fx = Image.new("RGB", (w, h), "#0f172a")
+        dx = ImageDraw.Draw(fx)
+        dx.text((w//2, 200), f"MARKET MOVER {i+1}/3", fill="#b8974d", font=f_sub, anchor="mm")
+        if i < len(data_points):
+            try: f_ticker = ImageFont.truetype(ft_path, 120)
+            except: f_ticker = f_title
+            dx.text((w//2, 400), data_points[i]['ticker'], fill="#ffffff", font=f_ticker, anchor="mm")
+            
+            val = data_points[i]['val']
+            val_col = "#10b981" if "+" in val else "#ef4444"
+            try: f_val = ImageFont.truetype(ft_path, 100)
+            except: f_val = f_title
+            dx.text((w//2, 550), val, fill=val_col, font=f_val, anchor="mm")
+        frames.append(fx)
+
+    # 3. 마지막 콜투액션 (CTA) 프레임
+    f5 = Image.new("RGB", (w, h), "#0f172a")
+    d5 = ImageDraw.Draw(f5)
+    d5.text((w//2, h//2 - 50), "READ THE FULL ANALYSIS", fill="#3b82f6", font=f_title, anchor="mm")
+    d5.text((w//2, h//2 + 50), "LINK IN EMAIL", fill="#ffffff", font=f_sub, anchor="mm")
+    frames.append(f5)
+
+    buf = io.BytesIO()
+    # 프레임당 1000ms(1초)로 저장하여 총 5초 길이의 루핑 동영상 완성
+    frames[0].save(buf, format='GIF', save_all=True, append_images=frames[1:], duration=1000, loop=0)
+    return buf.getvalue()
+
+
+# ═══════════════════════════════════════════════
 # 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 슬라이드 3종) - v40.35 수정
 # ═══════════════════════════════════════════════
 def generate_vip_carousel(raw_content, cat):
@@ -1357,8 +1450,11 @@ def generate_vip_carousel(raw_content, cat):
     buf3 = io.BytesIO()
     img3.save(buf3, format="JPEG", quality=90)
     
-    # 🚨 이메일 텍스트를 구성하기 위해 생성된 Hook과 Question 문구를 함께 반환
-    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points, hook_text, question_text
+    # 🚨 새로 추가된 기능: 5초 동영상(GIF) 생성 로직 호출
+    video_gif_bytes = generate_5sec_video_gif(cat, hook_text, data_points)
+
+    # 🚨 이메일 텍스트를 구성하기 위해 생성된 Hook과 Question 문구, 그리고 동영상 바이트를 함께 반환
+    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points, hook_text, question_text, video_gif_bytes
 
 # ═══════════════════════════════════════════════
 # PUBLISHER
@@ -1464,11 +1560,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-            # 🚨 반환받은 HOOK과 QUESTION 텍스트를 이메일 발송 함수로 전달
+            # 🚨 반환받은 HOOK과 QUESTION 텍스트 및 5초 동영상을 이메일 발송 함수로 전달
             if tier == "vip" and raw_for_cards:
-                img_list, data_points, hook_text, question_text = generate_vip_carousel(raw_for_cards, cat)
+                img_list, data_points, hook_text, question_text, video_gif_bytes = generate_vip_carousel(raw_for_cards, cat)
                 if img_list:
-                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text)
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, video_gif_bytes)
             
             return True
         else:
