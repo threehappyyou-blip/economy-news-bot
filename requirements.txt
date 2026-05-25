@@ -4,3 +4,5 @@ google-genai
 PyJWT
 requests
 Pillow
+moviepy
+numpy
