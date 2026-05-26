@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.36 (TikTok Social Footer Patch)
+# Warm Insight Auto Poster — v40.55 (Auto-Install & 11-Param Bug Fix)
 # 변경점:
-#   1) [UI] SOCIAL_LINKS 에 틱톡(@warminsight) 정보 추가
-#   2) [UI] 게시물 및 이메일 하단 글로벌 푸터에 틱톡 검은색 버튼 추가
-#   3) v40.35의 3단 슬라이드 포맷 및 바이럴 캡션 로직 100% 유지
-#   4) 🚨 [NEW] 5초 티저 영상(Animated GIF) 자동 생성 및 이메일 본문/첨부 기능 추가
+#   1) [오류수정] 이메일 발송 함수의 파라미터 불일치 오류(11 args) 완벽 해결
+#   2) [기능추가] Github Actions 환경에서 numpy/moviepy 자동 강제 설치 로직 탑재
+#   3) [영상] 부드러운 디졸브(Crossfade) 화면 전환이 포함된 정식 .mp4 동영상 파일 생성 유지
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -19,6 +18,9 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from email.mime.base import MIMEBase
+from email import encoders
+import tempfile
 
 # ═══════════════════════════════════════════════
 # CONFIG
@@ -116,19 +118,19 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 소셜 미디어 스타일 이메일 전송 시스템 (5초 비디오 추가 지원)
+# ✉️ 소셜 미디어 이메일 전송 시스템 (파라미터 11개 버그 완벽 수정)
 # ═══════════════════════════════════════════════
-def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, video_gif_bytes=None):
+def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
 
-    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일(슬라이드 및 영상)을 전송합니다...")
+    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일(MP4 영상 포함)을 전송합니다...")
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"🚨 {cat.upper()} ALERTS: Top Market Movers Data"
+        msg['Subject'] = f"🚨 {cat.upper()} REELS VIDEO READY: {hook_text[:40]}..."
 
         list_html = ""
         for item in data_points:
@@ -138,92 +140,84 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         for idx in range(len(image_bytes_list)):
             img_tags += f'<img src="cid:slide_{idx}" alt="Slide {idx+1}" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7; margin-bottom: 12px;">\n'
 
-        # 🚨 이메일 본문에 5초 영상(Animated GIF) 표시 영역 추가
         vid_tag = ""
-        if video_gif_bytes:
+        if video_mp4_bytes:
             vid_tag = f"""
-            <div style="margin-bottom: 25px; text-align:center; padding: 20px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
-                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎥 5-Sec Teaser Video</p>
-                <img src="cid:video_teaser" alt="Teaser Video" style="width: 100%; max-width: 400px; border-radius: 12px;">
-                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 15px;">이메일 하단의 첨부파일에서 영상을 다운로드하여 틱톡/릴스에 바로 업로드하세요.</p>
+            <div style="margin-bottom: 25px; text-align:center; padding: 25px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
+                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 Real MP4 Video Attached!</p>
+                <div style="font-size: 45px; margin: 15px 0;">✨ 📹 ✨</div>
+                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">인스타 릴스 / 틱톡 업로드 전용 부드러운 MP4 동영상이 생성되었습니다.</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">이메일 하단의 첨부파일에서 <strong>WarmInsight_{cat}_SmoothVideo.mp4</strong> 파일을 다운로드하여 스마트폰으로 옮긴 후 바로 업로드하세요!</p>
             </div>
             """
 
         body = f"""
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 0 auto; background-color: #ffffff; padding: 20px; color: #0f1419;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f5; padding: 20px; color: #0f1419;">
             
-            <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; margin-right: 12px; text-align: center; line-height: 40px;">W</div>
-                <div>
-                    <div style="font-weight: 800; font-size: 16px; display: flex; align-items: center;">
-                        Warm Insight Alerts <span style="color: #3b82f6; margin-left: 4px;">✔</span>
-                    </div>
-                    <div style="color: #71717a; font-size: 14px;">Just now</div>
+            <div style="background: #ffffff; border-left: 5px solid #eab308; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #ca8a04; font-size: 18px;">🎬 1-Min Reels Script</h3>
+                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">이 대본을 보고 말하거나 AI 보이스에 넣어 릴스를 제작하세요.</p>
+                <div style="background: #fefce8; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; font-style: italic;">
+                    {reels_script.replace(chr(10), '<br>')}
                 </div>
             </div>
 
-            <div style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-                <p style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 0;">{hook_text}</p>
-                Warm Insight tracked critical shifts in the <strong>{cat}</strong> sector. Here's a look at the top market movers and allocations:
-                
-                <div style="margin-top: 15px; margin-bottom: 15px; padding-left: 10px; border-left: 3px solid #10b981;">
-                    {list_html}
+            <div style="background: #ffffff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #2563eb; font-size: 18px;">💬 Smart Community Comment</h3>
+                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">Bloomberg, WSJ 등 유명 인스타 계정 최신 글에 이 댓글을 복사해 붙여넣으세요. 좋아요를 받아 상단에 고정되면 무료 트래픽이 유입됩니다.</p>
+                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; font-size: 15px; font-weight: bold; color: #1e3a8a;">
+                    "{smart_comment}"
                 </div>
-                
-                <p style="font-weight: bold; color: #0f1419; margin-bottom: 8px;">{question_text}</p>
+            </div>
 
-                Read the full deep-dive analysis at <a href="{link}" style="color:#10b981; font-weight:bold; text-decoration:none;">warminsight.com</a> ✅<br>
-                <span style="color: #71717a; font-size: 14px; font-style: italic;">*(Check the link in our bio/profile!)*</span>
-                <br><br>#investing #finance #stockmarket #{cat.lower()}
+            <div style="background: #ffffff; border-left: 5px solid #10b981; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
+                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">영상을 업로드 시 아래 텍스트를 그대로 복사해서 쓰세요.</p>
+                <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
             </div>
 
             {vid_tag}
 
+            <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
+            <h3 style="text-align:center; color: #3f3f46;">📸 첨부된 슬라이드 이미지 (다운로드용)</h3>
+            <div style="text-align:center; margin-bottom: 20px;">
+                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
+                    웹사이트에서 확인하기
+                </a>
+            </div>
+
             <a href="{link}" style="display: block; text-decoration: none;">
                 {img_tags}
             </a>
-            
-            <p style="text-align: center; color: #71717a; font-size: 13px; margin-top: 15px;">
-                *⬇️ 하단의 첨부파일을 다운로드하여 마케팅 자료로 활용하세요.
-            </p>
-
-            <div style="margin-top: 15px; text-align: center;">
-                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    Read Full VIP Analysis
-                </a>
-            </div>
         </div>
         """
         msg.attach(MIMEText(body, 'html'))
 
-        # 인라인 이미지 첨부
         for idx, img_b in enumerate(image_bytes_list):
             image_inline = MIMEImage(img_b)
             image_inline.add_header('Content-ID', f'<slide_{idx}>')
             image_inline.add_header('Content-Disposition', 'inline', filename=f'slide_inline_{idx}.jpg')
             msg.attach(image_inline)
 
-        # 다운로드용 정식 이미지 첨부파일
         for idx, img_b in enumerate(image_bytes_list):
             image_attach = MIMEImage(img_b)
             image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Slide_0{idx+1}.jpg')
             msg.attach(image_attach)
 
-        # 🚨 동영상(GIF) 인라인 및 첨부파일 추가
-        if video_gif_bytes:
-            vid_inline = MIMEImage(video_gif_bytes, _subtype='gif')
-            vid_inline.add_header('Content-ID', '<video_teaser>')
-            vid_inline.add_header('Content-Disposition', 'inline', filename=f'teaser.gif')
-            msg.attach(vid_inline)
-            
-            vid_attach = MIMEImage(video_gif_bytes, _subtype='gif')
-            vid_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_5Sec_Video.gif')
-            msg.attach(vid_attach)
+        if video_mp4_bytes:
+            try:
+                part = MIMEBase('video', 'mp4')
+                part.set_payload(video_mp4_bytes)
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_SmoothVideo.mp4')
+                msg.attach(part)
+            except Exception as e:
+                print(f"   ⚠️ MP4 첨부 오류: {e}")
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 3단 슬라이드 및 5초 영상 이메일 발송 완료!")
+        print("   ✅ 마케팅 스크립트 및 MP4 비디오 포함 이메일 발송 완료!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
 
@@ -1230,84 +1224,63 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎬 [NEW] 5초 티저 영상(Animated GIF) 자동 생성기
+# 🎬 [NEW ENGINE] MoviePy 활용 부드러운 교차 전환(Dissolve) MP4 영상 생성기
 # ═══════════════════════════════════════════════
-def generate_5sec_video_gif(cat, hook_text, data_points):
-    print("   🎥 Generating 5-second Teaser Video (GIF)...")
-    w, h = 800, 800
-    frames = []
-    ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
+def generate_5sec_video_mp4(cat, hook_text, data_points, frames_images):
+    print("   🎥 Generating SMOOTH 5-second Teaser Video (MP4 via MoviePy)...")
     try:
-        f_title = ImageFont.truetype(ft_path, 80)
-        f_sub = ImageFont.truetype(ft_path, 50)
-    except:
-        f_title = ImageFont.load_default()
-        f_sub = ImageFont.load_default()
+        import numpy as np
+        from moviepy.editor import ImageClip, concatenate_videoclips
+    except ImportError:
+        print("   📦 패키지가 없습니다. 자동 설치를 시도합니다...")
+        import os
+        os.system("pip install moviepy numpy imageio[ffmpeg]")
+        try:
+            import numpy as np
+            from moviepy.editor import ImageClip, concatenate_videoclips
+        except Exception as e:
+            print(f"   ❌ 자동 설치 후에도 인코딩 라이브러리 로드 실패: {e}")
+            return None
 
-    def draw_wrapped_text(d, text, font, w_limit, y_start, fill):
-        words = text.split()
-        lines = []
-        curr_line = []
-        for word in words:
-            test_line = " ".join(curr_line + [word])
-            try: tw = d.textlength(test_line, font=font)
-            except: tw = len(test_line) * (font.size // 2)
-            if tw < w_limit: curr_line.append(word)
-            else:
-                if curr_line: lines.append(" ".join(curr_line))
-                curr_line = [word]
-        if curr_line: lines.append(" ".join(curr_line))
-        
-        y = y_start
-        for line in lines:
-            d.text((w//2, y), line, fill=fill, font=font, anchor="mm")
-            y += font.size + 10
-
-    # 1. 시선을 끄는 첫 프레임 (Hook)
-    f1 = Image.new("RGB", (w, h), "#0f172a")
-    d1 = ImageDraw.Draw(f1)
-    d1.text((w//2, h//2 - 100), "🚨 ALERTS:", fill="#10b981", font=f_sub, anchor="mm")
-    draw_wrapped_text(d1, hook_text, f_title, w - 100, h//2, "#ffffff")
-    frames.append(f1)
-
-    # 2. 3초간 보여지는 핵심 데이터 프레임
-    for i in range(3):
-        fx = Image.new("RGB", (w, h), "#0f172a")
-        dx = ImageDraw.Draw(fx)
-        dx.text((w//2, 200), f"MARKET MOVER {i+1}/3", fill="#b8974d", font=f_sub, anchor="mm")
-        if i < len(data_points):
-            try: f_ticker = ImageFont.truetype(ft_path, 120)
-            except: f_ticker = f_title
-            dx.text((w//2, 400), data_points[i]['ticker'], fill="#ffffff", font=f_ticker, anchor="mm")
+    try:
+        clips = []
+        for i, frame in enumerate(frames_images):
+            # PIL 이미지를 Numpy Array 구조로 변경하여 무비파이 객체로 전환
+            frame_np = np.array(frame.convert('RGB'))
+            clip = ImageClip(frame_np).set_duration(1.4)
             
-            val = data_points[i]['val']
-            val_col = "#10b981" if "+" in val else "#ef4444"
-            try: f_val = ImageFont.truetype(ft_path, 100)
-            except: f_val = f_title
-            dx.text((w//2, 550), val, fill=val_col, font=f_val, anchor="mm")
-        frames.append(fx)
-
-    # 3. 마지막 콜투액션 (CTA) 프레임
-    f5 = Image.new("RGB", (w, h), "#0f172a")
-    d5 = ImageDraw.Draw(f5)
-    d5.text((w//2, h//2 - 50), "READ THE FULL ANALYSIS", fill="#3b82f6", font=f_title, anchor="mm")
-    d5.text((w//2, h//2 + 50), "LINK IN EMAIL", fill="#ffffff", font=f_sub, anchor="mm")
-    frames.append(f5)
-
-    buf = io.BytesIO()
-    # 프레임당 1000ms(1초)로 저장하여 총 5초 길이의 루핑 동영상 완성
-    frames[0].save(buf, format='GIF', save_all=True, append_images=frames[1:], duration=1000, loop=0)
-    return buf.getvalue()
-
+            # 두 번째 프레임부터는 직전 화면과 0.4초간 자연스럽게 겹치는 크로스페이드 처리
+            if i > 0:
+                clip = clip.crossfadein(0.4)
+            clips.append(clip)
+            
+        # method="compose" 옵션을 주어 페이드 인/아웃 투명도 레이어가 부드럽게 믹싱되도록 병합
+        video = concatenate_videoclips(clips, padding=-0.4, method="compose")
+        
+        temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
+        temp_path = temp_file.name
+        temp_file.close()
+        
+        # libx264 코덱으로 인코딩하여 인스타, 틱톡 모바일 앱 업로드 호환성 100% 확보
+        video.write_videofile(temp_path, fps=24, codec='libx264', audio=False, logger=None)
+        
+        with open(temp_path, 'rb') as f:
+            mp4_bytes = f.read()
+            
+        os.remove(temp_path)
+        print("   ✅ MoviePy 정식 고화질 MP4 숏폼 비디오 추출 완료!")
+        return mp4_bytes
+    except Exception as e:
+        print(f"   ❌ MoviePy 부드러운 비디오 인코딩 실패: {e}")
+        return None
 
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 (소셜 미디어 슬라이드 3종) - v40.35 수정
+# 🎨 VIP 전용 데이터 인포그래픽 생성 및 비디오 파이프라인 연동
 # ═══════════════════════════════════════════════
 def generate_vip_carousel(raw_content, cat):
     print("   🎨 Generating 3-Slide Carousel for TikTok/Reels...")
     client = _get_gemini_client()
     
-    # 🚨 수정: HOOK(어그로성 제목)과 QUESTION(댓글 유도)을 생성하도록 프롬프트 개편
     sys_inst = """You are a quantitative data analyst and viral social media expert. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
     CRITICAL: TICKER MUST BE SHORT (Max 8 chars, e.g. $AAPL, $VIX, Gold, Oil). Do NOT output long descriptive names.
     Also, write a viral HOOK (headline) and an engaging QUESTION for social media captions to maximize TikTok/Reels algorithm engagement.
@@ -1316,6 +1289,9 @@ def generate_vip_carousel(raw_content, cat):
     <BADGE>e.g. IMPACT: HIGH</BADGE>
     <HOOK>e.g. Where the Smart Money is Moving NOW 🚨</HOOK>
     <QUESTION>e.g. Which sector do you think will grow most in 2026? Drop a comment! 👇</QUESTION>
+    <REELS_SCRIPT>Write the spoken script here...</REELS_SCRIPT>
+    <IG_CAPTION>Write the Instagram caption here with CTA and hashtags...</IG_CAPTION>
+    <SMART_COMMENT>Write the Bloomberg/WSJ comment here...</SMART_COMMENT>
     <ITEM1>SHORT_TICKER | Value%</ITEM1>
     <ITEM2>SHORT_TICKER | Value%</ITEM2>
     <ITEM3>SHORT_TICKER | Value%</ITEM3>
@@ -1326,10 +1302,11 @@ def generate_vip_carousel(raw_content, cat):
     
     main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} PORTFOLIO"
     badge_text = xtag(raw_data, "BADGE") or "AUM: TOP"
-    
-    # 🚨 생성된 후크와 질문 추출
     hook_text = xtag(raw_data, "HOOK") or f"🚨 Top Market Movers in the {cat} sector!"
     question_text = xtag(raw_data, "QUESTION") or f"Drop a comment: What is your top pick for {cat}? 👇"
+    reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed. Please review the market data."
+    ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nCheck the link in our bio for the full analysis! #investing #finance"
+    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting shift in the market dynamics. We just published a deep dive on this exact trend for retail investors."
     
     data_points = []
     for i in range(1, 6):
@@ -1370,40 +1347,31 @@ def generate_vip_carousel(raw_content, cat):
             line = [w]
     if line: lines.append(" ".join(line))
 
-    # --- 📸 [Slide 1] Hook (시선 끌기) ---
+    # --- [Slide 1] Hook ---
     img1 = Image.new("RGB", (1080, 1350), "#09090b")
     d1 = ImageDraw.Draw(img1)
-    
     d1.text((540, 250), "WARM INSIGHT", fill="#10b981", font=font_sub, anchor="mm")
-    
     y_text = 550
     for i, ln in enumerate(lines[:3]):
         color = "#6ee7b7" if i == 0 else "#ffffff"
         d1.text((540, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 120
-        
     d1.text((540, 1150), "SWIPE FOR DATA ➔", fill="#94a3b8", font=font_sub, anchor="mm")
-    
-    buf1 = io.BytesIO()
-    img1.save(buf1, format="JPEG", quality=90)
 
-    # --- 📸 [Slide 2] Data Chart (기존 포트폴리오 차트) ---
+    # --- [Slide 2] Data Chart ---
     img2 = Image.new("RGB", (1080, 1350), "#09090b") 
     d2 = ImageDraw.Draw(img2)
-    
     y_text = 100
     for i, ln in enumerate(lines[:3]): 
         color = "#6ee7b7" if i == 0 else "#ffffff"
         d2.text((540, y_text), ln, fill=color, font=font_title, anchor="mt")
         y_text += 115
-        
     badge_y = y_text + 20
     try:
         bbox = d2.textbbox((0, 0), badge_text, font=font_sub)
         bw = bbox[2] - bbox[0]
     except:
         bw = len(badge_text) * 30
-        
     bx2 = 1000
     bx1 = bx2 - bw - 60
     d2.rounded_rectangle([bx1, badge_y, bx2, badge_y+70], radius=35, fill="#6ee7b7")
@@ -1412,7 +1380,6 @@ def generate_vip_carousel(raw_content, cat):
     cx, cy = 540, badge_y + 460
     r_outer = 350
     r_inner = 160
-    
     colors = ["#10b981", "#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6"]
     start_ang = -90
     for i in range(5):
@@ -1430,31 +1397,26 @@ def generate_vip_carousel(raw_content, cat):
         ang_rad = math.radians(ang_deg)
         tx = cx + text_radius * math.cos(ang_rad)
         ty = cy + text_radius * math.sin(ang_rad)
-        
         d2.text((tx, ty-20), item['ticker'], fill="#6ee7b7", font=font_sub, anchor="mm")
         d2.text((tx, ty+30), item['val'], fill="#ffffff", font=font_data, anchor="mm")
-
-    buf2 = io.BytesIO()
-    img2.save(buf2, format="JPEG", quality=90)
     
-    # --- 📸 [Slide 3] CTA (행동 유도) ---
+    # --- [Slide 3] CTA ---
     img3 = Image.new("RGB", (1080, 1350), "#09090b")
     d3 = ImageDraw.Draw(img3)
-    
     d3.text((540, 450), "WHAT'S YOUR NEXT MOVE?", fill="#ffffff", font=font_title, anchor="mm")
     d3.text((540, 600), "READ THE FULL VIP ANALYSIS", fill="#94a3b8", font=font_sub, anchor="mm")
-    
     d3.rounded_rectangle([290, 800, 790, 920], radius=60, fill="#10b981")
     d3.text((540, 860), "LINK IN BIO", fill="#ffffff", font=font_title, anchor="mm")
 
-    buf3 = io.BytesIO()
+    buf1, buf2, buf3 = io.BytesIO(), io.BytesIO(), io.BytesIO()
+    img1.save(buf1, format="JPEG", quality=90)
+    img2.save(buf2, format="JPEG", quality=90)
     img3.save(buf3, format="JPEG", quality=90)
     
-    # 🚨 새로 추가된 기능: 5초 동영상(GIF) 생성 로직 호출
-    video_gif_bytes = generate_5sec_video_gif(cat, hook_text, data_points)
+    # 🚨 부드러운 디졸브 전환 효과가 먹힌 정식 MP4 영상 인코딩 실행
+    video_mp4_bytes = generate_5sec_video_mp4(cat, hook_text, data_points, [img1, img2, img3, img1])
 
-    # 🚨 이메일 텍스트를 구성하기 위해 생성된 Hook과 Question 문구, 그리고 동영상 바이트를 함께 반환
-    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points, hook_text, question_text, video_gif_bytes
+    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 # ═══════════════════════════════════════════════
 # PUBLISHER
@@ -1509,18 +1471,10 @@ def get_wp_author_id(author_full_string):
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
-    
-    tag_name = "VIP" if tier == "vip" else "Pro"
-    tag_id = get_or_create_wp_tag(tag_name)
-    
+    tag_id = get_or_create_wp_tag("VIP" if tier == "vip" else "Pro")
     author_id = get_wp_author_id(author_name)
 
-    if cat in ["Foundation", "The Daily Catalyst"]:
-        display_title = title
-    elif tier == "vip":
-        display_title = f"[VIP] {title}"
-    else:
-        display_title = f"[Pro] {title}"
+    display_title = title if cat in ["Foundation", "The Daily Catalyst"] else (f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}")
 
     post_data = {
         "title": display_title,
@@ -1530,22 +1484,16 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
     
     if author_id: post_data["author"] = author_id
-    
     if media_id: post_data["featured_media"] = media_id
     if cat_id: post_data["categories"] = [cat_id]
     if tag_id: post_data["tags"] = [tag_id] 
     
-    seo_title = _clean_seo_title(title)
-    
-    is_premium = "no" if cat == "Foundation" else "yes"
-    pms_restrict = "0" if cat == "Foundation" else "1"
-
     post_data["meta"] = {
-        "rank_math_title": (seo_title + " | " + cat + " | Warm Insight")[:60],
+        "rank_math_title": (_clean_seo_title(title) + " | " + cat + " | Warm Insight")[:60],
         "rank_math_description": ((exc or "")[:120] + f" Insightful {cat.lower()} analysis.")[:155],
         "rank_math_focus_keyword": kw or "",
-        "is_premium": is_premium,
-        "pms_content_restrict": pms_restrict,
+        "is_premium": "no" if cat == "Foundation" else "yes",
+        "pms_content_restrict": "0" if cat == "Foundation" else "1",
         "post_tier": tier.upper(),
     }
 
@@ -1560,12 +1508,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-            # 🚨 반환받은 HOOK과 QUESTION 텍스트 및 5초 동영상을 이메일 발송 함수로 전달
+            # 🚨 변동 파라미터 전달 구조 동기화 완료
             if tier == "vip" and raw_for_cards:
-                img_list, data_points, hook_text, question_text, video_gif_bytes = generate_vip_carousel(raw_for_cards, cat)
+                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                 if img_list:
-                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, video_gif_bytes)
-            
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
             return True
         else:
             print(f"   ❌ Publish failed: {r.text[:100]}")
@@ -1578,97 +1525,60 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.36 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.55 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
-    
     theme = random.choice(FOUNDATION_TOPICS)
-    print(f"   💡 Selected Topic: {theme}")
-    
     tier = "premium" 
-    
-    print("   [AI] Calling Foundation Guide Generation...")
     raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
-    
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
         exc = xtag(raw, "EXCERPT")
         slug = make_slug(kw, title, cat)
-        
         author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        
         html = build_foundation_html(raw, author, tf, title)
-        
-        print("   🖌️ Generating Foundation Thumbnail...")
         img_bytes = make_thumbnail(title, cat, tier)
-        
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.36 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.55 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
-    
     theme = random.choice(PHILOSOPHY_TOPICS)
-    print(f"   💡 Selected Theme: {theme}")
-    
     tier = "premium" 
-    
-    print("   [AI] Calling Philosophy Generation...")
     raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
-    
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
         exc = xtag(raw, "ANCHOR")
         slug = make_slug(kw, title, cat)
-        
         author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        
         html = build_philosophy_html(raw, author, tf, title)
-        
-        print("   🖌️ Generating Philosophy Thumbnail...")
         img_bytes = make_thumbnail(title, cat, tier)
-        
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.36 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v40.55 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
-    
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
-    print(f"   📥 Fetched {total_news} total news items from RSS.")
-    
-    if total_news < 2:
-        print("   🛑 No news found. Aborting.")
-        return
-        
+    if total_news < 2: return
     mid = total_news // 2
-    news_map = {
-        "vip": "\n".join(all_news[:mid]),
-        "premium": "\n".join(all_news[mid:])
-    }
+    news_map = {"vip": "\n".join(all_news[:mid]), "premium": "\n".join(all_news[mid:])}
     
     for tier in TIERS:
-        print(f"\n--- Processing {tier.upper()} ---")
         assigned_news = news_map[tier]
-        
         if tier == "vip":
-            print("   [AI] Calling VIP Part 1...")
             raw1 = gem_fb(tier, VIP_P1.replace("{cat}", cat).replace("{news}", assigned_news))
             if not raw1: continue
-            
-            print("   [AI] Calling VIP Part 2...")
             ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
             alloc = f"{CAT_ALLOC[cat]['s']}% Stocks, {CAT_ALLOC[cat]['b']}% Safe"
             raw2 = gem_fb(tier, VIP_P2.replace("{cat}", cat).replace("{ctx}", ctx).replace("{alloc}", alloc))
             raw = raw1 + "\n" + raw2
         else:
-            print("   [AI] Calling PRO Full Gen...")
             raw = gem_fb(tier, PROMPT_PREMIUM.replace("{cat}", cat).replace("{news}", assigned_news))
         
         if raw:
@@ -1676,23 +1586,16 @@ def run_news_pipeline():
             kw = xtag(raw, "SEO_KEYWORD")
             exc = xtag(raw, "EXECUTIVE_SUMMARY") if tier == "vip" else xtag(raw, "EXCERPT")
             slug = make_slug(kw, title, cat)
-            
             author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
             tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-            
             html = build_html(tier, cat, raw, author, tf, title)
-            
-            print("   🖌️ Generating Warmy Robot Thumbnail...")
             img_bytes = make_thumbnail(title, cat, tier)
-            
             publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw if tier == "vip" else None)
             time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        if sys.argv[1] == "philosophy":
-            run_philosophy_pipeline()
-        elif sys.argv[1] == "foundation":
-            run_foundation_pipeline()
+        if sys.argv[1] == "philosophy": run_philosophy_pipeline()
+        elif sys.argv[1] == "foundation": run_foundation_pipeline()
     else:
         run_news_pipeline()
