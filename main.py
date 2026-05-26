@@ -1231,16 +1231,10 @@ def generate_5sec_video_mp4(cat, hook_text, data_points, frames_images):
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
-    except ImportError:
-        print("   📦 패키지가 없습니다. 자동 설치를 시도합니다...")
-        import os
-        os.system("pip install moviepy numpy imageio[ffmpeg]")
-        try:
-            import numpy as np
-            from moviepy.editor import ImageClip, concatenate_videoclips
-        except Exception as e:
-            print(f"   ❌ 자동 설치 후에도 인코딩 라이브러리 로드 실패: {e}")
-            return None
+    except ImportError as e:
+        print(f"   ❌ MoviePy import 실패: {e}")
+        print("   ⚠️ requirements.txt에 moviepy==1.0.3 이 설치되어 있는지 확인하세요.")
+        return None
 
     try:
         clips = []
