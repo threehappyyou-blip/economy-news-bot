@@ -4,5 +4,7 @@ google-genai
 PyJWT
 requests
 Pillow
-moviepy
-numpy
+moviepy==1.0.3
+numpy<2.0
+imageio-ffmpeg
+decorator==4.4.2
