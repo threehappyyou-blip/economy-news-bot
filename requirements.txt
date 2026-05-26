@@ -3,8 +3,11 @@ pytz
 google-genai
 PyJWT
 requests
-Pillow
+Pillow==9.5.0
 moviepy==1.0.3
-numpy<2.0
-imageio-ffmpeg
+numpy==1.26.4
+imageio==2.31.1
+imageio-ffmpeg==0.4.9
 decorator==4.4.2
+proglog==0.1.10
+tqdm==4.66.1
