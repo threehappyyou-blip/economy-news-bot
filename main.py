@@ -1583,10 +1583,10 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-            # 🚨 변동 파라미터 전달 구조 동기화 완료
+           # 🚨 변동 파라미터 전달 구조 동기화 완료
             if tier == "vip" and raw_for_cards:
                 img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                if img_list:
+                if video_mp4_bytes:
                     send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
             return True
         else:
