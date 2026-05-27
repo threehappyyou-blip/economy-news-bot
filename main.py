@@ -1300,22 +1300,23 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         print(f"   ❌ MoviePy 비디오 인코딩 실패: {e}")
         traceback.print_exc()
         return None
-
 # ═══════════════════════════════════════════════
-# 🎨 VIP 전용 데이터 인포그래픽 생성 및 비디오 파이프라인 연동
+# 🎨 [v41] VIP 6-슬라이드 9:16 카루셀 + 영상 생성 파이프라인
 # ═══════════════════════════════════════════════
 def generate_vip_carousel(raw_content, cat):
-    print("   🎨 Generating 3-Slide Carousel for TikTok/Reels...")
+    print("   🎨 Generating 6-Slide Vertical (1080x1920) Carousel for Reels/TikTok/Shorts...")
     client = _get_gemini_client()
-    
+
     sys_inst = """You are a quantitative data analyst and viral social media expert. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
     CRITICAL: TICKER MUST BE SHORT (Max 8 chars, e.g. $AAPL, $VIX, Gold, Oil). Do NOT output long descriptive names.
-    Also, write a viral HOOK (headline) and an engaging QUESTION for social media captions to maximize TikTok/Reels algorithm engagement.
+    Also, write a viral HOOK (headline), an engaging QUESTION, and ONE powerful INSIGHT_LINE for social media to maximize TikTok/Reels algorithm engagement.
+    INSIGHT_LINE must be max 8 words and impactful (e.g. "SMART MONEY MOVES TO TECH NOW").
     Format EXACTLY as:
     <MAIN_TITLE>e.g. GLOBAL TECH MOVERS</MAIN_TITLE>
     <BADGE>e.g. IMPACT: HIGH</BADGE>
     <HOOK>e.g. Where the Smart Money is Moving NOW 🚨</HOOK>
-    <QUESTION>e.g. Which sector do you think will grow most in 2026? Drop a comment! 👇</QUESTION>
+    <QUESTION>e.g. Which sector do you think will grow most? Drop a comment! 👇</QUESTION>
+    <INSIGHT_LINE>e.g. SMART MONEY MOVES TO TECH NOW</INSIGHT_LINE>
     <REELS_SCRIPT>Write the spoken script here...</REELS_SCRIPT>
     <IG_CAPTION>Write the Instagram caption here with CTA and hashtags...</IG_CAPTION>
     <SMART_COMMENT>Write the Bloomberg/WSJ comment here...</SMART_COMMENT>
@@ -1326,15 +1327,16 @@ def generate_vip_carousel(raw_content, cat):
     <ITEM5>SHORT_TICKER | Value%</ITEM5>
     """
     raw_data = gem_fb("vip", raw_content, sys_inst)
-    
+
     main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} PORTFOLIO"
     badge_text = xtag(raw_data, "BADGE") or "AUM: TOP"
     hook_text = xtag(raw_data, "HOOK") or f"🚨 Top Market Movers in the {cat} sector!"
     question_text = xtag(raw_data, "QUESTION") or f"Drop a comment: What is your top pick for {cat}? 👇"
+    insight_line = xtag(raw_data, "INSIGHT_LINE") or "SMART MONEY IS MOVING NOW"
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed. Please review the market data."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nCheck the link in our bio for the full analysis! #investing #finance"
-    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting shift in the market dynamics. We just published a deep dive on this exact trend for retail investors."
-    
+    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting shift in the market dynamics. We just published a deep dive on this trend."
+
     data_points = []
     for i in range(1, 6):
         item = xtag(raw_data, f"ITEM{i}")
@@ -1344,7 +1346,7 @@ def generate_vip_carousel(raw_content, cat):
             if len(raw_ticker) > 10:
                 raw_ticker = raw_ticker[:8] + ".."
             data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
-            
+
     if len(data_points) < 5:
         data_points = [
             {"ticker": "$NVDA", "val": "+6.2%"}, {"ticker": "$AAPL", "val": "+5.3%"},
@@ -1352,98 +1354,126 @@ def generate_vip_carousel(raw_content, cat):
             {"ticker": "$AMZN", "val": "+2.3%"}
         ]
 
+    # ═══ 1080x1920 세로 9:16 캔버스 — 릴스/틱톡/쇼츠 표준 비율 ═══
+    W, H = 1080, 1920
+    BG = "#09090b"
+    ACCENT = "#10b981"
+    ACCENT_LIGHT = "#6ee7b7"
+
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
-    
-    try: font_title = ImageFont.truetype(ft_path, 110)
+
+    try: font_title = ImageFont.truetype(ft_path, 130)
     except: font_title = ImageFont.load_default()
-    try: font_sub = ImageFont.truetype(ft_path, 55)
+    try: font_huge = ImageFont.truetype(ft_path, 220)
+    except: font_huge = ImageFont.load_default()
+    try: font_sub = ImageFont.truetype(ft_path, 65)
     except: font_sub = ImageFont.load_default()
-    try: font_data = ImageFont.truetype(ft_path, 40)
+    try: font_data = ImageFont.truetype(ft_path, 50)
     except: font_data = ImageFont.load_default()
 
-    words = main_title.split()
-    lines, line = [], []
-    for w in words:
-        test_str = " ".join(line + [w])
-        try: tw = ImageDraw.Draw(Image.new("RGB", (1,1))).textlength(test_str, font=font_title)
-        except: tw = len(test_str) * 55
-        if tw < 980: 
-            line.append(w)
-        else:
-            if line: lines.append(" ".join(line))
-            line = [w]
-    if line: lines.append(" ".join(line))
+    # 텍스트 줄바꿈 헬퍼
+    def wrap_lines(text, font, max_width):
+        words = text.split()
+        lines, line = [], []
+        d = ImageDraw.Draw(Image.new("RGB", (1,1)))
+        for w in words:
+            test_str = " ".join(line + [w])
+            try: tw = d.textlength(test_str, font=font)
+            except: tw = len(test_str) * 50
+            if tw < max_width:
+                line.append(w)
+            else:
+                if line: lines.append(" ".join(line))
+                line = [w]
+        if line: lines.append(" ".join(line))
+        return lines
 
-    # --- [Slide 1] Hook ---
-    img1 = Image.new("RGB", (1080, 1350), "#09090b")
+    # ─── [Slide 1] Hook (제목) ───
+    img1 = Image.new("RGB", (W, H), BG)
     d1 = ImageDraw.Draw(img1)
-    d1.text((540, 250), "WARM INSIGHT", fill="#10b981", font=font_sub, anchor="mm")
-    y_text = 550
-    for i, ln in enumerate(lines[:3]):
-        color = "#6ee7b7" if i == 0 else "#ffffff"
-        d1.text((540, y_text), ln, fill=color, font=font_title, anchor="mm")
-        y_text += 120
-    d1.text((540, 1150), "SWIPE FOR DATA ➔", fill="#94a3b8", font=font_sub, anchor="mm")
+    d1.text((W//2, 380), "WARM INSIGHT", fill=ACCENT, font=font_sub, anchor="mm")
 
-    # --- [Slide 2] Data Chart ---
-    img2 = Image.new("RGB", (1080, 1350), "#09090b") 
-    d2 = ImageDraw.Draw(img2)
-    y_text = 100
-    for i, ln in enumerate(lines[:3]): 
-        color = "#6ee7b7" if i == 0 else "#ffffff"
-        d2.text((540, y_text), ln, fill=color, font=font_title, anchor="mt")
-        y_text += 115
-    badge_y = y_text + 20
-    try:
-        bbox = d2.textbbox((0, 0), badge_text, font=font_sub)
-        bw = bbox[2] - bbox[0]
-    except:
-        bw = len(badge_text) * 30
-    bx2 = 1000
-    bx1 = bx2 - bw - 60
-    d2.rounded_rectangle([bx1, badge_y, bx2, badge_y+70], radius=35, fill="#6ee7b7")
-    d2.text(((bx1+bx2)/2, badge_y+15), badge_text, fill="#000000", font=font_sub, anchor="mt")
+    title_lines = wrap_lines(main_title.upper(), font_title, 980)
+    y_text = H//2 - (len(title_lines[:4]) * 75)
+    for i, ln in enumerate(title_lines[:4]):
+        color = ACCENT_LIGHT if i == 0 else "#ffffff"
+        d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
+        y_text += 150
 
-    cx, cy = 540, badge_y + 460
-    r_outer = 350
-    r_inner = 160
-    colors = ["#10b981", "#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6"]
-    start_ang = -90
-    for i in range(5):
-        end_ang = start_ang + 72
-        d2.pieslice([cx-r_outer, cy-r_outer, cx+r_outer, cy+r_outer], start_ang, end_ang, fill=colors[i])
-        start_ang = end_ang
+    d1.text((W//2, H - 380), "WATCH THE DATA ↓", fill="#94a3b8", font=font_sub, anchor="mm")
 
-    d2.ellipse([cx-r_inner, cy-r_inner, cx+r_inner, cy+r_inner], fill="#09090b")
-    d2.text((cx, cy-40), "WARM", fill="#ffffff", font=font_title, anchor="mm")
-    d2.text((cx, cy+40), "INSIGHT", fill="#6ee7b7", font=font_title, anchor="mm")
+    # ─── [Slide 2~4] Data 1, 2, 3 (각 데이터 포인트 거대하게 강조) ───
+    data_imgs = []
+    for idx in range(3):
+        if idx >= len(data_points): break
+        item = data_points[idx]
 
-    text_radius = 420
-    for i, item in enumerate(data_points):
-        ang_deg = -90 + (i * 72) + 36
-        ang_rad = math.radians(ang_deg)
-        tx = cx + text_radius * math.cos(ang_rad)
-        ty = cy + text_radius * math.sin(ang_rad)
-        d2.text((tx, ty-20), item['ticker'], fill="#6ee7b7", font=font_sub, anchor="mm")
-        d2.text((tx, ty+30), item['val'], fill="#ffffff", font=font_data, anchor="mm")
-    
-    # --- [Slide 3] CTA ---
-    img3 = Image.new("RGB", (1080, 1350), "#09090b")
-    d3 = ImageDraw.Draw(img3)
-    d3.text((540, 450), "WHAT'S YOUR NEXT MOVE?", fill="#ffffff", font=font_title, anchor="mm")
-    d3.text((540, 600), "READ THE FULL VIP ANALYSIS", fill="#94a3b8", font=font_sub, anchor="mm")
-    d3.rounded_rectangle([290, 800, 790, 920], radius=60, fill="#10b981")
-    d3.text((540, 860), "LINK IN BIO", fill="#ffffff", font=font_title, anchor="mm")
+        img = Image.new("RGB", (W, H), BG)
+        d = ImageDraw.Draw(img)
 
-    buf1, buf2, buf3 = io.BytesIO(), io.BytesIO(), io.BytesIO()
-    img1.save(buf1, format="JPEG", quality=90)
-    img2.save(buf2, format="JPEG", quality=90)
-    img3.save(buf3, format="JPEG", quality=90)
-    
-    # 🚨 부드러운 디졸브 전환 효과가 먹힌 정식 MP4 영상 인코딩 실행
-    video_mp4_bytes = generate_5sec_video_mp4(cat, hook_text, data_points, [img1, img2, img3, img1])
+        # 상단: 카테고리명 + 진행 표시 텍스트
+        d.text((W//2, 380), cat.upper(), fill=ACCENT, font=font_sub, anchor="mm")
+        d.text((W//2, 500), f"DATA POINT {idx+1}/3", fill="#94a3b8", font=font_data, anchor="mm")
 
-    return [buf1.getvalue(), buf2.getvalue(), buf3.getvalue()], data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
+        # 중앙: 큰 티커명
+        d.text((W//2, 880), item['ticker'], fill="#ffffff", font=font_title, anchor="mm")
+
+        # 중앙 하단: 거대한 값 (음수면 빨강, 양수/중립이면 초록)
+        val_str = item['val']
+        val_color = "#ef4444" if '-' in val_str else ACCENT_LIGHT
+        d.text((W//2, 1200), val_str, fill=val_color, font=font_huge, anchor="mm")
+
+        # 하단: 진행 도트 인디케이터 (1/2/3 진행도 시각화)
+        dot_y = H - 380
+        for di in range(3):
+            dx = W//2 + (di - 1) * 60
+            color = ACCENT if di == idx else "#3f3f46"
+            d.ellipse([dx-20, dot_y-20, dx+20, dot_y+20], fill=color)
+
+        data_imgs.append(img)
+
+    # ─── [Slide 5] Insight (한 줄 인사이트 강조) ───
+    img5 = Image.new("RGB", (W, H), BG)
+    d5 = ImageDraw.Draw(img5)
+    d5.text((W//2, 380), "THE INSIGHT", fill=ACCENT, font=font_sub, anchor="mm")
+
+    insight_lines = wrap_lines(insight_line.upper(), font_title, 980)
+    y_text = H//2 - (len(insight_lines[:4]) * 75)
+    for ln in insight_lines[:4]:
+        d5.text((W//2, y_text), ln, fill="#ffffff", font=font_title, anchor="mm")
+        y_text += 150
+
+    d5.text((W//2, H - 380), "READ FULL ANALYSIS →", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
+
+    # ─── [Slide 6] CTA (Link in Bio) ───
+    img6 = Image.new("RGB", (W, H), BG)
+    d6 = ImageDraw.Draw(img6)
+    d6.text((W//2, 540), "WHAT'S YOUR", fill="#ffffff", font=font_title, anchor="mm")
+    d6.text((W//2, 710), "NEXT MOVE?", fill="#ffffff", font=font_title, anchor="mm")
+    d6.text((W//2, 940), "READ THE FULL VIP ANALYSIS", fill="#94a3b8", font=font_sub, anchor="mm")
+
+    # 큰 LINK IN BIO 버튼
+    d6.rounded_rectangle([240, 1180, 840, 1360], radius=90, fill=ACCENT)
+    d6.text((W//2, 1270), "LINK IN BIO", fill="#ffffff", font=font_title, anchor="mm")
+
+    d6.text((W//2, H - 380), "@WARMINSIGHT", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
+
+    # ═══ JPG 바이너리 변환 (이메일 첨부용 6장) ═══
+    buf1 = io.BytesIO(); img1.save(buf1, format="JPEG", quality=90)
+    data_bufs = []
+    for img in data_imgs:
+        buf = io.BytesIO(); img.save(buf, format="JPEG", quality=90)
+        data_bufs.append(buf)
+    buf5 = io.BytesIO(); img5.save(buf5, format="JPEG", quality=90)
+    buf6 = io.BytesIO(); img6.save(buf6, format="JPEG", quality=90)
+
+    image_bytes_list = [buf1.getvalue()] + [b.getvalue() for b in data_bufs] + [buf5.getvalue(), buf6.getvalue()]
+
+    # ═══ 영상 생성: 6장 슬라이드 + 마지막 CTA 1장 반복으로 종료 페이드 강화 ═══
+    all_frames = [img1] + data_imgs + [img5, img6, img6]
+    video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, all_frames)
+
+    return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 # ═══════════════════════════════════════════════
 # PUBLISHER
