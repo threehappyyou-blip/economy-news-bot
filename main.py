@@ -118,42 +118,36 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ 소셜 미디어 이메일 전송 시스템 (파라미터 11개 버그 완벽 수정)
+# ✉️ [v42] 슬림 이메일 — 이미지 첨부 제거, 영상 + 스크립트만
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
 
-    print(f"   📧 {EMAIL_RECEIVER}로 인포그래픽 이메일(MP4 영상 포함)을 전송합니다...")
+    print(f"   📧 {EMAIL_RECEIVER}로 슬림 마케팅 패키지를 전송합니다...")
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"🚨 {cat.upper()} REELS VIDEO READY: {hook_text[:40]}..."
-
-        list_html = ""
-        for item in data_points:
-            list_html += f"<div style='margin-bottom: 6px;'><strong>{item['ticker']}</strong>: {item['val']}</div>"
-
-        img_tags = ""
-        for idx in range(len(image_bytes_list)):
-            img_tags += f'<img src="cid:slide_{idx}" alt="Slide {idx+1}" style="width: 100%; border-radius: 16px; border: 1px solid #e4e4e7; margin-bottom: 12px;">\n'
+        msg['Subject'] = f"🚨 {cat.upper()} REELS READY: {hook_text[:40]}..."
 
         vid_tag = ""
         if video_mp4_bytes:
             vid_tag = f"""
             <div style="margin-bottom: 25px; text-align:center; padding: 25px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
-                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 Real MP4 Video Attached!</p>
+                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 20-Sec Reels Video Attached!</p>
                 <div style="font-size: 45px; margin: 15px 0;">✨ 📹 ✨</div>
-                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">인스타 릴스 / 틱톡 업로드 전용 부드러운 MP4 동영상이 생성되었습니다.</p>
-                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">이메일 하단의 첨부파일에서 <strong>WarmInsight_{cat}_SmoothVideo.mp4</strong> 파일을 다운로드하여 스마트폰으로 옮긴 후 바로 업로드하세요!</p>
+                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">인스타 릴스 / 틱톡 / 유튜브 쇼츠 100% 호환 영상입니다.</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">하단 첨부파일 <strong>WarmInsight_{cat}_Video.mp4</strong> 를 다운로드 후 바로 업로드하세요.</p>
             </div>
             """
 
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f5; padding: 20px; color: #0f1419;">
             
+            {vid_tag}
+
             <div style="background: #ffffff; border-left: 5px solid #eab308; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; color: #ca8a04; font-size: 18px;">🎬 1-Min Reels Script</h3>
                 <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">이 대본을 보고 말하거나 AI 보이스에 넣어 릴스를 제작하세요.</p>
@@ -164,7 +158,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
 
             <div style="background: #ffffff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; color: #2563eb; font-size: 18px;">💬 Smart Community Comment</h3>
-                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">Bloomberg, WSJ 등 유명 인스타 계정 최신 글에 이 댓글을 복사해 붙여넣으세요. 좋아요를 받아 상단에 고정되면 무료 트래픽이 유입됩니다.</p>
+                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">Bloomberg, WSJ 등 유명 인스타 계정 최신 글에 이 댓글을 복사해 붙여넣으세요.</p>
                 <div style="background: #eff6ff; padding: 15px; border-radius: 8px; font-size: 15px; font-weight: bold; color: #1e3a8a;">
                     "{smart_comment}"
                 </div>
@@ -172,44 +166,28 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
 
             <div style="background: #ffffff; border-left: 5px solid #10b981; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
-                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">영상을 업로드 시 아래 텍스트를 그대로 복사해서 쓰세요.</p>
+                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">영상 업로드 시 아래 텍스트를 그대로 복사해서 쓰세요.</p>
                 <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
             </div>
 
-            {vid_tag}
-
             <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
-            <h3 style="text-align:center; color: #3f3f46;">📸 첨부된 슬라이드 이미지 (다운로드용)</h3>
+
             <div style="text-align:center; margin-bottom: 20px;">
                 <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    웹사이트에서 확인하기
+                    웹사이트에서 확인하기 →
                 </a>
             </div>
-
-            <a href="{link}" style="display: block; text-decoration: none;">
-                {img_tags}
-            </a>
         </div>
         """
         msg.attach(MIMEText(body, 'html'))
 
-        for idx, img_b in enumerate(image_bytes_list):
-            image_inline = MIMEImage(img_b)
-            image_inline.add_header('Content-ID', f'<slide_{idx}>')
-            image_inline.add_header('Content-Disposition', 'inline', filename=f'slide_inline_{idx}.jpg')
-            msg.attach(image_inline)
-
-        for idx, img_b in enumerate(image_bytes_list):
-            image_attach = MIMEImage(img_b)
-            image_attach.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Slide_0{idx+1}.jpg')
-            msg.attach(image_attach)
-
+        # 🚨 이미지 첨부 완전 제거 — 영상만 첨부
         if video_mp4_bytes:
             try:
                 part = MIMEBase('video', 'mp4')
                 part.set_payload(video_mp4_bytes)
                 encoders.encode_base64(part)
-                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_SmoothVideo.mp4')
+                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Video.mp4')
                 msg.attach(part)
             except Exception as e:
                 print(f"   ⚠️ MP4 첨부 오류: {e}")
@@ -217,10 +195,9 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 마케팅 스크립트 및 MP4 비디오 포함 이메일 발송 완료!")
+        print("   ✅ 슬림 마케팅 이메일 발송 완료 (영상 + 스크립트만)!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
-
 # ═══════════════════════════════════════════════
 # 🛡️ SYSTEM UTILS & API ENGINE
 # ═══════════════════════════════════════════════
@@ -1301,41 +1278,60 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         traceback.print_exc()
         return None
 # ═══════════════════════════════════════════════
-# 🎨 [v41] VIP 6-슬라이드 9:16 카루셀 + 영상 생성 파이프라인
+# 🎨 [v42] 흥미 유발 강화 6-슬라이드 카루셀
 # ═══════════════════════════════════════════════
 def generate_vip_carousel(raw_content, cat):
-    print("   🎨 Generating 6-Slide Vertical (1080x1920) Carousel for Reels/TikTok/Shorts...")
+    print("   🎨 Generating ENGAGING 6-Slide Vertical Carousel...")
     client = _get_gemini_client()
 
-    sys_inst = """You are a quantitative data analyst and viral social media expert. Extract exactly 5 key assets/tickers mentioned in the text along with a key percentage or metric for each.
-    CRITICAL: TICKER MUST BE SHORT (Max 8 chars, e.g. $AAPL, $VIX, Gold, Oil). Do NOT output long descriptive names.
-    Also, write a viral HOOK (headline), an engaging QUESTION, and ONE powerful INSIGHT_LINE for social media to maximize TikTok/Reels algorithm engagement.
-    INSIGHT_LINE must be max 8 words and impactful (e.g. "SMART MONEY MOVES TO TECH NOW").
-    Format EXACTLY as:
-    <MAIN_TITLE>e.g. GLOBAL TECH MOVERS</MAIN_TITLE>
+    # ═══ 흥미 유발 강화 프롬프트 ═══
+    sys_inst = """You are a TOP-TIER viral content creator for finance Instagram/TikTok (think @morning.brew, @theinsidertt).
+    Your job: Extract data + write COPY THAT STOPS THE SCROLL.
+
+    OUTPUT RULES (CRITICAL):
+    - HOOK: Pattern interrupt opener. Use shocking number, contrarian take, or curiosity gap. Max 7 words.
+      Examples: "Wall Street Just Did THIS 🚨" / "Tesla's $500B Secret" / "Don't Buy Stocks Until You See This"
+    - SHOCK_STAT: One jaw-dropping statistic that proves the hook. Max 6 words. Include numbers.
+      Examples: "65% OF FUNDS MISSED THIS" / "$2.3 TRILLION MOVED OVERNIGHT"
+    - INSIGHT_LINE: The "aha moment" payoff. Max 8 words. Confident, declarative.
+      Examples: "AI IS THE NEW OIL ECONOMY" / "RECESSION IS ALREADY PRICED IN"
+    - CTA_HOOK: Urgency/FOMO trigger for the last slide. Max 6 words.
+      Examples: "DON'T MISS THE NEXT MOVE" / "POSITION BEFORE WALL STREET DOES"
+
+    TICKER FORMAT:
+    - Max 8 chars per ticker ($AAPL, $VIX, Gold)
+    - Values: include direction (+/-) and % or value
+    - Examples: "+6.2%", "-3.4%", "$4,820"
+
+    Format EXACTLY:
+    <MAIN_TITLE>Main viral headline, max 5 words, ALL CAPS, energetic</MAIN_TITLE>
     <BADGE>e.g. IMPACT: HIGH</BADGE>
-    <HOOK>e.g. Where the Smart Money is Moving NOW 🚨</HOOK>
-    <QUESTION>e.g. Which sector do you think will grow most? Drop a comment! 👇</QUESTION>
-    <INSIGHT_LINE>e.g. SMART MONEY MOVES TO TECH NOW</INSIGHT_LINE>
-    <REELS_SCRIPT>Write the spoken script here...</REELS_SCRIPT>
-    <IG_CAPTION>Write the Instagram caption here with CTA and hashtags...</IG_CAPTION>
-    <SMART_COMMENT>Write the Bloomberg/WSJ comment here...</SMART_COMMENT>
-    <ITEM1>SHORT_TICKER | Value%</ITEM1>
-    <ITEM2>SHORT_TICKER | Value%</ITEM2>
-    <ITEM3>SHORT_TICKER | Value%</ITEM3>
-    <ITEM4>SHORT_TICKER | Value%</ITEM4>
-    <ITEM5>SHORT_TICKER | Value%</ITEM5>
+    <HOOK>Scroll-stopping opener (max 7 words)</HOOK>
+    <SHOCK_STAT>Jaw-dropping stat (max 6 words, with numbers)</SHOCK_STAT>
+    <QUESTION>Engagement question for comments</QUESTION>
+    <INSIGHT_LINE>The aha moment (max 8 words)</INSIGHT_LINE>
+    <CTA_HOOK>FOMO trigger (max 6 words)</CTA_HOOK>
+    <REELS_SCRIPT>60-second spoken script with hook-stat-story-CTA structure</REELS_SCRIPT>
+    <IG_CAPTION>Caption with hook, value, CTA, 15+ hashtags</IG_CAPTION>
+    <SMART_COMMENT>Bloomberg/WSJ-style comment for free traffic</SMART_COMMENT>
+    <ITEM1>TICKER | Value with % or $</ITEM1>
+    <ITEM2>TICKER | Value with % or $</ITEM2>
+    <ITEM3>TICKER | Value with % or $</ITEM3>
+    <ITEM4>TICKER | Value with % or $</ITEM4>
+    <ITEM5>TICKER | Value with % or $</ITEM5>
     """
     raw_data = gem_fb("vip", raw_content, sys_inst)
 
-    main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} PORTFOLIO"
-    badge_text = xtag(raw_data, "BADGE") or "AUM: TOP"
-    hook_text = xtag(raw_data, "HOOK") or f"🚨 Top Market Movers in the {cat} sector!"
-    question_text = xtag(raw_data, "QUESTION") or f"Drop a comment: What is your top pick for {cat}? 👇"
+    main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} ALERT"
+    badge_text = xtag(raw_data, "BADGE") or "IMPACT: HIGH"
+    hook_text = xtag(raw_data, "HOOK") or "Wall Street Just Did THIS 🚨"
+    shock_stat = xtag(raw_data, "SHOCK_STAT") or "$2.3T MOVED OVERNIGHT"
+    question_text = xtag(raw_data, "QUESTION") or "Where's YOUR money going? 👇"
     insight_line = xtag(raw_data, "INSIGHT_LINE") or "SMART MONEY IS MOVING NOW"
-    reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed. Please review the market data."
-    ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nCheck the link in our bio for the full analysis! #investing #finance"
-    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting shift in the market dynamics. We just published a deep dive on this trend."
+    cta_hook = xtag(raw_data, "CTA_HOOK") or "DON'T MISS THE NEXT MOVE"
+    reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
+    ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
+    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
 
     data_points = []
     for i in range(1, 6):
@@ -1354,24 +1350,29 @@ def generate_vip_carousel(raw_content, cat):
             {"ticker": "$AMZN", "val": "+2.3%"}
         ]
 
-    # ═══ 1080x1920 세로 9:16 캔버스 — 릴스/틱톡/쇼츠 표준 비율 ═══
+    # ═══ 1080x1920 세로 9:16 캔버스 ═══
     W, H = 1080, 1920
     BG = "#09090b"
     ACCENT = "#10b981"
     ACCENT_LIGHT = "#6ee7b7"
+    RED = "#ef4444"
+    YELLOW = "#fbbf24"
 
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
 
     try: font_title = ImageFont.truetype(ft_path, 130)
     except: font_title = ImageFont.load_default()
-    try: font_huge = ImageFont.truetype(ft_path, 220)
+    try: font_huge = ImageFont.truetype(ft_path, 240)
     except: font_huge = ImageFont.load_default()
+    try: font_mega = ImageFont.truetype(ft_path, 160)
+    except: font_mega = ImageFont.load_default()
     try: font_sub = ImageFont.truetype(ft_path, 65)
     except: font_sub = ImageFont.load_default()
-    try: font_data = ImageFont.truetype(ft_path, 50)
+    try: font_data = ImageFont.truetype(ft_path, 55)
     except: font_data = ImageFont.load_default()
+    try: font_alert = ImageFont.truetype(ft_path, 80)
+    except: font_alert = ImageFont.load_default()
 
-    # 텍스트 줄바꿈 헬퍼
     def wrap_lines(text, font, max_width):
         words = text.split()
         lines, line = [], []
@@ -1388,21 +1389,41 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    # ─── [Slide 1] Hook (제목) ───
+    # ─── [Slide 1] HOOK 슬라이드 — 시선을 즉시 멈추는 충격 오프너 ───
     img1 = Image.new("RGB", (W, H), BG)
     d1 = ImageDraw.Draw(img1)
-    d1.text((W//2, 380), "WARM INSIGHT", fill=ACCENT, font=font_sub, anchor="mm")
 
-    title_lines = wrap_lines(main_title.upper(), font_title, 980)
-    y_text = H//2 - (len(title_lines[:4]) * 75)
-    for i, ln in enumerate(title_lines[:4]):
-        color = ACCENT_LIGHT if i == 0 else "#ffffff"
+    # 상단 빨간 ALERT 배너 (강한 시선 끌기)
+    d1.rounded_rectangle([60, 280, W-60, 400], radius=60, fill=RED)
+    d1.text((W//2, 340), f"🚨 {cat.upper()} ALERT", fill="#ffffff", font=font_alert, anchor="mm")
+
+    # 메인 HOOK — 화면 중앙 크게
+    hook_lines = wrap_lines(hook_text.upper(), font_title, 980)
+    y_text = H//2 - (len(hook_lines[:4]) * 75)
+    for i, ln in enumerate(hook_lines[:4]):
+        color = YELLOW if i == 0 else "#ffffff"
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 150
 
-    d1.text((W//2, H - 380), "WATCH THE DATA ↓", fill="#94a3b8", font=font_sub, anchor="mm")
+    # 하단 스와이프 유도 화살표 (애니메이션 느낌)
+    d1.text((W//2, H - 380), "↓ SWIPE TO SEE WHY ↓", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
 
-    # ─── [Slide 2~4] Data 1, 2, 3 (각 데이터 포인트 거대하게 강조) ───
+    # ─── [Slide 2] SHOCK STAT — 단일 거대 충격 숫자 ───
+    img2 = Image.new("RGB", (W, H), BG)
+    d2 = ImageDraw.Draw(img2)
+
+    d2.text((W//2, 380), "THE NUMBER", fill=ACCENT, font=font_sub, anchor="mm")
+
+    # 거대한 충격 통계
+    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 980)
+    y_text = H//2 - (len(shock_lines[:3]) * 90)
+    for ln in shock_lines[:3]:
+        d2.text((W//2, y_text), ln, fill=YELLOW, font=font_mega, anchor="mm")
+        y_text += 180
+
+    d2.text((W//2, H - 380), "WAIT FOR IT...", fill="#94a3b8", font=font_sub, anchor="mm")
+
+    # ─── [Slide 3, 4, 5] DATA Reveal — 데이터 포인트 거대 강조 ───
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
@@ -1411,19 +1432,19 @@ def generate_vip_carousel(raw_content, cat):
         img = Image.new("RGB", (W, H), BG)
         d = ImageDraw.Draw(img)
 
-        # 상단: 카테고리명 + 진행 표시 텍스트
+        # 상단 카테고리 + 진행 표시
         d.text((W//2, 380), cat.upper(), fill=ACCENT, font=font_sub, anchor="mm")
-        d.text((W//2, 500), f"DATA POINT {idx+1}/3", fill="#94a3b8", font=font_data, anchor="mm")
+        d.text((W//2, 500), f"WATCH THIS → {idx+1}/3", fill="#94a3b8", font=font_data, anchor="mm")
 
-        # 중앙: 큰 티커명
+        # 중앙 거대 티커
         d.text((W//2, 880), item['ticker'], fill="#ffffff", font=font_title, anchor="mm")
 
-        # 중앙 하단: 거대한 값 (음수면 빨강, 양수/중립이면 초록)
+        # 거대 값 — 양수 초록, 음수 빨강
         val_str = item['val']
-        val_color = "#ef4444" if '-' in val_str else ACCENT_LIGHT
+        val_color = RED if '-' in val_str else ACCENT_LIGHT
         d.text((W//2, 1200), val_str, fill=val_color, font=font_huge, anchor="mm")
 
-        # 하단: 진행 도트 인디케이터 (1/2/3 진행도 시각화)
+        # 진행 도트
         dot_y = H - 380
         for di in range(3):
             dx = W//2 + (di - 1) * 60
@@ -1432,45 +1453,42 @@ def generate_vip_carousel(raw_content, cat):
 
         data_imgs.append(img)
 
-    # ─── [Slide 5] Insight (한 줄 인사이트 강조) ───
-    img5 = Image.new("RGB", (W, H), BG)
-    d5 = ImageDraw.Draw(img5)
-    d5.text((W//2, 380), "THE INSIGHT", fill=ACCENT, font=font_sub, anchor="mm")
-
-    insight_lines = wrap_lines(insight_line.upper(), font_title, 980)
-    y_text = H//2 - (len(insight_lines[:4]) * 75)
-    for ln in insight_lines[:4]:
-        d5.text((W//2, y_text), ln, fill="#ffffff", font=font_title, anchor="mm")
-        y_text += 150
-
-    d5.text((W//2, H - 380), "READ FULL ANALYSIS →", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
-
-    # ─── [Slide 6] CTA (Link in Bio) ───
+    # ─── [Slide 6] INSIGHT + CTA 통합 — FOMO 트리거 ───
     img6 = Image.new("RGB", (W, H), BG)
     d6 = ImageDraw.Draw(img6)
-    d6.text((W//2, 540), "WHAT'S YOUR", fill="#ffffff", font=font_title, anchor="mm")
-    d6.text((W//2, 710), "NEXT MOVE?", fill="#ffffff", font=font_title, anchor="mm")
-    d6.text((W//2, 940), "READ THE FULL VIP ANALYSIS", fill="#94a3b8", font=font_sub, anchor="mm")
 
-    # 큰 LINK IN BIO 버튼
-    d6.rounded_rectangle([240, 1180, 840, 1360], radius=90, fill=ACCENT)
-    d6.text((W//2, 1270), "LINK IN BIO", fill="#ffffff", font=font_title, anchor="mm")
+    d6.text((W//2, 380), "THE TAKEAWAY", fill=ACCENT, font=font_sub, anchor="mm")
 
-    d6.text((W//2, H - 380), "@WARMINSIGHT", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
+    # 인사이트 한 줄 강조
+    insight_lines = wrap_lines(insight_line.upper(), font_title, 980)
+    y_text = 700 - (len(insight_lines[:3]) * 75)
+    for ln in insight_lines[:3]:
+        d6.text((W//2, y_text), ln, fill="#ffffff", font=font_title, anchor="mm")
+        y_text += 150
 
-    # ═══ JPG 바이너리 변환 (이메일 첨부용 6장) ═══
+    # CTA HOOK — FOMO 자극
+    d6.text((W//2, 1200), cta_hook.upper(), fill=YELLOW, font=font_alert, anchor="mm")
+
+    # 거대 LINK IN BIO 버튼
+    d6.rounded_rectangle([180, 1380, 900, 1580], radius=100, fill=ACCENT)
+    d6.text((W//2, 1480), "LINK IN BIO →", fill="#ffffff", font=font_title, anchor="mm")
+
+    d6.text((W//2, H - 200), "@WARMINSIGHT", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
+
+    # ═══ JPG 변환 (이메일 첨부에는 안 쓰지만 영상엔 사용) ═══
     buf1 = io.BytesIO(); img1.save(buf1, format="JPEG", quality=90)
     data_bufs = []
     for img in data_imgs:
         buf = io.BytesIO(); img.save(buf, format="JPEG", quality=90)
         data_bufs.append(buf)
-    buf5 = io.BytesIO(); img5.save(buf5, format="JPEG", quality=90)
     buf6 = io.BytesIO(); img6.save(buf6, format="JPEG", quality=90)
 
-    image_bytes_list = [buf1.getvalue()] + [b.getvalue() for b in data_bufs] + [buf5.getvalue(), buf6.getvalue()]
+    image_bytes_list = [buf1.getvalue()] + [b.getvalue() for b in data_bufs] + [io.BytesIO(b.tobytes() if hasattr(b, 'tobytes') else b'').getvalue() for b in []] + [buf6.getvalue()]
+    # 위는 사용 안 함 (이메일 첨부 제거를 위해)
+    image_bytes_list = []  # 빈 리스트로 - 이메일에서 이미지 첨부 안 함
 
-    # ═══ 영상 생성: 6장 슬라이드 + 마지막 CTA 1장 반복으로 종료 페이드 강화 ═══
-    all_frames = [img1] + data_imgs + [img5, img6, img6]
+    # 영상용 프레임: HOOK → SHOCK_STAT → DATA1 → DATA2 → DATA3 → CTA
+    all_frames = [img1, img2] + data_imgs + [img6]
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, all_frames)
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
