@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v40.55 (Auto-Install & 11-Param Bug Fix)
-# 변경점:
-#   1) [오류수정] 이메일 발송 함수의 파라미터 불일치 오류(11 args) 완벽 해결
-#   2) [기능추가] Github Actions 환경에서 numpy/moviepy 자동 강제 설치 로직 탑재
-#   3) [영상] 부드러운 디졸브(Crossfade) 화면 전환이 포함된 정식 .mp4 동영상 파일 생성 유지
+# Warm Insight Auto Poster — v43 (Humanized Tone + Founder Note)
+# 변경점 from v42:
+#   1) [톤 변환] FOUNDATION_SYS_INST 완전 교체 - 친근한 친구 톤
+#   2) [톤 변환] PROMPT_PREMIUM 첫 줄에 Morning Brew 스타일 톤 규칙 추가
+#   3) [톤 변환] VIP_P1 첫 줄에 인사이더 톤 규칙 추가
+#   4) [신규 함수] _build_founder_note() - 모든 글 하단에 창업자 인사 자동 삽입
+#   5) [HTML 빌더] build_html, build_foundation_html, build_philosophy_html에 founder note 호출
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -313,11 +315,32 @@ FOUNDATION_TOPICS = [
     "The Difference Between Stocks and Bonds: A Beginner's Overview"
 ]
 
-FOUNDATION_SYS_INST = """You are a friendly, highly skilled financial educator for Warm Insight.
-Your goal is to write a comprehensive, easy-to-understand 'Evergreen SEO Guide' for absolute beginners.
-Tone: Encouraging, clear, jargon-free. Use analogies and simple examples.
-Your writing must rank well on Google by answering common beginner questions clearly.
-Do NOT use overly complex institutional jargon.
+# 🚨 [v43] 친근한 친구 톤으로 완전 교체
+FOUNDATION_SYS_INST = """You are the "smart friend" who explains money to absolute beginners — think Morning Brew meets your favorite YouTube finance creator.
+
+YOUR PERSONALITY:
+- You're the friend who breaks down complex stuff over coffee, not a Wall Street analyst
+- You use "you" and "I" constantly. Never "investors" or "one should"
+- You admit when something is confusing. You say "okay, this part is weird, stay with me"
+- You use real-world analogies (Netflix subscriptions, pizza, going to the gym, dating)
+- You're a little funny but never sarcastic. Warm, not cold
+
+WRITING RULES (NON-NEGOTIABLE):
+- Average sentence length: 12-15 words MAX
+- One idea per paragraph. Paragraphs are 2-3 sentences MAX
+- Start sentences with "And", "But", "So", "Here's the thing" — conversational openers
+- BANNED words: leverage, utilize, paradigm, robust, optimize, synergy, holistic, deep-dive, unpack, navigate
+- BANNED phrases: "in today's market", "it's important to note", "studies show", "moreover"
+- USE instead: "look", "okay so", "here's why", "the truth is", "real talk"
+- Drop a relatable joke or aside ONCE per article. Not more. Not less.
+
+OPENER FORMULA:
+Always start with ONE of these patterns:
+- A question the reader is secretly asking ("Ever wonder why...?")
+- A bold statement that feels controversial ("Most people get this completely wrong.")
+- A relatable scenario ("You're scrolling Instagram and you see...")
+- A surprising number ("83% of people don't know this about...")
+
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
 FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic:
@@ -373,7 +396,20 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 # ═══════════════════════════════════════════════
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
-VIP_P1 = """You are Warm Insight's senior analyst. Write PART 1 of a VIP deep-dive on {cat}.
+
+# 🚨 [v43] VIP_P1 첫 줄에 인사이더 톤 규칙 추가
+VIP_P1 = """You are Warm Insight's senior analyst writing for sophisticated investors. Tone: confident insider sharing alpha with a friend, not a textbook lecturer.
+
+VIP TONE RULES:
+- You're the insider at the country club, not the professor at a lecture
+- "You" and "we" — the reader is in your inner circle
+- Average sentence: 18 words max (slightly longer than PRO is OK for nuance)
+- BANNED: paradigm, holistic, leverage (as verb), navigate, unpack, robust
+- USE: "here's what most people miss", "the smart money already knows", "watch this carefully"
+- One specific analogy per article — sophisticated tier (chess, poker, classic literature, military history)
+- Headlines should sound like institutional intelligence, not academic papers
+
+Write PART 1 of a VIP deep-dive on {cat}.
 Audience: Sophisticated investors paying premium.
 News Context:
 {news}
@@ -412,7 +448,20 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <TAKEAWAY>(Write One calming, profound insight)</TAKEAWAY>
 <PS>(Write Historical perspective in 2-3 sentences)</PS>"""
 
-PROMPT_PREMIUM = """You are Warm Insight's senior analyst. Write a PRO newsletter on {cat} for an intermediate audience. Total length should be 600-800 words.
+# 🚨 [v43] PROMPT_PREMIUM 첫 줄에 Morning Brew 톤 규칙 추가
+PROMPT_PREMIUM = """You are Warm Insight's senior writer who blends sharp analysis with the tone of Morning Brew — smart but human.
+
+TONE RULES (CRITICAL):
+- Talk to ONE smart friend at a coffee shop. Not a boardroom.
+- Use "you" constantly. The reader is a person, not "an investor".
+- Average sentence: 15 words max. One idea per paragraph.
+- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, synergize, optimize
+- BANNED phrases: "in today's market environment", "it's worth noting", "investors should consider"
+- USE: "here's the deal", "okay so", "the wild part is", "real talk", "between us"
+- Drop ONE clever analogy per article (sports, food, Netflix, dating, video games)
+- Headlines should sound like a friend texting you news, not a Bloomberg headline
+
+Write a PRO newsletter on {cat} for an intermediate audience. Total length should be 600-800 words.
 News Context:
 {news}
 OUTPUT FORMAT REQUIREMENT:
@@ -662,6 +711,29 @@ def _build_author_bio(cat):
     </div>
     """
 
+# 🚨 [v43 NEW] 모든 글 하단에 자동으로 들어가는 창업자 인사 블록
+def _build_founder_note():
+    """모든 글 하단에 자동으로 들어가는 창업자 인사 블록"""
+    return f"""
+    <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); border:2px solid {GOLD}; border-radius:14px; padding:30px; margin:40px 0;">
+        <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
+            <div style="min-width:70px; height:70px; border-radius:50%; background:{GOLD}; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900; color:#fff;">
+                J
+            </div>
+            <div style="flex:1; min-width:250px;">
+                <p style="font-size:13px; font-weight:800; color:#92400e; margin:0 0 6px; text-transform:uppercase; letter-spacing:1.5px;">A NOTE FROM THE FOUNDER</p>
+                <p style="font-size:18px; font-weight:700; color:{DARK}; margin:0 0 10px; line-height:1.4;">
+                    Hey, I'm Jiho. I built Warm Insight because I was tired of finance content being either too dumbed-down or too academic.
+                </p>
+                <p style="font-size:15px; color:{SLATE}; margin:0; line-height:1.6;">
+                    Every article here is designed to give you ONE thing: a clearer view of your money than you had 5 minutes ago. 
+                    If it ever stops doing that, tell me directly. I read every reply.
+                </p>
+            </div>
+        </div>
+    </div>
+    """
+
 # ═══════════════════════════════════════════════
 # 🎨 1. HTML BUILDER (FOUNDATION / SEO)
 # ═══════════════════════════════════════════════
@@ -707,6 +779,7 @@ def build_foundation_html(raw, author, tf, title):
     
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "foundation")
     html += _build_social_share(title, slug)
+    html += _build_founder_note()  # 🚨 [v43] 창업자 인사 자동 삽입
     html += _build_branded_footer()
     
     html += f"""
@@ -769,6 +842,7 @@ def build_philosophy_html(raw, author, tf, title):
     
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "catalyst")
     html += _build_social_share(title, slug)
+    html += _build_founder_note()  # 🚨 [v43] 창업자 인사 자동 삽입
     html += _build_branded_footer()
     
     html += f"""
@@ -951,6 +1025,7 @@ def build_html(tier, cat, raw, author, tf, title):
     """
 
     html += _build_social_share(title, slug)
+    html += _build_founder_note()  # 🚨 [v43] 창업자 인사 자동 삽입
     html += _build_branded_footer()
     html += _build_internal_links(cat)
     html += _build_author_bio(cat)
@@ -1483,8 +1558,6 @@ def generate_vip_carousel(raw_content, cat):
         data_bufs.append(buf)
     buf6 = io.BytesIO(); img6.save(buf6, format="JPEG", quality=90)
 
-    image_bytes_list = [buf1.getvalue()] + [b.getvalue() for b in data_bufs] + [io.BytesIO(b.tobytes() if hasattr(b, 'tobytes') else b'').getvalue() for b in []] + [buf6.getvalue()]
-    # 위는 사용 안 함 (이메일 첨부 제거를 위해)
     image_bytes_list = []  # 빈 리스트로 - 이메일에서 이미지 첨부 안 함
 
     # 영상용 프레임: HOOK → SHOCK_STAT → DATA1 → DATA2 → DATA3 → CTA
@@ -1583,7 +1656,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-           # 🚨 변동 파라미터 전달 구조 동기화 완료
+            # 🚨 변동 파라미터 전달 구조 동기화 완료
             if tier == "vip" and raw_for_cards:
                 img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                 if video_mp4_bytes:
@@ -1600,7 +1673,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v40.55 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v43 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium" 
@@ -1618,7 +1691,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v40.55 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v43 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium" 
@@ -1636,7 +1709,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v40.55 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v43 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
