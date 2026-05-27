@@ -1224,18 +1224,16 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎬 [v41.1] 모바일 호환성 강화 - yuv420p + faststart
+# 🎬 [v42] 틱톡 100% 호환 — SAR 1:1 + 고정 1080x1920
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
     """
-    인스타 릴스 / 틱톡 / 유튜브 쇼츠 / 안드로이드 갤러리 100% 호환 20초 9:16 영상.
-    핵심 호환성 설정:
-    - yuv420p 픽셀 포맷 (모바일 하드웨어 디코더 필수)
-    - +faststart 플래그 (moov atom 선두 배치로 스트리밍 최적화)
-    - H.264 Main Profile Level 4.0 (모든 모바일 SoC 지원)
-    - 6Mbps 비트레이트 (틱톡/인스타 권장 범위)
+    릴스 / 틱톡 / 쇼츠 / 갤러리 100% 호환 20초 영상.
+    틱톡 거부 방지 핵심:
+    - scale=1080:1920 으로 모든 프레임 절대 고정 (줌 효과의 변동 해상도 무력화)
+    - setsar=1:1 메타데이터 명시 (틱톡의 SAR 곱셈 검증 우회)
     """
-    print("   🎥 Generating SMOOTH 20-second Vertical (9:16) Mobile-Compatible Reels Video...")
+    print("   🎥 Generating SMOOTH 20-second TikTok-Compatible Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1254,7 +1252,6 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
             frame_np = np.array(frame.convert('RGB'))
             clip = ImageClip(frame_np).set_duration(SLIDE_DURATION)
 
-            # Ken Burns 효과: 짝수 줌인, 홀수 줌아웃 교차로 단조로움 제거
             if i % 2 == 0:
                 clip = clip.resize(lambda t: ZOOM_START + (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
             else:
@@ -1273,7 +1270,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         temp_path = temp_file.name
         temp_file.close()
 
-        # ═══ 모바일 100% 호환 인코딩 설정 ═══
+        # ═══ 틱톡 검증 통과 최종 인코딩 ═══
         video.write_videofile(
             temp_path,
             fps=30,
@@ -1282,11 +1279,13 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
             audio=False,
             preset='medium',
             ffmpeg_params=[
-                '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+                # 절대 1080x1920 고정 (줌으로 인한 변동 해상도 차단) + SAR 1:1 명시
+                '-vf', 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1:1',
                 '-pix_fmt', 'yuv420p',
                 '-movflags', '+faststart',
                 '-profile:v', 'main',
-                '-level', '4.0'
+                '-level', '4.0',
+                '-x264-params', 'colorprim=bt709:transfer=bt709:colormatrix=bt709'  # 모바일 표준 색공간
             ],
             logger=None
         )
@@ -1295,7 +1294,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
             mp4_bytes = f.read()
         os.remove(temp_path)
 
-        print(f"   ✅ 모바일 호환 20초 세로 영상 추출 완료! ({len(mp4_bytes)/1024/1024:.1f}MB)")
+        print(f"   ✅ 틱톡 호환 20초 세로 영상 추출 완료! ({len(mp4_bytes)/1024/1024:.1f}MB)")
         return mp4_bytes
     except Exception as e:
         print(f"   ❌ MoviePy 비디오 인코딩 실패: {e}")
