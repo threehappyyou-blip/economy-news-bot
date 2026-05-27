@@ -1224,10 +1224,17 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎬 [NEW ENGINE] MoviePy 활용 부드러운 교차 전환(Dissolve) MP4 영상 생성기
+# 🎬 [v41 ENGINE] 20초 세로(9:16) 영상 - Ken Burns + 부드러운 디졸브
 # ═══════════════════════════════════════════════
-def generate_5sec_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating SMOOTH 5-second Teaser Video (MP4 via MoviePy)...")
+def generate_video_mp4(cat, hook_text, data_points, frames_images):
+    """
+    인스타 릴스 / 틱톡 / 유튜브 쇼츠 알고리즘 최적화 20초 9:16 세로 영상.
+    - 7프레임 × 3.3초 - 6 × 0.5초 overlap = 약 20초 최종 길이
+    - Ken Burns 줌인/줌아웃 교차 효과로 정적 슬라이드에 카메라 움직임 부여
+    - 0.5초 크로스페이드 디졸브로 매끄러운 화면 전환
+    - 30fps 8Mbps libx264 인코딩 (모바일 SNS 권장 사양)
+    """
+    print("   🎥 Generating SMOOTH 20-second Vertical (9:16) Reels Video via MoviePy...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1237,35 +1244,61 @@ def generate_5sec_video_mp4(cat, hook_text, data_points, frames_images):
         return None
 
     try:
+        # 시간/줌 파라미터 설정
+        SLIDE_DURATION = 3.3
+        CROSSFADE_DURATION = 0.5
+        ZOOM_START = 1.0
+        ZOOM_END = 1.08  # 8% 줌인 — 자연스러운 카메라 워크 강조
+
         clips = []
         for i, frame in enumerate(frames_images):
-            # PIL 이미지를 Numpy Array 구조로 변경하여 무비파이 객체로 전환
             frame_np = np.array(frame.convert('RGB'))
-            clip = ImageClip(frame_np).set_duration(1.4)
-            
-            # 두 번째 프레임부터는 직전 화면과 0.4초간 자연스럽게 겹치는 크로스페이드 처리
+            clip = ImageClip(frame_np).set_duration(SLIDE_DURATION)
+
+            # Ken Burns 효과: 홀짝 슬라이드별로 줌인/줌아웃 교차 적용하여 변화감 부여
+            if i % 2 == 0:
+                # 짝수 슬라이드: 점진적 줌인
+                clip = clip.resize(lambda t: ZOOM_START + (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+            else:
+                # 홀수 슬라이드: 점진적 줌아웃
+                clip = clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+
+            # 줌 시 가장자리 잘림 방지를 위해 항상 화면 중앙 고정
+            clip = clip.set_position(('center', 'center'))
+
+            # 두 번째 슬라이드부터 0.5초 크로스페이드 디졸브 적용
             if i > 0:
-                clip = clip.crossfadein(0.4)
+                clip = clip.crossfadein(CROSSFADE_DURATION)
+
             clips.append(clip)
-            
-        # method="compose" 옵션을 주어 페이드 인/아웃 투명도 레이어가 부드럽게 믹싱되도록 병합
-        video = concatenate_videoclips(clips, padding=-0.4, method="compose")
-        
+
+        # method="compose"로 페이드 레이어가 매끄럽게 합성되도록 병합
+        video = concatenate_videoclips(clips, padding=-CROSSFADE_DURATION, method="compose")
+
         temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
         temp_path = temp_file.name
         temp_file.close()
-        
-        # libx264 코덱으로 인코딩하여 인스타, 틱톡 모바일 앱 업로드 호환성 100% 확보
-        video.write_videofile(temp_path, fps=24, codec='libx264', audio=False, logger=None)
-        
+
+        # libx264 코덱, 30fps, 8Mbps로 인코딩 — 인스타/틱톡/쇼츠 업로드 호환성 100%
+        video.write_videofile(
+            temp_path,
+            fps=30,
+            codec='libx264',
+            bitrate='8000k',
+            audio=False,
+            preset='medium',
+            logger=None
+        )
+
         with open(temp_path, 'rb') as f:
             mp4_bytes = f.read()
-            
         os.remove(temp_path)
-        print("   ✅ MoviePy 정식 고화질 MP4 숏폼 비디오 추출 완료!")
+
+        print(f"   ✅ MoviePy 20초 부드러운 세로 영상 추출 완료! ({len(mp4_bytes)/1024/1024:.1f}MB)")
         return mp4_bytes
     except Exception as e:
-        print(f"   ❌ MoviePy 부드러운 비디오 인코딩 실패: {e}")
+        print(f"   ❌ MoviePy 비디오 인코딩 실패: {e}")
+        traceback.print_exc()
         return None
 
 # ═══════════════════════════════════════════════
