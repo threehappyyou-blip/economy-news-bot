@@ -1282,10 +1282,11 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
             audio=False,
             preset='medium',
             ffmpeg_params=[
-                '-pix_fmt', 'yuv420p',          # 모바일 하드웨어 디코더 표준 포맷
-                '-movflags', '+faststart',       # moov atom을 파일 앞으로 → 스트리밍/즉시 재생 가능
-                '-profile:v', 'main',            # High 대신 Main Profile (구형 모바일 호환)
-                '-level', '4.0'                  # H.264 표준 레벨 4.0
+                '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+                '-pix_fmt', 'yuv420p',
+                '-movflags', '+faststart',
+                '-profile:v', 'main',
+                '-level', '4.0'
             ],
             logger=None
         )
