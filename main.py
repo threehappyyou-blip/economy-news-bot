@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v43 (Humanized Tone + Founder Note)
-# 변경점 from v42:
-#   1) [톤 변환] FOUNDATION_SYS_INST 완전 교체 - 친근한 친구 톤
-#   2) [톤 변환] PROMPT_PREMIUM 첫 줄에 Morning Brew 스타일 톤 규칙 추가
-#   3) [톤 변환] VIP_P1 첫 줄에 인사이더 톤 규칙 추가
-#   4) [신규 함수] _build_founder_note() - 모든 글 하단에 창업자 인사 자동 삽입
-#   5) [HTML 빌더] build_html, build_foundation_html, build_philosophy_html에 founder note 호출
+# Warm Insight Auto Poster — v43.2 (VIP Tone Deep Polish)
+# 변경점 from v43.1:
+#   [Pro 살짝 강화] BANNED 단어 5개 추가, 단락 규칙 명시, 약한 전환구 제거
+#   [VIP 본격 강화]
+#     1) BANNED 단어 20개로 확장 (regulatory bodies, geopolitics 등)
+#     2) BANNED 표현 6개 → 12개 확장 ("also plays a role" 등 약한 전환구)
+#     3) 단락 규칙 명시: 한 단락 최대 3문장, 단락 사이 시각적 호흡
+#     4) 비유 규칙 강화: 30단어 이상 구체적으로 전개, 비유 안에서 한 번 더 확장
+#     5) MACRO 섹션 별도 톤 규칙: 12단어 문장, 짧은 단락
+#     6) Bad/Good 예시 추가 (헤드라인 + 단락 둘 다)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -315,7 +318,7 @@ FOUNDATION_TOPICS = [
     "The Difference Between Stocks and Bonds: A Beginner's Overview"
 ]
 
-# 🚨 [v43] 친근한 친구 톤으로 완전 교체
+# [v43] 친근한 친구 톤
 FOUNDATION_SYS_INST = """You are the "smart friend" who explains money to absolute beginners — think Morning Brew meets your favorite YouTube finance creator.
 
 YOUR PERSONALITY:
@@ -397,21 +400,54 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
-# 🚨 [v43] VIP_P1 첫 줄에 인사이더 톤 규칙 추가
-VIP_P1 = """You are a sharp insider sharing market intel with a friend who happens to be wealthy. Think Bloomberg's best analyst texting their best friend — not writing a thesis.
+# 🚨 [v43.2 UPGRADED] VIP_P1 본격 강화 — 학술 표현 완전 제거 + 비유 깊이 강화 + MACRO 톤 별도 규칙
+VIP_P1 = """You are a sharp insider sharing market intel with a friend who happens to be wealthy. Think Bloomberg's best analyst texting their best friend at 11pm — not writing a thesis.
 
-VIP TONE RULES (CRITICAL):
+═══ VIP TONE RULES (CRITICAL) ═══
+
+VOICE:
 - You're at a private dinner sharing real talk, not lecturing from a podium
 - Use "you" and "we" constantly. The reader is your trusted friend, not an audience
-- Average sentence: 16 words MAX. Short hits harder than long.
 - Start with curiosity hooks: "Here's what most analysts missed this week...", "Between us, the real story is...", "Watch this carefully — it changes everything..."
-- BANNED words: paradigm, holistic, robust, navigate, unpack, leverage, optimize, crosscurrents, recalibrate, underscore, reshape, intricate
-- BANNED phrases: "it's worth noting", "in today's environment", "investors should consider", "complex landscape"
-- USE: "here's the deal", "the wild part is", "real talk", "between us", "smart money already knows", "watch what happens next"
-- TWO specific analogies per article required — sophisticated tier (poker, chess, classic literature, military history, sports strategy, vintage wine, jazz improvisation)
-- Headlines should sound like a hedge fund manager texting alpha to a friend, NOT like a Reuters headline
-- Bad headline: "AI's New Front Lines: Geopolitics and User Sovereignty"
-- Good headline: "Why Smart Money Is Quietly Exiting Big Tech This Week"
+
+SENTENCE & PARAGRAPH RULES:
+- Average sentence: 16 words MAX. Short hits harder than long.
+- One paragraph = ONE idea = MAX 3 sentences. Then break.
+- Never write dense walls of text. Visual breathing room matters.
+- MACRO section follows same rules. NO exceptions for "depth" — depth comes from precision, not length.
+
+BANNED WORDS (NEVER USE):
+paradigm, holistic, robust, navigate, unpack, leverage (as verb), optimize, crosscurrents, recalibrate, underscore, reshape, intricate, regulatory bodies, market participants, stakeholders, ecosystem, framework, dynamics (overused), landscape (overused), geopolitics (use "global politics" or specific country names)
+
+BANNED PHRASES (NEVER USE — these are AI tells):
+- "it's worth noting", "in today's environment", "investors should consider"
+- "complex landscape", "ever-evolving"
+- "also plays a role here", "additionally", "furthermore", "moreover"
+- "plays a critical role", "remains to be seen", "time will tell"
+
+USE INSTEAD (these sound human):
+- "here's the deal", "the wild part is", "real talk", "between us"
+- "smart money already knows", "watch what happens next"
+- "look", "okay so", "the kicker is", "and here's where it gets interesting"
+
+ANALOGY RULES (MOST IMPORTANT):
+- EXACTLY TWO sophisticated analogies per article — required
+- Each analogy must be FULLY developed (30+ words minimum). No throwaway one-liners.
+- After introducing the analogy, extend it ONE more time later in the piece
+- Sophisticated tier ONLY: poker hands, chess endgames, military strategy (Napoleon, Sun Tzu), classic literature (Gatsby, Moby Dick), vintage wine vintages, jazz improvisation, Formula 1 racing strategy
+- BAD analogy (too short): "It's like a poker game."
+- GOOD analogy (developed): "Think of this Fed cycle like a no-limit poker hand on the river. The Fed just shoved all-in with rate guidance. Smart money is reading the bluff — and quietly folding into cash. The amateurs? They're calling with pocket pairs."
+
+HEADLINE RULES:
+- Sound like a hedge fund manager texting alpha to a friend, NOT like a Reuters headline
+- BAD: "Tech's New Front Lines: AI, Geopolitics, and User Sovereignty"
+- GOOD: "Why Smart Money Is Quietly Exiting Big Tech This Week"
+- BAD: "Election Volatility & Regulatory Games: What's Next for Your Portfolio"
+- GOOD: "The Three Stocks I'd Buy Before Election Day"
+- BAD: "Inflation's Grip & AI's Wild Card"
+- GOOD: "Why the Inflation Story Just Quietly Changed"
+
+═══ END TONE RULES ═══
 
 Write PART 1 of a VIP deep-dive on {cat}.
 Audience: Sophisticated investors paying premium.
@@ -419,50 +455,60 @@ News Context:
 {news}
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below. Do not miss any tags!
-<TITLE>(Write Institutional title here, max 90 chars. No tickers)</TITLE>
+<TITLE>(Write Institutional title here, max 90 chars. No tickers. Sound like alpha being texted to a friend, not a Reuters headline.)</TITLE>
 <SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
-(Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight)
+(Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
 </DATA_TABLE>
 <HEATMAP>
 (Invent 3-4 sector risk levels (0-100%) based on news. Format exactly: Sector Name | Number)
 </HEATMAP>
-<EXECUTIVE_SUMMARY>(Write 3 powerful sentences summarizing the systemic shift)</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>(Write 3-4 sentences using a vivid, memorable analogy for non-experts)</PLAIN_ENGLISH>
-<HEADLINE>(Write Analytical headline for market drivers here)</HEADLINE>
-<MACRO>(Write 2 full paragraphs (150+ words) on Global forces)</MACRO>
-<HERD>(Write 1 full paragraph (80+ words) on Cognitive bias and retail panic)</HERD>
-<CONTRARIAN>(Write 1 full paragraph (80+ words) on Smart money moves)</CONTRARIAN>
-<QUICK_FLOW>(Write Chain of events with arrows ➡️ 5-6 steps)</QUICK_FLOW>"""
+<EXECUTIVE_SUMMARY>(Write 3 powerful sentences summarizing the systemic shift. Each sentence MAX 16 words. Start with "Here's what most analysts missed..." or "Between us..." or "The wild part is...")</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(Write 3-4 sentences containing your FIRST analogy. Must be 30+ words of developed analogy. Use poker, chess, military history, or classic literature. Make it vivid.)</PLAIN_ENGLISH>
+<HEADLINE>(Write Analytical headline for market drivers here. Sound like inside intel, NOT academic.)</HEADLINE>
+<MACRO>(Write 2 paragraphs, each MAX 3 sentences, each sentence MAX 14 words. Use clear breaks. NO "also plays a role" or "additionally". Start sentences with "Look,", "Here's why,", "The thing is,", "What changed:". Extend your earlier analogy ONE more time here.)</MACRO>
+<HERD>(Write 1 paragraph, MAX 3 sentences. Show retail panic with vivid imagery. Use words like "stampede", "rushing", "blindly buying", "FOMO".)</HERD>
+<CONTRARIAN>(Write 1 paragraph, MAX 3 sentences. Introduce your SECOND analogy here. Smart money moves. Be specific: "Citadel is doing X", "Bridgewater is positioning Y".)</CONTRARIAN>
+<QUICK_FLOW>(Write Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
 
-VIP_P2 = """You are Warm Insight's senior analyst. Write PART 2 of the VIP strategy for {cat}.
+VIP_P2 = """You are Warm Insight's senior analyst writing for sophisticated investors. Tone: insider sharing alpha with a friend.
+
+TONE RULES (apply to all sections below):
+- Sentences MAX 16 words
+- Each paragraph MAX 3 sentences  
+- USE "you", "we", "smart money", "between us", "here's the deal"
+- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role", "investors should consider"
+- Be specific with sector/ETF names
+
+Write PART 2 of the VIP strategy for {cat}.
 Context from Part 1:
 {ctx}
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-<BULL_CASE>(Write Bullish scenario. Full paragraph 80+ words)</BULL_CASE>
-<BEAR_CASE>(Write Bearish scenario. Full paragraph 80+ words)</BEAR_CASE>
-<VIP_T1>(Write a full paragraph explaining the current market sentiment balance: Fear vs Greed)</VIP_T1>
-<VIP_T2>(Write a full paragraph on how to deploy capital now, mentioning specific ETF sectors)</VIP_T2>
-<VIP_T3>(Write a full paragraph comparing US vs International exposure)</VIP_T3>
-<VIP_T4>(Write a full paragraph on DCA and risk management)</VIP_T4>
-<VIP_DO>(Write 2 specific actions with ETF sectors and triggers)</VIP_DO>
-<VIP_DONT>(Write 1 critical mistake to avoid)</VIP_DONT>
-<TAKEAWAY>(Write One calming, profound insight)</TAKEAWAY>
-<PS>(Write Historical perspective in 2-3 sentences)</PS>"""
+<BULL_CASE>(Bullish scenario. MAX 4 sentences. Specific. End with one bold claim.)</BULL_CASE>
+<BEAR_CASE>(Bearish scenario. MAX 4 sentences. Specific. Name what breaks first.)</BEAR_CASE>
+<VIP_T1>(Fear vs Greed paragraph. MAX 3 sentences. Reference a specific historical parallel — 2008, dot-com, 1970s stagflation.)</VIP_T1>
+<VIP_T2>(How to deploy capital now. MAX 3 sentences. Name 2-3 specific ETF sectors like XLE, SMH, KRE.)</VIP_T2>
+<VIP_T3>(US vs International. MAX 3 sentences. Pick a winner. Defend the call.)</VIP_T3>
+<VIP_T4>(DCA and risk management. MAX 3 sentences. Use friend-talking-to-friend tone.)</VIP_T4>
+<VIP_DO>(2 specific actions. Format: "1) [Action with ETF ticker]. 2) [Action with trigger]." Be concrete.)</VIP_DO>
+<VIP_DONT>(1 critical mistake. Be blunt. Start with "Don't" or "Stop".)</VIP_DONT>
+<TAKEAWAY>(One calming, profound insight. Under 20 words. Quotable.)</TAKEAWAY>
+<PS>(Historical perspective. 2 sentences. Show wisdom, not lecture.)</PS>"""
 
-# 🚨 [v43] PROMPT_PREMIUM 첫 줄에 Morning Brew 톤 규칙 추가
+# 🚨 [v43.2 LIGHT POLISH] PROMPT_PREMIUM 살짝 강화 — BANNED 단어 추가 + 단락 규칙 명시
 PROMPT_PREMIUM = """You are Warm Insight's senior writer who blends sharp analysis with the tone of Morning Brew — smart but human.
 
 TONE RULES (CRITICAL):
 - Talk to ONE smart friend at a coffee shop. Not a boardroom.
 - Use "you" constantly. The reader is a person, not "an investor".
 - Average sentence: 15 words max. One idea per paragraph.
-- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, synergize, optimize
-- BANNED phrases: "in today's market environment", "it's worth noting", "investors should consider"
-- USE: "here's the deal", "okay so", "the wild part is", "real talk", "between us"
-- Drop ONE clever analogy per article (sports, food, Netflix, dating, video games)
+- Each paragraph MAX 3 sentences. Break for visual breathing room.
+- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, synergize, optimize, regulatory bodies, ecosystem, framework, stakeholders
+- BANNED phrases: "in today's market environment", "it's worth noting", "investors should consider", "also plays a role", "moreover", "furthermore"
+- USE: "here's the deal", "okay so", "the wild part is", "real talk", "between us", "look", "the kicker is"
+- Drop ONE clever analogy per article (sports, food, Netflix, dating, video games). Analogy must be 20+ words, not a throwaway one-liner.
 - Headlines should sound like a friend texting you news, not a Bloomberg headline
 
 Write a PRO newsletter on {cat} for an intermediate audience. Total length should be 600-800 words.
@@ -470,27 +516,27 @@ News Context:
 {news}
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-<TITLE>(Write Compelling headline here, max 80 chars. No tickers)</TITLE>
+<TITLE>(Write Compelling headline here, max 80 chars. No tickers. Sound like a friend texting news.)</TITLE>
 <EXCERPT>(Write 2 sentence SEO summary here)</EXCERPT>
 <SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
 (Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight)
 </DATA_TABLE>
-<EXECUTIVE_SUMMARY>(Write 3 sentences capturing the core thesis)</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>(Write 3-4 sentences using a vivid, relatable analogy)</PLAIN_ENGLISH>
+<EXECUTIVE_SUMMARY>(Write 3 sentences capturing the core thesis. Each MAX 15 words. Start conversationally.)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(Write 3-4 sentences with your ONE analogy. Make it relatable: food, sports, Netflix, dating. 20+ words developed.)</PLAIN_ENGLISH>
 <HEADLINE>(Write Analytical headline for drivers here)</HEADLINE>
-<DEPTH>(Write 3-4 sentences on deeper structural pattern, followed by 2-3 sentences on Herd Trap)</DEPTH>
+<DEPTH>(Write 3-4 sentences on deeper structural pattern. Then break to new paragraph for 2-3 sentences on Herd Trap. Each paragraph MAX 3 sentences.)</DEPTH>
 <QUICK_FLOW>(Write Chain of events with arrows ➡️)</QUICK_FLOW>
 <BULL_CASE>(Write 3-4 sentences optimistic outlook)</BULL_CASE>
 <BEAR_CASE>(Write 3-4 sentences pessimistic outlook)</BEAR_CASE>
 <QUICK_HITS>
 (Write 3 bullet points of other relevant news. 1 sentence per line)
 </QUICK_HITS>
-<PRO_INSIGHT>(Write 1-2 paragraphs cross-sector connection and second-order thinking. Name sectors)</PRO_INSIGHT>
-<PRO_DO>(Write 1 specific action with reasoning)</PRO_DO>
-<PRO_DONT>(Write 1 specific mistake to avoid)</PRO_DONT>
-<TAKEAWAY>(Write The bottom line insight here)</TAKEAWAY>
+<PRO_INSIGHT>(Write 1-2 paragraphs cross-sector connection and second-order thinking. Name sectors. Each paragraph MAX 3 sentences.)</PRO_INSIGHT>
+<PRO_DO>(Write 1 specific action with reasoning. Use "you should" tone.)</PRO_DO>
+<PRO_DONT>(Write 1 specific mistake to avoid. Be blunt.)</PRO_DONT>
+<TAKEAWAY>(Write The bottom line insight here. Under 20 words. Quotable.)</TAKEAWAY>
 <PS>(Write One-line veteran advice here)</PS>"""
 
 # ═══════════════════════════════════════════════
@@ -715,7 +761,7 @@ def _build_author_bio(cat):
     </div>
     """
 
-# 🚨 [v43 NEW] 모든 글 하단에 자동으로 들어가는 창업자 인사 블록
+# [v43] 모든 글 하단에 자동으로 들어가는 창업자 인사 블록
 def _build_founder_note():
     """모든 글 하단에 자동으로 들어가는 창업자 인사 블록"""
     return f"""
@@ -783,7 +829,7 @@ def build_foundation_html(raw, author, tf, title):
     
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "foundation")
     html += _build_social_share(title, slug)
-    html += _build_founder_note()  # 🚨 [v43] 창업자 인사 자동 삽입
+    html += _build_founder_note()
     html += _build_branded_footer()
     
     html += f"""
@@ -846,7 +892,7 @@ def build_philosophy_html(raw, author, tf, title):
     
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "catalyst")
     html += _build_social_share(title, slug)
-    html += _build_founder_note()  # 🚨 [v43] 창업자 인사 자동 삽입
+    html += _build_founder_note()
     html += _build_branded_footer()
     
     html += f"""
@@ -1029,7 +1075,7 @@ def build_html(tier, cat, raw, author, tf, title):
     """
 
     html += _build_social_share(title, slug)
-    html += _build_founder_note()  # 🚨 [v43] 창업자 인사 자동 삽입
+    html += _build_founder_note()
     html += _build_branded_footer()
     html += _build_internal_links(cat)
     html += _build_author_bio(cat)
@@ -1677,7 +1723,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v43 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v43.2 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium" 
@@ -1695,7 +1741,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v43 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v43.2 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium" 
@@ -1713,7 +1759,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v43 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v43.2 News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
