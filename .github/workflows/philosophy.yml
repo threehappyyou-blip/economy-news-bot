@@ -2,8 +2,11 @@ name: Warm Insight Philosophy Poster
 
 on:
   schedule:
-    # 매일 UTC 12:00, 16:00, 22:00 실행 (뉴욕 EST: 오전 7시, 11시, 오후 5시 / EDT: 오전 8시, 12시, 오후 6시)
-    - cron: '0 12,16,22 * * *'
+    # v45 분산 스케줄 (EDT 기준)
+    # 07:00 EDT (UTC 11:00) - 아침판 마인드셋
+    # 20:00 EDT (UTC 00:00 익일) - 저녁판 성찰
+    - cron: '0 11 * * *'
+    - cron: '0 0 * * *'
   workflow_dispatch: # 수동으로 버튼을 눌러서 즉시 실행할 수 있게 함
 
 jobs:
