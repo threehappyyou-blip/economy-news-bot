@@ -1,14 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v44.1 (VIP Quant Framework Patch)
+# Warm Insight Auto Poster — v45 (Unified Newsletter)
 # 변경점 from v44:
-#   [VIP 개편]
-#     1) VIP_P2 프롬프트 개조: 단순 분석(Bull/Bear) -> IF/THEN 시나리오, 헤지 전략, 워치리스트 강제
-#     2) 저자 프로필 변경: 가상의 애널리스트 -> 감정이 배제된 "Warm Insight Quant Engine" (VIP 전용)
-#     3) 데이터 소스 고급화: 월스트리트저널(WSJ) 등 고급 매크로 피드 추가로 AI 분석 퀄리티 향상
-#     4) HTML 렌더링: 새로운 VIP 태그(SCENARIO, HEDGE_STRATEGY 등)에 맞춘 고급 UI 개편
-#   [유지 사항] 틱톡/릴스 100% 호환 영상(MP4) 생성 및 슬림 마케팅 이메일, Milk Road 톤 모두 유지
+#   [Phase 1A — main.py 통합]
+#     1) VIP/Pro 두 티어 → "Unified" 단일 티어로 통합
+#     2) 헤드라인 prefix [VIP], [Pro] 모두 제거
+#     3) 가짜 카테고리별 작가 이름 → "Warm Insight Editorial Team" 통일
+#     4) "Edited by Jiho, Founder" 자동 푸터 추가
+#     5) 발행 회수: 카테고리당 2개 → 1개 (하루 1개 발행)
+#     6) 통합 글 품질 향상: VIP의 데이터 시각화 + Pro의 밀크로드 톤
+#     7) 4단계 Titan's Playbook 제거 (너무 무거움)
+#     8) "Smart Money Move" 섹션 신설 (이전 Pro Insight + 일부 VIP 깊이)
+#
+#   [Phase 1A 유지 사항]
+#     - 이메일 자동화 (SNS 캡션 + 16초 영상) 유지
+#     - Foundation Pipeline 유지 (별도 동작)
+#     - Daily Catalyst Pipeline 유지 (별도 동작)
+#     - 톤은 v44 밀크로드 스타일 유지하되 데이터 깊이 강화
+#
+#   [Phase 1B 예정 (다음 작업)]
+#     - YouTube 메타데이터 강화 ("Why I picked this today" + Sources + Chapters)
+#     - 광고 슬롯 placeholder
+#     - 발행 시간 18:00 ET (GitHub Actions 스케줄로 처리)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -46,9 +60,9 @@ MODEL_PRI = {
 FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
-TIERS       = ["premium", "vip"]
-TIER_LABELS = {"premium": "PRO", "vip": "VIP"} 
-TIER_SLEEP  = {"premium": 45, "vip": 60}
+TIERS       = ["unified"]  # v45: VIP/Pro 통합 → 단일 티어
+TIER_LABELS = {"unified": "INSIGHT"} 
+TIER_SLEEP  = {"unified": 60}
 
 F = "font-size:18px;line-height:1.8;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"
 GOLD   = "#b8974d"
@@ -75,20 +89,19 @@ CAT_RELATED = {
 }
 
 VIP_AUTHORS = {
-    "Economy":  "Oliver Grant & The Warm Insight Panel",
-    "Politics": "Elena Vasquez & The Warm Insight Panel",
-    "Tech":     "Marcus Chen & The Warm Insight Panel",
-    "Health":   "Sarah Mitchell & The Warm Insight Panel",
-    "Energy":   "Alexander Vance & The Warm Insight Panel",
-    "The Daily Catalyst": "Arthur Sterling", 
-    "Foundation": "Clara Bennett"            
+    "Economy":  "Warm Insight Editorial Team",
+    "Politics": "Warm Insight Editorial Team",
+    "Tech":     "Warm Insight Editorial Team",
+    "Health":   "Warm Insight Editorial Team",
+    "Energy":   "Warm Insight Editorial Team",
+    "The Daily Catalyst": "Warm Insight Editorial Team", 
+    "Foundation": "Warm Insight Editorial Team"            
 }
 
-# 🚨 [v44.1 업데이트] RSS 피드 고급화 (WSJ 등 고급 매크로 피드 추가)
 RSS_FEEDS = {
     "Economy": [
-        "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
         "https://feeds.reuters.com/reuters/businessNews",
+        "https://finance.yahoo.com/news/rssindex",
         "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"
     ],
     "Politics": [
@@ -97,9 +110,9 @@ RSS_FEEDS = {
         "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"
     ],
     "Tech": [
-        "https://feeds.a.dj.com/rss/RSSWSJD.xml",
         "https://feeds.reuters.com/reuters/technologyNews",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"
+        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",
+        "https://techcrunch.com/feed/"
     ],
     "Health": [
         "https://feeds.reuters.com/reuters/healthNews",
@@ -185,6 +198,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         """
         msg.attach(MIMEText(body, 'html'))
 
+        # 🚨 이미지 첨부 완전 제거 — 영상만 첨부
         if video_mp4_bytes:
             try:
                 part = MIMEBase('video', 'mp4')
@@ -201,7 +215,6 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print("   ✅ 슬림 마케팅 이메일 발송 완료 (영상 + 스크립트만)!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
-
 # ═══════════════════════════════════════════════
 # 🛡️ SYSTEM UTILS & API ENGINE
 # ═══════════════════════════════════════════════
@@ -283,6 +296,9 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
+# ═══════════════════════════════════════════════
+# 📰 NEWS POOLING
+# ═══════════════════════════════════════════════
 def fetch_news_pool(cat, max_items=30):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -299,125 +315,243 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 1. FOUNDATION & PHILOSOPHY
+# 🧠 1. FOUNDATION (SEO 초보자 가이드) DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
 FOUNDATION_TOPICS = [
     "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
     "Dollar Cost Averaging (DCA): How to Invest Safely in Volatile Markets",
-    "Understanding Inflation: How it Affects Your Savings and Investments"
+    "Understanding Inflation: How it Affects Your Savings and Investments",
+    "Bull Market vs Bear Market: Simple Explanations for Beginners",
+    "Asset Allocation 101: Why You Shouldn't Put All Your Eggs in One Basket",
+    "Compound Interest Explained: The Magic of Growing Your Wealth Over Time",
+    "What are Dividends? Building a Passive Income Stream",
+    "Growth Stocks vs Value Stocks: Which Investing Style is Right for You?",
+    "Understanding Interest Rates: How the Federal Reserve Moves the Market",
+    "The Difference Between Stocks and Bonds: A Beginner's Overview"
 ]
 
+# [v44] 밀크로드 수준 강화 — 이모지 자유, 자조적 솔직함, 더 구체적 비유
 FOUNDATION_SYS_INST = """You are the "smart friend" who explains money to absolute beginners — channel Morning Brew + Milk Road energy. You text your friend the news, not write a textbook.
+
+YOUR PERSONALITY:
+- You're the friend texting at 9pm: "OK so this thing happened today and you HAVE to know about it"
+- You use "you" and "I" constantly. Never "investors" or "one should"
+- You're allowed to admit when something's weird: "OK this part is honestly kinda boring, but stay with me"
+- You use SPECIFIC everyday analogies (Netflix subscription wars, ordering Uber Eats, dating apps, Costco runs)
+- You're funny without trying too hard. Warm, not cold. Smart, not nerdy.
+
+EMOJI POLICY (USE FREELY):
+- Headlines can have emojis: "Bitcoin Just Did THIS 🚀"
+- Body emojis welcome: 💡 for insights, 👀 for "look at this", 🚨 for alerts, 🤔 for "let's think", 💸 for money
+- Don't overdo it — 3-5 emojis per article is the sweet spot
+- Use them where they actually help readability, not as decoration
+
+CASUAL EXPRESSION RULES (BALANCED):
+- USE contractions freely: it's, that's, you'd, won't, didn't, here's, that'll
+- USE conversational openers: "OK so...", "Look,", "Real talk,", "Here's the thing:"
+- USE personal opinion phrases: "Honestly,", "My take?", "If you ask me,"
+- BANNED slang: gonna, wanna, kinda, lol, lmao, fr, ngl (too informal for finance)
+- BANNED textbook phrases: "in conclusion", "moreover", "furthermore", "it is important to note"
+
+WRITING RULES (NON-NEGOTIABLE):
+- Average sentence length: 12-15 words MAX
+- One idea per paragraph. Paragraphs are 2-3 sentences MAX
+- Start sentences with "And", "But", "So", "Here's the thing" — conversational openers
+- BANNED words: leverage, utilize, paradigm, robust, optimize, synergy, holistic, deep-dive, unpack, navigate, ecosystem, framework, stakeholders
+- USE instead: "look", "okay so", "here's why", "the truth is", "real talk", "the kicker is"
+- Drop a relatable joke or aside ONCE per article. Not more. Not less.
+- "Yeah I know this sounds boring, but stick with me" type self-aware moments are encouraged ONCE per article
+
+OPENER FORMULA:
+Always start with ONE of these patterns:
+- A question the reader is secretly asking ("Ever wonder why...?")
+- A bold statement that feels controversial ("Most people get this completely wrong.")
+- A relatable scenario ("You're scrolling Instagram and you see...")
+- A surprising number ("83% of people don't know this about...")
+- A pop culture reference ("Remember when GameStop went to the moon? Yeah, this is kinda like that.")
+
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
 FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic:
 TOPIC: {theme}
-OUTPUT FORMAT REQUIREMENT:
-<TITLE>(title max 80 chars)</TITLE><SEO_KEYWORD>(keyword)</SEO_KEYWORD><EXCERPT>(excerpt)</EXCERPT><DEFINITION>(definition)</DEFINITION><WHY_MATTERS>(why it matters)</WHY_MATTERS><HOW_TO_START>(how to start)</HOW_TO_START>"""
 
-PHILOSOPHY_TOPICS = ["부를 담을 심리적 그릇과 책임의 무게"]
-PHILOSOPHY_SYS_INST = "You are an elite philosophical life strategist."
-PHILOSOPHY_PROMPT = "Write a philosophical daily insight based on the theme: {theme}\nOUTPUT FORMAT:\n<TITLE>(Title)</TITLE><SEO_KEYWORD>(Keyword)</SEO_KEYWORD><ANCHOR>(Anchor)</ANCHOR><REFLECTION>(Reflection)</REFLECTION><CATALYST>(Catalyst)</CATALYST>"
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Write a clear, SEO-friendly title targeting beginners, max 80 chars)</TITLE>
+<SEO_KEYWORD>(Write the primary search keyword, e.g., "What is an ETF")</SEO_KEYWORD>
+<EXCERPT>(Write a 2-sentence meta description summarizing the guide for Google search results)</EXCERPT>
+<DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an easy everyday analogy. e.g., "Think of it like a fruit basket...")</DEFINITION>
+<WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care about this concept and how it builds wealth.)</WHY_MATTERS>
+<HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, actionable steps for a beginner to start using this concept today. Format as a bulleted list or numbered steps within the paragraph.)</HOW_TO_START>
+"""
+
+# ═══════════════════════════════════════════════
+# 🧠 2. PHILOSOPHY DATABASE & PROMPTS (The Daily Catalyst)
+# ═══════════════════════════════════════════════
+PHILOSOPHY_TOPICS = [
+    "돈을 짝사랑하지 말고 행동으로 사랑하라 (Love money through action, not just unrequited longing)",
+    "부를 담을 심리적 그릇과 책임의 무게 (The psychological vessel of wealth and the weight of responsibility)",
+    "자발적 피로: 성장을 위한 쾌락적 고통 (Voluntary fatigue: The pleasurable pain of chosen growth)",
+    "환경적 결핍을 폭발적 성장의 무기로 삼아라 (Weaponize environmental lack for explosive growth)",
+    "소비자에서 생산자로: 읽기에서 쓰기로의 전환 (From consumer to producer: The shift from reading to writing)",
+    "스스로 설정한 인지적 연봉 상한선을 파괴하라 (Destroy the cognitive salary cap you set for yourself)",
+    "핑계의 소거: 타협 없는 성장의 시작 (The elimination of excuses: The beginning of uncompromising growth)"
+]
+
+PHILOSOPHY_SYS_INST = """You are an elite philosophical life strategist and writer, heavily influenced by classical literature and pragmatic wealth philosophies. 
+Your objective is to create a daily insight post that delivers profound, unfiltered truths about personal growth, wealth accumulation, and psychological resilience. 
+You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
+Your writing must be direct, concise, and unapologetic. Use short, plain sentences. Do not sugar-coat reality.
+NEVER use the following words or phrases: 'dive into', 'unleash', 'game-changing', 'buckle up', 'embark on this journey', 'delve', 'explore', 'supercharge', 'basically', 'in conclusion'.
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the following theme:
+THEME: {theme}
+
+When interpreting concepts like 'dirt spoon' or poverty, frame it as a 'systemic disadvantage that must be weaponized for explosive growth'. 
+When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaustion that comes from total, self-directed immersion in a meaningful task'.
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Write a punchy, 3-to-6 word title)</TITLE>
+<SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
+<ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme)</ANCHOR>
+<REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses and logically argue for voluntary fatigue and action.)</REFLECTION>
+<CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
+"""
 
 # ═══════════════════════════════════════════════
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
-VIP_P1 = """You are a sharp insider sharing market intel with a friend who happens to be wealthy. Think Bloomberg's best analyst texting their best friend at 11pm — not writing a thesis.
+# 🚨 [v45 NEW] PROMPT_UNIFIED — VIP/Pro 통합 단일 프롬프트
+# 밀크로드 친근 톤 + VIP의 데이터 시각화 구조 결합
+PROMPT_UNIFIED_P1 = """You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people.
 
-═══ VIP TONE RULES (CRITICAL) ═══
+═══ THE GOLDEN RULE ═══
+Imagine your reader is your friend Sarah, a 32-year-old marketing manager who knows nothing about finance but is curious. She'll close the tab in 5 seconds if you sound like Wall Street. Write so she actually wants to read more — AND get smart insights at the same time.
 
-VOICE:
-- You're at a private dinner sharing real talk, not lecturing from a podium
-- Use "you" and "we" constantly. The reader is your trusted friend, not an audience
-- Start with curiosity hooks: "Here's what most analysts missed this week...", "Between us, the real story is...", "Watch this carefully — it changes everything..."
+═══ VOICE & TONE ═══
 
-SENTENCE & PARAGRAPH RULES:
-- Average sentence: 16 words MAX. Short hits harder than long.
-- One paragraph = ONE idea = MAX 3 sentences. Then break.
-- Never write dense walls of text. Visual breathing room matters.
-- MACRO section follows same rules. NO exceptions for "depth" — depth comes from precision, not length.
+PERSONALITY:
+- You're the friend texting at 9pm: "OK so this thing happened today and you need to hear it"
+- You use "you" constantly. Sarah is reading this.
+- Confident but never arrogant. Smart but never nerdy.
+- Honest about uncertainty: "Nobody really knows where this goes, but here's my best guess"
+- A little funny, never sarcastic, never preachy
 
-BANNED WORDS (NEVER USE):
-paradigm, holistic, robust, navigate, unpack, leverage (as verb), optimize, crosscurrents, recalibrate, underscore, reshape, intricate, regulatory bodies, market participants, stakeholders, ecosystem, framework, dynamics (overused), landscape (overused), geopolitics (use "global politics" or specific country names)
+EMOJI POLICY (USE FREELY):
+- Headlines should have 1-2 emojis: "Bitcoin Just Did THIS 🚀"
+- Body emojis welcome: 💡 insight | 👀 look at this | 🚨 alert | 🤔 thinking | 💸 money | 📉 declining | 📈 rising | 🔥 hot | 🤯 mind-blown
+- Sweet spot: 5-8 emojis per article
+- Don't decorate randomly — use them where they actually add meaning
 
-BANNED PHRASES (NEVER USE — these are AI tells):
-- "it's worth noting", "in today's environment", "investors should consider"
-- "complex landscape", "ever-evolving"
-- "also plays a role here", "additionally", "furthermore", "moreover"
-- "plays a critical role", "remains to be seen", "time will tell"
+CASUAL EXPRESSION RULES:
+- USE contractions freely: it's, that's, you'd, won't, didn't, here's, that'll
+- USE conversational openers: "OK so...", "Look,", "Real talk,", "Here's the thing:"
+- USE personal opinion: "Honestly,", "My take?", "If you ask me,"
+- BANNED slang: gonna, wanna, kinda, lol, lmao, fr, ngl
 
-USE INSTEAD (these sound human):
-- "here's the deal", "the wild part is", "real talk", "between us"
-- "smart money already knows", "watch what happens next"
-- "look", "okay so", "the kicker is", "and here's where it gets interesting"
+═══ HEADLINE FORMULAS (USE ONE) ═══
 
-ANALOGY RULES (MOST IMPORTANT):
-- EXACTLY TWO sophisticated analogies per article — required
-- Each analogy must be FULLY developed (30+ words minimum). No throwaway one-liners.
-- After introducing the analogy, extend it ONE more time later in the piece
-- Sophisticated tier ONLY: poker hands, chess endgames, military strategy (Napoleon, Sun Tzu), classic literature (Gatsby, Moby Dick), vintage wine vintages, jazz improvisation, Formula 1 racing strategy
-- BAD analogy (too short): "It's like a poker game."
-- GOOD analogy (developed): "Think of this Fed cycle like a no-limit poker hand on the river. The Fed just shoved all-in with rate guidance. Smart money is reading the bluff — and quietly folding into cash. The amateurs? They're calling with pocket pairs."
+Pick ONE of these 6 formulas for the title. NO Bloomberg/Reuters style.
 
-HEADLINE RULES:
-- Sound like a hedge fund manager texting alpha to a friend, NOT like a Reuters headline
-- BAD: "Tech's New Front Lines: AI, Geopolitics, and User Sovereignty"
-- GOOD: "Why Smart Money Is Quietly Exiting Big Tech This Week"
-- BAD: "Election Volatility & Regulatory Games: What's Next for Your Portfolio"
-- GOOD: "The Three Stocks I'd Buy Before Election Day"
-- BAD: "Inflation's Grip & AI's Wild Card"
-- GOOD: "Why the Inflation Story Just Quietly Changed"
+FORMULA 1 — Emoji shock: "Bitcoin Just Did THIS 🚀"
+FORMULA 2 — Parenthetical: "Apple's Wild Week (and why your grandma should care)"
+FORMULA 3 — Quote: "'We're cooked' — Wall Street on Fed's surprise move"
+FORMULA 4 — Number shock: "97% of investors missed this last week 👀"
+FORMULA 5 — Direct question: "Why is everyone suddenly buying gold? 🤔"
+FORMULA 6 — Contrast: "Big Tech is dying. Small caps are winning. Here's why."
 
-═══ END TONE RULES ═══
+BAD HEADLINES (NEVER WRITE):
+- "Geopolitical Risk & Macroeconomic Realignments"
+- "Q3 Tech Sector Analysis"
 
-Write PART 1 of a VIP deep-dive on {cat}.
-Audience: Sophisticated investors paying premium.
+═══ WRITING RULES ═══
+
+- Sentences MAX 15 words. Short hits harder than long.
+- Each paragraph MAX 3 sentences. Visual breathing room matters.
+- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, optimize, regulatory bodies, ecosystem, framework, stakeholders, dynamics (overused), landscape (overused)
+- BANNED phrases: "in today's market", "investors should consider", "also plays a role", "moreover", "furthermore", "it is important to note"
+- USE: "here's the deal", "OK so", "real talk", "look", "between us", "the kicker is", "here's the thing"
+
+═══ ANALOGY RULE ═══
+
+ONE clever analogy per article — specific and relatable. 20+ words developed.
+
+GOOD ANALOGIES:
+- "Think of bonds like that boring cousin at family dinners. Predictable, sometimes annoying, but always there when the loud cousin (stocks) starts a fight."
+- "AI chip demand right now is like Costco the day before Thanksgiving. Everyone's in there, lines are crazy, and they're running out of stuff."
+
+═══ AI-TELL REMOVAL ═══
+
+DO:
+- Drop ONE self-aware moment per article: "Yeah I know, more AI news. But this one's actually different."
+- Show personal stake: "Honestly? I'd be watching XLE this week."
+- Admit uncertainty: "Nobody really knows where this goes."
+
+DON'T:
+- Sound like every other finance newsletter
+- Use perfect grammar all the time (fragments are OK. Like this.)
+
+═══ END VOICE RULES ═══
+
+Write PART 1 of an Insight newsletter on {cat}.
+Target length: 1000-1400 words across both parts combined.
 News Context:
 {news}
+
 OUTPUT FORMAT REQUIREMENT:
-You MUST wrap your content EXACTLY in the XML tags listed below. Do not miss any tags!
-<TITLE>(Write Institutional title here, max 90 chars. No tickers. Sound like alpha being texted to a friend, not a Reuters headline.)</TITLE>
+You MUST wrap your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Use ONE of the 6 headline formulas. Include emoji for formulas 1 or 4. Max 80 chars. Sound like a friend texting news.)</TITLE>
+<EXCERPT>(2-sentence SEO summary that sounds human. Start with "Here's why..." or "OK so..." or similar.)</EXCERPT>
 <SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
 (Extract 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
 </DATA_TABLE>
 <HEATMAP>
-(Invent 3-4 sector risk levels (0-100%) based on news. Format exactly: Sector Name | Number)
+(Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
 </HEATMAP>
-<EXECUTIVE_SUMMARY>(Write 3 powerful sentences summarizing the systemic shift. Each sentence MAX 16 words. Start with "Here's what most analysts missed..." or "Between us..." or "The wild part is...")</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>(Write 3-4 sentences containing your FIRST analogy. Must be 30+ words of developed analogy. Use poker, chess, military history, or classic literature. Make it vivid.)</PLAIN_ENGLISH>
-<HEADLINE>(Write Analytical headline for market drivers here. Sound like inside intel, NOT academic.)</HEADLINE>
-<MACRO>(Write 2 paragraphs, each MAX 3 sentences, each sentence MAX 14 words. Use clear breaks. NO "also plays a role" or "additionally". Start sentences with "Look,", "Here's why,", "The thing is,", "What changed:". Extend your earlier analogy ONE more time here.)</MACRO>
-<HERD>(Write 1 paragraph, MAX 3 sentences. Show retail panic with vivid imagery. Use words like "stampede", "rushing", "blindly buying", "FOMO".)</HERD>
-<CONTRARIAN>(Write 1 paragraph, MAX 3 sentences. Introduce your SECOND analogy here. Smart money moves. Be specific: "Citadel is doing X", "Bridgewater is positioning Y".)</CONTRARIAN>
-<QUICK_FLOW>(Write Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
+<EXECUTIVE_SUMMARY>(3 sentences capturing core thesis. Each MAX 15 words. Start with "OK so..." or "Look," or "Here's the deal:" — NOT "Today's markets show..." Use 1 emoji if fits naturally.)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps, family dinners. 20+ words developed.)</PLAIN_ENGLISH>
+<HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel, not academic.)</HEADLINE>
+<MACRO>(Write 2 paragraphs about the big-picture force driving the story. Each MAX 3 sentences, each sentence MAX 14 words. Use clear line breaks. Start sentences with "Look,", "Here's why,", "The thing is,". Drop ONE self-aware moment here.)</MACRO>
+<HERD>(Write 1 paragraph showing what retail/average investors are doing wrong. MAX 3 sentences. Use vivid imagery: "stampede", "FOMO", "blindly buying".)</HERD>
+<CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with personal stake: "Honestly? I'd be watching X" or "My take? Y is the smarter play here.")</CONTRARIAN>
+<QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
 
-# 🚨 [v44.1 업데이트] VIP_P2 퀀트 텍티컬 프레임워크 개편
-VIP_P2 = """You are the Chief Investment Officer for Warm Insight writing for sophisticated investors. Tone: insider sharing institutional alpha with a wealthy friend.
+PROMPT_UNIFIED_P2 = """You are Warm Insight's lead writer continuing the analysis. Same friendly + smart tone as Part 1.
 
-TONE RULES (apply to all sections below):
-- Sentences MAX 16 words
+TONE RULES (apply to all sections):
+- Sentences MAX 15 words
 - Each paragraph MAX 3 sentences  
-- USE "you", "we", "smart money", "between us", "here's the deal"
+- USE "you", "we", "honestly", "real talk", "here's the deal"
 - BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role", "investors should consider"
-- Be hyper-specific with sector/ETF names
+- Use 1-2 emojis where they help (📈 📉 💡 👀)
 
-Write PART 2 of the VIP strategy for {cat}.
+Write PART 2 of the Insight newsletter for {cat}.
 Context from Part 1:
 {ctx}
-OUTPUT FORMAT REQUIREMENT:
-You MUST wrap your content EXACTLY in the XML tags listed below. Do not give generic advice. Give institutional-grade tactical frameworks.
-<SCENARIO_A_BULL>(Write a specific 'IF/THEN' scenario. E.g., 'If the Fed cuts rates by 25bps, then rotate capital into [Specific Sector/ETF]' - 80 words)</SCENARIO_A_BULL>
-<SCENARIO_B_BEAR>(Write the downside 'IF/THEN' risk scenario. E.g., 'If inflation prints above 3.5%, expect a 5% pullback in Tech. Move to [Defensive ETF/Cash]' - 80 words)</SCENARIO_B_BEAR>
-<HEDGE_STRATEGY>(Write 1 tactical way to hedge this specific risk using generic inverse ETFs or asset rebalancing. E.g., 'Allocate 5% to GLD or SH' - 60 words)</HEDGE_STRATEGY>
-<TRIGGER_WATCHLIST>(Name 2 upcoming macroeconomic events or data points the investor must watch next week to validate these scenarios.)</TRIGGER_WATCHLIST>
-<VIP_DO>(Write 1 hyper-specific action: e.g., 'Accumulate [Sector] if it drops below its 50-day moving average.')</VIP_DO>
-<VIP_DONT>(Write 1 specific trap retail investors are falling for right now that VIPs must avoid.)</VIP_DONT>
-<TAKEAWAY>(Write a profound, contrarian insight concluding the analysis.)</TAKEAWAY>
-<PS>(Write a 2-sentence historical parallel to today's situation.)</PS>"""
 
+OUTPUT FORMAT REQUIREMENT:
+You MUST wrap your content EXACTLY in the XML tags listed below.
+
+<BULL_CASE>(Optimistic scenario. 3-4 sentences. Specific. End with one bold claim.)</BULL_CASE>
+<BEAR_CASE>(Pessimistic scenario. 3-4 sentences. Specific. Name what breaks first.)</BEAR_CASE>
+<QUICK_HITS>
+(3 bullet points of other relevant news. 1 sentence per line. Start each with emoji: 🚨 / 👀 / 🤔 / 💸)
+</QUICK_HITS>
+<SMART_MONEY_MOVE>(2 paragraphs. First paragraph: WHAT smart investors are doing right now (1-2 specific ETF tickers like XLE, SMH, VTI). Second paragraph: WHY this matters for you specifically. Each paragraph MAX 3 sentences. Show personal stake: "If I were you...")</SMART_MONEY_MOVE>
+<DO_ACTION>(1 specific action. Format: "1) [Specific action with ticker or trigger]. 2) [Optional second action]." Use "you should" tone. Be concrete.)</DO_ACTION>
+<DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". 1-2 sentences.)</DONT_ACTION>
+<TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. The kind of thing you'd screenshot and send to a friend.)</TAKEAWAY>
+<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style. Show wisdom, not lecture.)</PS>"""
+
+# 🚨 [v44 OVERHAUL] PROMPT_PREMIUM 밀크로드 스타일로 대대적 개편
 PROMPT_PREMIUM = """You are Warm Insight's senior writer who channels Milk Road + Morning Brew energy. You're texting your smart friend the market news at 9pm — not writing a Bloomberg report.
 
 ═══ THE GOLDEN RULE ═══
@@ -736,41 +870,26 @@ def _build_internal_links(cat):
     """
     return html
 
-# 🚨 [v44.1 업데이트] VIP 전용 AI 퀀트 포지셔닝으로 변경
-def _build_author_bio(cat, tier="premium"):
-    if tier == "vip":
-        return f"""
-        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:35px 0; display:flex; gap:20px; align-items:center;">
-            <div style="min-width:56px; height:56px; border-radius:50%; background:{DARK}; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:{GOLD};">
-                AI
-            </div>
-            <div>
-                <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">Warm Insight Quant Engine</p>
-                <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
-                    Warm Insight VIP is powered by a proprietary AI engine that processes thousands of macroeconomic data points daily to remove human emotion and deliver pure, tactical scenario frameworks.
-                </p>
-            </div>
+def _build_author_bio(cat):
+    author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
+    return f"""
+    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:35px 0; display:flex; gap:20px; align-items:center;">
+        <div style="min-width:56px; height:56px; border-radius:50%; background:{GOLD}; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff;">
+            W
         </div>
-        """
-    else:
-        author = VIP_AUTHORS.get(cat, "The Warm Insight Panel")
-        first_name = author.split("&")[0].strip().split()[-1]
-        return f"""
-        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:35px 0; display:flex; gap:20px; align-items:center;">
-            <div style="min-width:56px; height:56px; border-radius:50%; background:{GOLD}; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff;">
-                {first_name[0]}
-            </div>
-            <div>
-                <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">{author}</p>
-                <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
-                    Senior analyst at Warm Insight with deep expertise in global macro-trends, geopolitics, and asset strategy. 
-                    Our insights combine analytical intelligence for everyday investors.
-                </p>
-            </div>
+        <div>
+            <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">{author}</p>
+            <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
+                AI-powered financial analysis, curated and edited by Jiho, founder of Warm Insight. 
+                We translate Wall Street complexity into clear insights for everyday investors.
+            </p>
         </div>
-        """
+    </div>
+    """
 
+# [v43] 모든 글 하단에 자동으로 들어가는 창업자 인사 블록
 def _build_founder_note():
+    """모든 글 하단에 자동으로 들어가는 창업자 인사 블록"""
     return f"""
     <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); border:2px solid {GOLD}; border-radius:14px; padding:30px; margin:40px 0;">
         <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
@@ -798,10 +917,13 @@ def build_foundation_html(raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
     
     html += f"""
-    <div style="border-top:4px solid #10b981; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
-        <p style="margin:0; font-size:15px; color:{MUTED};">
-            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf}
+    <div style="border-top:4px solid #10b981; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
+        <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
+            <strong style="color:{DARK};">By {author}</strong> &nbsp;|&nbsp; {tf}
             <span style="background:#10b981; color:#fff; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">BEGINNER'S GUIDE</span>
+        </p>
+        <p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">
+            Edited by Jiho, Founder
         </p>
     </div>
     """
@@ -854,10 +976,13 @@ def build_philosophy_html(raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
     
     html += f"""
-    <div style="border-top:4px solid {GOLD}; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
-        <p style="margin:0; font-size:15px; color:{MUTED};">
-            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf}
+    <div style="border-top:4px solid {GOLD}; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
+        <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
+            <strong style="color:{DARK};">By {author}</strong> &nbsp;|&nbsp; {tf}
             <span style="background:{DARK}; color:{GOLD}; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">DAILY INSIGHT</span>
+        </p>
+        <p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">
+            Edited by Jiho, Founder
         </p>
     </div>
     """
@@ -913,153 +1038,123 @@ def build_philosophy_html(raw, author, tf, title):
 # ═══════════════════════════════════════════════
 # 🎨 3. HTML BUILDER (REGULAR NEWS)
 # ═══════════════════════════════════════════════
-# 🚨 [v44.1 업데이트] 새로운 VIP 태그(SCENARIO, HEDGE 등) 렌더링 반영
 def build_html(tier, cat, raw, author, tf, title):
+    """
+    v45: VIP/Pro 통합 단일 형식.
+    tier 파라미터는 호환성을 위해 유지하지만 항상 'unified' 처리.
+    """
     html = f"<div style=\"{F}\">\n"
     
-    badge = "VIP EXCLUSIVE" if tier == "vip" else "PRO EXCLUSIVE"
-    badge_bg = GOLD if tier == "vip" else "#3b82f6"
+    # 통합 형식 — 단일 배지
+    badge = "WARM INSIGHT"
+    badge_bg = GOLD  # 골드 톤으로 통일 (프리미엄 느낌)
     
+    # 작가 표시: "By [team] / Edited by Jiho, Founder"
     html += f"""
-    <div style="border-top:4px solid {badge_bg}; border-bottom:1px solid {BORDER}; padding:16px 0; margin-bottom:35px;">
-        <p style="margin:0; font-size:15px; color:{MUTED};">
-            <strong style="color:{DARK};">{author}</strong> &nbsp;|&nbsp; {tf}
+    <div style="border-top:4px solid {badge_bg}; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
+        <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
+            <strong style="color:{DARK};">By {author}</strong> &nbsp;|&nbsp; {tf}
             <span style="background:{badge_bg}; color:#fff; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">{badge}</span>
+        </p>
+        <p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">
+            Edited by Jiho, Founder
         </p>
     </div>
     """
     
-    if tier == "vip":
-        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
-        html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
-        
-        html += _build_data_table(xtag(raw, "DATA_TABLE"), "Institutional Market Dashboard")
-        html += _build_progress_bars(xtag(raw, "HEATMAP"), "Systemic Risk Heatmap")
-        
-        html += f"""
-        <div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
-            <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Tactical Analogy</p>
-            <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
-        </div>
-        """
-        
-        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Deep Flow</h2>'
-        html += f'<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>'
-        
-        html += f"""
-        <div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {badge_bg}; padding:30px; border-radius:8px; margin:30px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
-            <p><strong>🧐 MACRO:</strong> {xtag(raw, "MACRO")}</p>
-            <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
-            <p><strong>🐑 HERD:</strong> {xtag(raw, "HERD")}</p>
-            <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
-            <p><strong>🦅 CONTRARIAN:</strong> {xtag(raw, "CONTRARIAN")}</p>
-        </div>
-        """
-        
-        html += f"""
-        <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
-            <strong style="color:#92400e; font-size:20px;">🔗 Institutional Flow:</strong><br>
-            <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
-        </div>
-        """
-
-        html += f"""
-        <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
-            <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
-                <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 IF/THEN: Bull Scenario</h4>
-                <p style="margin:0; color:#064e3b;">{xtag(raw, "SCENARIO_A_BULL")}</p>
-            </div>
-            <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
-                <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 IF/THEN: Bear Scenario</h4>
-                <p style="margin:0; color:#7f1d1d;">{xtag(raw, "SCENARIO_B_BEAR")}</p>
-            </div>
-        </div>
-        """
-        html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
-        
-        al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
-        pie = _build_pie_chart(al["s"], al["b"], al["c"], cat)
-        
-        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px; display:inline-block; margin-top:30px;">Tactical Decision Framework</h2>'
-        html += f"""
-        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:25px;">
-            <h3 style="margin-top:0; font-size:22px; color:{DARK};">🛡️ Asset Allocation & Hedging</h3>
-            {pie}
-            <p style="margin-top:20px; font-weight:bold; color:#b45309;">Hedge Strategy:</p>
-            <p>{xtag(raw, "HEDGE_STRATEGY")}</p>
-        </div>
-        <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:25px;">
-            <h3 style="margin-top:0; font-size:22px; color:{DARK};">👀 Trigger Watchlist</h3>
-            <p>{xtag(raw, "TRIGGER_WATCHLIST")}</p>
-        </div>
-        """
-        
-        html += f"""
-        <div style="background:#1e293b; padding:40px; border-radius:12px; margin:45px 0;">
-            <h3 style="color:{GOLD}; margin-top:0; font-size:26px; border-bottom:2px solid #475569; padding-bottom:15px;">✅ VIP Action Plan</h3>
-            <div style="background:#ecfdf5; border:2px solid #10b981; padding:20px; border-radius:8px; margin:25px 0 15px;">
-                <p style="margin:0; color:#065f46; font-size:18px;"><strong>🟢 DO (Action):</strong> {xtag(raw, "VIP_DO")}</p>
-            </div>
-            <div style="background:#fef2f2; border:2px solid #ef4444; padding:20px; border-radius:8px;">
-                <p style="margin:0; color:#7f1d1d; font-size:18px;"><strong>🔴 DON'T (Avoid):</strong> {xtag(raw, "VIP_DONT")}</p>
-            </div>
-        </div>
-        """
-
-    else: 
-        html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid #3b82f6; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
-        html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
-        
-        html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Movers Dashboard")
-        
-        html += f"""
-        <div style="background:#f4f4f5; border-left:5px solid #8b5cf6; padding:25px; border-radius:8px; margin:40px 0;">
-            <h3 style="margin-top:0; font-size:20px; color:{DARK}; margin-bottom:12px;">📱 Viral Social Insights</h3>
-            <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
-        </div>
-        """
-        
-        html += f'<h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin:45px 0 20px;">Market Drivers & Insights</h2>'
-        html += f'<h3 style="font-size:24px; color:{DARK}; margin-bottom:15px;">{xtag(raw, "HEADLINE")}</h3>'
-        html += f'<p>{xtag(raw, "DEPTH")}</p>'
-        
-        html += f"""
-        <div style="background:#fffbeb; border:1px solid #fde68a; padding:25px; border-radius:8px; margin:40px 0;">
-            <strong style="font-size:18px; color:#d97706; text-transform:uppercase;">💡 Quick Flow:</strong>
-            <p style="font-size:19px; font-weight:bold; color:{DARK}; margin:12px 0 0;">{xtag(raw, "QUICK_FLOW")}</p>
-        </div>
-        """
-        
-        html += f"""
-        <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
-            <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
-                <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
-                <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
-            </div>
-            <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
-                <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
-                <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
-            </div>
-        </div>
-        """
-        html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
-        
-        html += f"""
-        <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:8px; margin:45px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
-            <h3 style="margin-top:0; color:#1e40af; font-size:24px;">💎 Pro-Only Insight</h3>
-            <p style="margin:0;">{xtag(raw, "PRO_INSIGHT")}</p>
-        </div>
-        <div style="background:#ecfdf5; border:2px solid #10b981; padding:25px; border-radius:8px; margin-bottom:15px;">
-            <p style="margin:0; color:#065f46; font-size:18px;"><strong>🟢 DO (Action):</strong> {xtag(raw, "PRO_DO")}</p>
-        </div>
-        <div style="background:#fef2f2; border:2px solid #ef4444; padding:25px; border-radius:8px; margin-bottom:40px;">
-            <p style="margin:0; color:#7f1d1d; font-size:18px;"><strong>🔴 DON'T (Avoid):</strong> {xtag(raw, "PRO_DONT")}</p>
-        </div>
-        """
+    # Executive Summary
+    html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
+    html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
     
-    if tier == "premium":
-        html += _build_upgrade_cta()
-
+    # Market Dashboard
+    html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
+    
+    # Risk Heatmap
+    html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
+    
+    # Viral Social Insights (analogy)
+    html += f"""
+    <div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
+        <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Plain English</p>
+        <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
+    </div>
+    """
+    
+    # Market Drivers
+    html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Flow</h2>'
+    html += f'<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>'
+    
+    # MACRO / HERD / CONTRARIAN
+    html += f"""
+    <div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {badge_bg}; padding:30px; border-radius:8px; margin:30px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+        <p><strong>🧐 The Big Picture:</strong> {xtag(raw, "MACRO")}</p>
+        <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
+        <p><strong>🐑 What Most People Are Doing:</strong> {xtag(raw, "HERD")}</p>
+        <hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;">
+        <p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p>
+    </div>
+    """
+    
+    # Quick Flow
+    html += f"""
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
+        <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br>
+        <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
+    </div>
+    """
+    
+    # Bull / Bear
+    html += f"""
+    <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
+        <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
+            <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
+        </div>
+        <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
+            <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
+        </div>
+    </div>
+    """
+    
+    # Quick Hits
+    html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
+    
+    # Smart Money Move (이전 Pro Insight의 진화 버전)
+    html += f"""
+    <div style="background:#ffffff; border:2px solid {badge_bg}; padding:30px; border-radius:8px; margin:45px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; color:{badge_bg}; font-size:24px;">💎 Smart Money Move</h3>
+        <p style="margin:0;">{xtag(raw, "SMART_MONEY_MOVE")}</p>
+    </div>
+    """
+    
+    # Asset Allocation (단순화된 버전)
+    al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
+    pie = _build_pie_chart(al["s"], al["b"], al["c"], cat)
+    html += f"""
+    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:40px;">
+        <h3 style="margin-top:0; font-size:22px; color:{DARK};">📊 Suggested Allocation</h3>
+        {pie}
+        <p style="margin-top:15px; color:{MUTED}; font-size:14px; text-align:center; font-style:italic;">
+            General guideline based on current {cat} outlook. Not personalized advice.
+        </p>
+    </div>
+    """
+    
+    # Action Plan
+    html += f"""
+    <div style="background:#1e293b; padding:40px; border-radius:12px; margin:45px 0;">
+        <h3 style="color:{badge_bg}; margin-top:0; font-size:26px; border-bottom:2px solid #475569; padding-bottom:15px;">✅ Action Plan</h3>
+        <div style="background:#ecfdf5; border:2px solid #10b981; padding:20px; border-radius:8px; margin:25px 0 15px;">
+            <p style="margin:0; color:#065f46; font-size:18px;"><strong>🟢 DO:</strong> {xtag(raw, "DO_ACTION")}</p>
+        </div>
+        <div style="background:#fef2f2; border:2px solid #ef4444; padding:20px; border-radius:8px;">
+            <p style="margin:0; color:#7f1d1d; font-size:18px;"><strong>🔴 DON'T:</strong> {xtag(raw, "DONT_ACTION")}</p>
+        </div>
+    </div>
+    """
+    
+    # Takeaway + P.S.
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), xtag(raw, "TITLE"), cat)
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
@@ -1074,24 +1169,22 @@ def build_html(tier, cat, raw, author, tf, title):
         </p>
     </div>
     """
-
-    html += _build_social_share(title, slug)
     
-    if tier == "premium":
-        html += _build_founder_note()
-        
+    # 푸터 섹션들
+    html += _build_social_share(title, slug)
+    html += _build_founder_note()
     html += _build_branded_footer()
     html += _build_internal_links(cat)
-    
-    html += _build_author_bio(cat, tier)
+    html += _build_author_bio(cat)
 
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
-        Disclaimer: This article is for informational purposes only. All decisions are your own.
+        Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.
     </p>
     </div>
     """
     return sanitize(html)
+
 
 # ═══════════════════════════════════════════════════════════════
 # 🤖 🚨 썸네일 엔진 (기본 블로그 썸네일용)
@@ -1674,10 +1767,22 @@ def get_wp_author_id(author_full_string):
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
-    tag_id = get_or_create_wp_tag("VIP" if tier == "vip" else "Pro")
+    # v45: unified는 "Insight" 태그, 옛 tier 값은 호환성 유지
+    if tier == "unified":
+        tag_id = get_or_create_wp_tag("Insight")
+    elif tier == "vip":
+        tag_id = get_or_create_wp_tag("VIP")
+    else:
+        tag_id = get_or_create_wp_tag("Pro")
     author_id = get_wp_author_id(author_name)
 
-    display_title = title if cat in ["Foundation", "The Daily Catalyst"] else (f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}")
+    # v45: VIP/Pro 통합 → 모든 새 글은 prefix 없음 (단, 기존 발행 글은 그대로 유지)
+    # tier가 'unified'인 경우(v45)와 Foundation/Catalyst는 prefix 없음
+    if cat in ["Foundation", "The Daily Catalyst"] or tier == "unified":
+        display_title = title
+    else:
+        # 호환성: 만약 옛 tier 값이 들어오면 fallback
+        display_title = f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}"
 
     post_data = {
         "title": display_title,
@@ -1712,7 +1817,8 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             print(f"   ✅ Published: {link}")
             
             # 🚨 변동 파라미터 전달 구조 동기화 완료
-            if tier == "vip" and raw_for_cards:
+            # v45: VIP 전용 → unified도 SNS 카루셀 + 영상 자동 생성
+            if (tier == "vip" or tier == "unified") and raw_for_cards:
                 img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                 if video_mp4_bytes:
                     send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
@@ -1728,7 +1834,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v44.1 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium" 
@@ -1746,7 +1852,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v44.1 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium" 
@@ -1764,37 +1870,42 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v44.1 News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45 Unified News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
     if total_news < 2: return
-    mid = total_news // 2
-    news_map = {"vip": "\n".join(all_news[:mid]), "premium": "\n".join(all_news[mid:])}
     
-    for tier in TIERS:
-        assigned_news = news_map[tier]
-        if tier == "vip":
-            raw1 = gem_fb(tier, VIP_P1.replace("{cat}", cat).replace("{news}", assigned_news))
-            if not raw1: continue
-            ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
-            alloc = f"{CAT_ALLOC[cat]['s']}% Stocks, {CAT_ALLOC[cat]['b']}% Safe"
-            raw2 = gem_fb(tier, VIP_P2.replace("{cat}", cat).replace("{ctx}", ctx).replace("{alloc}", alloc))
-            raw = raw1 + "\n" + raw2
-        else:
-            raw = gem_fb(tier, PROMPT_PREMIUM.replace("{cat}", cat).replace("{news}", assigned_news))
-        
-        if raw:
-            title = xtag(raw, "TITLE")
-            kw = xtag(raw, "SEO_KEYWORD")
-            exc = xtag(raw, "EXECUTIVE_SUMMARY") if tier == "vip" else xtag(raw, "EXCERPT")
-            slug = make_slug(kw, title, cat)
-            author = "Warm Insight Quant AI" if tier == "vip" else VIP_AUTHORS.get(cat, "The Warm Insight Panel")
-            tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-            html = build_html(tier, cat, raw, author, tf, title)
-            img_bytes = make_thumbnail(title, cat, tier)
-            publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw if tier == "vip" else None)
-            time.sleep(TIER_SLEEP[tier])
+    # v45: VIP/Pro 통합 → 모든 뉴스를 하나의 글에 통합
+    news_str = "\n".join(all_news)
+    tier = "unified"
+    
+    # 2-Part Prompt 사용 (Part 1 + Part 2)
+    raw1 = gem_fb(tier, PROMPT_UNIFIED_P1.replace("{cat}", cat).replace("{news}", news_str))
+    if not raw1:
+        print("   ❌ Part 1 generation failed.")
+        return
+    
+    ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
+    raw2 = gem_fb(tier, PROMPT_UNIFIED_P2.replace("{cat}", cat).replace("{ctx}", ctx))
+    if not raw2:
+        print("   ⚠️ Part 2 generation failed. Using Part 1 only.")
+        raw = raw1
+    else:
+        raw = raw1 + "\n" + raw2
+    
+    title = xtag(raw, "TITLE")
+    kw = xtag(raw, "SEO_KEYWORD")
+    exc = xtag(raw, "EXCERPT") or xtag(raw, "EXECUTIVE_SUMMARY")
+    slug = make_slug(kw, title, cat)
+    author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
+    tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+    html = build_html(tier, cat, raw, author, tf, title)
+    img_bytes = make_thumbnail(title, cat, tier)
+    
+    # 통합 글에 대해서도 SNS/Reels 자동화 호출 (이전 VIP 전용 → 모든 글에)
+    publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw)
+    time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
