@@ -2,7 +2,7 @@ name: Warm Insight Auto Poster
 
 on:
   schedule:
-    - cron: '0 */3 * * *' # 매 3시간마다 실행 (UTC 기준)
+    - cron: '0 23 * * *'  # 하루 1번, UTC 23:00 = ET 18:00 (EST 기준)
   workflow_dispatch: # 수동으로 버튼을 눌러서 실행할 수 있게 함
 
 jobs:
