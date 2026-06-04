@@ -851,7 +851,7 @@ def build_foundation_html(raw, author, tf, title):
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: block; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 24px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-            💬 Share Your Thoughts (댓글 남기기) ↓
+            💬 Share Your Thoughts ↓
         </a>
     </div>
     """
