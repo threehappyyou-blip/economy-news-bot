@@ -221,7 +221,7 @@ def verify_wp_credentials():
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
     if not sys_inst:
         sys_inst = "You are an elite financial analyst. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested. DO NOT omit any requested XML tags. Failure to include tags will break the system."
-    
+
     config = types.GenerateContentConfig(
         system_instruction=sys_inst,
         temperature=0.7,
@@ -233,12 +233,15 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
             if r.text: return str(r.text)
         except Exception as e:
             err = str(e)
+            print(f"    ⚠️ [Gemini API Error] {err}")  # 🚨 구글 AI가 거절한 진짜 이유를 화면에 출력합니다.
+            
             if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
                 print(f"    ⏳ 503 Overload. Jitter Wait {wait:.1f}s...")
                 time.sleep(wait)
             elif "429" in err:
+                print(f"    ⏳ 429 Quota Exceeded. Waiting...")
                 time.sleep(30 + random.uniform(0, 10))
             elif i < retries: time.sleep(5 * i)
     return None
