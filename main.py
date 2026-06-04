@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.1 (Depth Recovery + UX Upgrade)
+# Warm Insight Auto Poster — v45.2 (Depth Recovery + UX + Billing Crash Handler)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -194,6 +194,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print("   ✅ 슬림 마케팅 이메일 발송 완료 (영상 + 스크립트만)!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
+
 # ═══════════════════════════════════════════════
 # 🛡️ SYSTEM UTILS & API ENGINE
 # ═══════════════════════════════════════════════
@@ -233,8 +234,13 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
             if r.text: return str(r.text)
         except Exception as e:
             err = str(e)
-            print(f"    ⚠️ [Gemini API Error] {err}")  # 🚨 구글 AI가 거절한 진짜 이유를 화면에 출력합니다.
+            print(f"    ⚠️ [Gemini API Error] {err}")
             
+            # 🚨 v45.2 추가: 크레딧 소진 에러 시 헛돌지 않고 즉시 포기
+            if "credits are depleted" in err or "billing" in err.lower():
+                print("    🚨 크레딧(무료 제공량)이 모두 소진되었습니다! Google AI Studio에서 결제 수단을 등록하거나 새 API 키를 발급받으세요.")
+                return None
+                
             if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
@@ -312,7 +318,6 @@ FOUNDATION_TOPICS = [
     "The Difference Between Stocks and Bonds: A Beginner's Overview"
 ]
 
-# [v44] 밀크로드 수준 강화 — 이모지 자유, 자조적 솔직함, 더 구체적 비유
 FOUNDATION_SYS_INST = """You are the "smart friend" who explains money to absolute beginners — channel Morning Brew + Milk Road energy. You text your friend the news, not write a textbook.
 
 YOUR PERSONALITY:
@@ -408,8 +413,6 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
-# 🚨 [v45.1 UPGRADED] PROMPT_UNIFIED — 진부함 제거 + 깊이 강화
-# 밀크로드 친근 톤 + VIP의 데이터 시각화 + Counterintuitive Insight 강제
 PROMPT_UNIFIED_P1 = """You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline.
 
 ═══ THE GOLDEN RULE ═══
@@ -779,7 +782,6 @@ def _build_author_bio(cat):
     """
 
 def _build_founder_note():
-    """모든 글 하단에 자동으로 들어가는 창업자 인사 블록"""
     return f"""
     <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); border:2px solid {GOLD}; border-radius:14px; padding:30px; margin:40px 0;">
         <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
@@ -846,7 +848,6 @@ def build_foundation_html(raw, author, tf, title):
     </div>
     """
 
-    # --- 🚨 v45.1 모바일 최적화 댓글 이동 버튼 ---
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: block; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 24px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
@@ -921,7 +922,6 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
 
-    # --- 🚨 v45.1 모바일 최적화 댓글 이동 버튼 ---
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: block; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 24px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
@@ -1069,7 +1069,6 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
 
-    # --- 🚨 v45.1 모바일 최적화 댓글 이동 버튼 ---
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: block; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 24px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
@@ -1078,7 +1077,6 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
     
-    # 🚨 v45.1 잉여 섹션(_build_internal_links) 함수 호출 삭제 완료
     html += _build_social_share(title, slug)
     html += _build_founder_note()
     html += _build_branded_footer()
@@ -1334,12 +1332,6 @@ def make_thumbnail(title_text, cat, tier):
 # 🎬 [v42] 틱톡 100% 호환 — SAR 1:1 + 고정 1080x1920
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    """
-    릴스 / 틱톡 / 쇼츠 / 갤러리 100% 호환 20초 영상.
-    틱톡 거부 방지 핵심:
-    - scale=1080:1920 으로 모든 프레임 절대 고정 (줌 효과의 변동 해상도 무력화)
-    - setsar=1:1 메타데이터 명시 (틱톡의 SAR 곱셈 검증 우회)
-    """
     print("   🎥 Generating SMOOTH 20-second TikTok-Compatible Reels Video...")
     try:
         import numpy as np
@@ -1377,7 +1369,6 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         temp_path = temp_file.name
         temp_file.close()
 
-        # ═══ 틱톡 검증 통과 최종 인코딩 ═══
         video.write_videofile(
             temp_path,
             fps=30,
@@ -1386,13 +1377,12 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
             audio=False,
             preset='medium',
             ffmpeg_params=[
-                # 절대 1080x1920 고정 (줌으로 인한 변동 해상도 차단) + SAR 1:1 명시
                 '-vf', 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1:1',
                 '-pix_fmt', 'yuv420p',
                 '-movflags', '+faststart',
                 '-profile:v', 'main',
                 '-level', '4.0',
-                '-x264-params', 'colorprim=bt709:transfer=bt709:colormatrix=bt709'  # 모바일 표준 색공간
+                '-x264-params', 'colorprim=bt709:transfer=bt709:colormatrix=bt709'
             ],
             logger=None
         )
@@ -1407,6 +1397,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         print(f"   ❌ MoviePy 비디오 인코딩 실패: {e}")
         traceback.print_exc()
         return None
+
 # ═══════════════════════════════════════════════
 # 🎨 [v42] 흥미 유발 강화 6-슬라이드 카루셀
 # ═══════════════════════════════════════════════
@@ -1414,7 +1405,6 @@ def generate_vip_carousel(raw_content, cat):
     print("   🎨 Generating ENGAGING 6-Slide Vertical Carousel...")
     client = _get_gemini_client()
 
-    # ═══ 흥미 유발 강화 프롬프트 ═══
     sys_inst = """You are a TOP-TIER viral content creator for finance Instagram/TikTok (think @morning.brew, @theinsidertt).
     Your job: Extract data + write COPY THAT STOPS THE SCROLL.
 
@@ -1480,7 +1470,6 @@ def generate_vip_carousel(raw_content, cat):
             {"ticker": "$AMZN", "val": "+2.3%"}
         ]
 
-    # ═══ 1080x1920 세로 9:16 캔버스 ═══
     W, H = 1080, 1920
     BG = "#09090b"
     ACCENT = "#10b981"
@@ -1519,15 +1508,12 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    # ─── [Slide 1] HOOK 슬라이드 — 시선을 즉시 멈추는 충격 오프너 ───
     img1 = Image.new("RGB", (W, H), BG)
     d1 = ImageDraw.Draw(img1)
 
-    # 상단 빨간 ALERT 배너 (강한 시선 끌기)
     d1.rounded_rectangle([60, 280, W-60, 400], radius=60, fill=RED)
     d1.text((W//2, 340), f"🚨 {cat.upper()} ALERT", fill="#ffffff", font=font_alert, anchor="mm")
 
-    # 메인 HOOK — 화면 중앙 크게
     hook_lines = wrap_lines(hook_text.upper(), font_title, 980)
     y_text = H//2 - (len(hook_lines[:4]) * 75)
     for i, ln in enumerate(hook_lines[:4]):
@@ -1535,16 +1521,13 @@ def generate_vip_carousel(raw_content, cat):
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 150
 
-    # 하단 스와이프 유도 화살표 (애니메이션 느낌)
     d1.text((W//2, H - 380), "↓ SWIPE TO SEE WHY ↓", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
 
-    # ─── [Slide 2] SHOCK STAT — 단일 거대 충격 숫자 ───
     img2 = Image.new("RGB", (W, H), BG)
     d2 = ImageDraw.Draw(img2)
 
     d2.text((W//2, 380), "THE NUMBER", fill=ACCENT, font=font_sub, anchor="mm")
 
-    # 거대한 충격 통계
     shock_lines = wrap_lines(shock_stat.upper(), font_mega, 980)
     y_text = H//2 - (len(shock_lines[:3]) * 90)
     for ln in shock_lines[:3]:
@@ -1553,7 +1536,6 @@ def generate_vip_carousel(raw_content, cat):
 
     d2.text((W//2, H - 380), "WAIT FOR IT...", fill="#94a3b8", font=font_sub, anchor="mm")
 
-    # ─── [Slide 3, 4, 5] DATA Reveal — 데이터 포인트 거대 강조 ───
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
@@ -1562,19 +1544,15 @@ def generate_vip_carousel(raw_content, cat):
         img = Image.new("RGB", (W, H), BG)
         d = ImageDraw.Draw(img)
 
-        # 상단 카테고리 + 진행 표시
         d.text((W//2, 380), cat.upper(), fill=ACCENT, font=font_sub, anchor="mm")
         d.text((W//2, 500), f"WATCH THIS → {idx+1}/3", fill="#94a3b8", font=font_data, anchor="mm")
 
-        # 중앙 거대 티커
         d.text((W//2, 880), item['ticker'], fill="#ffffff", font=font_title, anchor="mm")
 
-        # 거대 값 — 양수 초록, 음수 빨강
         val_str = item['val']
         val_color = RED if '-' in val_str else ACCENT_LIGHT
         d.text((W//2, 1200), val_str, fill=val_color, font=font_huge, anchor="mm")
 
-        # 진행 도트
         dot_y = H - 380
         for di in range(3):
             dx = W//2 + (di - 1) * 60
@@ -1583,29 +1561,24 @@ def generate_vip_carousel(raw_content, cat):
 
         data_imgs.append(img)
 
-    # ─── [Slide 6] INSIGHT + CTA 통합 — FOMO 트리거 ───
     img6 = Image.new("RGB", (W, H), BG)
     d6 = ImageDraw.Draw(img6)
 
     d6.text((W//2, 380), "THE TAKEAWAY", fill=ACCENT, font=font_sub, anchor="mm")
 
-    # 인사이트 한 줄 강조
     insight_lines = wrap_lines(insight_line.upper(), font_title, 980)
     y_text = 700 - (len(insight_lines[:3]) * 75)
     for ln in insight_lines[:3]:
         d6.text((W//2, y_text), ln, fill="#ffffff", font=font_title, anchor="mm")
         y_text += 150
 
-    # CTA HOOK — FOMO 자극
     d6.text((W//2, 1200), cta_hook.upper(), fill=YELLOW, font=font_alert, anchor="mm")
 
-    # 거대 LINK IN BIO 버튼
     d6.rounded_rectangle([180, 1380, 900, 1580], radius=100, fill=ACCENT)
     d6.text((W//2, 1480), "LINK IN BIO →", fill="#ffffff", font=font_title, anchor="mm")
 
     d6.text((W//2, H - 200), "@WARMINSIGHT", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
 
-    # ═══ JPG 변환 (이메일 첨부에는 안 쓰지만 영상엔 사용) ═══
     buf1 = io.BytesIO(); img1.save(buf1, format="JPEG", quality=90)
     data_bufs = []
     for img in data_imgs:
@@ -1613,9 +1586,8 @@ def generate_vip_carousel(raw_content, cat):
         data_bufs.append(buf)
     buf6 = io.BytesIO(); img6.save(buf6, format="JPEG", quality=90)
 
-    image_bytes_list = []  # 빈 리스트로 - 이메일에서 이미지 첨부 안 함
+    image_bytes_list = []  
 
-    # 영상용 프레임: HOOK → SHOCK_STAT → DATA1 → DATA2 → DATA3 → CTA
     all_frames = [img1, img2] + data_imgs + [img6]
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, all_frames)
 
@@ -1674,7 +1646,6 @@ def get_wp_author_id(author_full_string):
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat) 
-    # v45: unified는 "Insight" 태그, 옛 tier 값은 호환성 유지
     if tier == "unified":
         tag_id = get_or_create_wp_tag("Insight")
     elif tier == "vip":
@@ -1683,12 +1654,9 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         tag_id = get_or_create_wp_tag("Pro")
     author_id = get_wp_author_id(author_name)
 
-    # v45: VIP/Pro 통합 → 모든 새 글은 prefix 없음 (단, 기존 발행 글은 그대로 유지)
-    # tier가 'unified'인 경우(v45)와 Foundation/Catalyst는 prefix 없음
     if cat in ["Foundation", "The Daily Catalyst"] or tier == "unified":
         display_title = title
     else:
-        # 호환성: 만약 옛 tier 값이 들어오면 fallback
         display_title = f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}"
 
     post_data = {
@@ -1723,8 +1691,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
             
-            # 🚨 변동 파라미터 전달 구조 동기화 완료
-            # v45: VIP 전용 → unified도 SNS 카루셀 + 영상 자동 생성
             if (tier == "vip" or tier == "unified") and raw_for_cards:
                 img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                 if video_mp4_bytes:
@@ -1741,7 +1707,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v45.1 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.2 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium" 
@@ -1759,7 +1725,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v45.1 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.2 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium" 
@@ -1777,17 +1743,15 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v45.1 Unified News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.2 Unified News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
     if total_news < 2: return
     
-    # v45: VIP/Pro 통합 → 모든 뉴스를 하나의 글에 통합
     news_str = "\n".join(all_news)
     tier = "unified"
     
-    # 2-Part Prompt 사용 (Part 1 + Part 2)
     raw1 = gem_fb(tier, PROMPT_UNIFIED_P1.replace("{cat}", cat).replace("{news}", news_str))
     if not raw1:
         print("   ❌ Part 1 generation failed.")
@@ -1810,7 +1774,6 @@ def run_news_pipeline():
     html = build_html(tier, cat, raw, author, tf, title)
     img_bytes = make_thumbnail(title, cat, tier)
     
-    # 통합 글에 대해서도 SNS/Reels 자동화 호출 (이전 VIP 전용 → 모든 글에)
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw)
     time.sleep(TIER_SLEEP[tier])
 
