@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.2 (Depth Recovery + UX + Billing Crash Handler)
+# Warm Insight Auto Poster — v45.3 (UX 개선, VIP 푸터 삭제, 카테고리 동시 발행)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -177,7 +177,6 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         """
         msg.attach(MIMEText(body, 'html'))
 
-        # 🚨 이미지 첨부 완전 제거 — 영상만 첨부
         if video_mp4_bytes:
             try:
                 part = MIMEBase('video', 'mp4')
@@ -236,7 +235,6 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
             err = str(e)
             print(f"    ⚠️ [Gemini API Error] {err}")
             
-            # 🚨 v45.2 추가: 크레딧 소진 에러 시 헛돌지 않고 즉시 포기
             if "credits are depleted" in err or "billing" in err.lower():
                 print("    🚨 크레딧(무료 제공량)이 모두 소진되었습니다! Google AI Studio에서 결제 수단을 등록하거나 새 API 키를 발급받으세요.")
                 return None
@@ -923,7 +921,7 @@ def build_philosophy_html(raw, author, tf, title):
 
     html += """
     <div style="margin: 40px 0; text-align: center;">
-        <a href="#respond" style="display: block; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 24px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+        <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
             💬 Share Your Thoughts ↓
         </a>
     </div>
@@ -1070,8 +1068,8 @@ def build_html(tier, cat, raw, author, tf, title):
 
     html += """
     <div style="margin: 40px 0; text-align: center;">
-        <a href="#respond" style="display: block; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 24px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
-            💬 Share Your Thoughts (댓글 남기기) ↓
+        <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
+            💬 Share Your Thoughts ↓
         </a>
     </div>
     """
@@ -1644,13 +1642,22 @@ def get_wp_author_id(author_full_string):
 
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
+    
+    # 🚨 세부 카테고리
     cat_id = get_or_create_wp_category(cat) 
+    
+    # 🚨 추가된 부분: Insight 상위 카테고리 생성/조회 (Foundation, Catalyst 제외)
+    insight_cat_id = None
+    if cat not in ["Foundation", "The Daily Catalyst"]:
+        insight_cat_id = get_or_create_wp_category("Insight")
+
     if tier == "unified":
         tag_id = get_or_create_wp_tag("Insight")
     elif tier == "vip":
         tag_id = get_or_create_wp_tag("VIP")
     else:
         tag_id = get_or_create_wp_tag("Pro")
+        
     author_id = get_wp_author_id(author_name)
 
     if cat in ["Foundation", "The Daily Catalyst"] or tier == "unified":
@@ -1667,7 +1674,13 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     
     if author_id: post_data["author"] = author_id
     if media_id: post_data["featured_media"] = media_id
-    if cat_id: post_data["categories"] = [cat_id]
+    
+    # 🚨 변경된 부분: 카테고리 배열(cats)로 묶어서 동시 등록
+    cats = []
+    if cat_id: cats.append(cat_id)
+    if insight_cat_id: cats.append(insight_cat_id)
+    
+    if cats: post_data["categories"] = cats
     if tag_id: post_data["tags"] = [tag_id] 
     
     post_data["meta"] = {
@@ -1706,7 +1719,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v45.2 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.3 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium" 
@@ -1724,7 +1737,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v45.2 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.3 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium" 
@@ -1742,7 +1755,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v45.2 Unified News Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.3 Unified News Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
