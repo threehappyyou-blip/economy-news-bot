@@ -2,11 +2,18 @@ name: Warm Insight Philosophy Poster
 
 on:
   schedule:
-    # v45 분산 스케줄 (EDT 기준)
-    # 07:00 EDT (UTC 11:00) - 아침판 마인드셋
-    # 20:00 EDT (UTC 00:00 익일) - 저녁판 성찰
-    - cron: '0 11 * * *'
-    - cron: '0 0 * * *'
+    # v45.3 — 3-attempt retry within same UTC day per slot
+    
+    # 🌅 아침판 (07:00 EDT / UTC 11:00 / KST 20:00 전날)
+    - cron: '0 11 * * *'    # 1차 시도
+    - cron: '20 11 * * *'   # 2차 재시도 (20분 후)
+    - cron: '40 11 * * *'   # 3차 재시도 (40분 후)
+    
+    # 🌙 저녁판 (20:00 EDT / UTC 00:00 / KST 09:00)
+    - cron: '0 0 * * *'     # 1차 시도
+    - cron: '20 0 * * *'    # 2차 재시도 (20분 후)
+    - cron: '40 0 * * *'    # 3차 재시도 (40분 후)
+    
   workflow_dispatch: # 수동으로 버튼을 눌러서 즉시 실행할 수 있게 함
 
 jobs:
@@ -29,7 +36,7 @@ jobs:
 
     - name: Run Philosophy Bot
       env:
-        PYTHONUNBUFFERED: "1"       # 실시간 로그 출력
+        PYTHONUNBUFFERED: "1"      # 실시간 로그 출력
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         WP_URL: ${{ secrets.WP_URL }}
         WP_USERNAME: ${{ secrets.WP_USERNAME }}
