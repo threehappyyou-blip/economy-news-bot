@@ -2,9 +2,12 @@ name: Warm Insight Foundation Poster
 
 on:
   schedule:
-    # v45 분산 스케줄 (EDT 기준)
+    # v45.3 — 3-attempt retry within same UTC day (썸네일 실패 시 자동 재시도)
     # 12:00 EDT (UTC 16:00) - 점심시간 학습 콘텐츠
-    - cron: '0 16 * * *'
+    # KST 01:00 / 01:20 / 01:40 기준
+    - cron: '0 16 * * *'    # 1차 시도
+    - cron: '20 16 * * *'   # 2차 재시도 (20분 후)
+    - cron: '40 16 * * *'   # 3차 재시도 (40분 후)
   workflow_dispatch:
 
 jobs:
