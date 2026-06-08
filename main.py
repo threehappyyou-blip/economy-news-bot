@@ -1140,7 +1140,7 @@ def make_thumbnail(title_text, cat, tier):
         "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
         "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
         "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
-        "Foundation": {"bg1": "#047857", "bg2": "#10b981", "acc": "#fde047"}
+        "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"}
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
@@ -1215,8 +1215,11 @@ def make_thumbnail(title_text, cat, tier):
             draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
             draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
         elif cat == "Foundation":
-            draw.rectangle([cx_p-70*S, cy_p-50*S, cx_p, cy_p+70*S], fill="#6ee7b7", outline="#ffffff", width=6*S)
-            draw.rectangle([cx_p, cy_p-50*S, cx_p+70*S, cy_p+70*S], fill="#34d399", outline="#ffffff", width=6*S)
+            # 책 아이콘 — 네이비+골드 (배경색과 조화)
+            draw.rectangle([cx_p-70*S, cy_p-60*S, cx_p+70*S, cy_p+80*S], fill="#1e3a5f", outline="#f59e0b", width=6*S)
+            draw.rectangle([cx_p-55*S, cy_p-40*S, cx_p+55*S, cy_p-20*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p-10*S, cx_p+55*S, cy_p+10*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p+20*S, cx_p+20*S, cy_p+40*S], fill="#f59e0b")
 
         R = S * 1.4
         draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030")
