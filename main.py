@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.3 (UX 개선, VIP 푸터 삭제, 카테고리 동시 발행)
+# Warm Insight Auto Poster — v45.4
+#
+# v45.3 → v45.4 변경 사항:
+#   1. already_published_today() 함수 추가 — 중복 발행 방지
+#   2. 모든 pipeline에 썸네일 검증 추가 (len < 1000 → abort)
+#   3. run_news_pipeline 카테고리 결정: 시간 기반 → 일자 기반
+#   4. make_thumbnail() Insight(unified) 카테고리 PRO 배지 제거
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -27,7 +33,6 @@ WP_USER        = os.environ.get("WP_USERNAME", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASSWORD", "")
 SITE_URL       = "https://warminsight.com"
 
-# 🚨 이메일 발송용 시크릿 키
 EMAIL_SENDER   = os.environ.get("EMAIL_SENDER", "")
 EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
@@ -39,8 +44,8 @@ MODEL_PRI = {
 FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy"]
-TIERS       = ["unified"]  # v45: VIP/Pro 통합 → 단일 티어
-TIER_LABELS = {"unified": "INSIGHT"} 
+TIERS       = ["unified"]
+TIER_LABELS = {"unified": "INSIGHT"}
 TIER_SLEEP  = {"unified": 60}
 
 F = "font-size:18px;line-height:1.8;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"
@@ -73,8 +78,8 @@ VIP_AUTHORS = {
     "Tech":     "Warm Insight Editorial Team",
     "Health":   "Warm Insight Editorial Team",
     "Energy":   "Warm Insight Editorial Team",
-    "The Daily Catalyst": "Warm Insight Editorial Team", 
-    "Foundation": "Warm Insight Editorial Team"            
+    "The Daily Catalyst": "Warm Insight Editorial Team",
+    "Foundation": "Warm Insight Editorial Team"
 }
 
 RSS_FEEDS = {
@@ -114,7 +119,7 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# ✉️ [v42] 슬림 이메일 — 이미지 첨부 제거, 영상 + 스크립트만
+# ✉️ 슬림 이메일
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -141,9 +146,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
 
         body = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f5; padding: 20px; color: #0f1419;">
-            
             {vid_tag}
-
             <div style="background: #ffffff; border-left: 5px solid #eab308; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; color: #ca8a04; font-size: 18px;">🎬 1-Min Reels Script</h3>
                 <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">이 대본을 보고 말하거나 AI 보이스에 넣어 릴스를 제작하세요.</p>
@@ -151,7 +154,6 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
                     {reels_script.replace(chr(10), '<br>')}
                 </div>
             </div>
-
             <div style="background: #ffffff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; color: #2563eb; font-size: 18px;">💬 Smart Community Comment</h3>
                 <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">Bloomberg, WSJ 등 유명 인스타 계정 최신 글에 이 댓글을 복사해 붙여넣으세요.</p>
@@ -159,15 +161,12 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
                     "{smart_comment}"
                 </div>
             </div>
-
             <div style="background: #ffffff; border-left: 5px solid #10b981; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
                 <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">영상 업로드 시 아래 텍스트를 그대로 복사해서 쓰세요.</p>
                 <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
             </div>
-
             <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
-
             <div style="text-align:center; margin-bottom: 20px;">
                 <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
                     웹사이트에서 확인하기 →
@@ -190,7 +189,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 슬림 마케팅 이메일 발송 완료 (영상 + 스크립트만)!")
+        print("   ✅ 슬림 마케팅 이메일 발송 완료!")
     except Exception as e:
         print(f"   ❌ 이메일 전송 실패: {e}")
 
@@ -234,11 +233,11 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
         except Exception as e:
             err = str(e)
             print(f"    ⚠️ [Gemini API Error] {err}")
-            
+
             if "credits are depleted" in err or "billing" in err.lower():
-                print("    🚨 크레딧(무료 제공량)이 모두 소진되었습니다! Google AI Studio에서 결제 수단을 등록하거나 새 API 키를 발급받으세요.")
+                print("    🚨 크레딧이 모두 소진되었습니다!")
                 return None
-                
+
             if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
@@ -283,6 +282,46 @@ def _clean_seo_title(title):
     return title.strip()
 
 # ═══════════════════════════════════════════════
+# 🆕 v45.4 PATCH 1: already_published_today()
+# ═══════════════════════════════════════════════
+def already_published_today(cat):
+    """
+    오늘(UTC) 해당 카테고리에 이미 발행된 글이 있는지 확인.
+    있으면 True (= 스킵), 없으면 False (= 발행 진행).
+    """
+    try:
+        today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+        cat_slug = cat.lower().replace(" ", "-")
+
+        # 카테고리 ID 조회
+        r = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
+            auth=(WP_USER, WP_APP_PASS), timeout=10
+        )
+        if r.status_code != 200 or not r.json():
+            return False
+        cat_id = r.json()[0]["id"]
+
+        # 오늘 발행된 글 조회
+        r2 = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            params={
+                "categories": cat_id,
+                "after": f"{today_str}T00:00:00",
+                "before": f"{today_str}T23:59:59",
+                "per_page": 1,
+                "status": "publish"
+            },
+            auth=(WP_USER, WP_APP_PASS), timeout=10
+        )
+        if r2.status_code == 200 and len(r2.json()) > 0:
+            print(f"   ⏭️  [{cat}] Already published today: {r2.json()[0].get('link', '')}")
+            return True
+    except Exception as e:
+        print(f"   ⚠️ already_published_today check failed: {e}")
+    return False
+
+# ═══════════════════════════════════════════════
 # 📰 NEWS POOLING
 # ═══════════════════════════════════════════════
 def fetch_news_pool(cat, max_items=30):
@@ -291,7 +330,7 @@ def fetch_news_pool(cat, max_items=30):
     for url in feeds:
         try:
             d = feedparser.parse(url)
-            for e in d.entries[:10]: 
+            for e in d.entries[:10]:
                 title = getattr(e, 'title', '').strip()
                 summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
                 if title and len(title) > 10: items.add(f"• {title}: {summary}")
@@ -301,7 +340,7 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 1. FOUNDATION (SEO 초보자 가이드) DATABASE & PROMPTS
+# 🧠 1. FOUNDATION DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
 FOUNDATION_TOPICS = [
     "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
@@ -372,7 +411,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🧠 2. PHILOSOPHY DATABASE & PROMPTS (The Daily Catalyst)
+# 🧠 2. PHILOSOPHY DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
 PHILOSOPHY_TOPICS = [
     "돈을 짝사랑하지 말고 행동으로 사랑하라 (Love money through action, not just unrequited longing)",
@@ -384,8 +423,8 @@ PHILOSOPHY_TOPICS = [
     "핑계의 소거: 타협 없는 성장의 시작 (The elimination of excuses: The beginning of uncompromising growth)"
 ]
 
-PHILOSOPHY_SYS_INST = """You are an elite philosophical life strategist and writer, heavily influenced by classical literature and pragmatic wealth philosophies. 
-Your objective is to create a daily insight post that delivers profound, unfiltered truths about personal growth, wealth accumulation, and psychological resilience. 
+PHILOSOPHY_SYS_INST = """You are an elite philosophical life strategist and writer, heavily influenced by classical literature and pragmatic wealth philosophies.
+Your objective is to create a daily insight post that delivers profound, unfiltered truths about personal growth, wealth accumulation, and psychological resilience.
 You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
 Your writing must be direct, concise, and unapologetic. Use short, plain sentences. Do not sugar-coat reality.
 NEVER use the following words or phrases: 'dive into', 'unleash', 'game-changing', 'buckle up', 'embark on this journey', 'delve', 'explore', 'supercharge', 'basically', 'in conclusion'.
@@ -394,7 +433,7 @@ You MUST wrap your content EXACTLY in the XML tags requested."""
 PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the following theme:
 THEME: {theme}
 
-When interpreting concepts like 'dirt spoon' or poverty, frame it as a 'systemic disadvantage that must be weaponized for explosive growth'. 
+When interpreting concepts like 'dirt spoon' or poverty, frame it as a 'systemic disadvantage that must be weaponized for explosive growth'.
 When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaustion that comes from total, self-directed immersion in a meaningful task'.
 
 OUTPUT FORMAT REQUIREMENT:
@@ -468,13 +507,13 @@ FORMULA 4 — Number shock: "97% of investors missed this last week 👀"
 FORMULA 5 — Direct question: "Why is everyone suddenly buying gold? 🤔"
 FORMULA 6 — Contrast: "Big Tech is dying. Small caps are winning. Here's why."
 
-═══ THESIS COHERENCE RULE (NEW IN v45.1) ═══
+═══ THESIS COHERENCE RULE ═══
 
 The news context will contain MANY unrelated stories. Your job:
 1. Pick ONE central thesis from the news
 2. Build your ENTIRE article around that single thesis
 3. IGNORE news that doesn't support or contrast with your thesis
-4. Do NOT randomly mention "Black founders funding is up" or unrelated items just because they were in the news pool
+4. Do NOT randomly mention unrelated items just because they were in the news pool
 
 ═══ WRITING RULES ═══
 
@@ -489,16 +528,14 @@ ONE clever analogy per article — specific and relatable. 20+ words developed.
 
 GOOD: "Think of bonds like that boring cousin at family dinners. Predictable, sometimes annoying, but always there when the loud cousin (stocks) starts a fight."
 
-═══ END VOICE RULES ═══
-
 Write PART 1 of an Insight newsletter on {cat}.
-Target length: 1300-1700 words across both parts combined (longer than before — depth matters).
+Target length: 1300-1700 words across both parts combined.
 News Context:
 {news}
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-DATA_TABLE IS NOT OPTIONAL — if you can't find specific data, MAKE REASONABLE ESTIMATES based on news context.
+DATA_TABLE IS NOT OPTIONAL.
 
 <TITLE>(Use ONE of the 6 headline formulas. Include emoji for formulas 1 or 4. Max 80 chars.)</TITLE>
 <EXCERPT>(2-sentence SEO summary that sounds human. Start with "Here's why..." or "OK so..." Avoid clichés.)</EXCERPT>
@@ -507,11 +544,6 @@ DATA_TABLE IS NOT OPTIONAL — if you can't find specific data, MAKE REASONABLE 
 <DATA_TABLE>
 (REQUIRED — extract OR estimate 3-4 key market metrics. Format exactly:
 Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words
-Example:
-S&P 500 | 5,234 | UP | Tech rally pushing index to new highs
-Nasdaq | 18,200 | UP | AI names leading the gains
-10Y Treasury | 4.25% | DOWN | Rate cut bets growing stronger
-VIX | 14.2 | SIDEWAYS | Volatility surprisingly muted given tensions
 )
 </DATA_TABLE>
 <HEATMAP>
@@ -520,13 +552,13 @@ VIX | 14.2 | SIDEWAYS | Volatility surprisingly muted given tensions
 <EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" or "The kicker:" — NOT "Today's markets show..." Use 1 emoji.)</EXECUTIVE_SUMMARY>
 <PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps, family dinners. 20+ words developed.)</PLAIN_ENGLISH>
 <HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
-<MACRO>(Write 3 PARAGRAPHS about the big-picture force driving the story. Each paragraph MAX 3 sentences, each sentence MAX 14 words. Use clear line breaks between paragraphs. Required structure:
+<MACRO>(Write 3 PARAGRAPHS about the big-picture force driving the story. Each paragraph MAX 3 sentences, each sentence MAX 14 words. Required structure:
 PARAGRAPH 1: What's happening (with specific number/data)
 PARAGRAPH 2: WHY it's happening (the underlying cause most people miss)
-PARAGRAPH 3: The self-aware moment — your honest take ("Yeah I know this sounds like X, but here's why Y")
+PARAGRAPH 3: The self-aware moment — your honest take
 )</MACRO>
-<HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific — name a stock/ETF the herd is buying.)</HERD>
-<CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND a hedge fund/institution if possible: "Citadel is rotating into X" or "My take? Watch XLE this week.")</CONTRARIAN>
+<HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
+<CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
 <QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
 
 PROMPT_UNIFIED_P2 = """You are Warm Insight's lead writer continuing the analysis. Same friendly + smart tone as Part 1.
@@ -538,9 +570,9 @@ NEVER write generic conclusions like:
 - "This trend has serious legs"
 Always be SPECIFIC with numbers, tickers, names, dates.
 
-═══ TONE RULES (apply to all sections) ═══
+═══ TONE RULES ═══
 - Sentences MAX 15 words
-- Each paragraph MAX 3 sentences  
+- Each paragraph MAX 3 sentences
 - USE "you", "we", "honestly", "real talk", "here's the deal"
 - BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role"
 - Use 1-2 emojis where they help (📈 📉 💡 👀)
@@ -555,40 +587,32 @@ ALL TAGS ARE REQUIRED. Do not skip HISTORICAL_PARALLEL.
 
 <BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
 <BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
-<HISTORICAL_PARALLEL>(REQUIRED — write 3-4 sentences comparing today's situation to a SPECIFIC past market event. Name the year and event explicitly. Examples:
-- "This rhymes with 1999 dot-com bubble. Back then, every company adding '.com' surged 200%+ overnight. By March 2001, 80% were down 90%."
-- "We saw this in 2008 — Lehman's collapse exposed who was over-leveraged. The same dynamic is playing out now with [specific sector]."
-- "In 1973's oil crisis, energy stocks tripled while everything else tanked. The current setup looks eerily similar for [reason]."
-End with: "What's different this time?" + your honest answer (1 sentence).)</HISTORICAL_PARALLEL>
+<HISTORICAL_PARALLEL>(REQUIRED — write 3-4 sentences comparing today's situation to a SPECIFIC past market event. Name the year and event explicitly. End with: "What's different this time?" + your honest answer.)</HISTORICAL_PARALLEL>
 <QUICK_HITS>
 (EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — each line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸
-Example format:
-🚨 Apple delays Vision Pro 2 launch to 2027
-👀 Bitcoin ETFs saw $2.3B inflows last week
-💸 Goldman cuts S&P year-end target to 5,800
 )
 </QUICK_HITS>
-<SMART_MONEY_MOVE>(2 paragraphs. 
-FIRST PARAGRAPH: WHAT smart investors are doing right now. NAME 1-2 specific ETF tickers (XLE, SMH, VTI, KRE, IWM, etc.) AND explain the rotation logic.
-SECOND PARAGRAPH: WHY this matters for you specifically. Show personal stake: "If I were you, I'd..." Be concrete about the timing — what trigger to watch.
+<SMART_MONEY_MOVE>(2 paragraphs.
+FIRST PARAGRAPH: WHAT smart investors are doing right now. NAME 1-2 specific ETF tickers.
+SECOND PARAGRAPH: WHY this matters for you specifically. Show personal stake: "If I were you, I'd..."
 Each paragraph MAX 3 sentences.)</SMART_MONEY_MOVE>
-<DO_ACTION>(1-2 specific actions. Format: "1) [Specific action with ticker or trigger]. 2) [Optional second action]." Use "you should" tone. Must include either a ticker, a price level, OR a date trigger.)</DO_ACTION>
-<DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior (e.g. "Don't pile into NVDA at $1,500 — wait for a pullback to $1,300").)</DONT_ACTION>
-<TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible. The kind of thing you'd screenshot and send to a friend.)</TAKEAWAY>
-<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style. Show wisdom, not lecture.)</PS>"""
+<DO_ACTION>(1-2 specific actions. Must include either a ticker, a price level, OR a date trigger.)</DO_ACTION>
+<DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
+<TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
+<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>"""
 
 # ═══════════════════════════════════════════════
 # 📊 VISUAL DATA BUILDERS & HTML
 # ═══════════════════════════════════════════════
 def _build_data_table(raw_data, title="Market Dashboard"):
-    if not raw_data: 
+    if not raw_data:
         raw_data = """S&P 500 | 5,234 | UP | Index near recent highs
 Nasdaq 100 | 18,200 | UP | Tech leading the broader market
 10Y Treasury Yield | 4.25% | SIDEWAYS | Rate cut bets keeping yields contained
 VIX | 14.2 | DOWN | Volatility surprisingly low"""
-    
+
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
-    
+
     if len(lines) < 2:
         fallback_lines = [
             "S&P 500 | 5,234 | UP | Index near recent highs",
@@ -596,7 +620,7 @@ VIX | 14.2 | DOWN | Volatility surprisingly low"""
             "10Y Treasury | 4.25% | SIDEWAYS | Rate cut bets keeping yields contained"
         ]
         lines = lines + fallback_lines[:max(2, 3 - len(lines))]
-    
+
     html = f"""
     <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px; display:inline-block;">📊 {title}</h3>
@@ -617,10 +641,10 @@ VIX | 14.2 | DOWN | Volatility surprisingly low"""
         if len(parts) >= 4:
             asset, value, trend, insight = parts[:4]
             t_upper = trend.upper()
-            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢" 
-            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴" 
+            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢"
+            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴"
             else: t_color, t_icon = "#f59e0b", "🟡"
-            
+
             html += f"""
                 <tr style="border-bottom:1px solid {BORDER};">
                     <td style="padding:14px; font-weight:600; color:{DARK};">{asset}</td>
@@ -636,13 +660,13 @@ def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
     if not raw_data: return ""
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
     if not lines: return ""
-    
+
     html = f"""
     <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;">
         <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px;">🌡️ {title}</h3>
     """
     colors = ["#dc2626", "#ea580c", "#ca8a04", "#059669", "#3b82f6"]
-    
+
     for i, line in enumerate(lines[:5]):
         parts = [p.strip() for p in line.split('|')]
         if len(parts) >= 2:
@@ -651,7 +675,7 @@ def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
             except: pct = 50
             pct = max(0, min(100, pct))
             c = colors[0] if pct > 75 else (colors[1] if pct > 50 else (colors[3] if pct < 30 else colors[2]))
-            
+
             html += f"""
             <div style="margin-top:18px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -670,17 +694,17 @@ def _build_quick_hits(raw_data):
     if not raw_data: return ""
     lines = [l.strip() for l in raw_data.split('\n') if l.strip()]
     if not lines: return ""
-    
+
     default_emojis = ["🚨", "👀", "💸"]
     emoji_chars = "🚨👀🤔💸📈📉🔥💡🤯"
-    
+
     items_html = ""
     for i, line in enumerate(lines[:3]):
         clean = line.replace("-", "").replace("*", "").strip()
         if clean and clean[0] not in emoji_chars:
             clean = f"{default_emojis[i % 3]} {clean}"
         items_html += f'<li style="margin-bottom:12px; color:{SLATE};">{clean}</li>'
-    
+
     return f"""
     <div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;">
         <h3 style="margin-top:0; font-size:20px; color:{DARK}; text-transform:uppercase; letter-spacing:1px;">⚡ Quick Hits</h3>
@@ -697,22 +721,22 @@ def _build_pie_chart(s, b, c, cat):
         "Energy": ("#d97706", "#fbbf24", "#fef3c7")
     }
     c_s, c_b, c_c = cat_colors.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
-    
+
     circ = 565.49
     sd, bd, cd = circ*s/100, circ*b/100, circ*c/100
-    
+
     pie = f'<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;">'
     pie += f'<circle cx="100" cy="100" r="90" fill="none" stroke="{c_s}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/>'
     pie += f'<circle cx="100" cy="100" r="90" fill="none" stroke="{c_b}" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/>'
     pie += f'<circle cx="100" cy="100" r="90" fill="none" stroke="{c_c}" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/>'
     pie += f'<text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text>'
     pie += f'<text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg>'
-    
+
     pie += f'<div style="display:flex;justify-content:center;gap:20px;">'
     pie += f'<span style="color:{c_s};font-weight:bold;">● Stocks {s}%</span>'
     pie += f'<span style="color:{c_b};font-weight:bold;">● Safe {b}%</span>'
     pie += f'<span style="color:{c_c};font-weight:bold;">● Cash {c}%</span></div>'
-    
+
     return pie
 
 # ═══════════════════════════════════════════════
@@ -771,7 +795,7 @@ def _build_author_bio(cat):
         <div>
             <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">{author}</p>
             <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
-                AI-powered financial analysis, curated and edited by Jiho, founder of Warm Insight. 
+                AI-powered financial analysis, curated and edited by Jiho, founder of Warm Insight.
                 We translate Wall Street complexity into clear insights for everyday investors.
             </p>
         </div>
@@ -791,7 +815,7 @@ def _build_founder_note():
                     Hey, I'm Jiho. I built Warm Insight because I was tired of finance content being either too dumbed-down or too academic.
                 </p>
                 <p style="font-size:15px; color:{SLATE}; margin:0; line-height:1.6;">
-                    Every article here is designed to give you ONE thing: a clearer view of your money than you had 5 minutes ago. 
+                    Every article here is designed to give you ONE thing: a clearer view of your money than you had 5 minutes ago.
                     If it ever stops doing that, tell me directly. I read every reply.
                 </p>
             </div>
@@ -804,7 +828,7 @@ def _build_founder_note():
 # ═══════════════════════════════════════════════
 def build_foundation_html(raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
-    
+
     html += f"""
     <div style="border-top:4px solid #10b981; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
         <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
@@ -816,7 +840,7 @@ def build_foundation_html(raw, author, tf, title):
         </p>
     </div>
     """
-    
+
     def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;">
@@ -826,7 +850,7 @@ def build_foundation_html(raw, author, tf, title):
         </div>
     </div>
     """
-    
+
     why_text = xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
@@ -834,7 +858,7 @@ def build_foundation_html(raw, author, tf, title):
         <p>{why_text}</p>
     </div>
     """
-    
+
     how_text = xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
@@ -852,12 +876,12 @@ def build_foundation_html(raw, author, tf, title):
         </a>
     </div>
     """
-    
+
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "foundation")
     html += _build_social_share(title, slug)
     html += _build_founder_note()
     html += _build_branded_footer()
-    
+
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: Educational content only.
@@ -867,11 +891,11 @@ def build_foundation_html(raw, author, tf, title):
     return sanitize(html)
 
 # ═══════════════════════════════════════════════
-# 🎨 2. HTML BUILDER (PHILOSOPHY 3-PART STRUCTURE)
+# 🎨 2. HTML BUILDER (PHILOSOPHY)
 # ═══════════════════════════════════════════════
 def build_philosophy_html(raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
-    
+
     html += f"""
     <div style="border-top:4px solid {GOLD}; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
         <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
@@ -883,7 +907,7 @@ def build_philosophy_html(raw, author, tf, title):
         </p>
     </div>
     """
-    
+
     html += f"""
     <div style="text-align:center; margin:50px 0;">
         <span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span>
@@ -893,7 +917,7 @@ def build_philosophy_html(raw, author, tf, title):
         <span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span>
     </div>
     """
-    
+
     reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
@@ -903,10 +927,10 @@ def build_philosophy_html(raw, author, tf, title):
         </div>
     </div>
     """
-    
+
     catalyst_raw = xtag(raw, "CATALYST")
-    catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw) 
-    
+    catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw)
+
     html += f"""
     <div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.05);">
         <p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p>
@@ -926,12 +950,12 @@ def build_philosophy_html(raw, author, tf, title):
         </a>
     </div>
     """
-    
+
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "catalyst")
     html += _build_social_share(title, slug)
     html += _build_founder_note()
     html += _build_branded_footer()
-    
+
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: This article is for informational purposes only.
@@ -945,10 +969,10 @@ def build_philosophy_html(raw, author, tf, title):
 # ═══════════════════════════════════════════════
 def build_html(tier, cat, raw, author, tf, title):
     html = f"<div style=\"{F}\">\n"
-    
+
     badge = "WARM INSIGHT"
     badge_bg = GOLD
-    
+
     html += f"""
     <div style="border-top:4px solid {badge_bg}; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
         <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
@@ -960,23 +984,23 @@ def build_html(tier, cat, raw, author, tf, title):
         </p>
     </div>
     """
-    
+
     html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
     html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
-    
+
     html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
     html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
-    
+
     html += f"""
     <div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
         <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Plain English</p>
         <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
     </div>
     """
-    
+
     html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Flow</h2>'
     html += f'<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>'
-    
+
     html += f"""
     <div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {badge_bg}; padding:30px; border-radius:8px; margin:30px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
         <p><strong>🧐 The Big Picture:</strong> {xtag(raw, "MACRO")}</p>
@@ -986,14 +1010,14 @@ def build_html(tier, cat, raw, author, tf, title):
         <p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p>
     </div>
     """
-    
+
     html += f"""
     <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
         <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br>
         <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
     </div>
     """
-    
+
     html += f"""
     <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
         <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
@@ -1006,16 +1030,16 @@ def build_html(tier, cat, raw, author, tf, title):
         </div>
     </div>
     """
-    
+
     html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
-    
+
     html += f"""
     <div style="background:#ffffff; border:2px solid {badge_bg}; padding:30px; border-radius:8px; margin:45px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; color:{badge_bg}; font-size:24px;">💎 Smart Money Move</h3>
         <p style="margin:0;">{xtag(raw, "SMART_MONEY_MOVE")}</p>
     </div>
     """
-    
+
     historical = xtag(raw, "HISTORICAL_PARALLEL")
     if historical:
         html += f"""
@@ -1026,7 +1050,7 @@ def build_html(tier, cat, raw, author, tf, title):
             <p style="color:#cbd5e1; font-size:17px; line-height:1.8; margin:15px 0 0;">{historical}</p>
         </div>
         """
-    
+
     al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
     pie = _build_pie_chart(al["s"], al["b"], al["c"], cat)
     html += f"""
@@ -1038,7 +1062,7 @@ def build_html(tier, cat, raw, author, tf, title):
         </p>
     </div>
     """
-    
+
     html += f"""
     <div style="background:#1e293b; padding:40px; border-radius:12px; margin:45px 0;">
         <h3 style="color:{badge_bg}; margin-top:0; font-size:26px; border-bottom:2px solid #475569; padding-bottom:15px;">✅ Action Plan</h3>
@@ -1050,11 +1074,11 @@ def build_html(tier, cat, raw, author, tf, title):
         </div>
     </div>
     """
-    
+
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), xtag(raw, "TITLE"), cat)
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
-    
+
     html += f"""
     <hr style="border:0; height:1px; background:{BORDER}; margin:50px 0;">
     <h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin-bottom:20px;">Today's Warm Insight</h2>
@@ -1073,7 +1097,7 @@ def build_html(tier, cat, raw, author, tf, title):
         </a>
     </div>
     """
-    
+
     html += _build_social_share(title, slug)
     html += _build_founder_note()
     html += _build_branded_footer()
@@ -1089,7 +1113,7 @@ def build_html(tier, cat, raw, author, tf, title):
 
 
 # ═══════════════════════════════════════════════════════════════
-# 🤖 🚨 썸네일 엔진 (기본 블로그 썸네일용)
+# 🖼️ 썸네일 엔진 — v45.4: Insight(unified) PRO 배지 제거
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -1097,11 +1121,11 @@ def get_font(url, filename):
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             print(f"    📥 Downloading font from {url}...")
             resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
-            resp.raise_for_status() 
+            resp.raise_for_status()
             with open(filename, 'wb') as f:
                 f.write(resp.content)
             print("    ✅ Font downloaded successfully.")
-        except Exception as e: 
+        except Exception as e:
             print(f"    ❌ Font download error: {e}")
     return filename
 
@@ -1115,8 +1139,8 @@ def make_thumbnail(title_text, cat, tier):
         "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
         "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
         "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
-        "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"}, 
-        "Foundation": {"bg1": "#047857", "bg2": "#10b981", "acc": "#fde047"} 
+        "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
+        "Foundation": {"bg1": "#047857", "bg2": "#10b981", "acc": "#fde047"}
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
@@ -1154,7 +1178,6 @@ def make_thumbnail(title_text, cat, tier):
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
         draw = ImageDraw.Draw(img)
-        
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
 
         cx = w * 0.88
@@ -1186,29 +1209,20 @@ def make_thumbnail(title_text, cat, tier):
         elif cat == "Health":
             draw.rounded_rectangle([cx_p-20*S, cy_p-70*S, cx_p+20*S, cy_p+70*S], radius=10*S, fill="#a7f3d0")
             draw.rounded_rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p+20*S], radius=10*S, fill="#a7f3d0")
-            draw.line([(cx_p-100*S, cy_p+100*S), (cx_p-50*S, cy_p+100*S), (cx_p-25*S, cy_p+50*S), (cx_p+25*S, cy_p+150*S), (cx_p+50*S, cy_p+100*S), (cx_p+100*S, cy_p+100*S)], fill="#ffffff", width=6*S)
         elif cat == "Energy":
             draw.polygon([(cx_p+30*S, cy_p-90*S), (cx_p-50*S, cy_p+10*S), (cx_p+10*S, cy_p+10*S), (cx_p-30*S, cy_p+90*S), (cx_p+50*S, cy_p-10*S), (cx_p-10*S, cy_p-10*S)], fill="#fde047")
         elif cat == "The Daily Catalyst":
             draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
             draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
-            draw.line([(cx_p-30*S, cy_p-100*S), (cx_p-20*S, cy_p-80*S)], fill="#fde047", width=6*S)
-            draw.line([(cx_p+30*S, cy_p-100*S), (cx_p+20*S, cy_p-80*S)], fill="#fde047", width=6*S)
-            draw.line([(cx_p, cy_p-110*S), (cx_p, cy_p-85*S)], fill="#fde047", width=6*S)
         elif cat == "Foundation":
             draw.rectangle([cx_p-70*S, cy_p-50*S, cx_p, cy_p+70*S], fill="#6ee7b7", outline="#ffffff", width=6*S)
             draw.rectangle([cx_p, cy_p-50*S, cx_p+70*S, cy_p+70*S], fill="#34d399", outline="#ffffff", width=6*S)
-            draw.line([(cx_p-50*S, cy_p-20*S), (cx_p-20*S, cy_p-20*S)], fill="#ffffff", width=5*S)
-            draw.line([(cx_p+20*S, cy_p-20*S), (cx_p+50*S, cy_p-20*S)], fill="#ffffff", width=5*S)
-            draw.line([(cx_p-50*S, cy_p+10*S), (cx_p-20*S, cy_p+10*S)], fill="#ffffff", width=5*S)
 
         R = S * 1.4
-        draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030") 
-        
-        draw.line([(cx - 30*R, cy + 10*R), (cx - 70*R, cy - 35*R)], fill="#f8fafc", width=int(12*R)) 
-        draw.line([(cx - 70*R, cy - 35*R), (cx - 85*R, cy - 35*R)], fill="#cbd5e1", width=int(12*R)) 
+        draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030")
+        draw.line([(cx - 30*R, cy + 10*R), (cx - 70*R, cy - 35*R)], fill="#f8fafc", width=int(12*R))
+        draw.line([(cx - 70*R, cy - 35*R), (cx - 85*R, cy - 35*R)], fill="#cbd5e1", width=int(12*R))
         draw.line([(cx + 30*R, cy + 10*R), (cx + 45*R, cy + 40*R)], fill="#f8fafc", width=int(12*R))
-        
         draw.rounded_rectangle([cx - 40*R, cy - 30*R, cx + 40*R, cy + 70*R], radius=int(15*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
         draw.rounded_rectangle([cx - 50*R, cy - 100*R, cx + 50*R, cy - 35*R], radius=int(20*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
         draw.rounded_rectangle([cx - 40*R, cy - 85*R, cx + 40*R, cy - 45*R], radius=int(10*R), fill="#0f172a")
@@ -1231,7 +1245,7 @@ def make_thumbnail(title_text, cat, tier):
 
     def lf(p, s):
         try: return ImageFont.truetype(p, s * SCALE)
-        except: 
+        except:
             fallbacks = [
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
                 "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
@@ -1252,38 +1266,43 @@ def make_thumbnail(title_text, cat, tier):
 
     date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
     draw.text((40 * S, 44 * S), date_badge, font=fb, fill="#ffffff")
-    
+
     try: date_w = draw.textlength(date_badge, font=fb)
     except: date_w = len(date_badge) * 15 * S
 
+    bx = 40 * S + date_w + 30 * S
     try: cat_w = draw.textlength(cat.upper(), font=fb)
     except: cat_w = len(cat) * 15 * S
-    
-    bx = 40 * S + date_w + 30 * S
+
     draw.rounded_rectangle(
         [(bx, 36 * S), (bx + cat_w + 60 * S, 86 * S)],
         radius=25 * S, fill="#ffffff"
     )
     draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
 
-    if cat not in ["Foundation", "The Daily Catalyst"]:
-        tl = "VIP" if tier == "vip" else "PRO"
-        t_bg = "#b8974d" if tier == "vip" else "#3b82f6" 
+    # ═══════════════════════════════════════════════
+    # 🆕 v45.4 PATCH: Insight(unified) PRO 배지 제거
+    #   - vip 티어 → VIP 배지 (골드)
+    #   - unified 티어 → 배지 없음
+    #   - Foundation / The Daily Catalyst → 배지 없음
+    # ═══════════════════════════════════════════════
+    if tier == "vip":
+        tl = "VIP"
+        t_bg = "#b8974d"
         t_tc = "#ffffff"
-        
         try: tier_w = draw.textlength(tl, font=f_badge)
         except: tier_w = len(tl) * 18 * S
-        
         badge_x = w - 40 * S - tier_w - 40 * S
         draw.rounded_rectangle(
             [(badge_x, 36 * S), (w - 40 * S, 86 * S)],
             radius=25 * S, fill=t_bg
         )
         draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
+    # unified / Foundation / The Daily Catalyst → 배지 없음 (아무것도 그리지 않음)
 
     clean_title = _clean_seo_title(title_text).upper()
     clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
-    
+
     words = clean_title.split()
     lines, line = [], []
     mw = w - 100 * SCALE if use_ai_bg else w - 380 * SCALE
@@ -1292,7 +1311,7 @@ def make_thumbnail(title_text, cat, tier):
         t = " ".join(line + [word])
         try: tw2 = draw.textlength(t, font=ft)
         except: tw2 = len(t) * 40 * SCALE
-        
+
         if tw2 < mw:
             line.append(word)
         else:
@@ -1313,7 +1332,7 @@ def make_thumbnail(title_text, cat, tier):
 
     date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
     draw.text((40 * S, h - 70 * S), f"WARM INSIGHT  |  {date_bottom}", font=fs, fill="#ffffff80")
-    
+
     tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
     try: tw_t = draw.textlength(tagline, font=fs)
     except: tw_t = len(tagline) * 15 * S
@@ -1326,7 +1345,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎬 [v42] 틱톡 100% 호환 — SAR 1:1 + 고정 1080x1920
+# 🎬 틱톡 호환 영상 생성
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
     print("   🎥 Generating SMOOTH 20-second TikTok-Compatible Reels Video...")
@@ -1396,7 +1415,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         return None
 
 # ═══════════════════════════════════════════════
-# 🎨 [v42] 흥미 유발 강화 6-슬라이드 카루셀
+# 🎨 6-슬라이드 카루셀
 # ═══════════════════════════════════════════════
 def generate_vip_carousel(raw_content, cat):
     print("   🎨 Generating ENGAGING 6-Slide Vertical Carousel...")
@@ -1407,18 +1426,13 @@ def generate_vip_carousel(raw_content, cat):
 
     OUTPUT RULES (CRITICAL):
     - HOOK: Pattern interrupt opener. Use shocking number, contrarian take, or curiosity gap. Max 7 words.
-      Examples: "Wall Street Just Did THIS 🚨" / "Tesla's $500B Secret" / "Don't Buy Stocks Until You See This"
     - SHOCK_STAT: One jaw-dropping statistic that proves the hook. Max 6 words. Include numbers.
-      Examples: "65% OF FUNDS MISSED THIS" / "$2.3 TRILLION MOVED OVERNIGHT"
     - INSIGHT_LINE: The "aha moment" payoff. Max 8 words. Confident, declarative.
-      Examples: "AI IS THE NEW OIL ECONOMY" / "RECESSION IS ALREADY PRICED IN"
     - CTA_HOOK: Urgency/FOMO trigger for the last slide. Max 6 words.
-      Examples: "DON'T MISS THE NEXT MOVE" / "POSITION BEFORE WALL STREET DOES"
 
     TICKER FORMAT:
     - Max 8 chars per ticker ($AAPL, $VIX, Gold)
     - Values: include direction (+/-) and % or value
-    - Examples: "+6.2%", "-3.4%", "$4,820"
 
     Format EXACTLY:
     <MAIN_TITLE>Main viral headline, max 5 words, ALL CAPS, energetic</MAIN_TITLE>
@@ -1493,98 +1507,73 @@ def generate_vip_carousel(raw_content, cat):
         words = text.split()
         lines, line = [], []
         d = ImageDraw.Draw(Image.new("RGB", (1,1)))
-        for w in words:
-            test_str = " ".join(line + [w])
+        for ww in words:
+            test_str = " ".join(line + [ww])
             try: tw = d.textlength(test_str, font=font)
             except: tw = len(test_str) * 50
             if tw < max_width:
-                line.append(w)
+                line.append(ww)
             else:
                 if line: lines.append(" ".join(line))
-                line = [w]
+                line = [ww]
         if line: lines.append(" ".join(line))
         return lines
 
     img1 = Image.new("RGB", (W, H), BG)
     d1 = ImageDraw.Draw(img1)
-
     d1.rounded_rectangle([60, 280, W-60, 400], radius=60, fill=RED)
     d1.text((W//2, 340), f"🚨 {cat.upper()} ALERT", fill="#ffffff", font=font_alert, anchor="mm")
-
     hook_lines = wrap_lines(hook_text.upper(), font_title, 980)
     y_text = H//2 - (len(hook_lines[:4]) * 75)
     for i, ln in enumerate(hook_lines[:4]):
         color = YELLOW if i == 0 else "#ffffff"
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 150
-
     d1.text((W//2, H - 380), "↓ SWIPE TO SEE WHY ↓", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
 
     img2 = Image.new("RGB", (W, H), BG)
     d2 = ImageDraw.Draw(img2)
-
     d2.text((W//2, 380), "THE NUMBER", fill=ACCENT, font=font_sub, anchor="mm")
-
     shock_lines = wrap_lines(shock_stat.upper(), font_mega, 980)
     y_text = H//2 - (len(shock_lines[:3]) * 90)
     for ln in shock_lines[:3]:
         d2.text((W//2, y_text), ln, fill=YELLOW, font=font_mega, anchor="mm")
         y_text += 180
-
     d2.text((W//2, H - 380), "WAIT FOR IT...", fill="#94a3b8", font=font_sub, anchor="mm")
 
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
         item = data_points[idx]
-
-        img = Image.new("RGB", (W, H), BG)
-        d = ImageDraw.Draw(img)
-
+        img_d = Image.new("RGB", (W, H), BG)
+        d = ImageDraw.Draw(img_d)
         d.text((W//2, 380), cat.upper(), fill=ACCENT, font=font_sub, anchor="mm")
         d.text((W//2, 500), f"WATCH THIS → {idx+1}/3", fill="#94a3b8", font=font_data, anchor="mm")
-
         d.text((W//2, 880), item['ticker'], fill="#ffffff", font=font_title, anchor="mm")
-
         val_str = item['val']
         val_color = RED if '-' in val_str else ACCENT_LIGHT
         d.text((W//2, 1200), val_str, fill=val_color, font=font_huge, anchor="mm")
-
         dot_y = H - 380
         for di in range(3):
             dx = W//2 + (di - 1) * 60
             color = ACCENT if di == idx else "#3f3f46"
             d.ellipse([dx-20, dot_y-20, dx+20, dot_y+20], fill=color)
-
-        data_imgs.append(img)
+        data_imgs.append(img_d)
 
     img6 = Image.new("RGB", (W, H), BG)
     d6 = ImageDraw.Draw(img6)
-
     d6.text((W//2, 380), "THE TAKEAWAY", fill=ACCENT, font=font_sub, anchor="mm")
-
     insight_lines = wrap_lines(insight_line.upper(), font_title, 980)
     y_text = 700 - (len(insight_lines[:3]) * 75)
     for ln in insight_lines[:3]:
         d6.text((W//2, y_text), ln, fill="#ffffff", font=font_title, anchor="mm")
         y_text += 150
-
     d6.text((W//2, 1200), cta_hook.upper(), fill=YELLOW, font=font_alert, anchor="mm")
-
     d6.rounded_rectangle([180, 1380, 900, 1580], radius=100, fill=ACCENT)
     d6.text((W//2, 1480), "LINK IN BIO →", fill="#ffffff", font=font_title, anchor="mm")
-
     d6.text((W//2, H - 200), "@WARMINSIGHT", fill=ACCENT_LIGHT, font=font_sub, anchor="mm")
 
-    buf1 = io.BytesIO(); img1.save(buf1, format="JPEG", quality=90)
-    data_bufs = []
-    for img in data_imgs:
-        buf = io.BytesIO(); img.save(buf, format="JPEG", quality=90)
-        data_bufs.append(buf)
-    buf6 = io.BytesIO(); img6.save(buf6, format="JPEG", quality=90)
-
-    image_bytes_list = []  
-
+    image_bytes_list = []
     all_frames = [img1, img2] + data_imgs + [img6]
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, all_frames)
 
@@ -1638,15 +1627,13 @@ def get_wp_author_id(author_full_string):
             if len(users) > 0:
                 return users[0]["id"]
     except: pass
-    return None 
+    return None
 
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
-    
-    # 🚨 세부 카테고리
-    cat_id = get_or_create_wp_category(cat) 
-    
-    # 🚨 추가된 부분: Insight 상위 카테고리 생성/조회 (Foundation, Catalyst 제외)
+
+    cat_id = get_or_create_wp_category(cat)
+
     insight_cat_id = None
     if cat not in ["Foundation", "The Daily Catalyst"]:
         insight_cat_id = get_or_create_wp_category("Insight")
@@ -1657,7 +1644,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         tag_id = get_or_create_wp_tag("VIP")
     else:
         tag_id = get_or_create_wp_tag("Pro")
-        
+
     author_id = get_wp_author_id(author_name)
 
     if cat in ["Foundation", "The Daily Catalyst"] or tier == "unified":
@@ -1671,18 +1658,17 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         "status": "publish",
         "slug": slug,
     }
-    
+
     if author_id: post_data["author"] = author_id
     if media_id: post_data["featured_media"] = media_id
-    
-    # 🚨 변경된 부분: 카테고리 배열(cats)로 묶어서 동시 등록
+
     cats = []
     if cat_id: cats.append(cat_id)
     if insight_cat_id: cats.append(insight_cat_id)
-    
+
     if cats: post_data["categories"] = cats
-    if tag_id: post_data["tags"] = [tag_id] 
-    
+    if tag_id: post_data["tags"] = [tag_id]
+
     post_data["meta"] = {
         "rank_math_title": (_clean_seo_title(title) + " | " + cat + " | Warm Insight")[:60],
         "rank_math_description": ((exc or "")[:120] + f" Insightful {cat.lower()} analysis.")[:155],
@@ -1702,7 +1688,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         if r.status_code in (200, 201):
             link = r.json().get('link')
             print(f"   ✅ Published: {link}")
-            
+
             if (tier == "vip" or tier == "unified") and raw_for_cards:
                 img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                 if video_mp4_bytes:
@@ -1715,14 +1701,20 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     return False
 
 # ═══════════════════════════════════════════════
-# 🔄 PIPELINES
+# 🔄 PIPELINES — v45.4
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v45.3 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.4 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
+
+    # 🆕 v45.4 PATCH 1: 중복 발행 체크
+    if already_published_today(cat):
+        print(f"   ⏭️  Skipping {cat} — already published today.")
+        return
+
     theme = random.choice(FOUNDATION_TOPICS)
-    tier = "premium" 
+    tier = "premium"
     raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
     if raw:
         title = xtag(raw, "TITLE")
@@ -1732,15 +1724,28 @@ def run_foundation_pipeline():
         author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         html = build_foundation_html(raw, author, tf, title)
+
+        # 🆕 v45.4 PATCH 2: 썸네일 검증
         img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail too small or empty ({len(img_bytes) if img_bytes else 0} bytes).")
+            print(f"   ⏳ Aborting publish. Next cron slot will retry.")
+            return
+
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v45.3 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.4 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
+
+    # 🆕 v45.4 PATCH 1: 중복 발행 체크
+    if already_published_today(cat):
+        print(f"   ⏭️  Skipping {cat} — already published today.")
+        return
+
     theme = random.choice(PHILOSOPHY_TOPICS)
-    tier = "premium" 
+    tier = "premium"
     raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
     if raw:
         title = xtag(raw, "TITLE")
@@ -1750,25 +1755,43 @@ def run_philosophy_pipeline():
         author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         html = build_philosophy_html(raw, author, tf, title)
+
+        # 🆕 v45.4 PATCH 2: 썸네일 검증
         img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail too small or empty ({len(img_bytes) if img_bytes else 0} bytes).")
+            print(f"   ⏳ Aborting publish. Next cron slot will retry.")
+            return
+
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_news_pipeline():
-    cat = CATEGORIES[(datetime.datetime.utcnow().hour // 3) % len(CATEGORIES)]
-    print(f"🚀 Starting v45.3 Unified News Pipeline | Category: {cat}")
+    # 🆕 v45.4 PATCH 3: 카테고리를 일자 기반으로 회전 (재시도 일관성)
+    day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
+    cat = CATEGORIES[day_of_year % len(CATEGORIES)]
+
+    print(f"🚀 Starting v45.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
+
+    # 🆕 v45.4 PATCH 1: 중복 발행 체크
+    if already_published_today(cat):
+        print(f"   ⏭️  Skipping {cat} — already published today.")
+        return
+
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
-    if total_news < 2: return
-    
+    if total_news < 2:
+        print(f"   ❌ Not enough news for {cat} ({total_news}). Aborting.")
+        return
+
     news_str = "\n".join(all_news)
     tier = "unified"
-    
+
     raw1 = gem_fb(tier, PROMPT_UNIFIED_P1.replace("{cat}", cat).replace("{news}", news_str))
     if not raw1:
         print("   ❌ Part 1 generation failed.")
         return
-    
+
     ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
     raw2 = gem_fb(tier, PROMPT_UNIFIED_P2.replace("{cat}", cat).replace("{ctx}", ctx))
     if not raw2:
@@ -1776,7 +1799,7 @@ def run_news_pipeline():
         raw = raw1
     else:
         raw = raw1 + "\n" + raw2
-    
+
     title = xtag(raw, "TITLE")
     kw = xtag(raw, "SEO_KEYWORD")
     exc = xtag(raw, "EXCERPT") or xtag(raw, "EXECUTIVE_SUMMARY")
@@ -1784,8 +1807,14 @@ def run_news_pipeline():
     author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
     html = build_html(tier, cat, raw, author, tf, title)
+
+    # 🆕 v45.4 PATCH 2: 썸네일 검증
     img_bytes = make_thumbnail(title, cat, tier)
-    
+    if not img_bytes or len(img_bytes) < 1000:
+        print(f"   ❌ Thumbnail too small or empty ({len(img_bytes) if img_bytes else 0} bytes).")
+        print(f"   ⏳ Aborting publish. Next cron slot will retry.")
+        return
+
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw)
     time.sleep(TIER_SLEEP[tier])
 
