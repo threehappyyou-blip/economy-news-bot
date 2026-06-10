@@ -1716,10 +1716,13 @@ def run_foundation_pipeline():
     print(f"🚀 Starting v45.4 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🆕 v45.4 PATCH 1: 중복 발행 체크
-    if already_published_today(cat):
+    # 🆕 v45.4 PATCH 1: 중복 발행 체크 (FORCE_PUBLISH=true 시 건너뜀)
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    if not force and already_published_today(cat):
         print(f"   ⏭️  Skipping {cat} — already published today.")
         return
+    if force:
+        print(f"   ⚡ FORCE_PUBLISH=true — 중복 체크 건너뜀 (테스트 모드)")
 
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium"
@@ -1747,10 +1750,13 @@ def run_philosophy_pipeline():
     print(f"🚀 Starting v45.4 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🆕 v45.4 PATCH 1: 중복 발행 체크
-    if already_published_today(cat):
+    # 🆕 v45.4 PATCH 1: 중복 발행 체크 (FORCE_PUBLISH=true 시 건너뜀)
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    if not force and already_published_today(cat):
         print(f"   ⏭️  Skipping {cat} — already published today.")
         return
+    if force:
+        print(f"   ⚡ FORCE_PUBLISH=true — 중복 체크 건너뜀 (테스트 모드)")
 
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium"
@@ -1781,10 +1787,13 @@ def run_news_pipeline():
     print(f"🚀 Starting v45.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🆕 v45.4 PATCH 1: 중복 발행 체크
-    if already_published_today(cat):
+    # 🆕 v45.4 PATCH 1: 중복 발행 체크 (FORCE_PUBLISH=true 시 건너뜀)
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    if not force and already_published_today(cat):
         print(f"   ⏭️  Skipping {cat} — already published today.")
         return
+    if force:
+        print(f"   ⚡ FORCE_PUBLISH=true — 중복 체크 건너뜀 (테스트 모드)")
 
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
