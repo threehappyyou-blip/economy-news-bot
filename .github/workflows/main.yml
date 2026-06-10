@@ -7,34 +7,44 @@ on:
     - cron: '0 23 * * *'    # 1차 시도
     - cron: '20 23 * * *'   # 2차 재시도 (20분 후)
     - cron: '40 23 * * *'   # 3차 재시도 (40분 후)
-  workflow_dispatch:  # 수동으로 버튼을 눌러서 실행할 수 있게 함
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: '중복 체크 무시하고 강제 발행 (테스트용)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Run Auto Poster Bot
-      env:
-        PYTHONUNBUFFERED: "1"           # <- 실시간 로그 출력
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        WP_URL: ${{ secrets.WP_URL }}
-        WP_USERNAME: ${{ secrets.WP_USERNAME }}
-        WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-        # 👇 VIP 카드뉴스 이메일 발송을 위한 시크릿 3종 추가 완료!
-        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-        EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
-      run: python main.py
+      - name: Run Auto Poster Bot
+        env:
+          PYTHONUNBUFFERED: "1"              # <- 실시간 로그 출력
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USERNAME: ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          # 👇 VIP 카드뉴스 이메일 발송을 위한 시크릿 3종 추가 완료!
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
+          FORCE_PUBLISH: ${{ github.event.inputs.force_publish || 'false' }}
+        run: python main.py
