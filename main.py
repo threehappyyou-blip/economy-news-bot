@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.4
+# Warm Insight Auto Poster — v45.5
+#
+# v45.4 → v45.5 변경 사항:
+#   1. 글 길이 30% 단축 (MACRO 2단락, SMART_MONEY_MOVE 1단락, HISTORICAL 2문장)
+#   2. Founder Note 위치 이동 (하단 → Executive Summary 직후 상단)
 #
 # v45.3 → v45.4 변경 사항:
 #   1. already_published_today() 함수 추가 — 중복 발행 방지
@@ -529,7 +533,7 @@ ONE clever analogy per article — specific and relatable. 20+ words developed.
 GOOD: "Think of bonds like that boring cousin at family dinners. Predictable, sometimes annoying, but always there when the loud cousin (stocks) starts a fight."
 
 Write PART 1 of an Insight newsletter on {cat}.
-Target length: 1300-1700 words across both parts combined.
+Target length: 900-1100 words across both parts combined. Shorter is better. Cut ruthlessly.
 News Context:
 {news}
 
@@ -552,10 +556,10 @@ Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 
 <EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" or "The kicker:" — NOT "Today's markets show..." Use 1 emoji.)</EXECUTIVE_SUMMARY>
 <PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps, family dinners. 20+ words developed.)</PLAIN_ENGLISH>
 <HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
-<MACRO>(Write 3 PARAGRAPHS about the big-picture force driving the story. Each paragraph MAX 3 sentences, each sentence MAX 14 words. Required structure:
-PARAGRAPH 1: What's happening (with specific number/data)
-PARAGRAPH 2: WHY it's happening (the underlying cause most people miss)
-PARAGRAPH 3: The self-aware moment — your honest take
+<MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
+PARAGRAPH 1: What's happening — ONE specific number or data point. Make it surprising.
+PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your honest one-line take.
+NO filler. Every sentence must earn its place.
 )</MACRO>
 <HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
 <CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
@@ -587,15 +591,14 @@ ALL TAGS ARE REQUIRED. Do not skip HISTORICAL_PARALLEL.
 
 <BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
 <BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
-<HISTORICAL_PARALLEL>(REQUIRED — write 3-4 sentences comparing today's situation to a SPECIFIC past market event. Name the year and event explicitly. End with: "What's different this time?" + your honest answer.)</HISTORICAL_PARALLEL>
+<HISTORICAL_PARALLEL>(REQUIRED — 2 sentences MAX. Name the year + event. One sentence on the parallel. One sentence: "What's different: [your answer].")</HISTORICAL_PARALLEL>
 <QUICK_HITS>
 (EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — each line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸
 )
 </QUICK_HITS>
-<SMART_MONEY_MOVE>(2 paragraphs.
-FIRST PARAGRAPH: WHAT smart investors are doing right now. NAME 1-2 specific ETF tickers.
-SECOND PARAGRAPH: WHY this matters for you specifically. Show personal stake: "If I were you, I'd..."
-Each paragraph MAX 3 sentences.)</SMART_MONEY_MOVE>
+<SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences.
+NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason]."
+Be direct. No hedging.)</SMART_MONEY_MOVE>
 <DO_ACTION>(1-2 specific actions. Must include either a ticker, a price level, OR a date trigger.)</DO_ACTION>
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
@@ -988,6 +991,9 @@ def build_html(tier, cat, raw, author, tf, title):
     html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
     html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
 
+    # 🆕 v45.5: Founder Note를 상단으로 이동 — Sarah가 5초 안에 "이 사람이 쓰는구나" 인식
+    html += _build_founder_note()
+
     html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
     html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
 
@@ -1099,7 +1105,6 @@ def build_html(tier, cat, raw, author, tf, title):
     """
 
     html += _build_social_share(title, slug)
-    html += _build_founder_note()
     html += _build_branded_footer()
     html += _build_author_bio(cat)
 
