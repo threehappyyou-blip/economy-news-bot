@@ -2,11 +2,16 @@ name: Warm Insight Auto Poster
 
 on:
   schedule:
-    # v45.3 — 3-attempt retry within same UTC day (썸네일 실패 시 자동 재시도)
-    # KST 08:00 / 08:20 / 08:40 기준
-    - cron: '0 23 * * *'    # 1차 시도
-    - cron: '20 23 * * *'   # 2차 재시도 (20분 후)
-    - cron: '40 23 * * *'   # 3차 재시도 (40분 후)
+    # 🌅 [미국 뉴욕 시간 오전 9시] - UTC 13:00 (실패 시 20분 간격 재시도)
+    - cron: '0 13 * * *'
+    - cron: '20 13 * * *'
+    - cron: '40 13 * * *'
+
+    # 🌇 [미국 뉴욕 시간 오후 6시] - UTC 22:00 (실패 시 20분 간격 재시도)
+    - cron: '0 22 * * *'
+    - cron: '20 22 * * *'
+    - cron: '40 22 * * *'
+
   workflow_dispatch:
     inputs:
       force_publish:
@@ -37,12 +42,11 @@ jobs:
 
       - name: Run Auto Poster Bot
         env:
-          PYTHONUNBUFFERED: "1"              # <- 실시간 로그 출력
+          PYTHONUNBUFFERED: "1"                 # 실시간 로그 출력
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_USERNAME: ${{ secrets.WP_USERNAME }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-          # 👇 VIP 카드뉴스 이메일 발송을 위한 시크릿 3종 추가 완료!
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
