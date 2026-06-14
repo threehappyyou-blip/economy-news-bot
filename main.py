@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.6 (SEO & CTR Optimization + Syntax Fix)
+# Warm Insight Auto Poster — v45.7 (SEO & CTR Optimization Update)
+#
+# v45.6 → v45.7 핵심 변경 사항:
+#   1. 자동 내부 링크(Deep Dive) 대상 URL을 현재 활성 카테고리(Insight, Foundation, The Daily Catalyst)로 전면 통합 및 수정
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -51,13 +54,13 @@ MUTED  = "#64748b"
 BORDER = "#e2e8f0"
 BG_LIGHT = "#f8fafc"
 
+# 🚨 v45.7 PATCH: 딥다이브 내부 링크를 현재 웹사이트 메뉴 구조에 맞게 완벽 통합
 PILLAR_PAGES = {
-    "Economy":  {"url": SITE_URL + "/category/economy/",  "anchor": "Global Economy & Market Analysis"},
-    "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "Geopolitics & Policy Shifts"},
-    "Tech":     {"url": SITE_URL + "/category/tech/",     "anchor": "Tech Trends & AI Innovation"},
-    "Health":   {"url": SITE_URL + "/category/health/",   "anchor": "Healthcare & Biotech Markets"},
-    "Energy":   {"url": SITE_URL + "/category/energy/",   "anchor": "Energy, Oil & Green Resources"},
+    "Insight":            {"url": SITE_URL + "/category/insight/",            "anchor": "Daily Market Insights"},
+    "Foundation":         {"url": SITE_URL + "/category/foundation/",         "anchor": "Financial Foundation & Basics"},
+    "The Daily Catalyst": {"url": SITE_URL + "/category/the-daily-catalyst/", "anchor": "The Daily Catalyst"},
 }
+
 CAT_RELATED = {
     "Economy":  ["Tech", "Energy"],
     "Politics": ["Economy", "Tech"],
@@ -255,7 +258,6 @@ def xtag(raw, tag):
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL | re.IGNORECASE)
     if m:
         res = m.group(1).strip()
-        # 🚨 [중요 버그 수정] 복사/붙여넣기 시 잘림 현상을 막기 위해 백틱(`)을 패턴화하여 사용
         res = re.sub(r"^`{3}(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
         res = re.sub(r"\n`{3}$", "", res)
         return res.strip()
@@ -329,7 +331,7 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 1. FOUNDATION DATABASE & PROMPTS (v45.6 SEO Upgraded)
+# 🧠 1. FOUNDATION DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
 FOUNDATION_TOPICS = [
     "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
@@ -391,7 +393,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🧠 2. PHILOSOPHY DATABASE & PROMPTS (v45.6 SEO Upgraded)
+# 🧠 2. PHILOSOPHY DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
 PHILOSOPHY_TOPICS = [
     "돈을 짝사랑하지 말고 행동으로 사랑하라 (Love money through action, not just unrequited longing)",
@@ -428,7 +430,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🎨 3. TWO-PART PROMPTS (REGULAR NEWS - v45.6 SEO Upgraded)
+# 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
 PROMPT_UNIFIED_P1 = """You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline.
@@ -661,9 +663,10 @@ def _build_pie_chart(s, b, c, cat):
 
     return pie
 
-def _build_pillar_link(cat):
-    """v45.6: 본문 하단에 자동 내부 링크 박스 추가 (SEO 랭킹 상승)"""
-    pillar = PILLAR_PAGES.get(cat)
+# 🚨 v45.7: 내부 링크 URL 완벽 매핑
+def _build_pillar_link(target_cat):
+    """v45.7: 본문 하단에 자동 내부 링크 박스 추가 (Insight, Foundation, Catalyst로 완벽 통합)"""
+    pillar = PILLAR_PAGES.get(target_cat)
     if not pillar: return ""
     return f"""
     <div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
@@ -803,7 +806,8 @@ def build_foundation_html(raw, author, tf, title, cat):
     </div>
     """
 
-    html += _build_pillar_link("Economy") # 내부 링크
+    # 🚨 v45.7 내부 링크 적용 (Foundation)
+    html += _build_pillar_link("Foundation") 
 
     html += """
     <div style="margin: 40px 0; text-align: center;">
@@ -879,7 +883,8 @@ def build_philosophy_html(raw, author, tf, title, cat):
     </div>
     """
 
-    html += _build_pillar_link("Economy") # 내부 링크
+    # 🚨 v45.7 내부 링크 적용 (The Daily Catalyst)
+    html += _build_pillar_link("The Daily Catalyst") 
 
     html += """
     <div style="margin: 40px 0; text-align: center;">
@@ -1030,7 +1035,8 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
 
-    html += _build_pillar_link(cat) # 내부 링크 삽입 (SEO 부스팅)
+    # 🚨 v45.7 내부 링크 적용 (Insight 통합)
+    html += _build_pillar_link("Insight") 
 
     html += """
     <div style="margin: 40px 0; text-align: center;">
@@ -1516,7 +1522,7 @@ def generate_vip_carousel(raw_content, cat):
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 # ═══════════════════════════════════════════════
-# PUBLISHER (v45.6: Rank Math SEO 최적화)
+# PUBLISHER (v45.7: Rank Math SEO 최적화)
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
@@ -1605,7 +1611,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     if cats: post_data["categories"] = cats
     if tag_id: post_data["tags"] = [tag_id]
 
-    # 🆕 v45.6 PATCH: Rank Math 메타데이터 길이 및 포맷 최적화
     seo_title = _clean_seo_title(title)
     if len(seo_title) > 50:
          rm_title = seo_title
@@ -1648,7 +1653,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v45.6 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.7 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1669,7 +1674,6 @@ def run_foundation_pipeline():
         author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         
-        # 🆕 v45.6 PATCH: HTML 빌더에 카테고리(cat) 추가 (내부 링크용)
         html = build_foundation_html(raw, author, tf, title, cat)
 
         img_bytes = make_thumbnail(title, cat, tier)
@@ -1682,7 +1686,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v45.6 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.7 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1698,12 +1702,11 @@ def run_philosophy_pipeline():
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "EXCERPT") # ANCHOR 대신 진짜 EXCERPT 사용
+        exc = xtag(raw, "EXCERPT")
         slug = make_slug(kw, title, cat)
         author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         
-        # 🆕 v45.6 PATCH: HTML 빌더에 카테고리(cat) 추가 (내부 링크용)
         html = build_philosophy_html(raw, author, tf, title, cat)
 
         img_bytes = make_thumbnail(title, cat, tier)
@@ -1718,7 +1721,7 @@ def run_news_pipeline():
     day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
     cat = CATEGORIES[day_of_year % len(CATEGORIES)]
 
-    print(f"🚀 Starting v45.6 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+    print(f"🚀 Starting v45.7 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
