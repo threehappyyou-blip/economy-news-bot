@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.7 (SEO & CTR Optimization Update)
+# Warm Insight Auto Poster — v45.8 (Dynamic News Shuffling Update)
 #
-# v45.6 → v45.7 핵심 변경 사항:
-#   1. 자동 내부 링크(Deep Dive) 대상 URL을 현재 활성 카테고리(Insight, Foundation, The Daily Catalyst)로 전면 통합 및 수정
+# v45.7 → v45.8 핵심 변경 사항:
+#   1. 강제 연속 발행 시 중복 주제 방지를 위한 다이내믹 뉴스 셔플링 도입
+#      (RSS 풀 120개로 대폭 확장 후 무작위 15개만 추출하여 매번 다른 Context 제공)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -54,7 +55,6 @@ MUTED  = "#64748b"
 BORDER = "#e2e8f0"
 BG_LIGHT = "#f8fafc"
 
-# 🚨 v45.7 PATCH: 딥다이브 내부 링크를 현재 웹사이트 메뉴 구조에 맞게 완벽 통합
 PILLAR_PAGES = {
     "Insight":            {"url": SITE_URL + "/category/insight/",            "anchor": "Daily Market Insights"},
     "Foundation":         {"url": SITE_URL + "/category/foundation/",         "anchor": "Financial Foundation & Basics"},
@@ -313,21 +313,26 @@ def already_published_today(cat):
     return False
 
 # ═══════════════════════════════════════════════
-# 📰 NEWS POOLING
+# 📰 NEWS POOLING (v45.8: Dynamic Shuffling)
 # ═══════════════════════════════════════════════
-def fetch_news_pool(cat, max_items=30):
+def fetch_news_pool(cat, max_items=15): # AI가 집중할 수 있도록 15개로 압축
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
     for url in feeds:
         try:
             d = feedparser.parse(url)
-            for e in d.entries[:10]:
+            # RSS 풀을 10개에서 40개로 대폭 늘려 다양한 뉴스 확보
+            for e in d.entries[:40]:
                 title = getattr(e, 'title', '').strip()
                 summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
                 if title and len(title) > 10: items.add(f"• {title}: {summary}")
         except: pass
     items_list = list(items)
+    
+    # 확보된 방대한 뉴스를 무작위로 섞음
     random.shuffle(items_list)
+    
+    # 섞인 카드 덱에서 15장만 뽑아서 전달 (연속 실행 시 매번 다른 테마 유도)
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
@@ -663,9 +668,7 @@ def _build_pie_chart(s, b, c, cat):
 
     return pie
 
-# 🚨 v45.7: 내부 링크 URL 완벽 매핑
 def _build_pillar_link(target_cat):
-    """v45.7: 본문 하단에 자동 내부 링크 박스 추가 (Insight, Foundation, Catalyst로 완벽 통합)"""
     pillar = PILLAR_PAGES.get(target_cat)
     if not pillar: return ""
     return f"""
@@ -806,7 +809,6 @@ def build_foundation_html(raw, author, tf, title, cat):
     </div>
     """
 
-    # 🚨 v45.7 내부 링크 적용 (Foundation)
     html += _build_pillar_link("Foundation") 
 
     html += """
@@ -883,7 +885,6 @@ def build_philosophy_html(raw, author, tf, title, cat):
     </div>
     """
 
-    # 🚨 v45.7 내부 링크 적용 (The Daily Catalyst)
     html += _build_pillar_link("The Daily Catalyst") 
 
     html += """
@@ -1035,7 +1036,6 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
 
-    # 🚨 v45.7 내부 링크 적용 (Insight 통합)
     html += _build_pillar_link("Insight") 
 
     html += """
@@ -1653,7 +1653,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v45.7 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.8 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1686,7 +1686,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v45.7 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.8 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1721,7 +1721,7 @@ def run_news_pipeline():
     day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
     cat = CATEGORIES[day_of_year % len(CATEGORIES)]
 
-    print(f"🚀 Starting v45.7 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+    print(f"🚀 Starting v45.8 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
