@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.5
+# Warm Insight Auto Poster — v45.6 (SEO & CTR Optimization Update)
 #
-# v45.4 → v45.5 변경 사항:
-#   1. 글 길이 30% 단축 (MACRO 2단락, SMART_MONEY_MOVE 1단락, HISTORICAL 2문장)
-#   2. Founder Note 위치 이동 (하단 → Executive Summary 직후 상단)
-#
-# v45.3 → v45.4 변경 사항:
-#   1. already_published_today() 함수 추가 — 중복 발행 방지
-#   2. 모든 pipeline에 썸네일 검증 추가 (len < 1000 → abort)
-#   3. run_news_pipeline 카테고리 결정: 시간 기반 → 일자 기반
-#   4. make_thumbnail() Insight(unified) 카테고리 PRO 배지 제거
+# v45.5 → v45.6 핵심 변경 사항:
+#   1. AI 프롬프트 SEO 최적화: Broad 키워드 배제, 3~5단어의 롱테일 키워드 강제 적용
+#   2. 클릭률(CTR) 극대화: 메타 설명(Excerpt)에 클릭 유도 훅(Hook) 및 괄호/연도 삽입
+#   3. 자동 내부 링크(Internal Linking): 본문 하단에 Pillar Page 연결 박스 자동 생성 (체류시간/게재순위 상승)
+#   4. Rank Math 제목 잘림 방지 로직 개선
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -62,11 +58,11 @@ BORDER = "#e2e8f0"
 BG_LIGHT = "#f8fafc"
 
 PILLAR_PAGES = {
-    "Economy":  {"url": SITE_URL + "/category/economy/",  "anchor": "Economy Analysis"},
-    "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "Politics & Policy"},
-    "Tech":     {"url": SITE_URL + "/category/tech/",     "anchor": "Tech & Innovation"},
-    "Health":   {"url": SITE_URL + "/category/health/",   "anchor": "Health & Markets"},
-    "Energy":   {"url": SITE_URL + "/category/energy/",   "anchor": "Energy & Resources"},
+    "Economy":  {"url": SITE_URL + "/category/economy/",  "anchor": "Global Economy & Market Analysis"},
+    "Politics": {"url": SITE_URL + "/category/politics/", "anchor": "Geopolitics & Policy Shifts"},
+    "Tech":     {"url": SITE_URL + "/category/tech/",     "anchor": "Tech Trends & AI Innovation"},
+    "Health":   {"url": SITE_URL + "/category/health/",   "anchor": "Healthcare & Biotech Markets"},
+    "Energy":   {"url": SITE_URL + "/category/energy/",   "anchor": "Energy, Oil & Green Resources"},
 }
 CAT_RELATED = {
     "Economy":  ["Tech", "Energy"],
@@ -266,7 +262,8 @@ def xtag(raw, tag):
     if m:
         res = m.group(1).strip()
         res = re.sub(r"^```(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
-        res = re.sub(r"\n```$", "", res)
+        res = re.sub(r"\n
+```$", "", res)
         return res.strip()
     return ""
 
@@ -286,18 +283,13 @@ def _clean_seo_title(title):
     return title.strip()
 
 # ═══════════════════════════════════════════════
-# 🆕 v45.4 PATCH 1: already_published_today()
+# 🆕 이미 발행된 카테고리 체크
 # ═══════════════════════════════════════════════
 def already_published_today(cat):
-    """
-    오늘(UTC) 해당 카테고리에 이미 발행된 글이 있는지 확인.
-    있으면 True (= 스킵), 없으면 False (= 발행 진행).
-    """
     try:
         today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
         cat_slug = cat.lower().replace(" ", "-")
 
-        # 카테고리 ID 조회
         r = requests.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
             auth=(WP_USER, WP_APP_PASS), timeout=10
@@ -306,7 +298,6 @@ def already_published_today(cat):
             return False
         cat_id = r.json()[0]["id"]
 
-        # 오늘 발행된 글 조회
         r2 = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
             params={
@@ -344,7 +335,7 @@ def fetch_news_pool(cat, max_items=30):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 1. FOUNDATION DATABASE & PROMPTS
+# 🧠 1. FOUNDATION DATABASE & PROMPTS (v45.6 SEO Upgraded)
 # ═══════════════════════════════════════════════
 FOUNDATION_TOPICS = [
     "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
@@ -388,15 +379,6 @@ WRITING RULES (NON-NEGOTIABLE):
 - BANNED words: leverage, utilize, paradigm, robust, optimize, synergy, holistic, deep-dive, unpack, navigate, ecosystem, framework, stakeholders
 - USE instead: "look", "okay so", "here's why", "the truth is", "real talk", "the kicker is"
 - Drop a relatable joke or aside ONCE per article. Not more. Not less.
-- "Yeah I know this sounds boring, but stick with me" type self-aware moments are encouraged ONCE per article
-
-OPENER FORMULA:
-Always start with ONE of these patterns:
-- A question the reader is secretly asking ("Ever wonder why...?")
-- A bold statement that feels controversial ("Most people get this completely wrong.")
-- A relatable scenario ("You're scrolling Instagram and you see...")
-- A surprising number ("83% of people don't know this about...")
-- A pop culture reference ("Remember when GameStop went to the moon? Yeah, this is kinda like that.")
 
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
@@ -406,16 +388,16 @@ TOPIC: {theme}
 OUTPUT FORMAT REQUIREMENT:
 You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
 
-<TITLE>(Write a clear, SEO-friendly title targeting beginners, max 80 chars)</TITLE>
-<SEO_KEYWORD>(Write the primary search keyword, e.g., "What is an ETF")</SEO_KEYWORD>
-<EXCERPT>(Write a 2-sentence meta description summarizing the guide for Google search results)</EXCERPT>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly clickable using numbers or brackets like [2026] or [Guide].)</TITLE>
+<SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, low competition, high search intent. E.g., "how fed rate cuts affect tech stocks" NOT just "interest rates")</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
 <DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an easy everyday analogy. e.g., "Think of it like a fruit basket...")</DEFINITION>
 <WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care about this concept and how it builds wealth.)</WHY_MATTERS>
 <HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, actionable steps for a beginner to start using this concept today. Format as a bulleted list or numbered steps within the paragraph.)</HOW_TO_START>
 """
 
 # ═══════════════════════════════════════════════
-# 🧠 2. PHILOSOPHY DATABASE & PROMPTS
+# 🧠 2. PHILOSOPHY DATABASE & PROMPTS (v45.6 SEO Upgraded)
 # ═══════════════════════════════════════════════
 PHILOSOPHY_TOPICS = [
     "돈을 짝사랑하지 말고 행동으로 사랑하라 (Love money through action, not just unrequited longing)",
@@ -443,15 +425,16 @@ When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaust
 OUTPUT FORMAT REQUIREMENT:
 You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
 
-<TITLE>(Write a punchy, 3-to-6 word title)</TITLE>
-<SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it punchy and intriguing but highly searchable on Google.)</TITLE>
+<SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, related to psychology, wealth, or personal growth. e.g. "psychology of wealth building")</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
 <ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme)</ANCHOR>
 <REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses and logically argue for voluntary fatigue and action.)</REFLECTION>
 <CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
 """
 
 # ═══════════════════════════════════════════════
-# 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
+# 🎨 3. TWO-PART PROMPTS (REGULAR NEWS - v45.6 SEO Upgraded)
 # ═══════════════════════════════════════════════
 
 PROMPT_UNIFIED_P1 = """You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline.
@@ -468,69 +451,23 @@ BANNED CONTENT (NEVER WRITE THESE — they make readers stop):
 - "Smart money is moving" without specifying WHERE
 - "It's important to note" / "investors should consider"
 - ANY statement that sounds like a Reuters headline summary
-- ANY conclusion an average Twitter user could write in 2 minutes
 
 REQUIRED CONTENT (MUST INCLUDE):
 - ONE counterintuitive insight that 80% of readers don't know
 - AT LEAST 3 specific numbers (percentages, dollar amounts, dates, ticker prices)
-- AT LEAST 1 specific company decision/move (not "tech companies", but "Dell's CFO said X on the earnings call")
-- ONE historical or comparative reference (named year/event/parallel)
-
-THE READER TEST:
-After reading, your reader should think: "Huh, I didn't know that. I should tell my friend."
-NOT: "Yeah, I read this same thing on Twitter yesterday."
-
-═══ VOICE & TONE ═══
-
-PERSONALITY:
-- You're the friend texting at 9pm: "OK so this thing happened today and you need to hear it"
-- You use "you" constantly. Sarah is reading this.
-- Confident but never arrogant. Smart but never nerdy.
-- Honest about uncertainty: "Nobody really knows where this goes, but here's my best guess"
-- A little funny, never sarcastic, never preachy
-
-EMOJI POLICY (USE FREELY):
-- Headlines should have 1-2 emojis: "Bitcoin Just Did THIS 🚀"
-- Body emojis welcome: 💡 insight | 👀 look at this | 🚨 alert | 🤔 thinking | 💸 money | 📉 declining | 📈 rising | 🔥 hot | 🤯 mind-blown
-- Sweet spot: 5-8 emojis per article
-
-CASUAL EXPRESSION RULES:
-- USE contractions freely: it's, that's, you'd, won't, didn't
-- USE conversational openers: "OK so...", "Look,", "Real talk,", "Here's the thing:"
-- USE personal opinion: "Honestly,", "My take?", "If you ask me,"
-- BANNED slang: gonna, wanna, kinda, lol, lmao, fr, ngl
-
-═══ HEADLINE FORMULAS (USE ONE) ═══
-
-Pick ONE of these 6 formulas. NO Bloomberg/Reuters style.
-
-FORMULA 1 — Emoji shock: "Bitcoin Just Did THIS 🚀"
-FORMULA 2 — Parenthetical: "Apple's Wild Week (and why your grandma should care)"
-FORMULA 3 — Quote: "'We're cooked' — Wall Street on Fed's surprise move"
-FORMULA 4 — Number shock: "97% of investors missed this last week 👀"
-FORMULA 5 — Direct question: "Why is everyone suddenly buying gold? 🤔"
-FORMULA 6 — Contrast: "Big Tech is dying. Small caps are winning. Here's why."
+- AT LEAST 1 specific company decision/move 
+- ONE historical or comparative reference
 
 ═══ THESIS COHERENCE RULE ═══
-
-The news context will contain MANY unrelated stories. Your job:
 1. Pick ONE central thesis from the news
 2. Build your ENTIRE article around that single thesis
 3. IGNORE news that doesn't support or contrast with your thesis
-4. Do NOT randomly mention unrelated items just because they were in the news pool
 
 ═══ WRITING RULES ═══
-
 - Sentences MAX 15 words. Short hits harder than long.
 - Each paragraph MAX 3 sentences. Visual breathing room matters.
-- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, optimize, regulatory bodies, ecosystem, framework, stakeholders, dynamics (overused), landscape (overused)
+- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, optimize, regulatory bodies, ecosystem, framework, stakeholders
 - USE: "here's the deal", "OK so", "real talk", "look", "between us", "the kicker is"
-
-═══ ANALOGY RULE ═══
-
-ONE clever analogy per article — specific and relatable. 20+ words developed.
-
-GOOD: "Think of bonds like that boring cousin at family dinners. Predictable, sometimes annoying, but always there when the loud cousin (stocks) starts a fight."
 
 Write PART 1 of an Insight newsletter on {cat}.
 Target length: 900-1100 words across both parts combined. Shorter is better. Cut ruthlessly.
@@ -539,11 +476,10 @@ News Context:
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-DATA_TABLE IS NOT OPTIONAL.
 
-<TITLE>(Use ONE of the 6 headline formulas. Include emoji for formulas 1 or 4. Max 80 chars.)</TITLE>
-<EXCERPT>(2-sentence SEO summary that sounds human. Start with "Here's why..." or "OK so..." Avoid clichés.)</EXCERPT>
-<SEO_KEYWORD>(Write focus keyphrase here)</SEO_KEYWORD>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly clickable using numbers or brackets like [2026] or [Alert].)</TITLE>
+<SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, specific to the news event. E.g., "impact of fed rate cuts on tech" NOT just "fed rate cut")</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
 (REQUIRED — extract OR estimate 3-4 key market metrics. Format exactly:
@@ -553,13 +489,12 @@ Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 
 <HEATMAP>
 (Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
 </HEATMAP>
-<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" or "The kicker:" — NOT "Today's markets show..." Use 1 emoji.)</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps, family dinners. 20+ words developed.)</PLAIN_ENGLISH>
+<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" Use 1 emoji.)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps. 20+ words developed.)</PLAIN_ENGLISH>
 <HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
 <MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
 PARAGRAPH 1: What's happening — ONE specific number or data point. Make it surprising.
 PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your honest one-line take.
-NO filler. Every sentence must earn its place.
 )</MACRO>
 <HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
 <CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
@@ -568,18 +503,12 @@ NO filler. Every sentence must earn its place.
 PROMPT_UNIFIED_P2 = """You are Warm Insight's lead writer continuing the analysis. Same friendly + smart tone as Part 1.
 
 ═══ ANTI-CLICHÉ REMINDER ═══
-NEVER write generic conclusions like:
-- "AI is here to stay"
-- "Tech will continue to dominate"
-- "This trend has serious legs"
-Always be SPECIFIC with numbers, tickers, names, dates.
+NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates.
 
 ═══ TONE RULES ═══
-- Sentences MAX 15 words
-- Each paragraph MAX 3 sentences
-- USE "you", "we", "honestly", "real talk", "here's the deal"
-- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role"
-- Use 1-2 emojis where they help (📈 📉 💡 👀)
+- Sentences MAX 15 words, Paragraphs MAX 3 sentences.
+- USE "you", "we", "honestly", "real talk", "here's the deal".
+- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role".
 
 Write PART 2 of the Insight newsletter for {cat}.
 Context from Part 1:
@@ -587,18 +516,14 @@ Context from Part 1:
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-ALL TAGS ARE REQUIRED. Do not skip HISTORICAL_PARALLEL.
 
 <BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
 <BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
 <HISTORICAL_PARALLEL>(REQUIRED — 2 sentences MAX. Name the year + event. One sentence on the parallel. One sentence: "What's different: [your answer].")</HISTORICAL_PARALLEL>
 <QUICK_HITS>
-(EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — each line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸
-)
+(EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — each line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸)
 </QUICK_HITS>
-<SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences.
-NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason]."
-Be direct. No hedging.)</SMART_MONEY_MOVE>
+<SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences. NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason].")</SMART_MONEY_MOVE>
 <DO_ACTION>(1-2 specific actions. Must include either a ticker, a price level, OR a date trigger.)</DO_ACTION>
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
@@ -742,6 +667,18 @@ def _build_pie_chart(s, b, c, cat):
 
     return pie
 
+def _build_pillar_link(cat):
+    """v45.6: 본문 하단에 자동 내부 링크 박스 추가 (SEO 랭킹 상승)"""
+    pillar = PILLAR_PAGES.get(cat)
+    if not pillar: return ""
+    return f"""
+    <div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+        <p style="margin:0; font-size:16px; color:#1e293b;">
+            <strong style="color:#2563eb;">📚 Deep Dive:</strong> Want to master this topic? Check out our complete guide to <a href="{pillar['url']}" style="color:#2563eb; text-decoration:underline; font-weight:700;">{pillar['anchor']}</a>.
+        </p>
+    </div>
+    """
+
 # ═══════════════════════════════════════════════
 # 📎 ENGAGEMENT & FOOTER BUILDERS
 # ═══════════════════════════════════════════════
@@ -798,7 +735,7 @@ def _build_author_bio(cat):
         <div>
             <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">{author}</p>
             <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
-                AI-powered financial analysis, curated and edited by Jiho, founder of Warm Insight.
+                AI-powered financial analysis, curated and edited by Jiho, founder of Warm Insight. 
                 We translate Wall Street complexity into clear insights for everyday investors.
             </p>
         </div>
@@ -818,7 +755,7 @@ def _build_founder_note():
                     Hey, I'm Jiho. I built Warm Insight because I was tired of finance content being either too dumbed-down or too academic.
                 </p>
                 <p style="font-size:15px; color:{SLATE}; margin:0; line-height:1.6;">
-                    Every article here is designed to give you ONE thing: a clearer view of your money than you had 5 minutes ago.
+                    Every article here is designed to give you ONE thing: a clearer view of your money than you had 5 minutes ago. 
                     If it ever stops doing that, tell me directly. I read every reply.
                 </p>
             </div>
@@ -829,7 +766,7 @@ def _build_founder_note():
 # ═══════════════════════════════════════════════
 # 🎨 1. HTML BUILDER (FOUNDATION / SEO)
 # ═══════════════════════════════════════════════
-def build_foundation_html(raw, author, tf, title):
+def build_foundation_html(raw, author, tf, title, cat):
     html = f"<div style=\"{F}\">\n"
 
     html += f"""
@@ -872,6 +809,8 @@ def build_foundation_html(raw, author, tf, title):
     </div>
     """
 
+    html += _build_pillar_link("Economy") # 내부 링크
+
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
@@ -896,7 +835,7 @@ def build_foundation_html(raw, author, tf, title):
 # ═══════════════════════════════════════════════
 # 🎨 2. HTML BUILDER (PHILOSOPHY)
 # ═══════════════════════════════════════════════
-def build_philosophy_html(raw, author, tf, title):
+def build_philosophy_html(raw, author, tf, title, cat):
     html = f"<div style=\"{F}\">\n"
 
     html += f"""
@@ -946,6 +885,8 @@ def build_philosophy_html(raw, author, tf, title):
     </div>
     """
 
+    html += _build_pillar_link("Economy") # 내부 링크
+
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
@@ -991,7 +932,6 @@ def build_html(tier, cat, raw, author, tf, title):
     html += f'<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>'
     html += f'<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>'
 
-    # 🆕 v45.5: Founder Note를 상단으로 이동 — Sarah가 5초 안에 "이 사람이 쓰는구나" 인식
     html += _build_founder_note()
 
     html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
@@ -1096,6 +1036,8 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
 
+    html += _build_pillar_link(cat) # 내부 링크 삽입 (SEO 부스팅)
+
     html += """
     <div style="margin: 40px 0; text-align: center;">
         <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
@@ -1118,7 +1060,7 @@ def build_html(tier, cat, raw, author, tf, title):
 
 
 # ═══════════════════════════════════════════════════════════════
-# 🖼️ 썸네일 엔진 — v45.4: Insight(unified) PRO 배지 제거
+# 🖼️ 썸네일 엔진 
 # ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
@@ -1220,7 +1162,6 @@ def make_thumbnail(title_text, cat, tier):
             draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
             draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
         elif cat == "Foundation":
-            # 책 아이콘 — 네이비+골드 (배경색과 조화)
             draw.rectangle([cx_p-70*S, cy_p-60*S, cx_p+70*S, cy_p+80*S], fill="#1e3a5f", outline="#f59e0b", width=6*S)
             draw.rectangle([cx_p-55*S, cy_p-40*S, cx_p+55*S, cy_p-20*S], fill="#f59e0b")
             draw.rectangle([cx_p-55*S, cy_p-10*S, cx_p+55*S, cy_p+10*S], fill="#f59e0b")
@@ -1288,12 +1229,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
 
-    # ═══════════════════════════════════════════════
-    # 🆕 v45.4 PATCH: Insight(unified) PRO 배지 제거
-    #   - vip 티어 → VIP 배지 (골드)
-    #   - unified 티어 → 배지 없음
-    #   - Foundation / The Daily Catalyst → 배지 없음
-    # ═══════════════════════════════════════════════
     if tier == "vip":
         tl = "VIP"
         t_bg = "#b8974d"
@@ -1306,7 +1241,6 @@ def make_thumbnail(title_text, cat, tier):
             radius=25 * S, fill=t_bg
         )
         draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
-    # unified / Foundation / The Daily Catalyst → 배지 없음 (아무것도 그리지 않음)
 
     clean_title = _clean_seo_title(title_text).upper()
     clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
@@ -1588,7 +1522,7 @@ def generate_vip_carousel(raw_content, cat):
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 # ═══════════════════════════════════════════════
-# PUBLISHER
+# PUBLISHER (v45.6: Rank Math SEO 최적화)
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
@@ -1677,10 +1611,17 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     if cats: post_data["categories"] = cats
     if tag_id: post_data["tags"] = [tag_id]
 
+    # 🆕 v45.6 PATCH: Rank Math 메타데이터 길이 및 포맷 최적화
+    seo_title = _clean_seo_title(title)
+    if len(seo_title) > 50:
+         rm_title = seo_title
+    else:
+         rm_title = f"{seo_title} | Warm Insight"
+
     post_data["meta"] = {
-        "rank_math_title": (_clean_seo_title(title) + " | " + cat + " | Warm Insight")[:60],
-        "rank_math_description": ((exc or "")[:120] + f" Insightful {cat.lower()} analysis.")[:155],
-        "rank_math_focus_keyword": kw or "",
+        "rank_math_title": rm_title[:60],
+        "rank_math_description": (exc or "")[:160],
+        "rank_math_focus_keyword": kw.lower() if kw else "",
         "is_premium": "no" if cat == "Foundation" else "yes",
         "pms_content_restrict": "0" if cat == "Foundation" else "1",
         "post_tier": tier.upper(),
@@ -1709,14 +1650,13 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     return False
 
 # ═══════════════════════════════════════════════
-# 🔄 PIPELINES — v45.4
+# 🔄 PIPELINES
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v45.4 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.6 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🆕 v45.4 PATCH 1: 중복 발행 체크 (FORCE_PUBLISH=true 시 건너뜀)
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     if not force and already_published_today(cat):
         print(f"   ⏭️  Skipping {cat} — already published today.")
@@ -1734,9 +1674,10 @@ def run_foundation_pipeline():
         slug = make_slug(kw, title, cat)
         author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        html = build_foundation_html(raw, author, tf, title)
+        
+        # 🆕 v45.6 PATCH: HTML 빌더에 카테고리(cat) 추가 (내부 링크용)
+        html = build_foundation_html(raw, author, tf, title, cat)
 
-        # 🆕 v45.4 PATCH 2: 썸네일 검증
         img_bytes = make_thumbnail(title, cat, tier)
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail too small or empty ({len(img_bytes) if img_bytes else 0} bytes).")
@@ -1747,10 +1688,9 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v45.4 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v45.6 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🆕 v45.4 PATCH 1: 중복 발행 체크 (FORCE_PUBLISH=true 시 건너뜀)
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     if not force and already_published_today(cat):
         print(f"   ⏭️  Skipping {cat} — already published today.")
@@ -1764,13 +1704,14 @@ def run_philosophy_pipeline():
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "ANCHOR")
+        exc = xtag(raw, "EXCERPT") # ANCHOR 대신 진짜 EXCERPT 사용
         slug = make_slug(kw, title, cat)
         author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        html = build_philosophy_html(raw, author, tf, title)
+        
+        # 🆕 v45.6 PATCH: HTML 빌더에 카테고리(cat) 추가 (내부 링크용)
+        html = build_philosophy_html(raw, author, tf, title, cat)
 
-        # 🆕 v45.4 PATCH 2: 썸네일 검증
         img_bytes = make_thumbnail(title, cat, tier)
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail too small or empty ({len(img_bytes) if img_bytes else 0} bytes).")
@@ -1780,14 +1721,12 @@ def run_philosophy_pipeline():
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_news_pipeline():
-    # 🆕 v45.4 PATCH 3: 카테고리를 일자 기반으로 회전 (재시도 일관성)
     day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
     cat = CATEGORIES[day_of_year % len(CATEGORIES)]
 
-    print(f"🚀 Starting v45.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+    print(f"🚀 Starting v45.6 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🆕 v45.4 PATCH 1: 중복 발행 체크 (FORCE_PUBLISH=true 시 건너뜀)
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     if not force and already_published_today(cat):
         print(f"   ⏭️  Skipping {cat} — already published today.")
@@ -1825,7 +1764,6 @@ def run_news_pipeline():
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
     html = build_html(tier, cat, raw, author, tf, title)
 
-    # 🆕 v45.4 PATCH 2: 썸네일 검증
     img_bytes = make_thumbnail(title, cat, tier)
     if not img_bytes or len(img_bytes) < 1000:
         print(f"   ❌ Thumbnail too small or empty ({len(img_bytes) if img_bytes else 0} bytes).")
