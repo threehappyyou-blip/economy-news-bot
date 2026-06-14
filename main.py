@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v46.3 (Final Masterpiece Edition)
+# Warm Insight Auto Poster — v46.4 (Hyper-Detailed Thumbnail Prompt Update)
 #
 # 핵심 복구 및 변경 사항:
-#   1. 기존 1700줄 규모의 비압축 원본 코드 완벽 복구 (뉴스레터 디자인 퀄리티 100% 보장)
+#   1. 기존 1700줄 규모의 비압축 원본 코드 완벽 유지 (뉴스레터 디자인 퀄리티 100% 보장)
 #   2. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 시스템 완벽 탑재
 #   3. 이메일 템플릿에 'Cross-Pollination(고정댓글/설명란용)' 텍스트 하드코딩
-#   4. SEO 롱테일 키워드 및 내부 링크(Pillar Link) 시스템 통합
+#   4. [v46.4] Vrew/미드저니용 유튜브 썸네일 프롬프트 극사실주의(하이엔드) 디테일 대폭 강화
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -122,7 +122,7 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE (2만 자 보장 분할 집필)
+# 🎬 1. YOUTUBE CHAPTERING ENGINE (2만 자 보장 분할 집필 + 하이엔드 썸네일)
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """Based on the following newsletter content, generate a YouTube Metadata package.
 [CONTENT]
@@ -139,7 +139,12 @@ You must strictly use these XML tags:
 - Option C: 
 
 [THUMBNAIL PROMPT]
-(MUST be Highly Realistic/Cinematic Style. Detail the exact text overlay taking up the top third of the image. E.g., 'A highly realistic cinematic shot of... The text is bright yellow with black outline saying [PUNCHY 3 WORDS]')
+(Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. It MUST include:
+1. Subject & Action: Intense, expressive facial expressions, dynamic macro objects, or dramatic splitting of the screen.
+2. Camera & Lighting: E.g., 8k resolution, hyper-realistic, cinematic lighting, volumetric rays, dramatic shadows, extreme depth of field.
+3. Mood & Color Grading: E.g., High contrast, vivid neon accents, intense cinematic color grading.
+4. Text Overlay: Specify a MASSIVE text taking up the top third. E.g., 'Massive bold yellow 3D text reading [PUNCHY 3 WORDS] with a heavy black drop shadow for maximum readability'.
+Make this prompt extremely descriptive (at least 4-5 sentences) to ensure the AI generates a breathtaking, hyper-realistic masterpiece thumbnail.)
 
 [SEO HASHTAGS]
 (10 highly searched global tags, e.g. #investing #economy)
@@ -235,7 +240,7 @@ def send_youtube_script_email(post_title, meta, script):
         print(f"   ❌ 유튜브 대본 이메일 전송 실패: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용 - 압축 해제본)
+# ✉️ 슬림 이메일 (인스타/숏폼용)
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -305,9 +310,9 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ 슬림 마케팅 이메일 발송 완료!")
+        print("   ✅ 인스타/숏폼 이메일 발송 완료!")
     except Exception as e:
-        print(f"   ❌ 이메일 전송 실패: {e}")
+        print(f"   ❌ 인스타/숏폼 이메일 전송 실패: {e}")
 
 # ═══════════════════════════════════════════════
 # 🛡️ SYSTEM UTILS & API ENGINE
@@ -335,7 +340,7 @@ def verify_wp_credentials():
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
     if not sys_inst:
-        sys_inst = "You are an elite financial analyst. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested."
+        sys_inst = "You are an elite financial analyst. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested. DO NOT omit any requested XML tags. Failure to include tags will break the system."
 
     config = types.GenerateContentConfig(
         system_instruction=sys_inst,
@@ -397,9 +402,6 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
-# ═══════════════════════════════════════════════
-# 🆕 이미 발행된 카테고리 체크
-# ═══════════════════════════════════════════════
 def already_published_today(cat):
     try:
         today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
@@ -551,6 +553,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 # ═══════════════════════════════════════════════
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
+
 PROMPT_UNIFIED_P1 = """You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline.
 
 ═══ THE GOLDEN RULE ═══
@@ -1341,19 +1344,6 @@ def make_thumbnail(title_text, cat, tier):
     )
     draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
 
-    if tier == "vip":
-        tl = "VIP"
-        t_bg = "#b8974d"
-        t_tc = "#ffffff"
-        try: tier_w = draw.textlength(tl, font=f_badge)
-        except: tier_w = len(tl) * 18 * S
-        badge_x = w - 40 * S - tier_w - 40 * S
-        draw.rounded_rectangle(
-            [(badge_x, 36 * S), (w - 40 * S, 86 * S)],
-            radius=25 * S, fill=t_bg
-        )
-        draw.text((badge_x + 20 * S, 44 * S), tl, font=f_badge, fill=t_tc)
-
     clean_title = _clean_seo_title(title_text).upper()
     clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
 
@@ -1752,7 +1742,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                 if video_mp4_bytes:
                     send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
             
-            # 🚨 뉴스레터 성공 후 👉 유튜브 3분할 집필 엔진 (2만자 보장) 가동!
+            # 🚨 뉴스레터 성공 후 👉 유튜브 분할 집필 엔진 (2만자 보장) 가동!
             if raw_for_cards:
                 yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
                 if yt_script:
@@ -1770,7 +1760,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v46.3 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.4 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1803,7 +1793,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v46.3 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.4 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1838,7 +1828,7 @@ def run_news_pipeline():
     day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
     cat = CATEGORIES[day_of_year % len(CATEGORIES)]
 
-    print(f"🚀 Starting v46.3 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+    print(f"🚀 Starting v46.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
