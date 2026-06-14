@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v45.6 (SEO & CTR Optimization Update)
-#
-# v45.5 → v45.6 핵심 변경 사항:
-#   1. AI 프롬프트 SEO 최적화: Broad 키워드 배제, 3~5단어의 롱테일 키워드 강제 적용
-#   2. 클릭률(CTR) 극대화: 메타 설명(Excerpt)에 클릭 유도 훅(Hook) 및 괄호/연도 삽입
-#   3. 자동 내부 링크(Internal Linking): 본문 하단에 Pillar Page 연결 박스 자동 생성 (체류시간/게재순위 상승)
-#   4. Rank Math 제목 잘림 방지 로직 개선
+# Warm Insight Auto Poster — v45.6 (SEO & CTR Optimization + Syntax Fix)
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -261,9 +255,9 @@ def xtag(raw, tag):
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL | re.IGNORECASE)
     if m:
         res = m.group(1).strip()
-        res = re.sub(r"^```(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
-        res = re.sub(r"\n
-```$", "", res)
+        # 🚨 [중요 버그 수정] 복사/붙여넣기 시 잘림 현상을 막기 위해 백틱(`)을 패턴화하여 사용
+        res = re.sub(r"^`{3}(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
+        res = re.sub(r"\n`{3}$", "", res)
         return res.strip()
     return ""
 
