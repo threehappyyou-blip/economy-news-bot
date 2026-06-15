@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — v46.4 (Hyper-Detailed Thumbnail Prompt Update)
+# Warm Insight Auto Poster — v46.5 (High-End Thumbnail Prompt & 20K Script)
 #
-# 핵심 복구 및 변경 사항:
-#   1. 기존 1700줄 규모의 비압축 원본 코드 완벽 유지 (뉴스레터 디자인 퀄리티 100% 보장)
-#   2. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 시스템 완벽 탑재
-#   3. 이메일 템플릿에 'Cross-Pollination(고정댓글/설명란용)' 텍스트 하드코딩
-#   4. [v46.4] Vrew/미드저니용 유튜브 썸네일 프롬프트 극사실주의(하이엔드) 디테일 대폭 강화
+# v46.4 → v46.5 핵심 변경 사항:
+#   1. 미드저니/Vrew 용 썸네일 프롬프트 공식을 강제 주입하여 극사실주의/고대비 썸네일 유도
+#   2. 썸네일 텍스트 오버레이(글씨)의 크기, 색상, 그림자 디테일 프롬프트 하드코딩
+#   3. 유튜브 대본 20,000자 생성 엔진 유지 및 코드 100% 무손실 복구
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -139,12 +138,10 @@ You must strictly use these XML tags:
 - Option C: 
 
 [THUMBNAIL PROMPT]
-(Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. It MUST include:
-1. Subject & Action: Intense, expressive facial expressions, dynamic macro objects, or dramatic splitting of the screen.
-2. Camera & Lighting: E.g., 8k resolution, hyper-realistic, cinematic lighting, volumetric rays, dramatic shadows, extreme depth of field.
-3. Mood & Color Grading: E.g., High contrast, vivid neon accents, intense cinematic color grading.
-4. Text Overlay: Specify a MASSIVE text taking up the top third. E.g., 'Massive bold yellow 3D text reading [PUNCHY 3 WORDS] with a heavy black drop shadow for maximum readability'.
-Make this prompt extremely descriptive (at least 4-5 sentences) to ensure the AI generates a breathtaking, hyper-realistic masterpiece thumbnail.)
+(CRITICAL INSTRUCTION: You MUST write an incredibly detailed, 80+ word professional AI image prompt for Midjourney v6/Vrew. DO NOT write a short summary. 
+You MUST strictly follow this exact template structure:
+"A hyper-realistic, 8k resolution cinematic photograph of [INSERT VIVID SUBJECT AND DRAMATIC ACTION HERE]. The scene features dramatic volumetric lighting, intense cinematic shadows, and high-contrast color grading. Shot on a 35mm lens, extreme depth of field, photorealistic, insanely detailed. In the top third of the image, there is massive, bold, 3D uppercase text reading '[INSERT 3-4 PUNCHY WORDS HERE]'. The text is bright glowing yellow with a heavy black outline and deep drop shadow for maximum visibility. --ar 16:9 --style raw --v 6.0"
+Fill in the brackets with highly imaginative, specific, and dramatic visual elements perfectly matching the newsletter's core theme.)
 
 [SEO HASHTAGS]
 (10 highly searched global tags, e.g. #investing #economy)
@@ -247,7 +244,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print("   ⚠️ 이메일 인증 정보가 없어 발송을 생략합니다.")
         return
 
-    print(f"   📧 {EMAIL_RECEIVER}로 슬림 마케팅 패키지를 전송합니다...")
+    print(f"   📧 {EMAIL_RECEIVER}로 인스타/숏폼 패키지를 전송합니다...")
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
@@ -402,6 +399,9 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
+# ═══════════════════════════════════════════════
+# 🆕 이미 발행된 카테고리 체크
+# ═══════════════════════════════════════════════
 def already_published_today(cat):
     try:
         today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
@@ -1742,7 +1742,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                 if video_mp4_bytes:
                     send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
             
-            # 🚨 뉴스레터 성공 후 👉 유튜브 분할 집필 엔진 (2만자 보장) 가동!
+            # 🚨 뉴스레터 성공 후 👉 유튜브 분할 집필 엔진 가동!
             if raw_for_cards:
                 yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
                 if yt_script:
@@ -1760,7 +1760,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v46.4 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.5 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1793,7 +1793,7 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v46.4 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.5 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1828,7 +1828,7 @@ def run_news_pipeline():
     day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
     cat = CATEGORIES[day_of_year % len(CATEGORIES)]
 
-    print(f"🚀 Starting v46.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+    print(f"🚀 Starting v46.5 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
