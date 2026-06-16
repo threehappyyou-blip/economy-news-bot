@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.8)
 #
 # 핵심 복구 및 변경 사항:
-#   1. 누락되었던 SOCIAL_LINKS(유튜브/틱톡 주소) 변수 완벽 복구
-#   2. 워드프레스 강력 방화벽 우회용 Stealth User-Agent 완벽 이식 (로그인 성공 확정)
-#   3. 기존 1700줄 규모의 원본 코드 완벽 유지 (뉴스레터 디자인 퀄리티 100% 보장)
-#   4. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 시스템 탑재
+#   1. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리를 100% 회피하여 무작위 배정
+#   2. [테스트 중복 방어] 카테고리별 1일 1포스팅 절대 규칙 적용 (실제 운영 시 완벽 작동)
+#   3. 누락되었던 SOCIAL_LINKS(유튜브/틱톡 주소) 변수 완벽 복구
+#   4. 워드프레스 강력 방화벽 우회용 Stealth User-Agent 완벽 이식
+#   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 시스템 탑재
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -128,7 +129,7 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE (2만 자 보장 분할 집필 + 하이엔드 썸네일)
+# 🎬 1. YOUTUBE CHAPTERING ENGINE
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """Based on the following newsletter content, generate a YouTube Metadata package.
 [CONTENT]
@@ -336,7 +337,6 @@ def check_env_vars():
         return False
     return True
 
-# 🚨 워드프레스 보안/방화벽 통과를 위한 인증 검사 (상세 로그 탑재)
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
@@ -415,11 +415,31 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
+# 🚨 [새로운 핵심 무기] 가장 최근에 쓴 글의 카테고리 이름을 훔쳐보는 함수
+def _get_latest_post_category_name():
+    try:
+        # 최근 발행된 1개의 글을 달라고 WP에 요청
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
+        if r.status_code == 200 and len(r.json()) > 0:
+            cat_ids = r.json()[0].get('categories', [])
+            if not cat_ids: return None
+            
+            # 카테고리 ID 번호를 가지고 이름을 매칭시키기 위해 카테고리 목록을 달라고 요청
+            r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
+            if r_cats.status_code == 200:
+                cat_map = {c['id']: c['name'] for c in r_cats.json()}
+                for cid in cat_ids:
+                    name = cat_map.get(cid)
+                    # 혹시나 "Insight" 같은 공통 부모 카테고리 말고 "Economy", "Politics" 등 메인 카테고리를 색출해냅니다.
+                    if name in CATEGORIES:
+                        return name
+    except Exception as e:
+        print(f"   ⚠️ 최근 카테고리 확인 실패: {e}")
+    return None
+
 def already_published_today(cat):
     try:
-        today_str = datetime.datetime.utcnow().strftime("%Y-%m-%d")
         cat_slug = cat.lower().replace(" ", "-")
-
         r = requests.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
             auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
@@ -432,16 +452,19 @@ def already_published_today(cat):
             f"{WP_URL}/wp-json/wp/v2/posts",
             params={
                 "categories": cat_id,
-                "after": f"{today_str}T00:00:00",
-                "before": f"{today_str}T23:59:59",
                 "per_page": 1,
                 "status": "publish"
             },
             auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
         )
         if r2.status_code == 200 and len(r2.json()) > 0:
-            print(f"   ⏭️  [{cat}] Already published today: {r2.json()[0].get('link', '')}")
-            return True
+            latest_post = r2.json()[0]
+            post_date_gmt = latest_post.get("date_gmt", "")[:10] 
+            today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+            
+            if post_date_gmt == today_utc:
+                print(f"   ⏭️  [{cat}] 중복 방어 작동: 오늘 이미 발행된 게시물이 존재합니다. ({latest_post.get('link')})")
+                return True
     except Exception as e:
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
@@ -1644,7 +1667,7 @@ def _upload_image(img_bytes, filename):
             "Content-Disposition": f'attachment; filename="{filename}"',
             "Content-Type": "image/jpeg"
         }
-        headers.update(REQ_HEADERS) # 🚨 v46.6 보안 헤더 추가
+        headers.update(REQ_HEADERS) # 🚨 v46.8 보안 헤더 추가
         resp = requests.post(
             f"{WP_URL}/wp-json/wp/v2/media",
             headers=headers,
@@ -1746,7 +1769,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        # 🚨 v46.6 보안 헤더 적용
+        # 🚨 v46.8 보안 헤더 적용
         r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
             json=post_data,
@@ -1781,15 +1804,16 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 # ═══════════════════════════════════════════════
 def run_foundation_pipeline():
     cat = "Foundation"
-    print(f"🚀 Starting v46.6 SEO Foundation Pipeline | Category: {cat}")
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.8 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    if not force and already_published_today(cat):
-        print(f"   ⏭️  Skipping {cat} — already published today.")
-        return
     if force:
-        print(f"   ⚡ FORCE_PUBLISH=true — 중복 체크 건너뜀 (테스트 모드)")
+        print(f"   ⚡ [테스트 모드] FORCE_PUBLISH=true — 중복 체크를 무시하고 강제 발행합니다.")
+    elif already_published_today(cat):
+        print(f"   🛑 [중복 방어 작동] {cat} 카테고리는 오늘 이미 발행되었습니다. 스크립트를 종료합니다.")
+        return
 
     theme = random.choice(FOUNDATION_TOPICS)
     tier = "premium"
@@ -1814,15 +1838,16 @@ def run_foundation_pipeline():
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
-    print(f"🚀 Starting v46.6 Catalyst Pipeline | Category: {cat}")
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.8 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    if not force and already_published_today(cat):
-        print(f"   ⏭️  Skipping {cat} — already published today.")
-        return
     if force:
-        print(f"   ⚡ FORCE_PUBLISH=true — 중복 체크 건너뜀 (테스트 모드)")
+        print(f"   ⚡ [테스트 모드] FORCE_PUBLISH=true — 중복 체크를 무시하고 강제 발행합니다.")
+    elif already_published_today(cat):
+        print(f"   🛑 [중복 방어 작동] {cat} 카테고리는 오늘 이미 발행되었습니다. 스크립트를 종료합니다.")
+        return
 
     theme = random.choice(PHILOSOPHY_TOPICS)
     tier = "premium"
@@ -1848,16 +1873,25 @@ def run_philosophy_pipeline():
 def run_news_pipeline():
     day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
     cat = CATEGORIES[day_of_year % len(CATEGORIES)]
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
-    print(f"🚀 Starting v46.6 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+    if force:
+        print(f"🚀 Starting v46.8 Unified News Pipeline | TEST MODE (Force Publish)")
+    else:
+        print(f"🚀 Starting v46.8 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    if not force and already_published_today(cat):
-        print(f"   ⏭️  Skipping {cat} — already published today.")
-        return
     if force:
-        print(f"   ⚡ FORCE_PUBLISH=true — 중복 체크 건너뜀 (테스트 모드)")
+        latest_cat = _get_latest_post_category_name()
+        available_cats = [c for c in CATEGORIES if c != latest_cat]
+        if not available_cats: available_cats = CATEGORIES
+        cat = random.choice(available_cats)
+        print(f"   ⚡ [테스트 모드] 직전 발행 카테고리('{latest_cat}')를 피해 '{cat}'(으)로 무작위 발행합니다.")
+    else:
+        if already_published_today(cat):
+            print(f"   🛑 [중복 방어 작동] {cat} 카테고리는 오늘 이미 발행되었습니다. 스크립트를 즉시 종료합니다.")
+            return
 
     all_news = fetch_news_pool(cat)
     total_news = len(all_news)
