@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.1)
 #
 # 핵심 복구 및 변경 사항:
-#   1. [Engagement Loop] 최상단 'Warm Index' 시각적 온도계 게이지 바 자동 생성
-#   2. [Engagement Loop] 최하단 '1 Click Poll' 스크롤 연동 투표 버튼 자동 생성
-#   3. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리를 100% 회피하여 무작위 배정
-#   4. [테스트 중복 방어] 카테고리별 1일 1포스팅 절대 규칙 적용
-#   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 및 3중 우회망 탑재
+#   1. [문법 픽스] Poll UI 생성 시 f-string 역슬래시 에러 완벽 해결
+#   2. [Engagement Loop] 최상단 'Warm Index' 시각적 온도계 게이지 바 자동 생성
+#   3. [Engagement Loop] 최하단 '1 Click Poll' 스크롤 연동 투표 버튼 자동 생성
+#   4. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리 100% 회피 무작위 배정
+#   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성 및 3중 우회망 탑재
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -750,6 +750,10 @@ def _build_poll(raw_data):
     
     if not question or not opt1: return ""
 
+    opt3_html = ""
+    if opt3:
+        opt3_html = f"""<a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt3}</a>"""
+
     return f"""
     <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin:50px 0; text-align:center;">
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px;">🗳️ What's your take?</h3>
@@ -758,7 +762,7 @@ def _build_poll(raw_data):
         <div style="display:flex; flex-direction:column; gap:12px; max-width:400px; margin:0 auto;">
             <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt1}</a>
             <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt2}</a>
-            {f'<a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor=\'{GOLD}\'; this.style.backgroundColor=\'#fefce8\';" onmouseout="this.style.borderColor=\'{BORDER}\'; this.style.backgroundColor=\'#ffffff\';">{opt3}</a>' if opt3 else ''}
+            {opt3_html}
         </div>
         <p style="font-size:13px; color:{MUTED}; margin-top:20px; font-style:italic;">Click to join the discussion below! 👇</p>
     </div>
@@ -1871,7 +1875,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.1 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1905,7 +1909,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.1 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1941,9 +1945,9 @@ def run_news_pipeline():
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
     if force:
-        print(f"🚀 Starting v46.9 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.1 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+        print(f"🚀 Starting v46.9.1 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
