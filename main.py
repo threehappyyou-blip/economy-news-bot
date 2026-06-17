@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.8)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9)
 #
 # 핵심 복구 및 변경 사항:
-#   1. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리를 100% 회피하여 무작위 배정
-#   2. [테스트 중복 방어] 카테고리별 1일 1포스팅 절대 규칙 적용 (실제 운영 시 완벽 작동)
-#   3. 누락되었던 SOCIAL_LINKS(유튜브/틱톡 주소) 변수 완벽 복구
-#   4. 워드프레스 강력 방화벽 우회용 Stealth User-Agent 완벽 이식
-#   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 시스템 탑재
+#   1. [Engagement Loop] 최상단 'Warm Index' 시각적 온도계 게이지 바 자동 생성
+#   2. [Engagement Loop] 최하단 '1 Click Poll' 스크롤 연동 투표 버튼 자동 생성
+#   3. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리를 100% 회피하여 무작위 배정
+#   4. [테스트 중복 방어] 카테고리별 1일 1포스팅 절대 규칙 적용
+#   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성(3-Phase Chaptering) 및 3중 우회망 탑재
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -415,22 +415,18 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
-# 🚨 [새로운 핵심 무기] 가장 최근에 쓴 글의 카테고리 이름을 훔쳐보는 함수
 def _get_latest_post_category_name():
     try:
-        # 최근 발행된 1개의 글을 달라고 WP에 요청
         r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
         if r.status_code == 200 and len(r.json()) > 0:
             cat_ids = r.json()[0].get('categories', [])
             if not cat_ids: return None
             
-            # 카테고리 ID 번호를 가지고 이름을 매칭시키기 위해 카테고리 목록을 달라고 요청
             r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
             if r_cats.status_code == 200:
                 cat_map = {c['id']: c['name'] for c in r_cats.json()}
                 for cid in cat_ids:
                     name = cat_map.get(cid)
-                    # 혹시나 "Insight" 같은 공통 부모 카테고리 말고 "Economy", "Politics" 등 메인 카테고리를 색출해냅니다.
                     if name in CATEGORIES:
                         return name
     except Exception as e:
@@ -547,6 +543,11 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 <DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an easy everyday analogy. e.g., "Think of it like a fruit basket...")</DEFINITION>
 <WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care about this concept and how it builds wealth.)</WHY_MATTERS>
 <HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, actionable steps for a beginner to start using this concept today. Format as a bulleted list or numbered steps within the paragraph.)</HOW_TO_START>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to this topic for the reader. e.g., "What is your biggest fear when investing?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
 """
 
 # ═══════════════════════════════════════════════
@@ -584,6 +585,11 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 <ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme)</ANCHOR>
 <REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses and logically argue for voluntary fatigue and action.)</REFLECTION>
 <CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to this topic. e.g., "What is currently holding you back the most?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
 """
 
 # ═══════════════════════════════════════════════
@@ -633,6 +639,10 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly clickable using numbers or brackets like [2026] or [Alert].)</TITLE>
 <SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, specific to the news event. E.g., "impact of fed rate cuts on tech" NOT just "fed rate cut")</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
+
+<WARM_INDEX_SCORE>(A number from 0 to 100 representing market fear/greed based on this news. 0=Extreme Fear, 100=Extreme Greed. Output ONLY the integer number.)</WARM_INDEX_SCORE>
+<WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score. E.g., "Tech rally masks underlying economic anxiety.")</WARM_INDEX_REASON>
+
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
 (REQUIRED — extract OR estimate 3-4 key market metrics. Format exactly:
@@ -680,11 +690,80 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <DO_ACTION>(1-2 specific actions. Must include either a ticker, a price level, OR a date trigger.)</DO_ACTION>
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
-<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>"""
+<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to today's news to ask the reader. e.g., "Do you think Apple is currently overvalued?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
 
 # ═══════════════════════════════════════════════
 # 📊 VISUAL DATA BUILDERS & HTML
 # ═══════════════════════════════════════════════
+
+def _build_warm_index(raw_data):
+    score_str = xtag(raw_data, "WARM_INDEX_SCORE")
+    reason = xtag(raw_data, "WARM_INDEX_REASON")
+    
+    if not score_str: return ""  # Foundation, Catalyst는 생략
+    
+    try: score = int(re.sub(r'[^0-9]', '', score_str))
+    except: return ""
+    score = max(0, min(100, score))
+    
+    # 0~30 Fear(Blue), 31~69 Neutral(Yellow), 70~100 Greed(Red)
+    if score < 30:
+        c_main, label, icon = "#3b82f6", "Fear Zone", "❄️"
+        grad = "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
+    elif score > 70:
+        c_main, label, icon = "#ef4444", "Greed Zone", "🔥"
+        grad = "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
+    else:
+        c_main, label, icon = "#f59e0b", "Neutral", "⚖️"
+        grad = "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
+
+    return f"""
+    <div style="background:#ffffff; border:2px solid {BORDER}; border-radius:12px; padding:25px; margin:0 0 35px 0; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+            <div>
+                <span style="font-size:13px; font-weight:800; color:{MUTED}; text-transform:uppercase; letter-spacing:1px;">Today's Warm Index</span>
+                <div style="font-size:20px; font-weight:800; color:{DARK}; margin-top:4px;">{icon} {label}</div>
+            </div>
+            <div style="text-align:right;">
+                <span style="font-size:32px; font-weight:900; color:{c_main}; line-height:1;">{score}</span>
+                <span style="font-size:14px; color:{MUTED}; font-weight:600;">/ 100</span>
+            </div>
+        </div>
+        <div style="background:#e2e8f0; height:10px; border-radius:5px; overflow:hidden; position:relative; margin-bottom:12px;">
+            <div style="background:{grad}; height:100%; width:{score}%; border-radius:5px; transition:width 1s ease-in-out;"></div>
+        </div>
+        <p style="margin:0; font-size:14px; color:{SLATE}; font-style:italic; text-align:center;">"{reason}"</p>
+    </div>
+    """
+
+def _build_poll(raw_data):
+    question = xtag(raw_data, "POLL_QUESTION")
+    opt1 = xtag(raw_data, "POLL_OPT1")
+    opt2 = xtag(raw_data, "POLL_OPT2")
+    opt3 = xtag(raw_data, "POLL_OPT3")
+    
+    if not question or not opt1: return ""
+
+    return f"""
+    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin:50px 0; text-align:center;">
+        <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px;">🗳️ What's your take?</h3>
+        <p style="font-size:18px; font-weight:600; color:{SLATE}; margin-bottom:25px;">"{question}"</p>
+        
+        <div style="display:flex; flex-direction:column; gap:12px; max-width:400px; margin:0 auto;">
+            <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt1}</a>
+            <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt2}</a>
+            {f'<a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor=\'{GOLD}\'; this.style.backgroundColor=\'#fefce8\';" onmouseout="this.style.borderColor=\'{BORDER}\'; this.style.backgroundColor=\'#ffffff\';">{opt3}</a>' if opt3 else ''}
+        </div>
+        <p style="font-size:13px; color:{MUTED}; margin-top:20px; font-style:italic;">Click to join the discussion below! 👇</p>
+    </div>
+    """
+
 def _build_data_table(raw_data, title="Market Dashboard"):
     if not raw_data:
         raw_data = """S&P 500 | 5,234 | UP | Index near recent highs
@@ -834,8 +913,6 @@ def _build_pillar_link(target_cat):
 # ═══════════════════════════════════════════════
 # 📎 ENGAGEMENT & FOOTER BUILDERS
 # ═══════════════════════════════════════════════
-
-# 🚨 지워졌던 유튜브/틱톡 공유 링크 주소 완벽 복구
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
     "tiktok": "https://www.tiktok.com/@warminsight"
@@ -964,14 +1041,9 @@ def build_foundation_html(raw, author, tf, title, cat):
     """
 
     html += _build_pillar_link("Foundation") 
-
-    html += """
-    <div style="margin: 40px 0; text-align: center;">
-        <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
-            💬 Share Your Thoughts ↓
-        </a>
-    </div>
-    """
+    
+    # 🚨 1 Click Poll 추가
+    html += _build_poll(raw)
 
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "foundation")
     html += _build_social_share(title, slug)
@@ -1040,14 +1112,9 @@ def build_philosophy_html(raw, author, tf, title, cat):
     """
 
     html += _build_pillar_link("The Daily Catalyst") 
-
-    html += """
-    <div style="margin: 40px 0; text-align: center;">
-        <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
-            💬 Share Your Thoughts ↓
-        </a>
-    </div>
-    """
+    
+    # 🚨 1 Click Poll 추가
+    html += _build_poll(raw)
 
     slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "catalyst")
     html += _build_social_share(title, slug)
@@ -1082,6 +1149,9 @@ def build_html(tier, cat, raw, author, tf, title):
         </p>
     </div>
     """
+    
+    # 🚨 Warm Index 추가 (뉴스레터 최상단)
+    html += _build_warm_index(raw)
 
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
@@ -1191,14 +1261,9 @@ def build_html(tier, cat, raw, author, tf, title):
     """
 
     html += _build_pillar_link("Insight") 
-
-    html += """
-    <div style="margin: 40px 0; text-align: center;">
-        <a href="#respond" style="display: flex; justify-content: center; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; padding: 18px 20px; border-radius: 50px; font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; text-decoration: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); line-height: 1;">
-            💬 Share Your Thoughts ↓
-        </a>
-    </div>
-    """
+    
+    # 🚨 1 Click Poll 추가
+    html += _build_poll(raw)
 
     html += _build_social_share(title, slug)
     html += _build_branded_footer()
@@ -1806,7 +1871,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.8 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1840,7 +1905,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.8 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1876,9 +1941,9 @@ def run_news_pipeline():
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
     if force:
-        print(f"🚀 Starting v46.8 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.8 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+        print(f"🚀 Starting v46.9 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
@@ -1921,6 +1986,8 @@ def run_news_pipeline():
     slug = make_slug(kw, title, cat)
     author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+    
+    # 🚨 여기에 Warm Index와 Poll이 렌더링 됩니다.
     html = build_html(tier, cat, raw, author, tf, title)
 
     img_bytes = make_thumbnail(title, cat, tier)
