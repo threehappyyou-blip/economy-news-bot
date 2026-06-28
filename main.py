@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.1) + Ad Inserter
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.1)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [문법 픽스] Poll UI 생성 시 f-string 역슬래시 에러 완벽 해결
@@ -9,7 +9,6 @@
 #   3. [Engagement Loop] 최하단 '1 Click Poll' 스크롤 연동 투표 버튼 자동 생성
 #   4. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리 100% 회피 무작위 배정
 #   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성 및 3중 우회망 탑재
-#   6. [수익화] HTML 렌더링 시 [adinserter block="2"] 단축코드 자동 삽입 기능 추가
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -1035,9 +1034,6 @@ def build_foundation_html(raw, author, tf, title, cat):
     </div>
     """
 
-    # 🚨 [광고 삽입] 기초 가이드 본문 중간 배너
-    html += """<div style="margin: 40px 0; text-align: center;">[adinserter block="2"]</div>"""
-
     how_text = xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
@@ -1103,9 +1099,6 @@ def build_philosophy_html(raw, author, tf, title, cat):
         </div>
     </div>
     """
-
-    # 🚨 [광고 삽입] 철학/인사이트 본문 중간 배너
-    html += """<div style="margin: 40px 0; text-align: center;">[adinserter block="2"]</div>"""
 
     catalyst_raw = xtag(raw, "CATALYST")
     catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw)
@@ -1191,9 +1184,6 @@ def build_html(tier, cat, raw, author, tf, title):
         <p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p>
     </div>
     """
-
-    # 🚨 [광고 삽입] 데일리 뉴스 본문 중간 배너
-    html += """<div style="margin: 40px 0; text-align: center;">[adinserter block="2"]</div>"""
 
     html += f"""
     <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
