@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.2) + WAF Bypass
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.3) + WAF Bypass
 #
 # 핵심 복구 및 변경 사항:
 #   1. [문법 픽스] Poll UI 생성 시 f-string 역슬래시 에러 완벽 해결
@@ -10,7 +10,8 @@
 #   4. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리 100% 회피 무작위 배정
 #   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성 및 3중 우회망 탑재
 #   6. [방화벽 우회] [adinserter] 단축코드 대신 안전한 HTML 앵커(id="warm-ad-middle") 삽입
-#   7. [에러 방어] 방화벽(WAF)이 200 OK로 가짜 응답 시 이메일 오발송 차단 안전장치 보강
+#   7. [에러 방어] 방화벽(WAF)이 200 OK로 가짜 응답 시 이메일 오발송 차단 및 파서 보호 
+#   8. [헤더 위장] Imunify360 우회를 위해 Mac Safari 위장 및 Cache-Control 적용
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -42,10 +43,11 @@ EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com" # 유튜브 대본 전용 이메일
 
-# 🚨 봇 차단 방지용 크롬 브라우저 위장 헤더 (로그인 방어막 우회)
+# 🚨 봇 차단 방지용 위장 헤더 (Mac OS Safari 위장 및 캐시 무효화)
 REQ_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*'
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
+    'Accept': 'application/json, text/plain, */*',
+    'Cache-Control': 'no-cache'
 }
 
 # 유튜브 대본처럼 매우 긴 글을 쓰기 위해 2.5-pro 모델 우선 배정
@@ -343,12 +345,19 @@ def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
         resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
-        # 🚨 [에러 방어] WAF가 200 응답을 줘도 올바른 JSON(Dict)인지 확인합니다.
-        if resp.status_code == 200 and isinstance(resp.json(), dict) and "id" in resp.json(): 
+        # 🚨 [에러 방어] WAF가 200 응답을 줘도 올바른 JSON(Dict)인지 확인하여 가짜 성공 차단
+        try:
+            resp_json = resp.json()
+            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
+        except:
+            is_valid_json = False
+
+        if resp.status_code == 200 and is_valid_json: 
             print("   ✅ WP Auth Successful!")
             return True
         else:
-            print(f"   ❌ WP Auth Failed or Blocked by WAF! (Response: {resp.text[:100]})")
+            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
+            print(f"   💬 Server Response: {resp.text[:250]}")
     except Exception as e: 
         print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
     return False
@@ -420,18 +429,24 @@ def _clean_seo_title(title):
 def _get_latest_post_category_name():
     try:
         r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
-        # 🚨 [에러 방어] 리스트 타입인지 명확히 확인
-        if r.status_code == 200 and isinstance(r.json(), list) and len(r.json()) > 0:
-            cat_ids = r.json()[0].get('categories', [])
-            if not cat_ids: return None
-            
-            r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
-            if r_cats.status_code == 200 and isinstance(r_cats.json(), list):
-                cat_map = {c['id']: c['name'] for c in r_cats.json()}
-                for cid in cat_ids:
-                    name = cat_map.get(cid)
-                    if name in CATEGORIES:
-                        return name
+        # 🚨 [에러 방어] 리스트 타입인지 명확히 확인하여 WAF HTML 에러 차단
+        if r.status_code == 200:
+            try:
+                r_json = r.json()
+                if isinstance(r_json, list) and len(r_json) > 0:
+                    cat_ids = r_json[0].get('categories', [])
+                    if not cat_ids: return None
+                    
+                    r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
+                    if r_cats.status_code == 200:
+                        r_cats_json = r_cats.json()
+                        if isinstance(r_cats_json, list):
+                            cat_map = {c['id']: c['name'] for c in r_cats_json}
+                            for cid in cat_ids:
+                                name = cat_map.get(cid)
+                                if name in CATEGORIES:
+                                    return name
+            except: pass
     except Exception as e:
         print(f"   ⚠️ 최근 카테고리 확인 실패: {e}")
     return None
@@ -443,9 +458,13 @@ def already_published_today(cat):
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
             auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
         )
-        if r.status_code != 200 or not isinstance(r.json(), list) or not r.json():
-            return False
-        cat_id = r.json()[0]["id"]
+        if r.status_code != 200: return False
+        
+        try:
+            r_json = r.json()
+            if not isinstance(r_json, list) or not r_json: return False
+            cat_id = r_json[0]["id"]
+        except: return False
 
         r2 = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
@@ -456,14 +475,18 @@ def already_published_today(cat):
             },
             auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
         )
-        if r2.status_code == 200 and isinstance(r2.json(), list) and len(r2.json()) > 0:
-            latest_post = r2.json()[0]
-            post_date_gmt = latest_post.get("date_gmt", "")[:10] 
-            today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
-            
-            if post_date_gmt == today_utc:
-                print(f"   ⏭️  [{cat}] 중복 방어 작동: 오늘 이미 발행된 게시물이 존재합니다. ({latest_post.get('link')})")
-                return True
+        if r2.status_code == 200:
+            try:
+                r2_json = r2.json()
+                if isinstance(r2_json, list) and len(r2_json) > 0:
+                    latest_post = r2_json[0]
+                    post_date_gmt = latest_post.get("date_gmt", "")[:10] 
+                    today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+                    
+                    if post_date_gmt == today_utc:
+                        print(f"   ⏭️  [{cat}] 중복 방어 작동: 오늘 이미 발행된 게시물이 존재합니다. ({latest_post.get('link')})")
+                        return True
+            except: pass
     except Exception as e:
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
@@ -1861,8 +1884,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         
         # 🚨 [에러 방어] 방화벽(WAF)이 200 OK를 리턴해도 실제 링크가 있는지 깐깐하게 검사합니다.
         if r.status_code in (200, 201):
-            resp_json = r.json() if isinstance(r.json(), dict) else {}
-            link = resp_json.get('link')
+            try:
+                resp_json = r.json()
+                link = resp_json.get('link') if isinstance(resp_json, dict) else None
+            except:
+                link = None
             
             if link:
                 print(f"   ✅ Published: {link}")
@@ -1896,7 +1922,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.2 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.3 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1930,7 +1956,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.2 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.3 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1966,9 +1992,9 @@ def run_news_pipeline():
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
     if force:
-        print(f"🚀 Starting v46.9.2 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.3 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.2 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+        print(f"🚀 Starting v46.9.3 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
