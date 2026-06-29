@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.3) + WAF Bypass
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.4)
 #
 # 핵심 복구 및 변경 사항:
-#   1. [문법 픽스] Poll UI 생성 시 f-string 역슬래시 에러 완벽 해결
-#   2. [Engagement Loop] 최상단 'Warm Index' 시각적 온도계 게이지 바 자동 생성
-#   3. [Engagement Loop] 최하단 '1 Click Poll' 스크롤 연동 투표 버튼 자동 생성
-#   4. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리 100% 회피 무작위 배정
-#   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성 및 3중 우회망 탑재
-#   6. [방화벽 우회] [adinserter] 단축코드 대신 안전한 HTML 앵커(id="warm-ad-middle") 삽입
-#   7. [에러 방어] 방화벽(WAF)이 200 OK로 가짜 응답 시 이메일 오발송 차단 및 파서 보호 
-#   8. [헤더 위장] Imunify360 우회를 위해 Mac Safari 위장 및 Cache-Control 적용
+#   1. [UI 개선] 본문 최상단 메타 정보(작성자/날짜/배지) 영역 전면 삭제
+#   2. [스마트 로테이션] FORCE_PUBLISH 시 동일 카테고리 연속 발행 원천 차단 (이중 방어 로직)
+#   3. [방화벽 우회] [adinserter] 단축코드 대신 안전한 HTML 투명 깃발(id="warm-ad-middle") 삽입
+#   4. [에러 방어] 방화벽(WAF) 200 OK 속임수 방어 및 Mac Safari 헤더 위장 적용
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -50,7 +46,6 @@ REQ_HEADERS = {
     'Cache-Control': 'no-cache'
 }
 
-# 유튜브 대본처럼 매우 긴 글을 쓰기 위해 2.5-pro 모델 우선 배정
 MODEL_PRI = {
     "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
     "Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"], 
@@ -144,18 +139,13 @@ You must strictly use these XML tags:
 
 <METADATA>
 [VIRAL TITLES]
-(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'. NO clichés like 'What 90% don't know'.)
+(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'.)
 - Option A: 
 - Option B: 
 - Option C: 
 
 [THUMBNAIL PROMPT]
-(Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. It MUST include:
-1. Subject & Action: Intense, expressive facial expressions, dynamic macro objects, or dramatic splitting of the screen.
-2. Camera & Lighting: E.g., 8k resolution, hyper-realistic, cinematic lighting, volumetric rays, dramatic shadows, extreme depth of field.
-3. Mood & Color Grading: E.g., High contrast, vivid neon accents, intense cinematic color grading.
-4. Text Overlay: Specify a MASSIVE text taking up the top third. E.g., 'Massive bold yellow 3D text reading [PUNCHY 3 WORDS] with a heavy black drop shadow for maximum readability'.
-Make this prompt extremely descriptive (at least 4-5 sentences) to ensure the AI generates a breathtaking, hyper-realistic masterpiece thumbnail.)
+(Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew.)
 
 [SEO HASHTAGS]
 (10 highly searched global tags, e.g. #investing #economy)
@@ -345,7 +335,6 @@ def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
         resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
-        # 🚨 [에러 방어] WAF가 200 응답을 줘도 올바른 JSON(Dict)인지 확인하여 가짜 성공 차단
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -428,25 +417,28 @@ def _clean_seo_title(title):
 
 def _get_latest_post_category_name():
     try:
+        # 최근 글 1개 불러오기
         r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
-        # 🚨 [에러 방어] 리스트 타입인지 명확히 확인하여 WAF HTML 에러 차단
         if r.status_code == 200:
-            try:
-                r_json = r.json()
-                if isinstance(r_json, list) and len(r_json) > 0:
-                    cat_ids = r_json[0].get('categories', [])
-                    if not cat_ids: return None
+            try: r_json = r.json()
+            except: return None
+            
+            if isinstance(r_json, list) and len(r_json) > 0:
+                cat_ids = r_json[0].get('categories', [])
+                if not cat_ids: return None
+                
+                # 전체 카테고리 목록 불러오기 (per_page=100 추가)
+                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
+                if r_cats.status_code == 200:
+                    try: r_cats_json = r_cats.json()
+                    except: return None
                     
-                    r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
-                    if r_cats.status_code == 200:
-                        r_cats_json = r_cats.json()
-                        if isinstance(r_cats_json, list):
-                            cat_map = {c['id']: c['name'] for c in r_cats_json}
-                            for cid in cat_ids:
-                                name = cat_map.get(cid)
-                                if name in CATEGORIES:
-                                    return name
-            except: pass
+                    if isinstance(r_cats_json, list):
+                        cat_map = {c['id']: c['name'] for c in r_cats_json}
+                        for cid in cat_ids:
+                            name = cat_map.get(cid)
+                            if name in CATEGORIES:
+                                return name
     except Exception as e:
         print(f"   ⚠️ 최근 카테고리 확인 실패: {e}")
     return None
@@ -986,23 +978,6 @@ def _build_branded_footer():
     </div>
     """
 
-def _build_author_bio(cat):
-    author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
-    return f"""
-    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:24px; margin:35px 0; display:flex; gap:20px; align-items:center;">
-        <div style="min-width:56px; height:56px; border-radius:50%; background:{GOLD}; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff;">
-            W
-        </div>
-        <div>
-            <p style="font-size:17px; font-weight:700; color:{DARK}; margin:0 0 6px;">{author}</p>
-            <p style="font-size:14px; color:{MUTED}; margin:0; line-height:1.6;">
-                AI-powered financial analysis, curated and edited by Jiho, founder of Warm Insight. 
-                We translate Wall Street complexity into clear insights for everyday investors.
-            </p>
-        </div>
-    </div>
-    """
-
 def _build_founder_note():
     return f"""
     <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); border:2px solid {GOLD}; border-radius:14px; padding:30px; margin:40px 0;">
@@ -1029,18 +1004,6 @@ def _build_founder_note():
 # ═══════════════════════════════════════════════
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
-
-    html += f"""
-    <div style="border-top:4px solid #10b981; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
-        <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
-            <strong style="color:{DARK};">By {author}</strong> &nbsp;|&nbsp; {tf}
-            <span style="background:#10b981; color:#fff; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">BEGINNER'S GUIDE</span>
-        </p>
-        <p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">
-            Edited by Jiho, Founder
-        </p>
-    </div>
-    """
 
     def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
@@ -1096,18 +1059,6 @@ def build_foundation_html(raw, author, tf, title, cat):
 # ═══════════════════════════════════════════════
 def build_philosophy_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
-
-    html += f"""
-    <div style="border-top:4px solid {GOLD}; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
-        <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
-            <strong style="color:{DARK};">By {author}</strong> &nbsp;|&nbsp; {tf}
-            <span style="background:{DARK}; color:{GOLD}; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">DAILY INSIGHT</span>
-        </p>
-        <p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">
-            Edited by Jiho, Founder
-        </p>
-    </div>
-    """
 
     html += f"""
     <div style="text-align:center; margin:50px 0;">
@@ -1173,18 +1124,6 @@ def build_html(tier, cat, raw, author, tf, title):
 
     badge = "WARM INSIGHT"
     badge_bg = GOLD
-
-    html += f"""
-    <div style="border-top:4px solid {badge_bg}; border-bottom:1px solid {BORDER}; padding:18px 0; margin-bottom:35px;">
-        <p style="margin:0 0 6px; font-size:15px; color:{MUTED};">
-            <strong style="color:{DARK};">By {author}</strong> &nbsp;|&nbsp; {tf}
-            <span style="background:{badge_bg}; color:#fff; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:800; letter-spacing:1px; margin-left:10px;">{badge}</span>
-        </p>
-        <p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">
-            Edited by Jiho, Founder
-        </p>
-    </div>
-    """
     
     # 🚨 Warm Index 추가 (뉴스레터 최상단)
     html += _build_warm_index(raw)
@@ -1306,7 +1245,6 @@ def build_html(tier, cat, raw, author, tf, title):
 
     html += _build_social_share(title, slug)
     html += _build_branded_footer()
-    html += _build_author_bio(cat)
 
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1922,7 +1860,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.3 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.4 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1956,7 +1894,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.3 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.4 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1992,9 +1930,9 @@ def run_news_pipeline():
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
     if force:
-        print(f"🚀 Starting v46.9.3 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.4 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.3 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+        print(f"🚀 Starting v46.9.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
@@ -2002,8 +1940,16 @@ def run_news_pipeline():
         latest_cat = _get_latest_post_category_name()
         available_cats = [c for c in CATEGORIES if c != latest_cat]
         if not available_cats: available_cats = CATEGORIES
-        cat = random.choice(available_cats)
-        print(f"   ⚡ [테스트 모드] 직전 발행 카테고리('{latest_cat}')를 피해 '{cat}'(으)로 무작위 발행합니다.")
+        
+        # 🚨 [이중 방어] 오늘 이미 발행된 카테고리도 피하도록 셔플 후 검사
+        random.shuffle(available_cats)
+        cat = available_cats[0]
+        for fallback_cat in available_cats:
+            if not already_published_today(fallback_cat):
+                cat = fallback_cat
+                break
+                
+        print(f"   ⚡ [테스트 모드] 직전 발행('{latest_cat}') 및 오늘 발행본을 피해 '{cat}'(으)로 강제 무작위 발행합니다.")
     else:
         if already_published_today(cat):
             print(f"   🛑 [중복 방어 작동] {cat} 카테고리는 오늘 이미 발행되었습니다. 스크립트를 즉시 종료합니다.")
