@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.1)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.2) + WAF Bypass
 #
 # 핵심 복구 및 변경 사항:
 #   1. [문법 픽스] Poll UI 생성 시 f-string 역슬래시 에러 완벽 해결
@@ -9,6 +9,8 @@
 #   3. [Engagement Loop] 최하단 '1 Click Poll' 스크롤 연동 투표 버튼 자동 생성
 #   4. [스마트 로테이션] 강제 발행(테스트) 시 직전 발행된 카테고리 100% 회피 무작위 배정
 #   5. 유튜브 롱폼 대본(20,000자 이상) 분할 생성 및 3중 우회망 탑재
+#   6. [방화벽 우회] [adinserter] 단축코드 대신 안전한 HTML 앵커(id="warm-ad-middle") 삽입
+#   7. [에러 방어] 방화벽(WAF)이 200 OK로 가짜 응답 시 이메일 오발송 차단 안전장치 보강
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -341,12 +343,12 @@ def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
         resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
-        if resp.status_code == 200: 
+        # 🚨 [에러 방어] WAF가 200 응답을 줘도 올바른 JSON(Dict)인지 확인합니다.
+        if resp.status_code == 200 and isinstance(resp.json(), dict) and "id" in resp.json(): 
             print("   ✅ WP Auth Successful!")
             return True
         else:
-            print(f"   ❌ WP Auth Failed! (HTTP Status: {resp.status_code})")
-            print(f"   💬 Server Response: {resp.text[:250]}")
+            print(f"   ❌ WP Auth Failed or Blocked by WAF! (Response: {resp.text[:100]})")
     except Exception as e: 
         print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
     return False
@@ -418,12 +420,13 @@ def _clean_seo_title(title):
 def _get_latest_post_category_name():
     try:
         r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
-        if r.status_code == 200 and len(r.json()) > 0:
+        # 🚨 [에러 방어] 리스트 타입인지 명확히 확인
+        if r.status_code == 200 and isinstance(r.json(), list) and len(r.json()) > 0:
             cat_ids = r.json()[0].get('categories', [])
             if not cat_ids: return None
             
             r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
-            if r_cats.status_code == 200:
+            if r_cats.status_code == 200 and isinstance(r_cats.json(), list):
                 cat_map = {c['id']: c['name'] for c in r_cats.json()}
                 for cid in cat_ids:
                     name = cat_map.get(cid)
@@ -440,7 +443,7 @@ def already_published_today(cat):
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
             auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
         )
-        if r.status_code != 200 or not r.json():
+        if r.status_code != 200 or not isinstance(r.json(), list) or not r.json():
             return False
         cat_id = r.json()[0]["id"]
 
@@ -453,7 +456,7 @@ def already_published_today(cat):
             },
             auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
         )
-        if r2.status_code == 200 and len(r2.json()) > 0:
+        if r2.status_code == 200 and isinstance(r2.json(), list) and len(r2.json()) > 0:
             latest_post = r2.json()[0]
             post_date_gmt = latest_post.get("date_gmt", "")[:10] 
             today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
@@ -1034,6 +1037,9 @@ def build_foundation_html(raw, author, tf, title, cat):
     </div>
     """
 
+    # 🚨 [WAF 방어] 단축코드 대신 안전한 투명 깃발 앵커 삽입
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+
     how_text = xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
@@ -1099,6 +1105,9 @@ def build_philosophy_html(raw, author, tf, title, cat):
         </div>
     </div>
     """
+
+    # 🚨 [WAF 방어] 단축코드 대신 안전한 투명 깃발 앵커 삽입
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
 
     catalyst_raw = xtag(raw, "CATALYST")
     catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw)
@@ -1184,6 +1193,9 @@ def build_html(tier, cat, raw, author, tf, title):
         <p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p>
     </div>
     """
+
+    # 🚨 [WAF 방어] 단축코드 대신 안전한 투명 깃발 앵커 삽입
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
 
     html += f"""
     <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
@@ -1846,22 +1858,31 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             headers=REQ_HEADERS,
             timeout=30
         )
+        
+        # 🚨 [에러 방어] 방화벽(WAF)이 200 OK를 리턴해도 실제 링크가 있는지 깐깐하게 검사합니다.
         if r.status_code in (200, 201):
-            link = r.json().get('link')
-            print(f"   ✅ Published: {link}")
+            resp_json = r.json() if isinstance(r.json(), dict) else {}
+            link = resp_json.get('link')
+            
+            if link:
+                print(f"   ✅ Published: {link}")
 
-            if (tier == "vip" or tier == "unified") and raw_for_cards:
-                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                if video_mp4_bytes:
-                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
-            
-            # 유튜브 대본 엔진
-            if raw_for_cards:
-                yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
-                if yt_script:
-                    send_youtube_script_email(title, yt_meta, yt_script)
-            
-            return True
+                if (tier == "vip" or tier == "unified") and raw_for_cards:
+                    img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
+                    if video_mp4_bytes:
+                        send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
+                
+                # 유튜브 대본 엔진
+                if raw_for_cards:
+                    yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
+                    if yt_script:
+                        send_youtube_script_email(title, yt_meta, yt_script)
+                
+                return True
+            else:
+                print(f"   ❌ [방화벽 차단 감지] 서버가 200 성공을 반환했지만, 실제 글이 생성되지 않았습니다.")
+                print(f"   💬 WAF/Plugin Response: {r.text[:300]}")
+                return False
         else:
             print(f"   ❌ Publish failed. HTTP Status: {r.status_code}, Response: {r.text[:200]}")
     except Exception as e:
@@ -1875,7 +1896,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.1 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.2 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1909,7 +1930,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.1 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.2 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1945,9 +1966,9 @@ def run_news_pipeline():
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
     if force:
-        print(f"🚀 Starting v46.9.1 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.2 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.1 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+        print(f"🚀 Starting v46.9.2 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
@@ -1991,7 +2012,6 @@ def run_news_pipeline():
     author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
     
-    # 🚨 여기에 Warm Index와 Poll이 렌더링 됩니다.
     html = build_html(tier, cat, raw, author, tf, title)
 
     img_bytes = make_thumbnail(title, cat, tier)
