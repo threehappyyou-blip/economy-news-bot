@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.4)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.5)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [UI 개선] 본문 최상단 메타 정보(작성자/날짜/배지) 영역 전면 삭제
-#   2. [스마트 로테이션] FORCE_PUBLISH 시 동일 카테고리 연속 발행 원천 차단 (이중 방어 로직)
-#   3. [방화벽 우회] [adinserter] 단축코드 대신 안전한 HTML 투명 깃발(id="warm-ad-middle") 삽입
-#   4. [에러 방어] 방화벽(WAF) 200 OK 속임수 방어 및 Mac Safari 헤더 위장 적용
+#   2. [UI 개선] 본문 최하단 Social Share(유튜브/틱톡/구독) 박스 전면 삭제 완수
+#   3. [스마트 로테이션] FORCE_PUBLISH 시 동일 카테고리 연속 발행 원천 차단 (이중 방어 로직)
+#   4. [방화벽 우회] [adinserter] 단축코드 대신 안전한 HTML 투명 깃발(id="warm-ad-middle") 삽입
+#   5. [에러 방어] 방화벽(WAF) 200 OK 속임수 방어 및 Mac Safari 헤더 위장 적용
 # ═══════════════════════════════════════════════════════════════
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
@@ -933,27 +934,12 @@ def _build_pillar_link(target_cat):
     """
 
 # ═══════════════════════════════════════════════
-# 📎 ENGAGEMENT & FOOTER BUILDERS
+# 📎 FOOTER BUILDER (소셜 쉐어 박스 삭제 완료)
 # ═══════════════════════════════════════════════
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
     "tiktok": "https://www.tiktok.com/@warminsight"
 }
-
-def _build_social_share(title, slug):
-    si = ""
-    if SOCIAL_LINKS.get("youtube"):
-        si += f"""<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>"""
-    if SOCIAL_LINKS.get("tiktok"):
-        si += f"""<a href="{SOCIAL_LINKS["tiktok"]}" target="_blank" style="display:inline-block; background:#000000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">🎵 TikTok</a>"""
-    return f"""
-    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:10px; padding:28px; margin:40px 0; text-align:center;">
-        <p style="font-size:20px; font-weight:bold; color:{DARK}; margin:0 0 10px;">Found this useful? Share the insight.</p>
-        <p style="font-size:15px; color:{MUTED}; margin:0 0 18px;">Forward to a friend who wants smarter market analysis.</p>
-        <div style="margin-bottom:14px;">{si}</div>
-        <p style="margin:0;"><a href="{SITE_URL}" style="color:{GOLD}; font-weight:600; text-decoration:underline;">Subscribe at warminsight.com</a></p>
-    </div>
-    """
 
 def _build_branded_footer():
     si = ""
@@ -1041,8 +1027,6 @@ def build_foundation_html(raw, author, tf, title, cat):
     # 🚨 1 Click Poll 추가
     html += _build_poll(raw)
 
-    slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "foundation")
-    html += _build_social_share(title, slug)
     html += _build_founder_note()
     html += _build_branded_footer()
 
@@ -1103,8 +1087,6 @@ def build_philosophy_html(raw, author, tf, title, cat):
     # 🚨 1 Click Poll 추가
     html += _build_poll(raw)
 
-    slug = make_slug(xtag(raw, "SEO_KEYWORD"), title, "catalyst")
-    html += _build_social_share(title, slug)
     html += _build_founder_note()
     html += _build_branded_footer()
 
@@ -1223,7 +1205,6 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
 
-    slug = make_slug(xtag(raw, "SEO_KEYWORD"), xtag(raw, "TITLE"), cat)
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
 
@@ -1243,7 +1224,7 @@ def build_html(tier, cat, raw, author, tf, title):
     # 🚨 1 Click Poll 추가
     html += _build_poll(raw)
 
-    html += _build_social_share(title, slug)
+    html += _build_founder_note()
     html += _build_branded_footer()
 
     html += f"""
@@ -1860,7 +1841,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.4 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.5 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1894,7 +1875,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.4 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.5 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
@@ -1930,9 +1911,9 @@ def run_news_pipeline():
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
     if force:
-        print(f"🚀 Starting v46.9.4 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.5 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.4 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
+        print(f"🚀 Starting v46.9.5 Unified News Pipeline | Category: {cat} (Day {day_of_year})")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
