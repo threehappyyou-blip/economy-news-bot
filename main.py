@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.8)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.9)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
 #   4. [썸네일 복구] AI 이미지 생성 실패 시 귀여운 로봇을 수동으로 그리는 Pillow Fallback 로직 복구
+#   5. [방화벽 우회 강화] Imunify360 등 강력한 WAF 우회를 위한 완벽한 크롬(Chrome) 브라우저 헤더 위장 적용
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -40,10 +41,17 @@ EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com" # 유튜브 대본 전용 이메일
 
-# 🚨 봇 차단 방지용 위장 헤더
+# 🚨 봇 차단 방지용 위장 헤더 (Imunify360 우회를 위한 강력한 크롬 브라우저 위장 적용)
 REQ_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Referer': SITE_URL,
+    'Origin': SITE_URL,
+    'Connection': 'keep-alive',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
     'Cache-Control': 'no-cache'
 }
 
@@ -1729,7 +1737,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.8 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.9 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1760,7 +1768,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.8 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.9 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1802,9 +1810,9 @@ def run_news_pipeline():
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.8 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.9 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.8 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.9 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
