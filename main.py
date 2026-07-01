@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.9)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.10)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
 #   4. [썸네일 복구] AI 이미지 생성 실패 시 귀여운 로봇을 수동으로 그리는 Pillow Fallback 로직 복구
-#   5. [방화벽 우회 강화] Imunify360 등 강력한 WAF 우회를 위한 완벽한 크롬(Chrome) 브라우저 헤더 위장 적용
+#   5. [아키텍처 변경] Imunify360/Cloudflare 방화벽 우회를 위해 TLS 핑거프린팅을 변조하는 Cloudscraper 모듈 전면 도입
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
-import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
@@ -26,8 +25,15 @@ from email.mime.base import MIMEBase
 from email import encoders
 import tempfile
 
+# 🚨 Imunify360 방화벽 우회를 위한 고급 스크래퍼 임포트
+try:
+    import cloudscraper
+except ImportError:
+    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다. GitHub Actions의 pip install에 cloudscraper를 추가해주세요.")
+    sys.exit(1)
+
 # ═══════════════════════════════════════════════
-# CONFIG & ANTI-BOT HEADERS
+# CONFIG & 스텔스 스크래퍼 초기화
 # ═══════════════════════════════════════════════
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 WP_URL         = os.environ.get("WP_URL", "https://warminsight.com").rstrip("/")
@@ -35,25 +41,31 @@ WP_USER        = os.environ.get("WP_USERNAME", "")
 WP_APP_PASS    = os.environ.get("WP_APP_PASSWORD", "")
 SITE_URL       = "https://warminsight.com"
 
-# 🚨 이메일 발송용 정보
 EMAIL_SENDER   = os.environ.get("EMAIL_SENDER", "")
 EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
-YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com" # 유튜브 대본 전용 이메일
+YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 
-# 🚨 봇 차단 방지용 위장 헤더 (Imunify360 우회를 위한 강력한 크롬 브라우저 위장 적용)
-REQ_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+# 🚨 완벽한 크롬 브라우저 위장을 위한 스크래퍼 세션 생성 (TLS 핑거프린팅 우회)
+scraper = cloudscraper.create_scraper(
+    browser={
+        'browser': 'chrome',
+        'platform': 'windows',
+        'desktop': True
+    }
+)
+
+# 스크래퍼 전용 기본 헤더 세팅
+scraper.headers.update({
     'Accept': 'application/json, text/plain, */*',
     'Accept-Language': 'en-US,en;q=0.9',
     'Referer': SITE_URL,
     'Origin': SITE_URL,
-    'Connection': 'keep-alive',
     'Sec-Fetch-Dest': 'empty',
     'Sec-Fetch-Mode': 'cors',
     'Sec-Fetch-Site': 'same-origin',
     'Cache-Control': 'no-cache'
-}
+})
 
 MODEL_PRI = {
     "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
@@ -62,7 +74,6 @@ MODEL_PRI = {
 }
 FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
-# 🚨 'On-Chain' 추가
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy", "On-Chain"]
 TIERS       = ["unified"]
 TIER_LABELS = {"unified": "INSIGHT"}
@@ -103,7 +114,6 @@ VIP_AUTHORS = {
     "Foundation": "Warm Insight Editorial Team"
 }
 
-# 🚨 'On-Chain' RSS 피드 추가
 RSS_FEEDS = {
     "Economy": [
         "https://feeds.reuters.com/reuters/businessNews",
@@ -350,7 +360,8 @@ def check_env_vars():
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
+        # 🚨 스크래퍼(scraper) 객체를 사용하여 WAF 우회
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -433,7 +444,8 @@ def _clean_seo_title(title):
 
 def _get_latest_post_category_name():
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
+        # 🚨 스크래퍼 객체 사용
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -442,7 +454,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10)
+                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", auth=(WP_USER, WP_APP_PASS), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -460,9 +472,10 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
-        r = requests.get(
+        # 🚨 스크래퍼 객체 사용
+        r = scraper.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
-            auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
+            auth=(WP_USER, WP_APP_PASS), timeout=15
         )
         if r.status_code != 200: return False
         
@@ -472,14 +485,14 @@ def already_published_today(cat):
             cat_id = r_json[0]["id"]
         except: return False
 
-        r2 = requests.get(
+        r2 = scraper.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
             params={
                 "categories": cat_id,
                 "per_page": 1,
                 "status": "publish"
             },
-            auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=10
+            auth=(WP_USER, WP_APP_PASS), timeout=15
         )
         if r2.status_code == 200:
             try:
@@ -1213,7 +1226,8 @@ def get_font(url, filename):
         try:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             print(f"    📥 Downloading font from {url}...")
-            resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+            # 여기도 스크래퍼 사용
+            resp = scraper.get(url, timeout=15)
             resp.raise_for_status()
             with open(filename, 'wb') as f:
                 f.write(resp.content)
@@ -1272,7 +1286,6 @@ def make_thumbnail(title_text, cat, tier):
         draw = ImageDraw.Draw(img)
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
 
-        # 🚨 [수동 그리기 복구] AI 이미지 생성이 안될 때 파이썬이 대신 그리는 도형 및 로봇 코드
         cx = w * 0.88
         cy = h * 0.65
         S = SCALE
@@ -1611,14 +1624,11 @@ def generate_vip_carousel(raw_content, cat):
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
-        headers = {
-            "Content-Disposition": f'attachment; filename="{filename}"',
-            "Content-Type": "image/jpeg"
-        }
-        headers.update(REQ_HEADERS) 
-        resp = requests.post(
+        # 🚨 스크래퍼 객체를 사용하여 업로드
+        resp = scraper.post(
             f"{WP_URL}/wp-json/wp/v2/media",
-            headers=headers, data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
+            headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
+            data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
     except: pass
@@ -1627,9 +1637,9 @@ def _upload_image(img_bytes, filename):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -1637,9 +1647,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -1647,7 +1657,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -1699,9 +1709,10 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        r = requests.post(
+        # 🚨 스크래퍼 객체를 사용하여 최종 포스팅
+        r = scraper.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
-            json=post_data, auth=(WP_USER, WP_APP_PASS), headers=REQ_HEADERS, timeout=30
+            json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
         if r.status_code in (200, 201):
             try:
@@ -1737,7 +1748,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.9 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.10 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1768,7 +1779,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.9 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.10 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1797,7 +1808,7 @@ def run_philosophy_pipeline():
 
 def run_news_pipeline():
     current_time = datetime.datetime.utcnow()
-    day_of_week = current_time.weekday() # 0:Mon, 1:Tue, 2:Wed, 3:Thu, 4:Fri, 5:Sat, 6:Sun
+    day_of_week = current_time.weekday()
     day_of_year = current_time.timetuple().tm_yday
     
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
@@ -1810,9 +1821,9 @@ def run_news_pipeline():
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.9 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.10 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.9 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.10 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
