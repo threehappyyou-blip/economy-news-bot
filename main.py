@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.7)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.8)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
-#   4. [UI 개선] 본문 최상단 메타 정보(작성자/날짜/배지) 및 최하단 Social Share 박스 삭제 완수
-#   5. [방화벽 우회] 투명 깃발(id="warm-ad-middle") 및 Mac Safari 헤더 위장 적용
+#   4. [썸네일 복구] AI 이미지 생성 실패 시 귀여운 로봇을 수동으로 그리는 Pillow Fallback 로직 복구
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -1265,6 +1264,66 @@ def make_thumbnail(title_text, cat, tier):
         draw = ImageDraw.Draw(img)
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
 
+        # 🚨 [수동 그리기 복구] AI 이미지 생성이 안될 때 파이썬이 대신 그리는 도형 및 로봇 코드
+        cx = w * 0.88
+        cy = h * 0.65
+        S = SCALE
+        cx_p = cx - 180 * S
+        cy_p = cy
+
+        if cat == "Economy":
+            draw.rectangle([cx_p-60*S, cy_p+20*S, cx_p-20*S, cy_p+80*S], fill="#38bdf8")
+            draw.rectangle([cx_p-10*S, cy_p-20*S, cx_p+30*S, cy_p+80*S], fill="#38bdf8")
+            draw.rectangle([cx_p+40*S, cy_p-60*S, cx_p+80*S, cy_p+80*S], fill="#fde047")
+            draw.line([cx_p-80*S, cy_p+40*S, cx_p*S, cy_p-20*S, cx_p+90*S, cy_p-90*S], fill="#ffffff", width=8*S)
+        elif cat == "Politics":
+            draw.polygon([(cx_p, cy_p-80*S), (cx_p-80*S, cy_p-20*S), (cx_p+80*S, cy_p-20*S)], fill="#fca5a5")
+            draw.rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p], fill="#ef4444")
+            draw.rectangle([cx_p-60*S, cy_p, cx_p-40*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p-10*S, cy_p, cx_p+10*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p+40*S, cy_p, cx_p+60*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p-80*S, cy_p+80*S, cx_p+80*S, cy_p+100*S], fill="#ef4444")
+        elif cat == "Tech":
+            draw.rounded_rectangle([cx_p-60*S, cy_p-60*S, cx_p+60*S, cy_p+60*S], radius=15*S, fill="#818cf8")
+            draw.rectangle([cx_p-30*S, cy_p-30*S, cx_p+30*S, cy_p+30*S], fill="#312e81")
+            for offset in [-40, 0, 40]:
+                draw.line([(cx_p+offset*S, cy_p-60*S), (cx_p+offset*S, cy_p-90*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p+offset*S, cy_p+60*S), (cx_p+offset*S, cy_p+90*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p-60*S, cy_p+offset*S), (cx_p-90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p+60*S, cy_p+offset*S), (cx_p+90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
+        elif cat == "Health":
+            draw.rounded_rectangle([cx_p-20*S, cy_p-70*S, cx_p+20*S, cy_p+70*S], radius=10*S, fill="#a7f3d0")
+            draw.rounded_rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p+20*S], radius=10*S, fill="#a7f3d0")
+        elif cat == "Energy":
+            draw.polygon([(cx_p+30*S, cy_p-90*S), (cx_p-50*S, cy_p+10*S), (cx_p+10*S, cy_p+10*S), (cx_p-30*S, cy_p+90*S), (cx_p+50*S, cy_p-10*S), (cx_p-10*S, cy_p-10*S)], fill="#fde047")
+        elif cat == "On-Chain":
+            draw.ellipse([cx_p-50*S, cy_p-50*S, cx_p+50*S, cy_p+50*S], fill="#a78bfa")
+            draw.polygon([(cx_p, cy_p-30*S), (cx_p-20*S, cy_p+15*S), (cx_p+20*S, cy_p+15*S)], fill="#fde047")
+            draw.polygon([(cx_p, cy_p+30*S), (cx_p-20*S, cy_p+20*S), (cx_p+20*S, cy_p+20*S)], fill="#fde047")
+        elif cat == "The Daily Catalyst":
+            draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
+            draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
+        elif cat == "Foundation":
+            draw.rectangle([cx_p-70*S, cy_p-60*S, cx_p+70*S, cy_p+80*S], fill="#1e3a5f", outline="#f59e0b", width=6*S)
+            draw.rectangle([cx_p-55*S, cy_p-40*S, cx_p+55*S, cy_p-20*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p-10*S, cx_p+55*S, cy_p+10*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p+20*S, cx_p+20*S, cy_p+40*S], fill="#f59e0b")
+
+        R = S * 1.4
+        draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030")
+        draw.line([(cx - 30*R, cy + 10*R), (cx - 70*R, cy - 35*R)], fill="#f8fafc", width=int(12*R))
+        draw.line([(cx - 70*R, cy - 35*R), (cx - 85*R, cy - 35*R)], fill="#cbd5e1", width=int(12*R))
+        draw.line([(cx + 30*R, cy + 10*R), (cx + 45*R, cy + 40*R)], fill="#f8fafc", width=int(12*R))
+        draw.rounded_rectangle([cx - 40*R, cy - 30*R, cx + 40*R, cy + 70*R], radius=int(15*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
+        draw.rounded_rectangle([cx - 50*R, cy - 100*R, cx + 50*R, cy - 35*R], radius=int(20*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
+        draw.rounded_rectangle([cx - 40*R, cy - 85*R, cx + 40*R, cy - 45*R], radius=int(10*R), fill="#0f172a")
+        draw.line([(cx - 25*R, cy - 65*R), (cx - 10*R, cy - 65*R)], fill="#38bdf8", width=int(6*R))
+        draw.line([(cx + 10*R, cy - 65*R), (cx + 25*R, cy - 65*R)], fill="#38bdf8", width=int(6*R))
+        draw.line([(cx, cy - 100*R), (cx, cy - 120*R)], fill="#cbd5e1", width=int(4*R))
+        draw.ellipse([cx - 8*R, cy - 130*R, cx + 8*R, cy - 114*R], fill="#f59e0b")
+        draw.ellipse([cx - 30*R, cy - 50*R, cx - 20*R, cy - 40*R], fill="#fca5a5")
+        draw.ellipse([cx + 20*R, cy - 50*R, cx + 30*R, cy - 40*R], fill="#fca5a5")
+
     draw = ImageDraw.Draw(img)
     if use_ai_bg:
         draw.rectangle([(0, 0), (w, h)], fill="#1a252c70")
@@ -1670,7 +1729,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.7 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.8 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1701,7 +1760,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.7 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.8 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1735,19 +1794,17 @@ def run_news_pipeline():
     
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
-    # 🚨 [스마트 스케줄링] 화요일(1)과 목요일(3)은 'On-Chain' 고정 발행
     if day_of_week in (1, 3):
         cat = "On-Chain"
         print(f"📅 [Smart Schedule] Today is Tue/Thu. Locking category to: {cat}")
     else:
-        # On-Chain을 제외한 기본 카테고리 로테이션
         base_cats = [c for c in CATEGORIES if c != "On-Chain"]
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.7 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.8 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.7 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.8 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
