@@ -1828,17 +1828,8 @@ def run_news_pipeline():
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
-        latest_cat = _get_latest_post_category_name()
-        available_cats = [c for c in CATEGORIES if c != latest_cat]
-        if not available_cats: available_cats = CATEGORIES
-        
-        random.shuffle(available_cats)
-        cat = available_cats[0]
-        for fallback_cat in available_cats:
-            if not already_published_today(fallback_cat):
-                cat = fallback_cat
-                break
-        print(f"   ⚡ [TEST MODE] Forcing random category '{cat}' avoiding '{latest_cat}'.")
+        cat = "On-Chain" # 🚨 테스트용: 무조건 On-Chain만 발행되도록 강제 고정
+        print(f"   ⚡ [TEST MODE] Forcing category to '{cat}'.")
     else:
         if already_published_today(cat):
             print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
