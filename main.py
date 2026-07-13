@@ -1806,14 +1806,17 @@ def run_philosophy_pipeline():
 
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
-def run_news_pipeline():
+def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
     day_of_week = current_time.weekday()
     day_of_year = current_time.timetuple().tm_yday
     
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
-    if day_of_week in (1, 3):
+    if forced_cat:
+        cat = forced_cat
+        print(f"🎯 [Command Override] Forcing category to: {cat}")
+    elif day_of_week in (1, 3):
         cat = "On-Chain"
         print(f"📅 [Smart Schedule] Today is Tue/Thu. Locking category to: {cat}")
     else:
@@ -1886,7 +1889,20 @@ def run_news_pipeline():
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        if sys.argv[1] == "philosophy": run_philosophy_pipeline()
-        elif sys.argv[1] == "foundation": run_foundation_pipeline()
+        arg = sys.argv[1].lower()
+        if arg == "philosophy": 
+            run_philosophy_pipeline()
+        elif arg == "foundation": 
+            run_foundation_pipeline()
+        elif arg == "onchain": 
+            # onchain 명령어 입력 시 On-Chain 고정 발행
+            run_news_pipeline("On-Chain")
+        elif arg == "insight":
+            # insight 명령어 입력 시 화/목에도 일반 뉴스(Insight) 발행되도록 처리
+            current_time = datetime.datetime.utcnow()
+            day_of_year = current_time.timetuple().tm_yday
+            base_cats = [c for c in CATEGORIES if c != "On-Chain"]
+            cat = base_cats[day_of_year % len(base_cats)]
+            run_news_pipeline(cat)
     else:
         run_news_pipeline()
