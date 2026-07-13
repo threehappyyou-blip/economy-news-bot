@@ -39,11 +39,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install cloudscraper  # 🚨 WAF 우회를 위한 필수 패키지 설치
+          pip install cloudscraper
 
       - name: Run Auto Poster Bot
         env:
-          PYTHONUNBUFFERED: "1"          # 실시간 로그 출력
+          PYTHONUNBUFFERED: "1"
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_USERNAME: ${{ secrets.WP_USERNAME }}
@@ -52,5 +52,5 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
           FORCE_PUBLISH: ${{ github.event.inputs.force_publish || 'false' }}
-        # 끝에 'insight'를 붙여 Insight 카테고리만 발행되도록 설정합니다.
-        run: python main.py insight
+        # 원래 코드대로 복구 (기본값이 Insight로 작동할 것입니다)
+        run: python main.py
