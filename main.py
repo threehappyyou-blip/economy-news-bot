@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.11)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.12)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
 #   4. [방화벽 우회] Imunify360/Cloudflare 방화벽 우회를 위한 Cloudscraper 모듈 전면 도입
-#   5. [버그 픽스] 뉴스레터 상단에 중복 노출되던 'Founder Note(노란색 배경)' 삭제 처리
-#   6. [시스템 복구] On-Chain 강제 고정 테스트 코드 해제 및 스마트 랜덤 추출 롤백
+#   5. [버그 픽스] 크립토 뉴스 사이트(CoinDesk 등) RSS 방화벽 403 차단 우회 로직 적용
+#   6. [버그 픽스] Force Publish 시 지정 카테고리(On-Chain)가 오버라이드되는 현상 수정
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -519,12 +519,20 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            d = feedparser.parse(url)
-            for e in d.entries[:40]:
-                title = getattr(e, 'title', '').strip()
-                summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
-                if title and len(title) > 10: items.add(f"• {title}: {summary}")
-        except: pass
+            # 🚨 크립토 사이트의 강력한 WAF 우회를 위해 스크래퍼를 거쳐서 RSS 데이터를 확보
+            resp = scraper.get(url, timeout=15)
+            if resp.status_code == 200:
+                d = feedparser.parse(resp.text)
+                for e in d.entries[:40]:
+                    title = getattr(e, 'title', '').strip()
+                    summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
+                    if title and len(title) > 10: items.add(f"• {title}: {summary}")
+            else:
+                print(f"   ⚠️ RSS feed blocked by WAF or returned {resp.status_code}: {url}")
+        except Exception as ex:
+            print(f"   ⚠️ RSS feed error on {url}: {ex}")
+            pass
+            
     items_list = list(items)
     random.shuffle(items_list)
     return items_list[:max_items]
@@ -1748,7 +1756,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.11 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.12 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1779,7 +1787,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.11 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.12 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1824,25 +1832,28 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.11 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.12 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.11 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.12 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    # 🚨 테스트용 코드 삭제 및 원래 로직으로 복구 완료
     if force:
-        latest_cat = _get_latest_post_category_name()
-        available_cats = [c for c in CATEGORIES if c != latest_cat]
-        if not available_cats: available_cats = CATEGORIES
-        
-        random.shuffle(available_cats)
-        cat = available_cats[0]
-        for fallback_cat in available_cats:
-            if not already_published_today(fallback_cat):
-                cat = fallback_cat
-                break
-        print(f"   ⚡ [TEST MODE] Forcing random category '{cat}' avoiding '{latest_cat}'.")
+        if forced_cat:
+            # 명령어(onchain 등)로 강제 지정된 경우, 카테고리를 랜덤으로 바꾸지 않고 유지합니다.
+            pass
+        else:
+            latest_cat = _get_latest_post_category_name()
+            available_cats = [c for c in CATEGORIES if c != latest_cat]
+            if not available_cats: available_cats = CATEGORIES
+            
+            random.shuffle(available_cats)
+            cat = available_cats[0]
+            for fallback_cat in available_cats:
+                if not already_published_today(fallback_cat):
+                    cat = fallback_cat
+                    break
+            print(f"   ⚡ [TEST MODE] Forcing random category '{cat}' avoiding '{latest_cat}'.")
     else:
         if already_published_today(cat):
             print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
