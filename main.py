@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.10)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.11)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
-#   4. [썸네일 복구] AI 이미지 생성 실패 시 귀여운 로봇을 수동으로 그리는 Pillow Fallback 로직 복구
-#   5. [아키텍처 변경] Imunify360/Cloudflare 방화벽 우회를 위해 TLS 핑거프린팅을 변조하는 Cloudscraper 모듈 전면 도입
+#   4. [방화벽 우회] Imunify360/Cloudflare 방화벽 우회를 위한 Cloudscraper 모듈 전면 도입
+#   5. [버그 픽스] 뉴스레터 상단에 중복 노출되던 'Founder Note(노란색 배경)' 삭제 처리
+#   6. [시스템 복구] On-Chain 강제 고정 테스트 코드 해제 및 스마트 랜덤 추출 롤백
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -1106,7 +1107,6 @@ def build_html(tier, cat, raw, author, tf, title):
     html += _build_warm_index(raw)
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
-    html += _build_founder_note()
     html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
     html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
     
@@ -1748,7 +1748,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.10 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.11 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1779,7 +1779,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.10 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.11 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1821,15 +1821,25 @@ def run_news_pipeline():
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.10 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.11 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.10 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.11 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
+    # 🚨 테스트용 코드 삭제 및 원래 로직으로 복구 완료
     if force:
-        cat = "On-Chain" # 🚨 테스트용: 무조건 On-Chain만 발행되도록 강제 고정
-        print(f"   ⚡ [TEST MODE] Forcing category to '{cat}'.")
+        latest_cat = _get_latest_post_category_name()
+        available_cats = [c for c in CATEGORIES if c != latest_cat]
+        if not available_cats: available_cats = CATEGORIES
+        
+        random.shuffle(available_cats)
+        cat = available_cats[0]
+        for fallback_cat in available_cats:
+            if not already_published_today(fallback_cat):
+                cat = fallback_cat
+                break
+        print(f"   ⚡ [TEST MODE] Forcing random category '{cat}' avoiding '{latest_cat}'.")
     else:
         if already_published_today(cat):
             print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
