@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.15)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.16)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -11,6 +11,7 @@
 #   5. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
 #   6. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
 #   7. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
+#   8. [SEO 픽스] 전 카테고리(Insight, On-Chain, Catalyst) 프리미엄 호기심 유발(Curiosity Gap) 로직 적용
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -541,7 +542,6 @@ def fetch_news_pool(cat, max_items=15):
 # ═══════════════════════════════════════════════
 # 🧠 1. FOUNDATION DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
-# 🚨 [SEO 픽스] 롱테일 키워드 및 클릭 유도형 주제로 업데이트 완료
 FOUNDATION_TOPICS = [
     "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
     "How to start investing in S&P 500 ETFs with exactly $100",
@@ -629,6 +629,7 @@ Your writing must be direct, concise, and unapologetic. Use short, plain sentenc
 NEVER use the following words or phrases: 'dive into', 'unleash', 'game-changing', 'buckle up', 'embark on this journey', 'delve', 'explore', 'supercharge', 'basically', 'in conclusion'.
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
+# 🚨 [SEO 픽스] Catalyst 카테고리 프리미엄 클릭 유도 로직 적용
 PHILOSOPHY_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Write a philosophical daily insight based on the following theme in English:
 THEME: {theme}
@@ -639,9 +640,9 @@ When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaust
 OUTPUT FORMAT REQUIREMENT:
 You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
 
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it punchy and intriguing but highly searchable on Google.)</TITLE>
-<SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, related to psychology, wealth, or personal growth. e.g. "psychology of wealth building")</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it deeply thought-provoking and highly clickable. Format idea: 'The Psychology Behind [X]' or 'Why You Struggle With [Y]'.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition search intent. E.g. 'how to overcome financial anxiety' NOT just 'money psychology')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that targets a painful truth and promises a solution. End with a strong question.)</EXCERPT>
 <ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme)</ANCHOR>
 <REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses and logically argue for voluntary fatigue and action.)</REFLECTION>
 <CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
@@ -656,6 +657,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
+# 🚨 [SEO 픽스] Insight 및 On-Chain 카테고리 프리미엄 클릭 유도 로직 적용
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
 
@@ -697,9 +699,9 @@ News Context:
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
 
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly clickable using numbers or brackets like [2026] or [Alert].)</TITLE>
-<SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, specific to the news event. E.g., "impact of fed rate cuts on tech" NOT just "fed rate cut")</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly engaging but professional. Use formats like 'The Hidden Reason Behind [X]' or 'Why Smart Money is Moving to [Y]'.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'why are tech stocks dropping today' or 'impact of fed rate cuts on crypto')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. Write a compelling summary that creates a 'curiosity gap' maintaining journalistic integrity. End with a thought-provoking question.)</EXCERPT>
 
 <WARM_INDEX_SCORE>(A number from 0 to 100 representing market fear/greed based on this news. 0=Extreme Fear, 100=Extreme Greed. Output ONLY the integer number.)</WARM_INDEX_SCORE>
 <WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score. E.g., "Tech rally masks underlying economic anxiety.")</WARM_INDEX_REASON>
@@ -1782,7 +1784,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.15 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.16 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1813,7 +1815,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.15 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.16 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1858,9 +1860,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.15 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.16 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.15 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.16 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
