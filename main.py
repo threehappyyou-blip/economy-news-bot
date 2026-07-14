@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.14)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.15)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -10,6 +10,7 @@
 #   4. [방화벽 우회] Imunify360/Cloudflare 방화벽 우회를 위한 Cloudscraper 모듈 전면 도입
 #   5. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
 #   6. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
+#   7. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -540,17 +541,18 @@ def fetch_news_pool(cat, max_items=15):
 # ═══════════════════════════════════════════════
 # 🧠 1. FOUNDATION DATABASE & PROMPTS
 # ═══════════════════════════════════════════════
+# 🚨 [SEO 픽스] 롱테일 키워드 및 클릭 유도형 주제로 업데이트 완료
 FOUNDATION_TOPICS = [
-    "What is an ETF? The Beginner's Guide to Exchange Traded Funds",
-    "Dollar Cost Averaging (DCA): How to Invest Safely in Volatile Markets",
-    "Understanding Inflation: How it Affects Your Savings and Investments",
-    "Bull Market vs Bear Market: Simple Explanations for Beginners",
-    "Asset Allocation 101: Why You Shouldn't Put All Your Eggs in One Basket",
-    "Compound Interest Explained: The Magic of Growing Your Wealth Over Time",
-    "What are Dividends? Building a Passive Income Stream",
-    "Growth Stocks vs Value Stocks: Which Investing Style is Right for You?",
-    "Understanding Interest Rates: How the Federal Reserve Moves the Market",
-    "The Difference Between Stocks and Bonds: A Beginner's Overview"
+    "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
+    "How to start investing in S&P 500 ETFs with exactly $100",
+    "The hidden risks of Dollar Cost Averaging (DCA) you must know",
+    "Inflation survival guide: Best ETF assets to protect your cash",
+    "Asset Allocation strategy for 30-something absolute beginners",
+    "Dividend ETF investing: How to make your first $100 in passive income",
+    "Growth vs Value Stocks: The ultimate test for your first portfolio",
+    "What happens to your stock portfolio when the Fed cuts interest rates?",
+    "Bond market explained for people who only buy tech stocks",
+    "Nasdaq 100 ETF vs S&P 500 ETF: Where to put your first investment"
 ]
 
 FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -593,9 +595,9 @@ TOPIC: {theme}
 OUTPUT FORMAT REQUIREMENT:
 You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
 
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly clickable using numbers or brackets like [2026] or [Guide].)</TITLE>
-<SEO_KEYWORD>(Write a LONG-TAIL focus keyword, 3-5 words, low competition, high search intent. E.g., "how fed rate cuts affect tech stocks" NOT just "interest rates")</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. End with a strong hook or question to drive clicks from Google search.)</EXCERPT>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [2026 Guide], odd numbers, or 'How to' formats.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to invest in etfs for beginners' NOT just 'etf')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that forces the user to click to find the answer. End with a provocative question.)</EXCERPT>
 <DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an easy everyday analogy. e.g., "Think of it like a fruit basket...")</DEFINITION>
 <WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care about this concept and how it builds wealth.)</WHY_MATTERS>
 <HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, actionable steps for a beginner to start using this concept today. Format as a bulleted list or numbered steps within the paragraph.)</HOW_TO_START>
@@ -1780,7 +1782,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.14 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.15 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1811,7 +1813,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.14 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.15 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1856,9 +1858,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.14 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.15 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.14 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.15 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
