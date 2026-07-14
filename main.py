@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.16)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.17)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -12,6 +12,7 @@
 #   6. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
 #   7. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
 #   8. [SEO 픽스] 전 카테고리(Insight, On-Chain, Catalyst) 프리미엄 호기심 유발(Curiosity Gap) 로직 적용
+#   9. [UX 픽스] 실전 중심 Action Plan 프롬프트 강화 및 Executive Summary 바로 밑으로 배치 변경
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -629,7 +630,6 @@ Your writing must be direct, concise, and unapologetic. Use short, plain sentenc
 NEVER use the following words or phrases: 'dive into', 'unleash', 'game-changing', 'buckle up', 'embark on this journey', 'delve', 'explore', 'supercharge', 'basically', 'in conclusion'.
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
-# 🚨 [SEO 픽스] Catalyst 카테고리 프리미엄 클릭 유도 로직 적용
 PHILOSOPHY_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Write a philosophical daily insight based on the following theme in English:
 THEME: {theme}
@@ -657,7 +657,6 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 # 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
-# 🚨 [SEO 픽스] Insight 및 On-Chain 카테고리 프리미엄 클릭 유도 로직 적용
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
 
@@ -726,6 +725,7 @@ PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your ho
 <CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
 <QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
 
+# 🚨 [UX 픽스] 실전 중심 Action Plan 강제 지시문 적용
 PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
 
@@ -751,7 +751,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 (EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — each line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸)
 </QUICK_HITS>
 <SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences. NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason].")</SMART_MONEY_MOVE>
-<DO_ACTION>(1-2 specific actions. Must include either a ticker, a price level, OR a date trigger.)</DO_ACTION>
+<DO_ACTION>(Provide exactly ONE highly specific, actionable strategy for absolute beginners with precise numbers e.g., 'If BTC drops below $X, accumulate 5%' or a 3-step checklist based on today's news.)</DO_ACTION>
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
 <PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
@@ -811,7 +811,6 @@ def _build_poll(raw_data, cat="Market"):
     opt2 = xtag(raw_data, "POLL_OPT2").strip()
     opt3 = xtag(raw_data, "POLL_OPT3").strip()
     
-    # 🚨 AI가 텍스트 생성을 누락했을 경우, 파란색 점선(투표창)이 예쁘게 나오도록 보호하는 강력한 Fallback 로직
     if not question:
         question = f"What is your perspective on today's {cat} news?"
     if not opt1: opt1 = "Bullish – I see an opportunity."
@@ -1041,7 +1040,7 @@ def _build_founder_note():
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     
-    html += _build_founder_note() # 🚨 빨간색: 파운더 노트를 가장 위(상단)에 배치합니다.
+    html += _build_founder_note()
     
     def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
@@ -1067,10 +1066,7 @@ def build_foundation_html(raw, author, tf, title, cat):
     </div>
     """
     html += _build_pillar_link("Foundation") 
-    html += _build_poll(raw, cat) # 파란색 투표창
-    
-    # 노란색 하단 중복 파운더 노트 제거됨
-    
+    html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1083,7 +1079,7 @@ def build_foundation_html(raw, author, tf, title, cat):
 def build_philosophy_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     
-    html += _build_founder_note() # 🚨 빨간색: 파운더 노트를 가장 위(상단)에 배치합니다.
+    html += _build_founder_note()
     
     html += f"""
     <div style="text-align:center; margin:50px 0;">
@@ -1115,10 +1111,7 @@ def build_philosophy_html(raw, author, tf, title, cat):
     </div>
     """
     html += _build_pillar_link("The Daily Catalyst") 
-    html += _build_poll(raw, cat) # 파란색 투표창
-    
-    # 노란색 하단 중복 파운더 노트 제거됨
-    
+    html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1134,11 +1127,31 @@ def build_html(tier, cat, raw, author, tf, title):
     badge_bg = GOLD
     
     html += _build_warm_index(raw)
-    
-    html += _build_founder_note() # 🚨 빨간색: 파운더 노트를 3번 사진처럼 Executive Summary 바로 앞 상단에 배치합니다.
+    html += _build_founder_note()
     
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
+
+    # 🚨 [UX 픽스] 실전 액션 플랜을 Executive Summary 바로 밑으로 끌어올리고 강력하게 디자인
+    do_act = xtag(raw, "DO_ACTION").replace('\n', '<br>')
+    dont_act = xtag(raw, "DONT_ACTION").replace('\n', '<br>')
+    
+    html += f"""
+    <div style="background:#fffbeb; border:2px solid #f59e0b; padding:25px; margin:35px 0; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; color:#b45309; font-size:22px; display:flex; align-items:center; gap:8px;">
+            ⚠️ One-Point Action Plan for Beginners
+        </h3>
+        <p style="font-size:15px; color:#92400e; margin-top:-10px; margin-bottom:20px;">초보자를 위한 오늘의 원-포인트 대응 전략</p>
+        <div style="background:#ffffff; border-left:5px solid #10b981; padding:20px; border-radius:6px; margin-bottom:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin:0; color:#065f46; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🟢 DO THIS:</p>
+            <p style="margin:8px 0 0; color:#064e3b; font-size:17px; line-height:1.6; font-weight:500;">{do_act}</p>
+        </div>
+        <div style="background:#ffffff; border-left:5px solid #ef4444; padding:20px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin:0; color:#991b1b; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🔴 AVOID THIS:</p>
+            <p style="margin:8px 0 0; color:#7f1d1d; font-size:17px; line-height:1.6; font-weight:500;">{dont_act}</p>
+        </div>
+    </div>
+    """
     
     html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
     html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
@@ -1214,18 +1227,6 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
     
-    html += f"""
-    <div style="background:#1e293b; padding:40px; border-radius:12px; margin:45px 0;">
-        <h3 style="color:{badge_bg}; margin-top:0; font-size:26px; border-bottom:2px solid #475569; padding-bottom:15px;">✅ Action Plan</h3>
-        <div style="background:#ecfdf5; border:2px solid #10b981; padding:20px; border-radius:8px; margin:25px 0 15px;">
-            <p style="margin:0; color:#065f46; font-size:18px;"><strong>🟢 DO:</strong> {xtag(raw, "DO_ACTION")}</p>
-        </div>
-        <div style="background:#fef2f2; border:2px solid #ef4444; padding:20px; border-radius:8px;">
-            <p style="margin:0; color:#7f1d1d; font-size:18px;"><strong>🔴 DON'T:</strong> {xtag(raw, "DONT_ACTION")}</p>
-        </div>
-    </div>
-    """
-    
     tw = xtag(raw, "TAKEAWAY")
     ps = xtag(raw, "PS")
     html += f"""
@@ -1240,11 +1241,7 @@ def build_html(tier, cat, raw, author, tf, title):
     """
     
     html += _build_pillar_link("Insight") 
-    
-    html += _build_poll(raw, cat) # 🚨 파란색: 빈칸 방지 로직이 적용된 투표창 배치
-    
-    # 노란색 하단 중복 파운더 노트 제거됨
-    
+    html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1784,7 +1781,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.16 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.17 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1815,7 +1812,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.16 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.17 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1860,9 +1857,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.16 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.17 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.16 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.17 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
