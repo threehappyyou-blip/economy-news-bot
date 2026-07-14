@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.12)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.14)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
 #   4. [방화벽 우회] Imunify360/Cloudflare 방화벽 우회를 위한 Cloudscraper 모듈 전면 도입
-#   5. [버그 픽스] 크립토 뉴스 사이트(CoinDesk 등) RSS 방화벽 403 차단 우회 로직 적용
-#   6. [버그 픽스] Force Publish 시 지정 카테고리(On-Chain)가 오버라이드되는 현상 수정
+#   5. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
+#   6. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -801,13 +801,18 @@ def _build_warm_index(raw_data):
     </div>
     """
 
-def _build_poll(raw_data):
-    question = xtag(raw_data, "POLL_QUESTION")
-    opt1 = xtag(raw_data, "POLL_OPT1")
-    opt2 = xtag(raw_data, "POLL_OPT2")
-    opt3 = xtag(raw_data, "POLL_OPT3")
+def _build_poll(raw_data, cat="Market"):
+    question = xtag(raw_data, "POLL_QUESTION").strip()
+    opt1 = xtag(raw_data, "POLL_OPT1").strip()
+    opt2 = xtag(raw_data, "POLL_OPT2").strip()
+    opt3 = xtag(raw_data, "POLL_OPT3").strip()
     
-    if not question or not opt1: return ""
+    # 🚨 AI가 텍스트 생성을 누락했을 경우, 파란색 점선(투표창)이 예쁘게 나오도록 보호하는 강력한 Fallback 로직
+    if not question:
+        question = f"What is your perspective on today's {cat} news?"
+    if not opt1: opt1 = "Bullish – I see an opportunity."
+    if not opt2: opt2 = "Neutral – Waiting for more signals."
+    if not opt3: opt3 = "Bearish – Taking a cautious stance."
 
     opt3_html = ""
     if opt3:
@@ -1031,6 +1036,9 @@ def _build_founder_note():
 # ═══════════════════════════════════════════════
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
+    
+    html += _build_founder_note() # 🚨 빨간색: 파운더 노트를 가장 위(상단)에 배치합니다.
+    
     def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;">
@@ -1038,6 +1046,7 @@ def build_foundation_html(raw, author, tf, title, cat):
         <div style="color:#064e3b; font-size:18px; line-height:1.8;">{def_text}</div>
     </div>
     """
+    
     why_text = xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
@@ -1054,8 +1063,10 @@ def build_foundation_html(raw, author, tf, title, cat):
     </div>
     """
     html += _build_pillar_link("Foundation") 
-    html += _build_poll(raw)
-    html += _build_founder_note()
+    html += _build_poll(raw, cat) # 파란색 투표창
+    
+    # 노란색 하단 중복 파운더 노트 제거됨
+    
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1067,6 +1078,9 @@ def build_foundation_html(raw, author, tf, title, cat):
 
 def build_philosophy_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
+    
+    html += _build_founder_note() # 🚨 빨간색: 파운더 노트를 가장 위(상단)에 배치합니다.
+    
     html += f"""
     <div style="text-align:center; margin:50px 0;">
         <span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span>
@@ -1083,6 +1097,7 @@ def build_philosophy_html(raw, author, tf, title, cat):
         <div style="color:{SLATE}; font-size:18px; line-height:1.8;">{reflection_text}</div>
     </div>
     """
+    
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     catalyst_raw = xtag(raw, "CATALYST")
     catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw)
@@ -1096,8 +1111,10 @@ def build_philosophy_html(raw, author, tf, title, cat):
     </div>
     """
     html += _build_pillar_link("The Daily Catalyst") 
-    html += _build_poll(raw)
-    html += _build_founder_note()
+    html += _build_poll(raw, cat) # 파란색 투표창
+    
+    # 노란색 하단 중복 파운더 노트 제거됨
+    
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1113,8 +1130,12 @@ def build_html(tier, cat, raw, author, tf, title):
     badge_bg = GOLD
     
     html += _build_warm_index(raw)
+    
+    html += _build_founder_note() # 🚨 빨간색: 파운더 노트를 3번 사진처럼 Executive Summary 바로 앞 상단에 배치합니다.
+    
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
+    
     html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
     html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
     
@@ -1215,8 +1236,11 @@ def build_html(tier, cat, raw, author, tf, title):
     """
     
     html += _build_pillar_link("Insight") 
-    html += _build_poll(raw)
-    html += _build_founder_note()
+    
+    html += _build_poll(raw, cat) # 🚨 파란색: 빈칸 방지 로직이 적용된 투표창 배치
+    
+    # 노란색 하단 중복 파운더 노트 제거됨
+    
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
@@ -1756,7 +1780,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.12 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.14 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1787,7 +1811,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.12 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.14 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1832,15 +1856,14 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.12 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.14 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.12 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.14 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force:
         if forced_cat:
-            # 명령어(onchain 등)로 강제 지정된 경우, 카테고리를 랜덤으로 바꾸지 않고 유지합니다.
             pass
         else:
             latest_cat = _get_latest_post_category_name()
