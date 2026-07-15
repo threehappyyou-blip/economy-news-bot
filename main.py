@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.18)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.19)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -14,6 +14,7 @@
 #   8. [SEO 픽스] 전 카테고리(Insight, On-Chain, Catalyst) 프리미엄 호기심 유발(Curiosity Gap) 로직 적용
 #   9. [UX 픽스] 실전 중심 Action Plan 프롬프트 강화 및 Executive Summary 바로 밑으로 배치 변경
 #  10. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
+#  11. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -79,7 +80,8 @@ MODEL_PRI = {
 }
 FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
-CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy", "On-Chain"]
+# 🚨 신규 카테고리 추가
+CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy", "On-Chain", "Money Hack"]
 TIERS       = ["unified"]
 TIER_LABELS = {"unified": "INSIGHT"}
 TIER_SLEEP  = {"unified": 60}
@@ -97,6 +99,7 @@ PILLAR_PAGES = {
     "Insight":            {"url": SITE_URL + "/category/insight/",            "anchor": "Daily Market Insights"},
     "Foundation":         {"url": SITE_URL + "/category/foundation/",         "anchor": "Financial Foundation & Basics"},
     "The Daily Catalyst": {"url": SITE_URL + "/category/the-daily-catalyst/", "anchor": "The Daily Catalyst"},
+    "Money Hack":         {"url": SITE_URL + "/category/money-hack/",         "anchor": "Money Hack & Side Hustles"},
 }
 
 CAT_RELATED = {
@@ -106,6 +109,7 @@ CAT_RELATED = {
     "Health":   ["Economy", "Politics"],
     "Energy":   ["Economy", "Politics"],
     "On-Chain": ["Economy", "Tech"],
+    "Money Hack": ["Foundation", "Tech"],
 }
 
 VIP_AUTHORS = {
@@ -116,7 +120,8 @@ VIP_AUTHORS = {
     "Energy":   "Warm Insight Editorial Team",
     "On-Chain": "Warm Insight Editorial Team",
     "The Daily Catalyst": "Warm Insight Editorial Team",
-    "Foundation": "Warm Insight Editorial Team"
+    "Foundation": "Warm Insight Editorial Team",
+    "Money Hack": "Warm Insight Growth Team"
 }
 
 RSS_FEEDS = {
@@ -655,7 +660,48 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🎨 3. TWO-PART PROMPTS (REGULAR NEWS)
+# 🧠 3. MONEY HACK (SIDE HUSTLE) DATABASE & PROMPTS
+# ═══════════════════════════════════════════════
+MONEY_HACK_TOPICS = [
+    "Week 1: Finding Your Micro-Niche for Amazon KDP E-books",
+    "Week 2: Writing a 30-Page E-book using AI Tools in 3 Hours",
+    "Week 3: Designing a Clickable Cover on Canva (Step-by-Step)",
+    "Week 4: Setting Up Your KDP Account & Making Your First $100",
+    "Flipping Digital Assets: How to Buy and Sell Domain Names",
+    "The Notion Template Hustle: Creating Systems People Pay For",
+    "Print on Demand: Setting up a Shopify + Printify Store in 1 Day",
+    "Freelance Copywriting: Landing Your First Client on Upwork",
+    "Building a Faceless YouTube Channel with AI Voiceovers",
+    "Email Newsletter Monetization: From 0 to 1,000 Subscribers"
+]
+
+MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are an elite side-hustle expert and digital business coach. Your objective is to write a highly actionable, step-by-step 'Money Hack' guide that helps normal people make an extra $1,000/month.
+Your tone is motivating, direct, and incredibly practical. No fluff. 
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+MONEY_HACK_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Write an SEO-optimized, step-by-step side hustle guide on the following topic in English:
+TOPIC: {theme}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [Step-by-Step], numbers, or 'How to' formats.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to make money with canva templates')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<CONCEPT>(2 paragraphs explaining what this side hustle is and why it's profitable right now.)</CONCEPT>
+<STEP_BY_STEP_TOOL>(Detail at least 2 specific platforms or tools needed (e.g., Gumroad, Canva, ChatGPT) and provide a 1-2-3 checklist to execute today to reach the $1,000/month milestone.)</STEP_BY_STEP_TOOL>
+<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits.)</PRO_TIP>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
+
+# ═══════════════════════════════════════════════
+# 🎨 4. TWO-PART PROMPTS (REGULAR NEWS)
 # ═══════════════════════════════════════════════
 
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -950,7 +996,7 @@ def _build_pie_chart(s, b, c, cat):
         "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"),
         "Health": ("#059669", "#34d399", "#d1fae5"),
         "Energy": ("#d97706", "#fbbf24", "#fef3c7"),
-        "On-Chain": ("#8b5cf6", "#a78bfa", "#ede9fe") # 보라색 테마
+        "On-Chain": ("#8b5cf6", "#a78bfa", "#ede9fe")
     }
     c_s, c_b, c_c = cat_colors.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
 
@@ -1121,6 +1167,48 @@ def build_philosophy_html(raw, author, tf, title, cat):
     """
     return sanitize(html)
 
+def build_money_hack_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    
+    html += _build_founder_note()
+    
+    concept = xtag(raw, "CONCEPT").replace("\n", "<br><br>")
+    html += f"""
+    <div style="margin:40px 0;">
+        <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3>
+        <p>{concept}</p>
+    </div>
+    """
+    
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    
+    tools = xtag(raw, "STEP_BY_STEP_TOOL").replace("\n", "<br><br>")
+    html += f"""
+    <div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3>
+        <div style="color:#064e3b; font-size:17px; line-height:1.8;">{tools}</div>
+    </div>
+    """
+    
+    pro_tip = xtag(raw, "PRO_TIP").replace("\n", "<br>")
+    html += f"""
+    <div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
+        <p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p>
+        <p style="margin:0; color:#92400e; font-style:italic;">{pro_tip}</p>
+    </div>
+    """
+    
+    html += _build_pillar_link("Money Hack")
+    html += _build_poll(raw, cat)
+    html += _build_branded_footer()
+    html += f"""
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+        Disclaimer: Educational content only. Results may vary based on individual effort.
+    </p>
+    </div>
+    """
+    return sanitize(html)
+
 def build_html(tier, cat, raw, author, tf, title):
     html = f"""<div style="{F}">\n"""
     badge = "WARM INSIGHT"
@@ -1132,7 +1220,6 @@ def build_html(tier, cat, raw, author, tf, title):
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
 
-    # 🚨 [언어 픽스] 한글 텍스트 영문화 및 깔끔한 출력
     do_act = xtag(raw, "DO_ACTION").replace('\n', '<br>')
     dont_act = xtag(raw, "DONT_ACTION").replace('\n', '<br>')
     
@@ -1181,19 +1268,6 @@ def build_html(tier, cat, raw, author, tf, title):
     <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
         <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br>
         <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
-    </div>
-    """
-    
-    html += f"""
-    <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
-        <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
-            <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
-            <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
-        </div>
-        <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
-            <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
-            <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
-        </div>
     </div>
     """
     
@@ -1281,7 +1355,8 @@ def make_thumbnail(title_text, cat, tier):
         "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
         "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
         "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
-        "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"}
+        "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"},
+        "Money Hack": {"bg1": "#f59e0b", "bg2": "#b45309", "acc": "#fef3c7"}
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
@@ -1293,7 +1368,8 @@ def make_thumbnail(title_text, cat, tier):
         "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a bright lightning bolt, acting as a friendly guide. Vibrant colors, clean gradient background. No text.",
         "On-Chain": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a glowing Bitcoin and blockchain network nodes, acting as a friendly guide. Vibrant purple colors, clean gradient background. No text, no words.",
         "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically presenting a classic book. Dark premium colors. No text.",
-        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically pointing at a gold coin and a guide book. Vibrant colors. No text."
+        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically pointing at a gold coin and a guide book. Vibrant colors. No text.",
+        "Money Hack": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically holding a glowing laptop and money. Vibrant yellow and green colors. No text."
     }
 
     img = None
@@ -1358,6 +1434,11 @@ def make_thumbnail(title_text, cat, tier):
             draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
             draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
         elif cat == "Foundation":
+            draw.rectangle([cx_p-70*S, cy_p-60*S, cx_p+70*S, cy_p+80*S], fill="#1e3a5f", outline="#f59e0b", width=6*S)
+            draw.rectangle([cx_p-55*S, cy_p-40*S, cx_p+55*S, cy_p-20*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p-10*S, cx_p+55*S, cy_p+10*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p+20*S, cx_p+20*S, cy_p+40*S], fill="#f59e0b")
+        elif cat == "Money Hack":
             draw.rectangle([cx_p-70*S, cy_p-60*S, cx_p+70*S, cy_p+80*S], fill="#1e3a5f", outline="#f59e0b", width=6*S)
             draw.rectangle([cx_p-55*S, cy_p-40*S, cx_p+55*S, cy_p-20*S], fill="#f59e0b")
             draw.rectangle([cx_p-55*S, cy_p-10*S, cx_p+55*S, cy_p+10*S], fill="#f59e0b")
@@ -1702,7 +1783,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     cat_id = get_or_create_wp_category(cat)
 
     insight_cat_id = None
-    if cat not in ["Foundation", "The Daily Catalyst"]:
+    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
         insight_cat_id = get_or_create_wp_category("Insight")
 
     if tier == "unified": tag_id = get_or_create_wp_tag("Insight")
@@ -1710,7 +1791,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     else: tag_id = get_or_create_wp_tag("Pro")
 
     author_id = get_wp_author_id(author_name)
-    display_title = title if cat in ["Foundation", "The Daily Catalyst"] or tier == "unified" else (f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}")
+    display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack"] or tier == "unified" else (f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}")
 
     post_data = {
         "title": display_title,
@@ -1736,8 +1817,8 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         "rank_math_title": rm_title[:60],
         "rank_math_description": (exc or "")[:160],
         "rank_math_focus_keyword": kw.lower() if kw else "",
-        "is_premium": "no" if cat == "Foundation" else "yes",
-        "pms_content_restrict": "0" if cat == "Foundation" else "1",
+        "is_premium": "no" if cat in ["Foundation", "Money Hack"] else "yes",
+        "pms_content_restrict": "0" if cat in ["Foundation", "Money Hack"] else "1",
         "post_tier": tier.upper(),
     }
 
@@ -1781,7 +1862,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.18 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.19 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1812,7 +1893,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.18 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.19 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1839,6 +1920,37 @@ def run_philosophy_pipeline():
 
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
+def run_moneyhack_pipeline():
+    cat = "Money Hack"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.9.19 Money Hack Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    theme = random.choice(MONEY_HACK_TOPICS)
+    tier = "premium"
+    raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Growth Team")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_money_hack_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
+
 def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
     day_of_week = current_time.weekday()
@@ -1853,13 +1965,13 @@ def run_news_pipeline(forced_cat=None):
         cat = "On-Chain"
         print(f"📅 [Smart Schedule] Today is Tue/Thu. Locking category to: {cat}")
     else:
-        base_cats = [c for c in CATEGORIES if c != "On-Chain"]
+        base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.18 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.19 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.18 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.19 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
@@ -1868,8 +1980,8 @@ def run_news_pipeline(forced_cat=None):
             pass
         else:
             latest_cat = _get_latest_post_category_name()
-            available_cats = [c for c in CATEGORIES if c != latest_cat]
-            if not available_cats: available_cats = CATEGORIES
+            available_cats = [c for c in CATEGORIES if c not in [latest_cat, "Money Hack"]]
+            if not available_cats: available_cats = [c for c in CATEGORIES if c != "Money Hack"]
             
             random.shuffle(available_cats)
             cat = available_cats[0]
@@ -1929,14 +2041,14 @@ if __name__ == "__main__":
             run_philosophy_pipeline()
         elif arg == "foundation": 
             run_foundation_pipeline()
+        elif arg == "moneyhack":
+            run_moneyhack_pipeline()
         elif arg == "onchain": 
-            # onchain 명령어 입력 시 On-Chain 고정 발행
             run_news_pipeline("On-Chain")
         elif arg == "insight":
-            # insight 명령어 입력 시 화/목에도 일반 뉴스(Insight) 발행되도록 처리
             current_time = datetime.datetime.utcnow()
             day_of_year = current_time.timetuple().tm_yday
-            base_cats = [c for c in CATEGORIES if c != "On-Chain"]
+            base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
             cat = base_cats[day_of_year % len(base_cats)]
             run_news_pipeline(cat)
     else:
