@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.19)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.20)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -15,6 +15,7 @@
 #   9. [UX 픽스] 실전 중심 Action Plan 프롬프트 강화 및 Executive Summary 바로 밑으로 배치 변경
 #  10. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
 #  11. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
+#  12. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -80,7 +81,6 @@ MODEL_PRI = {
 }
 FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
-# 🚨 신규 카테고리 추가
 CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy", "On-Chain", "Money Hack"]
 TIERS       = ["unified"]
 TIER_LABELS = {"unified": "INSIGHT"}
@@ -660,19 +660,20 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🧠 3. MONEY HACK (SIDE HUSTLE) DATABASE & PROMPTS
+# 🧠 3. MONEY HACK (SIDE HUSTLE) 무한 생성 엔진
 # ═══════════════════════════════════════════════
-MONEY_HACK_TOPICS = [
-    "Week 1: Finding Your Micro-Niche for Amazon KDP E-books",
-    "Week 2: Writing a 30-Page E-book using AI Tools in 3 Hours",
-    "Week 3: Designing a Clickable Cover on Canva (Step-by-Step)",
-    "Week 4: Setting Up Your KDP Account & Making Your First $100",
-    "Flipping Digital Assets: How to Buy and Sell Domain Names",
-    "The Notion Template Hustle: Creating Systems People Pay For",
-    "Print on Demand: Setting up a Shopify + Printify Store in 1 Day",
-    "Freelance Copywriting: Landing Your First Client on Upwork",
-    "Building a Faceless YouTube Channel with AI Voiceovers",
-    "Email Newsletter Monetization: From 0 to 1,000 Subscribers"
+MH_NICHES = [
+    "Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", 
+    "Content Creation & Faceless Channels", "Micro-SaaS & Software", "Domain & Asset Flipping", 
+    "Affiliate Marketing", "Consulting & Coaching", "Paid Newsletter & Community", "Print on Demand"
+]
+MH_PLATFORMS = [
+    "Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", 
+    "Twitter/X", "LinkedIn", "Pinterest", "Substack", "Etsy", "Amazon KDP", "WordPress"
+]
+MH_AI_TOOLS = [
+    "ChatGPT", "Midjourney", "Claude", "ElevenLabs", "Zapier/Make", "CapCut AI", 
+    "Perplexity", "RunwayML", "HeyGen", "OpusClip"
 ]
 
 MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -681,8 +682,10 @@ Your tone is motivating, direct, and incredibly practical. No fluff.
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
 MONEY_HACK_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Write an SEO-optimized, step-by-step side hustle guide on the following topic in English:
-TOPIC: {theme}
+Write an SEO-optimized, step-by-step side hustle guide based on this randomly generated framework:
+FRAMEWORK: {theme}
+
+Your job is to invent a highly specific, realistic 4-week challenge or a step-by-step blueprint that combines these elements into a profitable $1,000/month project.
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
@@ -690,8 +693,8 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [Step-by-Step], numbers, or 'How to' formats.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to make money with canva templates')</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
-<CONCEPT>(2 paragraphs explaining what this side hustle is and why it's profitable right now.)</CONCEPT>
-<STEP_BY_STEP_TOOL>(Detail at least 2 specific platforms or tools needed (e.g., Gumroad, Canva, ChatGPT) and provide a 1-2-3 checklist to execute today to reach the $1,000/month milestone.)</STEP_BY_STEP_TOOL>
+<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now.)</CONCEPT>
+<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today to reach the $1,000/month milestone.)</STEP_BY_STEP_TOOL>
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits.)</PRO_TIP>
 
 <POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
@@ -1268,6 +1271,19 @@ def build_html(tier, cat, raw, author, tf, title):
     <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
         <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br>
         <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
+    </div>
+    """
+    
+    html += f"""
+    <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
+        <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
+            <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
+        </div>
+        <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
+            <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
+        </div>
     </div>
     """
     
@@ -1862,7 +1878,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.19 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.20 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1893,7 +1909,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.19 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.20 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1924,7 +1940,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.19 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.20 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1932,7 +1948,13 @@ def run_moneyhack_pipeline():
         print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
         return
 
-    theme = random.choice(MONEY_HACK_TOPICS)
+    # 🚨 무한 주제 생성 엔진 작동 (Niche + Platform + AI Tool = 1,500가지 이상의 유니크한 조합)
+    niche = random.choice(MH_NICHES)
+    platform = random.choice(MH_PLATFORMS)
+    ai_tool = random.choice(MH_AI_TOOLS)
+    theme = f"Niche: {niche} | Core Platform: {platform} | AI Automation Tool: {ai_tool}"
+    print(f"   🎲 Random Framework Selected: {theme}")
+
     tier = "premium"
     raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
     if raw:
@@ -1969,9 +1991,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.19 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.20 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.19 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.20 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
