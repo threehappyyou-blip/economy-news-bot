@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.22)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.23)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -17,6 +17,7 @@
 #  12. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
 #  13. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
 #  14. [통신 픽스] WP API 통신 시 Imunify360 WAF 차단 문제 해결을 위해 standard requests 모듈로 원복
+#  15. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -1075,12 +1076,15 @@ def _build_founder_note():
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f": {kw}" if kw else ""
+    
     html += _build_founder_note()
     
     def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;">
-        <h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it? (Definition)</h3>
+        <h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it? (Definition){k_suf}</h3>
         <div style="color:#064e3b; font-size:18px; line-height:1.8;">{def_text}</div>
     </div>
     """
@@ -1088,7 +1092,7 @@ def build_foundation_html(raw, author, tf, title, cat):
     why_text = xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
-        <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3>
+        <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters{k_suf}</h3>
         <p>{why_text}</p>
     </div>
     """
@@ -1096,7 +1100,7 @@ def build_foundation_html(raw, author, tf, title, cat):
     how_text = xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
-        <h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3>
+        <h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today{k_suf}</h3>
         <div style="color:{SLATE}; font-size:18px; line-height:1.8;">{how_text}</div>
     </div>
     """
@@ -1117,6 +1121,9 @@ def build_foundation_html(raw, author, tf, title, cat):
 def build_philosophy_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f" — {kw}" if kw else ""
+    
     html += _build_founder_note()
     
     html += f"""
@@ -1131,7 +1138,7 @@ def build_philosophy_html(raw, author, tf, title, cat):
     reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
-        <h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3>
+        <h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection{k_suf}</h3>
         <div style="color:{SLATE}; font-size:18px; line-height:1.8;">{reflection_text}</div>
     </div>
     """
@@ -1165,12 +1172,15 @@ def build_philosophy_html(raw, author, tf, title, cat):
 def build_money_hack_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f": {kw}" if kw else ""
+    
     html += _build_founder_note()
     
     concept = xtag(raw, "CONCEPT").replace("\n", "<br><br>")
     html += f"""
     <div style="margin:40px 0;">
-        <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3>
+        <h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept{k_suf}</h3>
         <p>{concept}</p>
     </div>
     """
@@ -1180,7 +1190,7 @@ def build_money_hack_html(raw, author, tf, title, cat):
     tools = xtag(raw, "STEP_BY_STEP_TOOL").replace("\n", "<br><br>")
     html += f"""
     <div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-        <h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3>
+        <h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution{k_suf}</h3>
         <div style="color:#064e3b; font-size:17px; line-height:1.8;">{tools}</div>
     </div>
     """
@@ -1212,10 +1222,13 @@ def build_html(tier, cat, raw, author, tf, title):
     badge = "WARM INSIGHT"
     badge_bg = GOLD
     
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f": {kw}" if kw else ""
+    
     html += _build_warm_index(raw)
     html += _build_founder_note()
     
-    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary</h2>"""
+    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary{k_suf}</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
 
     do_act = xtag(raw, "DO_ACTION").replace('\n', '<br>')
@@ -1243,12 +1256,12 @@ def build_html(tier, cat, raw, author, tf, title):
     
     html += f"""
     <div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
-        <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Plain English</p>
+        <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Plain English{k_suf}</p>
         <p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
     </div>
     """
     
-    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Flow</h2>"""
+    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Flow{k_suf}</h2>"""
     html += f"""<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>"""
     
     html += f"""
@@ -1266,19 +1279,6 @@ def build_html(tier, cat, raw, author, tf, title):
     <div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
         <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br>
         <span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
-    </div>
-    """
-    
-    html += f"""
-    <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
-        <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
-            <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
-            <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
-        </div>
-        <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
-            <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
-            <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
-        </div>
     </div>
     """
     
@@ -1873,7 +1873,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.22 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.23 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1904,7 +1904,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.22 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.23 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1935,7 +1935,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.22 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.23 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1985,9 +1985,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.22 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.23 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.22 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.23 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
