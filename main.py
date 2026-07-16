@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.20)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.21)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -16,6 +16,7 @@
 #  10. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
 #  11. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
 #  12. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
+#  13. [UX 픽스] 투표창 하단 댓글 유도 문구(Call-to-Action)를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -880,7 +881,6 @@ def _build_poll(raw_data, cat="Market"):
             <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt2}</a>
             {opt3_html}
         </div>
-        <p style="font-size:13px; color:{MUTED}; margin-top:20px; font-style:italic;">Click to join the discussion below! 👇</p>
     </div>
     """
 
@@ -1118,7 +1118,10 @@ def build_foundation_html(raw, author, tf, title, cat):
     html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
-    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+    <p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">
+        💬 Click to join the discussion below! 👇
+    </p>
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: Educational content only.
     </p>
     </div>
@@ -1163,7 +1166,10 @@ def build_philosophy_html(raw, author, tf, title, cat):
     html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
-    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+    <p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">
+        💬 Click to join the discussion below! 👇
+    </p>
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: This article is for informational purposes only.
     </p>
     </div>
@@ -1205,7 +1211,10 @@ def build_money_hack_html(raw, author, tf, title, cat):
     html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
-    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+    <p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">
+        💬 Click to join the discussion below! 👇
+    </p>
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: Educational content only. Results may vary based on individual effort.
     </p>
     </div>
@@ -1334,7 +1343,10 @@ def build_html(tier, cat, raw, author, tf, title):
     html += _build_poll(raw, cat)
     html += _build_branded_footer()
     html += f"""
-    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:40px; text-transform:uppercase; letter-spacing:0.5px;">
+    <p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">
+        💬 Click to join the discussion below! 👇
+    </p>
+    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">
         Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.
     </p>
     </div>
@@ -1878,7 +1890,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.20 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.21 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1909,7 +1921,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.20 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.21 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1940,7 +1952,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.20 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.21 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1991,9 +2003,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.20 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.21 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.20 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.21 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
