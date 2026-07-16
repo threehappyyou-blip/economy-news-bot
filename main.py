@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.21)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.22)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
 #   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
-#   4. [방화벽 우회] Imunify360/Cloudflare 방화벽 우회를 위한 Cloudscraper 모듈 전면 도입
 #   5. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
 #   6. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
 #   7. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
@@ -16,11 +15,13 @@
 #  10. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
 #  11. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
 #  12. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
-#  13. [UX 픽스] 투표창 하단 댓글 유도 문구(Call-to-Action)를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
+#  13. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
+#  14. [통신 픽스] WP API 통신 시 Imunify360 WAF 차단 문제 해결을 위해 standard requests 모듈로 원복
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
 import urllib.request
+import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
 from google import genai
@@ -33,7 +34,6 @@ from email.mime.base import MIMEBase
 from email import encoders
 import tempfile
 
-# 🚨 Imunify360 방화벽 우회를 위한 고급 스크래퍼 임포트
 try:
     import cloudscraper
 except ImportError:
@@ -41,7 +41,7 @@ except ImportError:
     sys.exit(1)
 
 # ═══════════════════════════════════════════════
-# CONFIG & 스텔스 스크래퍼 초기화
+# CONFIG
 # ═══════════════════════════════════════════════
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 WP_URL         = os.environ.get("WP_URL", "https://warminsight.com").rstrip("/")
@@ -54,24 +54,12 @@ EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 
-# 🚨 완벽한 크롬 브라우저 위장을 위한 스크래퍼 세션 생성 (TLS 핑거프린팅 우회)
+# RSS 크롤링용 스크래퍼 (일반 뉴스/크립토 사이트용)
 scraper = cloudscraper.create_scraper(
-    browser={
-        'browser': 'chrome',
-        'platform': 'windows',
-        'desktop': True
-    }
+    browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True}
 )
-
-# 스크래퍼 전용 기본 헤더 세팅
 scraper.headers.update({
-    'Accept': 'application/json, text/plain, */*',
     'Accept-Language': 'en-US,en;q=0.9',
-    'Referer': SITE_URL,
-    'Origin': SITE_URL,
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-origin',
     'Cache-Control': 'no-cache'
 })
 
@@ -353,7 +341,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE
+# 🛡️ SYSTEM UTILS & API ENGINE (Requests 모듈 사용)
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -371,8 +359,8 @@ def check_env_vars():
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        # 🚨 스크래퍼(scraper) 객체를 사용하여 WAF 우회
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), timeout=25)
+        # 🚨 WAF (Imunify360) 차단을 피하기 위해 기본 requests 모듈 사용 (API 통신용)
+        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -455,8 +443,7 @@ def _clean_seo_title(title):
 
 def _get_latest_post_category_name():
     try:
-        # 🚨 스크래퍼 객체 사용
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -465,7 +452,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", auth=(WP_USER, WP_APP_PASS), timeout=15)
+                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", auth=(WP_USER, WP_APP_PASS), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -483,8 +470,7 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
-        # 🚨 스크래퍼 객체 사용
-        r = scraper.get(
+        r = requests.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
             auth=(WP_USER, WP_APP_PASS), timeout=15
         )
@@ -496,7 +482,7 @@ def already_published_today(cat):
             cat_id = r_json[0]["id"]
         except: return False
 
-        r2 = scraper.get(
+        r2 = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
             params={
                 "categories": cat_id,
@@ -529,7 +515,7 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            # 🚨 크립토 사이트의 강력한 WAF 우회를 위해 스크래퍼를 거쳐서 RSS 데이터를 확보
+            # RSS 크롤링은 외부 뉴스 사이트를 긁어오는 것이므로 scraper(클라우드플레어 우회)를 유지합니다.
             resp = scraper.get(url, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
@@ -1361,7 +1347,6 @@ def get_font(url, filename):
         try:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             print(f"    📥 Downloading font from {url}...")
-            # 여기도 스크래퍼 사용
             resp = scraper.get(url, timeout=15)
             resp.raise_for_status()
             with open(filename, 'wb') as f:
@@ -1766,8 +1751,7 @@ def generate_vip_carousel(raw_content, cat):
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
-        # 🚨 스크래퍼 객체를 사용하여 업로드
-        resp = scraper.post(
+        resp = requests.post(
             f"{WP_URL}/wp-json/wp/v2/media",
             headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
             data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
@@ -1779,9 +1763,9 @@ def _upload_image(img_bytes, filename):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -1789,9 +1773,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -1799,7 +1783,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -1851,8 +1835,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        # 🚨 스크래퍼 객체를 사용하여 최종 포스팅
-        r = scraper.post(
+        r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
             json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
@@ -1890,7 +1873,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.21 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.22 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1921,7 +1904,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.21 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.22 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1952,7 +1935,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.21 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.22 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1960,7 +1943,6 @@ def run_moneyhack_pipeline():
         print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
         return
 
-    # 🚨 무한 주제 생성 엔진 작동 (Niche + Platform + AI Tool = 1,500가지 이상의 유니크한 조합)
     niche = random.choice(MH_NICHES)
     platform = random.choice(MH_PLATFORMS)
     ai_tool = random.choice(MH_AI_TOOLS)
@@ -2003,9 +1985,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.21 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.22 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.21 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.22 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
