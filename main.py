@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.31)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.32)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -21,7 +21,8 @@
 #  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 최신 버전(imagen-3.0-generate-002)으로 업데이트
 #  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
 #  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
-#  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 불필요 텍스트(PARAGRAPH 등) 클렌징
+#  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
+#  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -291,9 +292,9 @@ def send_youtube_script_email(post_title, meta, script):
         print(f"   ❌ YouTube Script Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진 (v46.9.31 클렌징 패치)
+# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진 (v46.9.32 태그 추천 포함)
 # ═══════════════════════════════════════════════
-def send_medium_draft_email(title, original_link, raw_content, cat):
+def send_medium_draft_email(title, original_link, raw_content, cat, kw):
     if not EMAIL_SENDER or not EMAIL_PASS: return
     print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
     
@@ -305,6 +306,12 @@ def send_medium_draft_email(title, original_link, raw_content, cat):
     raw_macro = xtag(raw_content, "MACRO")
     raw_macro = raw_macro.replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
     macro_content = raw_macro.strip().replace('\n', '<br><br>')
+    
+    # 🚨 미디엄 소형 키워드(Tags) 자동 생성 로직
+    # kw(롱테일 키워드)가 있으면 핵심 단어 위주로 변환, 없으면 기본값 부여
+    kw_tag = kw.title() if kw else "Market Trends"
+    if len(kw_tag) > 25: kw_tag = kw_tag[:25].strip() # 미디엄 태그 길이 제한 방어
+    cat_tag = cat.replace("-", " ")
     
     try:
         msg = MIMEMultipart()
@@ -323,14 +330,20 @@ def send_medium_draft_email(title, original_link, raw_content, cat):
                     <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy the content below to drive traffic back to Warm Insight.</p>
                 </div>
                 
-                <div style="background: #ecfdf5; padding: 20px 25px; border-bottom: 2px solid #e2e8f0;">
+                <div style="background: #ecfdf5; padding: 20px 25px; border-bottom: 1px solid #e2e8f0;">
                     <h3 style="color: #065f46; margin-top: 0; font-size: 16px;">🚨 CRITICAL SEO STEP (Canonical URL)</h3>
                     <ol style="color: #064e3b; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.6;">
                         <li>Go to Medium and paste the Title & Body below.</li>
-                        <li>Click the <strong>3 dots (...)</strong> at the top right -> <strong>Story Settings</strong> -> <strong>Advanced Settings</strong>.</li>
+                        <li>Click the <strong>3 dots (...)</strong> at the top right -> <strong>More Settings</strong> -> <strong>Advanced Settings</strong>.</li>
                         <li>Check <em>"This story was originally published elsewhere"</em>.</li>
                         <li>Paste this Exact URL: <strong><a href="{original_link}" style="color: #059669;">{original_link}</a></strong></li>
                     </ol>
+                    
+                    <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🏷️ Recommended Medium Tags (Topics)</h3>
+                    <p style="color: #064e3b; font-size: 14px; margin: 0; background: #d1fae5; padding: 10px; border-radius: 4px; font-weight: bold;">
+                        Investing, Finance, {cat_tag}, Market Analysis, {kw_tag}
+                    </p>
+                    <p style="color: #064e3b; font-size: 12px; margin-top: 8px;">* Just type these exactly in the Topics bar before hitting Publish!</p>
                 </div>
 
                 <!-- 복사/붙여넣기 본문 영역 (순정 HTML 구조) -->
@@ -615,7 +628,8 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            resp = scraper.get(url, timeout=15)
+            # 🚨 외부 뉴스 사이트(로이터 등)는 일반 크롬 브라우저로 접속해야 긁어올 수 있으므로 EXTERNAL_HEADERS 사용
+            resp = requests.get(url, headers=EXTERNAL_HEADERS, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
                 for e in d.entries[:40]:
@@ -1850,84 +1864,6 @@ def generate_vip_carousel(raw_content, cat):
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 # ═══════════════════════════════════════════════
-# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진 (v46.9.31 클렌징 패치)
-# ═══════════════════════════════════════════════
-def send_medium_draft_email(title, original_link, raw_content, cat):
-    if not EMAIL_SENDER or not EMAIL_PASS: return
-    print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
-    
-    # 원본 XML 데이터 추출 및 불필요한 단어(PARAGRAPH 1: 등) 클렌징
-    exec_summary = xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
-    plain_english = xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
-    macro_headline = xtag(raw_content, "HEADLINE")
-    
-    raw_macro = xtag(raw_content, "MACRO")
-    raw_macro = raw_macro.replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
-    macro_content = raw_macro.strip().replace('\n', '<br><br>')
-    
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = MEDIUM_EMAIL_RECEIVER
-        msg['Subject'] = f"✍️ [Medium Draft] {title[:40]}..."
-
-        # 미디엄 에디터가 좋아하는 순정 HTML 구조로만 복사 영역 구성
-        body = f"""
-        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
-            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                
-                <!-- 상단 가이드라인 패널 -->
-                <div style="background: #10b981; padding: 25px; color: #ffffff;">
-                    <h2 style="margin: 0; font-size: 22px;">✍️ Medium Teaser Post Ready</h2>
-                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy the content below to drive traffic back to Warm Insight.</p>
-                </div>
-                
-                <div style="background: #ecfdf5; padding: 20px 25px; border-bottom: 2px solid #e2e8f0;">
-                    <h3 style="color: #065f46; margin-top: 0; font-size: 16px;">🚨 CRITICAL SEO STEP (Canonical URL)</h3>
-                    <ol style="color: #064e3b; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.6;">
-                        <li>Go to Medium and paste the Title & Body below.</li>
-                        <li>Click the <strong>3 dots (...)</strong> at the top right -> <strong>Story Settings</strong> -> <strong>Advanced Settings</strong>.</li>
-                        <li>Check <em>"This story was originally published elsewhere"</em>.</li>
-                        <li>Paste this Exact URL: <strong><a href="{original_link}" style="color: #059669;">{original_link}</a></strong></li>
-                    </ol>
-                </div>
-
-                <!-- 복사/붙여넣기 본문 영역 (순정 HTML 구조) -->
-                <div style="padding: 30px;">
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Copy From Here 👇</h3>
-                    
-                    <div style="padding: 20px; background: #ffffff; color: #222222; font-family: Georgia, serif; border: 1px dashed #cbd5e1;">
-                        <h1>{title}</h1>
-                        <br>
-                        <h2>Executive Summary</h2>
-                        <p>{exec_summary}</p>
-                        <br>
-                        <h2>💡 Plain English</h2>
-                        <p>{plain_english}</p>
-                        <br>
-                        <h2>{macro_headline}</h2>
-                        <p>{macro_content}</p>
-                        <br>
-                        <hr>
-                        <br>
-                        <h2>🚀 Read the Full Deep Dive</h2>
-                        <p>This is just the tip of the iceberg. To see the full <strong>Market Dashboard, Sector Heatmap, Bull/Bear Scenarios, and Smart Money Moves</strong>, read the complete analysis on Warm Insight.</p>
-                        <p><a href="{original_link}">👉 Click here to read the full report</a></p>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        """
-        msg.attach(MIMEText(body, 'html'))
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASS)
-            server.send_message(msg)
-        print("   ✅ Medium Teaser Draft Email Sent!")
-    except Exception as e:
-        print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
-
-# ═══════════════════════════════════════════════
 # PUBLISHER & CORE LOGIC
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
@@ -2045,7 +1981,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 
                 if cat in ["Insight", "On-Chain", "Economy", "Politics", "Tech", "Health", "Energy"]:
                     if raw_for_cards:
-                        send_medium_draft_email(display_title, link, raw_for_cards, cat)
+                        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw)
                 
                 return True
             else:
@@ -2064,7 +2000,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.31 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.32 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2095,7 +2031,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.31 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.32 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2126,7 +2062,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.31 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.32 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2176,9 +2112,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.31 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.32 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.31 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.32 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
