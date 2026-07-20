@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.23)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.24)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -18,6 +18,7 @@
 #  13. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
 #  14. [통신 픽스] WP API 통신 시 Imunify360 WAF 차단 문제 해결을 위해 standard requests 모듈로 원복
 #  15. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
+#  16. [통신 픽스] Nginx 415 에러 해결을 위해 모든 requests API 통신에 표준 Headers(User-Agent, Accept) 장착
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -54,6 +55,12 @@ EMAIL_SENDER   = os.environ.get("EMAIL_SENDER", "")
 EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
+
+# API 통신용 공통 헤더
+API_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+    'Accept': 'application/json'
+}
 
 # RSS 크롤링용 스크래퍼 (일반 뉴스/크립토 사이트용)
 scraper = cloudscraper.create_scraper(
@@ -360,8 +367,7 @@ def check_env_vars():
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        # 🚨 WAF (Imunify360) 차단을 피하기 위해 기본 requests 모듈 사용 (API 통신용)
-        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", auth=(WP_USER, WP_APP_PASS), timeout=25)
+        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -444,7 +450,7 @@ def _clean_seo_title(title):
 
 def _get_latest_post_category_name():
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -453,7 +459,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", auth=(WP_USER, WP_APP_PASS), timeout=15)
+                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -472,7 +478,7 @@ def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
         r = requests.get(
-            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}",
+            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=API_HEADERS,
             auth=(WP_USER, WP_APP_PASS), timeout=15
         )
         if r.status_code != 200: return False
@@ -484,7 +490,7 @@ def already_published_today(cat):
         except: return False
 
         r2 = requests.get(
-            f"{WP_URL}/wp-json/wp/v2/posts",
+            f"{WP_URL}/wp-json/wp/v2/posts", headers=API_HEADERS,
             params={
                 "categories": cat_id,
                 "per_page": 1,
@@ -516,7 +522,6 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            # RSS 크롤링은 외부 뉴스 사이트를 긁어오는 것이므로 scraper(클라우드플레어 우회)를 유지합니다.
             resp = scraper.get(url, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
@@ -1751,9 +1756,14 @@ def generate_vip_carousel(raw_content, cat):
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "image/jpeg"
+        }
         resp = requests.post(
             f"{WP_URL}/wp-json/wp/v2/media",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
+            headers=headers,
             data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
@@ -1763,9 +1773,9 @@ def _upload_image(img_bytes, filename):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -1773,9 +1783,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -1783,7 +1793,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -1837,6 +1847,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     try:
         r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
+            headers=API_HEADERS,
             json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
         if r.status_code in (200, 201):
@@ -1873,7 +1884,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.23 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.24 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1904,7 +1915,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.23 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.24 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1935,7 +1946,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.23 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.24 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1985,9 +1996,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.23 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.24 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.23 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.24 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
