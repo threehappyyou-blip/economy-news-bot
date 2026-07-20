@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.25)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.26)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -18,6 +18,7 @@
 #  12. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
 #  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
 #  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신(Loopback)으로 위장하는 WordPress User-Agent 탑재
+#  15. [버그 픽스] 이전 버전에서 누락된 SOCIAL_LINKS 변수 복구 (NameError 해결)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -59,6 +60,21 @@ WP_API_HEADERS = {
 EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
+
+try:
+    import cloudscraper
+    # RSS 크롤링용 스크래퍼 (일반 뉴스/크립토 사이트 우회용)
+    scraper = cloudscraper.create_scraper(
+        browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True}
+    )
+    scraper.headers.update({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache'
+    })
+except ImportError:
+    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다. GitHub Actions의 pip install에 cloudscraper를 추가해주세요.")
+    sys.exit(1)
+
 
 MODEL_PRI = {
     "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
@@ -338,7 +354,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE (WP Loopback Spoofing)
+# 🛡️ SYSTEM UTILS & API ENGINE
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -356,7 +372,6 @@ def check_env_vars():
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        # 🚨 스크립트가 아닌 워드프레스 자기 자신인 척 통신하여 방화벽 100% 무력화
         resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
         try:
             resp_json = resp.json()
@@ -512,8 +527,7 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            # 🚨 외부 뉴스 사이트(로이터 등)는 일반 크롬 브라우저로 접속해야 긁어올 수 있으므로 EXTERNAL_HEADERS 사용
-            resp = requests.get(url, headers=EXTERNAL_HEADERS, timeout=15)
+            resp = scraper.get(url, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
                 for e in d.entries[:40]:
@@ -521,7 +535,7 @@ def fetch_news_pool(cat, max_items=15):
                     summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
                     if title and len(title) > 10: items.add(f"• {title}: {summary}")
             else:
-                print(f"   ⚠️ RSS feed blocked or returned {resp.status_code}: {url}")
+                print(f"   ⚠️ RSS feed blocked by WAF or returned {resp.status_code}: {url}")
         except Exception as ex:
             print(f"   ⚠️ RSS feed error on {url}: {ex}")
             pass
@@ -1014,6 +1028,14 @@ def _build_pillar_link(target_cat):
     </div>
     """
 
+# ═══════════════════════════════════════════════
+# 📎 FOOTER BUILDER
+# ═══════════════════════════════════════════════
+SOCIAL_LINKS = {
+    "youtube": "https://www.youtube.com/@WarmInsightyou",
+    "tiktok": "https://www.tiktok.com/@warminsight"
+}
+
 def _build_branded_footer():
     si = ""
     if SOCIAL_LINKS.get("youtube"):
@@ -1270,6 +1292,19 @@ def build_html(tier, cat, raw, author, tf, title):
     </div>
     """
     
+    html += f"""
+    <div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
+        <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4>
+            <p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
+        </div>
+        <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4>
+            <p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
+        </div>
+    </div>
+    """
+    
     html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
     
     html += f"""
@@ -1335,7 +1370,6 @@ def get_font(url, filename):
         try:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             print(f"    📥 Downloading font from {url}...")
-            # 폰트 다운로드는 외부 접속이므로 EXTERNAL_HEADERS 사용
             resp = requests.get(url, headers=EXTERNAL_HEADERS, timeout=15)
             resp.raise_for_status()
             with open(filename, 'wb') as f:
@@ -1868,7 +1902,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.25 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.26 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1899,7 +1933,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.25 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.26 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1930,7 +1964,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.25 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.26 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1980,9 +2014,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.25 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.26 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.25 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.26 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
