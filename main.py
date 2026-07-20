@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.29)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.30)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -19,8 +19,8 @@
 #  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
 #  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신(Loopback)으로 위장하는 WordPress User-Agent 탑재
 #  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 최신 버전(imagen-3.0-generate-002)으로 업데이트
-#  16. [버그 픽스] NameError 해결을 위해 SOCIAL_LINKS 딕셔너리 변수 전역 선언 복구
-#  17. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
+#  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
+#  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -39,7 +39,7 @@ from email import encoders
 import tempfile
 
 # ═══════════════════════════════════════════════
-# CONFIG & 스텔스 API 헤더 
+# CONFIG & 전역 변수 설정
 # ═══════════════════════════════════════════════
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 WP_URL         = os.environ.get("WP_URL", "https://warminsight.com").rstrip("/")
@@ -51,7 +51,13 @@ EMAIL_SENDER   = os.environ.get("EMAIL_SENDER", "")
 EMAIL_PASS     = os.environ.get("EMAIL_PASSWORD", "")
 EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
-MEDIUM_EMAIL_RECEIVER = "jh0116jh@gmail.com" # 미디엄 드래프트 수신용
+MEDIUM_EMAIL_RECEIVER = "jh0116jh@gmail.com"
+
+# 🚨 에러 원천 차단: 유튜브 및 틱톡 링크 전역 변수 고정 (NameError 방지)
+SOCIAL_LINKS = {
+    "youtube": "https://www.youtube.com/@WarmInsightyou",
+    "tiktok": "https://www.tiktok.com/@warminsight"
+}
 
 # 🚨 핵심 솔루션: WP 서버 내부 통신(Cron/Pingback)으로 위장하여 Imunify360 방화벽 프리패스
 WP_API_HEADERS = {
@@ -606,7 +612,8 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            resp = scraper.get(url, timeout=15)
+            # 🚨 외부 뉴스 사이트(로이터 등)는 일반 크롬 브라우저로 접속해야 긁어올 수 있으므로 EXTERNAL_HEADERS 사용
+            resp = requests.get(url, headers=EXTERNAL_HEADERS, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
                 for e in d.entries[:40]:
@@ -1956,7 +1963,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                     yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
                     if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
 
-                # 🚨 신규 추가: Insight, On-Chain 카테고리일 경우 Medium Teaser 이메일 추가 발송
                 if cat in ["Insight", "On-Chain", "Economy", "Politics", "Tech", "Health", "Energy"]:
                     if raw_for_cards:
                         send_medium_draft_email(display_title, link, raw_for_cards, cat)
@@ -1978,7 +1984,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.29 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.30 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2009,7 +2015,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.29 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.30 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2040,7 +2046,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.29 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.30 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2090,9 +2096,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.29 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.30 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.29 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.30 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
