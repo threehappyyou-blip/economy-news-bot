@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.41)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.35)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -18,17 +18,14 @@
 #  12. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
 #  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
 #  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신(Loopback)으로 위장하는 WordPress User-Agent 탑재
-#  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 안정화 버전(imagen-3.0-generate-001)으로 조정
+#  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 최신 버전(imagen-3.0-generate-002)으로 업데이트
 #  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
 #  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
 #  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
 #  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
 #  20. [마케팅 픽스] Medium 썸네일 누락 해결을 위해, 생성된 AI 썸네일 이미지를 Draft 이메일에 파일로 자동 첨부
 #  21. [유튜브 픽스] 유튜브 썸네일 프롬프트에 시선을 사로잡는 강력한 텍스트(Text/Copy) 추천 항목 추가
-#  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
-#  23. [버그 픽스] AI 썸네일 생성 실패 시 웹사이트 썸네일을 재사용하지 않고, 파이썬 기반의 '텍스트 없는' 추상적 디자인 썸네일 강제 생성 로직 구현
-#  24. [확장] 365 챌린지 유입 극대화를 위해 Foundation, Catalyst, Money Hack 카테고리도 모두 Medium Draft 이메일 발송되도록 파이프라인 전면 개조
-#  25. [코드 무결성] 2,246줄 원본 로직 무손실 풀 복구 및 불필요한 코드 요약 전면 금지 적용
+#  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재 (웹사이트 썸네일 재사용 방지)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -61,22 +58,26 @@ EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 MEDIUM_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 
+# 🚨 에러 원천 차단: 유튜브 및 틱톡 링크 전역 변수 고정 (NameError 방지)
 SOCIAL_LINKS = {
     "youtube": "https://www.youtube.com/@WarmInsightyou",
     "tiktok": "https://www.tiktok.com/@warminsight"
 }
 
+# 🚨 핵심 솔루션: WP 서버 내부 통신(Cron/Pingback)으로 위장하여 Imunify360 방화벽 프리패스
 WP_API_HEADERS = {
     'User-Agent': 'WordPress/6.5; ' + SITE_URL,
     'Accept': 'application/json'
 }
 
+# 🚨 외부 뉴스(RSS) 크롤링 시 차단을 막기 위한 일반 브라우저 위장 헤더
 EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
 try:
     import cloudscraper
+    # RSS 크롤링용 스크래퍼 (일반 뉴스/크립토 사이트 우회용)
     scraper = cloudscraper.create_scraper(
         browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True}
     )
@@ -301,35 +302,13 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
     if not EMAIL_SENDER or not EMAIL_PASS: return
     print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
     
-    if cat == "Foundation":
-        sec1_title = "📖 What is it?"
-        sec1_body = xtag(raw_content, "DEFINITION").replace('\n', '<br>')
-        sec2_title = "💡 Why It Matters"
-        sec2_body = xtag(raw_content, "WHY_MATTERS").replace('\n', '<br>')
-        sec3_title = "🚀 How to Start Today"
-        sec3_body = xtag(raw_content, "HOW_TO_START").replace('\n', '<br>')
-    elif cat == "The Daily Catalyst":
-        sec1_title = "❝ The Anchor ❞"
-        sec1_body = xtag(raw_content, "ANCHOR").replace('\n', '<br>')
-        sec2_title = "The Reflection"
-        sec2_body = xtag(raw_content, "REFLECTION").replace('\n', '<br>')
-        sec3_title = "⚡ The Daily Catalyst"
-        sec3_body = xtag(raw_content, "CATALYST").replace('\n', '<br>')
-    elif cat == "Money Hack":
-        sec1_title = "💡 The Concept"
-        sec1_body = xtag(raw_content, "CONCEPT").replace('\n', '<br>')
-        sec2_title = "🛠️ Step-by-Step Execution"
-        sec2_body = xtag(raw_content, "STEP_BY_STEP_TOOL").replace('\n', '<br>')
-        sec3_title = "🔥 Pro Tip"
-        sec3_body = xtag(raw_content, "PRO_TIP").replace('\n', '<br>')
-    else:
-        sec1_title = "Executive Summary"
-        sec1_body = xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
-        sec2_title = "💡 Plain English"
-        sec2_body = xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
-        sec3_title = xtag(raw_content, "HEADLINE")
-        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
-        sec3_body = raw_m.strip().replace('\n', '<br><br>')
+    exec_summary = xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
+    plain_english = xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
+    macro_headline = xtag(raw_content, "HEADLINE")
+    
+    raw_macro = xtag(raw_content, "MACRO")
+    raw_macro = raw_macro.replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
+    macro_content = raw_macro.strip().replace('\n', '<br><br>')
     
     kw_tag = kw.title() if kw else "Market Trends"
     if len(kw_tag) > 25: kw_tag = kw_tag[:25].strip() 
@@ -345,6 +324,7 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
             <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                 
+                <!-- 상단 가이드라인 패널 -->
                 <div style="background: #10b981; padding: 25px; color: #ffffff;">
                     <h2 style="margin: 0; font-size: 22px;">✍️ Medium Teaser Post Ready</h2>
                     <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy the content below to drive traffic back to Warm Insight.</p>
@@ -370,25 +350,26 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
                     </p>
                 </div>
 
+                <!-- 복사/붙여넣기 본문 영역 -->
                 <div style="padding: 30px;">
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Copy From Here 👇</h3>
                     
                     <div style="padding: 20px; background: #ffffff; color: #222222; font-family: Georgia, serif; border: 1px dashed #cbd5e1;">
                         <h1>{title}</h1>
                         <br>
-                        <h2>{sec1_title}</h2>
-                        <p>{sec1_body}</p>
+                        <h2>Executive Summary</h2>
+                        <p>{exec_summary}</p>
                         <br>
-                        <h2>{sec2_title}</h2>
-                        <p>{sec2_body}</p>
+                        <h2>💡 Plain English</h2>
+                        <p>{plain_english}</p>
                         <br>
-                        <h2>{sec3_title}</h2>
-                        <p>{sec3_body}</p>
+                        <h2>{macro_headline}</h2>
+                        <p>{macro_content}</p>
                         <br>
                         <hr>
                         <br>
                         <h2>🚀 Read the Full Deep Dive</h2>
-                        <p>This is just the tip of the iceberg. To see the full deep dive, dashboard, and strategies, read the complete analysis on Warm Insight.</p>
+                        <p>This is just the tip of the iceberg. To see the full <strong>Market Dashboard, Sector Heatmap, Bull/Bear Scenarios, and Smart Money Moves</strong>, read the complete analysis on Warm Insight.</p>
                         <p><a href="{original_link}">👉 Click here to read the full report</a></p>
                     </div>
                 </div>
@@ -484,7 +465,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE
+# 🛡️ SYSTEM UTILS & API ENGINE (WP Loopback Spoofing)
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -582,36 +563,6 @@ def _clean_seo_title(title):
     for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] ", "[VIP] ", "[Pro] "]:
         title = title.replace(p, "")
     return title.strip()
-
-def get_or_create_wp_category(cat_name):
-    slug = cat_name.lower().replace(" ", "-")
-    try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r2.status_code in (200, 201): return r2.json()["id"]
-    except: pass
-    return None
-
-def get_or_create_wp_tag(tag_name):
-    slug = tag_name.lower().replace(" ", "-")
-    try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r2.status_code in (200, 201): return r2.json()["id"]
-    except: pass
-    return None
-
-def get_wp_author_id(author_full_string):
-    search_name = author_full_string.split("&")[0].strip()
-    try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200:
-            users = r.json()
-            if len(users) > 0: return users[0]["id"]
-    except: pass
-    return None
 
 def _get_latest_post_category_name():
     try:
@@ -1566,7 +1517,7 @@ def make_thumbnail(title_text, cat, tier):
         print(f"    [AI] Requesting Mascot Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
+            model='imagen-3.0-generate-002',
             prompt=AI_PROMPTS.get(cat, AI_PROMPTS["Economy"]),
             config=types.GenerateImagesConfig(
                 number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
@@ -1718,72 +1669,42 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 (완벽 분리/텍스트 제거 폴백 탑재)
+# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 (새로 추가됨)
 # ═══════════════════════════════════════════════
 def make_medium_thumbnail(cat):
     print(f"    [AI] Generating Premium Editorial Thumbnail for Medium...")
     client = _get_gemini_client()
     
-    # 🚨 잡지 커버 수준의 미디엄 전용 고품질 프롬프트 (글씨 절대 금지)
+    # 잡지 커버 수준의 미디엄 전용 고품질 프롬프트 (글씨 없음)
     prompts = {
-        "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words, no letters.",
-        "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words, no letters.",
-        "Tech": "A highly aesthetic, conceptual 3D illustration about artificial intelligence and future technology. Cinematic lighting, minimalist composition, glowing neon purple and cyan colors. High-end tech magazine cover style. No text, no words, no letters.",
-        "Health": "A highly aesthetic, conceptual 3D illustration about biotechnology and healthcare innovation. Cinematic lighting, minimalist composition, clean emerald green and white colors. High-end medical magazine cover style. No text, no words, no letters.",
-        "Energy": "A highly aesthetic, conceptual 3D illustration about global energy transition and power resources. Cinematic lighting, minimalist composition, vibrant orange and amber colors. High-end energy magazine cover style. No text, no words, no letters.",
-        "On-Chain": "A highly aesthetic, conceptual 3D illustration about blockchain, crypto, and decentralized finance. Cinematic lighting, minimalist composition, glowing purple and gold accents. High-end crypto magazine cover style. No text, no words, no letters.",
-        "The Daily Catalyst": "A highly aesthetic, conceptual 3D illustration about wealth building and mental growth. Cinematic lighting, minimalist composition, deep rich colors with warm glowing accents. High-end magazine cover style. No text, no words, no letters.",
-        "Foundation": "A highly aesthetic, conceptual 3D illustration about financial foundation and investment basics. Cinematic lighting, minimalist composition, deep rich colors with glowing gold accents. High-end magazine cover style. No text, no words, no letters.",
-        "Money Hack": "A highly aesthetic, conceptual 3D illustration about digital wealth and side hustles. Cinematic lighting, minimalist composition, deep rich colors with vibrant glowing accents. High-end magazine cover style. No text, no words, no letters."
+        "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words.",
+        "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words.",
+        "Tech": "A highly aesthetic, conceptual 3D illustration about artificial intelligence and future technology. Cinematic lighting, minimalist composition, glowing neon purple and cyan colors. High-end tech magazine cover style. No text, no words.",
+        "Health": "A highly aesthetic, conceptual 3D illustration about biotechnology and healthcare innovation. Cinematic lighting, minimalist composition, clean emerald green and white colors. High-end medical magazine cover style. No text, no words.",
+        "Energy": "A highly aesthetic, conceptual 3D illustration about global energy transition and power resources. Cinematic lighting, minimalist composition, vibrant orange and amber colors. High-end energy magazine cover style. No text, no words.",
+        "On-Chain": "A highly aesthetic, conceptual 3D illustration about blockchain, crypto, and decentralized finance. Cinematic lighting, minimalist composition, glowing purple and gold accents. High-end crypto magazine cover style. No text, no words.",
+        "The Daily Catalyst": "A highly aesthetic, conceptual 3D illustration about wealth building and mental growth. Cinematic lighting, minimalist composition, deep rich colors with warm glowing accents. High-end magazine cover style. No text, no words.",
+        "Foundation": "A highly aesthetic, conceptual 3D illustration about financial foundation and investment basics. Cinematic lighting, minimalist composition, deep rich colors with glowing gold accents. High-end magazine cover style. No text, no words.",
+        "Money Hack": "A highly aesthetic, conceptual 3D illustration about digital wealth and side hustles. Cinematic lighting, minimalist composition, deep rich colors with vibrant glowing accents. High-end magazine cover style. No text, no words."
     }
     prompt = prompts.get(cat, prompts["Economy"])
     
     try:
-        # 🚨 구글 API 404 에러 방지를 위해 가장 안정적인 imagen 001 버전 지정
         result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
+            model='imagen-3.0-generate-002',
             prompt=prompt,
             config=types.GenerateImagesConfig(
                 number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
             )
         )
-        print("    ✅ Medium Editorial Thumbnail Generated Successfully!")
+        print("    ✅ Medium Editorial Thumbnail Generated!")
         return result.generated_images[0].image.image_bytes
     except Exception as e:
-        # 🚨 AI 서버 거부 시, 글씨 있는 웹사이트용이 아니라 파이썬 자체의 '글씨 없는 추상화' 그리기
-        print(f"    ⚠️ Medium AI Image Gen failed. Generating custom abstract fallback... ({e})")
-        W, H = 1200, 630
-        CAT_STYLES = {
-            "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
-            "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
-            "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
-            "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
-            "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
-            "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
-            "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
-            "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"},
-            "Money Hack": {"bg1": "#f59e0b", "bg2": "#b45309", "acc": "#fef3c7"}
-        }
-        style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
-        img = Image.new("RGBA", (W, H), style["bg1"])
-        draw = ImageDraw.Draw(img)
-
-        # 고급스럽고 추상적인 기하학적 배경 구성 (글씨 절대 없음)
-        draw.ellipse([W*0.5, -H*0.2, W*1.3, H*1.2], fill=style["bg2"])
-        draw.ellipse([-W*0.1, H*0.4, W*0.4, H*1.5], fill="#00000030")
-        
-        # 엣지 있는 포인트 악센트 선과 도형
-        draw.line([(W*0.15, H*0.2), (W*0.25, H*0.2)], fill=style.get("acc", "#ffffff"), width=8)
-        draw.ellipse([W*0.8, H*0.75, W*0.82, H*0.75+W*0.02], fill=style.get("acc", "#ffffff"))
-        draw.rectangle([W*0.15, H*0.8, W*0.4, H*0.82], fill=style.get("acc", "#ffffff"))
-
-        img = img.convert("RGB")
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=90)
-        return buf.getvalue()
+        print(f"    ⚠️ Medium Thumbnail Gen failed, falling back to WP thumbnail. Error: {e}")
+        return None
 
 # ═══════════════════════════════════════════════
-# 🎬 6-슬라이드 숏폼 카루셀 & 비디오 생성 (전체 복구)
+# 🎬 6-슬라이드 숏폼 카루셀 & 비디오 생성
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
     print("   🎥 Generating SMOOTH 20-second TikTok-Compatible Reels Video...")
@@ -1870,7 +1791,7 @@ def generate_vip_carousel(raw_content, cat):
     shock_stat = xtag(raw_data, "SHOCK_STAT") or "$2.3T MOVED OVERNIGHT"
     question_text = xtag(raw_data, "QUESTION") or "Where's YOUR money going? 👇"
     insight_line = xtag(raw_data, "INSIGHT_LINE") or "SMART MONEY IS MOVING NOW"
-    cta_hook = xtag(raw_data, "CTA_HOOK") or "DONT MISS THE NEXT MOVE"
+    cta_hook = xtag(raw_data, "CTA_HOOK") or "DONTok MISS THE NEXT MOVE"
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
@@ -2005,6 +1926,36 @@ def _upload_image(img_bytes, filename):
     except: pass
     return None
 
+def get_or_create_wp_category(cat_name):
+    slug = cat_name.lower().replace(" ", "-")
+    try:
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r2.status_code in (200, 201): return r2.json()["id"]
+    except: pass
+    return None
+
+def get_or_create_wp_tag(tag_name):
+    slug = tag_name.lower().replace(" ", "-")
+    try:
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r2.status_code in (200, 201): return r2.json()["id"]
+    except: pass
+    return None
+
+def get_wp_author_id(author_full_string):
+    search_name = author_full_string.split("&")[0].strip()
+    try:
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200:
+            users = r.json()
+            if len(users) > 0: return users[0]["id"]
+    except: pass
+    return None
+
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None, med_img_bytes=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat)
@@ -2063,20 +2014,18 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             
             if link:
                 print(f"   ✅ Published: {link}")
+                if (tier == "vip" or tier == "unified") and raw_for_cards:
+                    img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
+                    if video_mp4_bytes:
+                        send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
                 
                 if raw_for_cards:
-                    # 소셜 비디오/유튜브 스크립트는 정규 뉴스에만 발송
-                    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-                        if tier == "vip" or tier == "unified":
-                            img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                            if video_mp4_bytes:
-                                send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
-                        
-                        yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
-                        if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
+                    yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
+                    if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
 
-                    # 🚨 365 챌린지를 포함한 전 카테고리 미디엄 이메일 발송
-                    send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
+                if cat in ["Insight", "On-Chain", "Economy", "Politics", "Tech", "Health", "Energy"]:
+                    if raw_for_cards:
+                        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
                 
                 return True
             else:
@@ -2095,7 +2044,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.41 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.35 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2119,15 +2068,14 @@ def run_foundation_pipeline():
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail error. Aborting.")
             return
-            
-        med_img_bytes = make_medium_thumbnail(cat)
-        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.41 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.35 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2152,14 +2100,13 @@ def run_philosophy_pipeline():
             print(f"   ❌ Thumbnail error. Aborting.")
             return
 
-        med_img_bytes = make_medium_thumbnail(cat)
-        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.41 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.35 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2189,8 +2136,7 @@ def run_moneyhack_pipeline():
             print(f"   ❌ Thumbnail error. Aborting.")
             return
 
-        med_img_bytes = make_medium_thumbnail(cat)
-        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author)
 
 def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
@@ -2210,9 +2156,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.41 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.35 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.41 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.35 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
@@ -2273,6 +2219,8 @@ def run_news_pipeline(forced_cat=None):
         return
         
     med_img_bytes = make_medium_thumbnail(cat)
+    if not med_img_bytes:
+        med_img_bytes = img_bytes # 실패 시 웹사이트 썸네일로 폴백
 
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
     time.sleep(TIER_SLEEP[tier])
