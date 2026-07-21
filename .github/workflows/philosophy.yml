@@ -2,14 +2,14 @@ name: Warm Insight Philosophy Poster
 
 on:
   schedule:
-    # v45.3 — 3-attempt retry within same UTC day per slot
+    # v45.3 - 3-attempt retry within same UTC day per slot
 
-    # 🌅 아침판 (07:00 EDT / UTC 11:00 / KST 20:00 전날)
+    # 🌅 아침반 (07:00 EDT / UTC 11:00 / KST 20:00 전날)
     - cron: '0 11 * * *'    # 1차 시도
     - cron: '20 11 * * *'   # 2차 재시도 (20분 후)
     - cron: '40 11 * * *'   # 3차 재시도 (40분 후)
 
-    # 🌙 저녁판 (20:00 EDT / UTC 00:00 / KST 09:00)
+    # 🌙 저녁반 (20:00 EDT / UTC 00:00 / KST 09:00)
     - cron: '0 0 * * *'     # 1차 시도
     - cron: '20 0 * * *'    # 2차 재시도 (20분 후)
     - cron: '40 0 * * *'    # 3차 재시도 (40분 후)
@@ -31,10 +31,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -45,17 +45,13 @@ jobs:
 
       - name: Run Philosophy Bot
         env:
-          PYTHONUNBUFFERED: "1"      # 실시간 로그 출력
+          PYTHONUNBUFFERED: "1"  # 실시간 로그 출력
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_USERNAME: ${{ secrets.WP_USERNAME }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           FORCE_PUBLISH: ${{ github.event.inputs.force_publish || 'false' }}
-        # 🚨 아래 명령어에 'philosophy'가 붙어있어야만 철학 글이 발행됩니다!
-        # 🚨 아래 3줄이 빠져있어서 이메일이 오지 않은 것입니다! 🚨
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
-          
-        run: python main.py foundation
         run: python main.py philosophy
