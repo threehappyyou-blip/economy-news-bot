@@ -46,4 +46,8 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           FORCE_PUBLISH: ${{ github.event.inputs.force_publish || 'false' }}
         # 🚨 끝에 'foundation' 이라고 적혀있어야만 기초 가이드를 작성합니다.
+        # 🚨 아래 3줄이 빠져있어서 이메일이 오지 않은 것입니다! 🚨
+          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVER: ${{ secrets.EMAIL_RECEIVER }}
         run: python main.py foundation
