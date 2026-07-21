@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.32)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.33)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -23,6 +23,7 @@
 #  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
 #  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
 #  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
+#  20. [마케팅 픽스] Medium 썸네일 누락 해결을 위해, 생성된 AI 썸네일 이미지를 Draft 이메일에 파일로 자동 첨부
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -292,13 +293,12 @@ def send_youtube_script_email(post_title, meta, script):
         print(f"   ❌ YouTube Script Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진 (v46.9.32 태그 추천 포함)
+# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진 (v46.9.33 썸네일 이미지 첨부 패치)
 # ═══════════════════════════════════════════════
-def send_medium_draft_email(title, original_link, raw_content, cat, kw):
+def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS: return
     print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
     
-    # 원본 XML 데이터 추출 및 불필요한 단어(PARAGRAPH 1: 등) 클렌징
     exec_summary = xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
     plain_english = xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
     macro_headline = xtag(raw_content, "HEADLINE")
@@ -307,10 +307,8 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw):
     raw_macro = raw_macro.replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
     macro_content = raw_macro.strip().replace('\n', '<br><br>')
     
-    # 🚨 미디엄 소형 키워드(Tags) 자동 생성 로직
-    # kw(롱테일 키워드)가 있으면 핵심 단어 위주로 변환, 없으면 기본값 부여
     kw_tag = kw.title() if kw else "Market Trends"
-    if len(kw_tag) > 25: kw_tag = kw_tag[:25].strip() # 미디엄 태그 길이 제한 방어
+    if len(kw_tag) > 25: kw_tag = kw_tag[:25].strip() 
     cat_tag = cat.replace("-", " ")
     
     try:
@@ -319,7 +317,6 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw):
         msg['To'] = MEDIUM_EMAIL_RECEIVER
         msg['Subject'] = f"✍️ [Medium Draft] {title[:40]}..."
 
-        # 미디엄 에디터가 좋아하는 순정 HTML 구조로만 복사 영역 구성
         body = f"""
         <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
             <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -339,11 +336,15 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw):
                         <li>Paste this Exact URL: <strong><a href="{original_link}" style="color: #059669;">{original_link}</a></strong></li>
                     </ol>
                     
+                    <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🖼️ Don't forget the Thumbnail!</h3>
+                    <p style="color: #064e3b; font-size: 14px; margin: 0;">
+                        Download the attached image (<strong>thumbnail.jpg</strong>) and drag-and-drop it right under your Title in the Medium editor. Medium will automatically use it as the cover image!
+                    </p>
+
                     <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🏷️ Recommended Medium Tags (Topics)</h3>
                     <p style="color: #064e3b; font-size: 14px; margin: 0; background: #d1fae5; padding: 10px; border-radius: 4px; font-weight: bold;">
                         Investing, Finance, {cat_tag}, Market Analysis, {kw_tag}
                     </p>
-                    <p style="color: #064e3b; font-size: 12px; margin-top: 8px;">* Just type these exactly in the Topics bar before hitting Publish!</p>
                 </div>
 
                 <!-- 복사/붙여넣기 본문 영역 (순정 HTML 구조) -->
@@ -374,10 +375,17 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw):
         </div>
         """
         msg.attach(MIMEText(body, 'html'))
+        
+        # 🚨 미디엄 썸네일 이미지 파일 첨부 로직 추가
+        if img_bytes:
+            image_part = MIMEImage(img_bytes, name="thumbnail.jpg")
+            image_part.add_header('Content-Disposition', 'attachment', filename="thumbnail.jpg")
+            msg.attach(image_part)
+
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ Medium Teaser Draft Email Sent!")
+        print("   ✅ Medium Teaser Draft Email Sent (with Thumbnail)!")
     except Exception as e:
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
@@ -1747,7 +1755,7 @@ def generate_vip_carousel(raw_content, cat):
     shock_stat = xtag(raw_data, "SHOCK_STAT") or "$2.3T MOVED OVERNIGHT"
     question_text = xtag(raw_data, "QUESTION") or "Where's YOUR money going? 👇"
     insight_line = xtag(raw_data, "INSIGHT_LINE") or "SMART MONEY IS MOVING NOW"
-    cta_hook = xtag(raw_data, "CTA_HOOK") or "DON'T MISS THE NEXT MOVE"
+    cta_hook = xtag(raw_data, "CTA_HOOK") or "DONTok MISS THE NEXT MOVE"
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
@@ -1981,7 +1989,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 
                 if cat in ["Insight", "On-Chain", "Economy", "Politics", "Tech", "Health", "Energy"]:
                     if raw_for_cards:
-                        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw)
+                        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, img_bytes)
                 
                 return True
             else:
@@ -2000,7 +2008,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.32 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.33 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2031,7 +2039,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.32 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.33 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2062,7 +2070,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.32 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.33 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2112,9 +2120,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.32 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.33 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.32 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.33 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
