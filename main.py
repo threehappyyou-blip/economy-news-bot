@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.33)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.35)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -24,6 +24,8 @@
 #  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
 #  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
 #  20. [마케팅 픽스] Medium 썸네일 누락 해결을 위해, 생성된 AI 썸네일 이미지를 Draft 이메일에 파일로 자동 첨부
+#  21. [유튜브 픽스] 유튜브 썸네일 프롬프트에 시선을 사로잡는 강력한 텍스트(Text/Copy) 추천 항목 추가
+#  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재 (웹사이트 썸네일 재사용 방지)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -199,8 +201,9 @@ You must strictly use these XML tags:
 - Option B: 
 - Option C: 
 
-[THUMBNAIL PROMPT]
-(Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew.)
+[THUMBNAIL IDEAS]
+1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew.)
+2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail. e.g., "SELL NOW?", "IT'S OVER.", "THE TRUTH")
 
 [SEO HASHTAGS]
 (10 highly searched global tags, e.g. #investing #economy)
@@ -270,7 +273,7 @@ def send_youtube_script_email(post_title, meta, script):
                     <p style="margin: 10px 0 0; opacity: 0.9;">Total Characters: <strong>{len(script):,}</strong></p>
                 </div>
                 <div style="padding: 30px;">
-                    <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📋 YouTube Metadata</h3>
+                    <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📋 YouTube Metadata & Thumbnail Copy</h3>
                     <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; white-space: pre-wrap; font-size: 15px; color: #334155; line-height: 1.6;">{meta}</div>
                     
                     <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 35px;">🔗 Cross-Pollination (For Description/Pinned Comment)</h3>
@@ -293,7 +296,7 @@ def send_youtube_script_email(post_title, meta, script):
         print(f"   ❌ YouTube Script Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진 (v46.9.33 썸네일 이미지 첨부 패치)
+# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진
 # ═══════════════════════════════════════════════
 def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS: return
@@ -347,7 +350,7 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
                     </p>
                 </div>
 
-                <!-- 복사/붙여넣기 본문 영역 (순정 HTML 구조) -->
+                <!-- 복사/붙여넣기 본문 영역 -->
                 <div style="padding: 30px;">
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Copy From Here 👇</h3>
                     
@@ -376,7 +379,6 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         """
         msg.attach(MIMEText(body, 'html'))
         
-        # 🚨 미디엄 썸네일 이미지 파일 첨부 로직 추가
         if img_bytes:
             image_part = MIMEImage(img_bytes, name="thumbnail.jpg")
             image_part.add_header('Content-Disposition', 'attachment', filename="thumbnail.jpg")
@@ -385,7 +387,7 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
-        print("   ✅ Medium Teaser Draft Email Sent (with Thumbnail)!")
+        print("   ✅ Medium Teaser Draft Email Sent (with Medium Exclusive Thumbnail)!")
     except Exception as e:
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
@@ -636,7 +638,6 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            # 🚨 외부 뉴스 사이트(로이터 등)는 일반 크롬 브라우저로 접속해야 긁어올 수 있으므로 EXTERNAL_HEADERS 사용
             resp = requests.get(url, headers=EXTERNAL_HEADERS, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
@@ -1668,6 +1669,41 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
+# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 (새로 추가됨)
+# ═══════════════════════════════════════════════
+def make_medium_thumbnail(cat):
+    print(f"    [AI] Generating Premium Editorial Thumbnail for Medium...")
+    client = _get_gemini_client()
+    
+    # 잡지 커버 수준의 미디엄 전용 고품질 프롬프트 (글씨 없음)
+    prompts = {
+        "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words.",
+        "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words.",
+        "Tech": "A highly aesthetic, conceptual 3D illustration about artificial intelligence and future technology. Cinematic lighting, minimalist composition, glowing neon purple and cyan colors. High-end tech magazine cover style. No text, no words.",
+        "Health": "A highly aesthetic, conceptual 3D illustration about biotechnology and healthcare innovation. Cinematic lighting, minimalist composition, clean emerald green and white colors. High-end medical magazine cover style. No text, no words.",
+        "Energy": "A highly aesthetic, conceptual 3D illustration about global energy transition and power resources. Cinematic lighting, minimalist composition, vibrant orange and amber colors. High-end energy magazine cover style. No text, no words.",
+        "On-Chain": "A highly aesthetic, conceptual 3D illustration about blockchain, crypto, and decentralized finance. Cinematic lighting, minimalist composition, glowing purple and gold accents. High-end crypto magazine cover style. No text, no words.",
+        "The Daily Catalyst": "A highly aesthetic, conceptual 3D illustration about wealth building and mental growth. Cinematic lighting, minimalist composition, deep rich colors with warm glowing accents. High-end magazine cover style. No text, no words.",
+        "Foundation": "A highly aesthetic, conceptual 3D illustration about financial foundation and investment basics. Cinematic lighting, minimalist composition, deep rich colors with glowing gold accents. High-end magazine cover style. No text, no words.",
+        "Money Hack": "A highly aesthetic, conceptual 3D illustration about digital wealth and side hustles. Cinematic lighting, minimalist composition, deep rich colors with vibrant glowing accents. High-end magazine cover style. No text, no words."
+    }
+    prompt = prompts.get(cat, prompts["Economy"])
+    
+    try:
+        result = client.models.generate_images(
+            model='imagen-3.0-generate-002',
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
+            )
+        )
+        print("    ✅ Medium Editorial Thumbnail Generated!")
+        return result.generated_images[0].image.image_bytes
+    except Exception as e:
+        print(f"    ⚠️ Medium Thumbnail Gen failed, falling back to WP thumbnail. Error: {e}")
+        return None
+
+# ═══════════════════════════════════════════════
 # 🎬 6-슬라이드 숏폼 카루셀 & 비디오 생성
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
@@ -1920,7 +1956,7 @@ def get_wp_author_id(author_full_string):
     except: pass
     return None
 
-def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None):
+def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None, med_img_bytes=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat)
 
@@ -1989,7 +2025,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
 
                 if cat in ["Insight", "On-Chain", "Economy", "Politics", "Tech", "Health", "Energy"]:
                     if raw_for_cards:
-                        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, img_bytes)
+                        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
                 
                 return True
             else:
@@ -2008,7 +2044,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.33 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.35 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2039,7 +2075,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.33 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.35 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2070,7 +2106,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.33 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.35 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2120,9 +2156,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.33 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.35 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.33 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.35 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
@@ -2181,8 +2217,12 @@ def run_news_pipeline(forced_cat=None):
     if not img_bytes or len(img_bytes) < 1000:
         print(f"   ❌ Thumbnail error. Aborting.")
         return
+        
+    med_img_bytes = make_medium_thumbnail(cat)
+    if not med_img_bytes:
+        med_img_bytes = img_bytes # 실패 시 웹사이트 썸네일로 폴백
 
-    publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw)
+    publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
     time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
