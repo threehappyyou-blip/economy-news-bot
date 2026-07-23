@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.43)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.44)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -17,7 +17,7 @@
 #  11. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
 #  12. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
 #  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
-#  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신 및 외부 요청을 Cloudscraper로 100% 전면 교체 적용 🚨
+#  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신 및 외부 요청을 Cloudscraper로 100% 전면 교체 적용 
 #  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 안정화 버전(imagen-3.0-generate-001)으로 조정
 #  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
 #  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
@@ -28,7 +28,8 @@
 #  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
 #  23. [버그 픽스] AI 썸네일 생성 실패 시 웹사이트 썸네일을 재사용하지 않고, 파이썬 기반의 '텍스트 없는' 추상적 디자인 썸네일 강제 생성 로직 구현
 #  24. [확장] 365 챌린지 유입 극대화를 위해 Foundation, Catalyst, Money Hack 카테고리도 모두 Medium Draft 이메일 발송되도록 파이프라인 전면 개조
-#  25. [코드 무결성] 2,298줄 원본 로직 무손실 100% 풀 복구 완료 🚨
+#  25. [코드 무결성] 2,298줄 원본 로직 무손실 100% 풀 복구 완료
+#  26. [프롬프트 극강화] 🔥 'AI 피로도' 원천 차단: 전 카테고리 프롬프트에 극한의 Anti-Cliche 룰, 반직관성(Counterintuitive), 구체적 숫자/명사 강제 적용
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -186,6 +187,7 @@ CAT_ALLOC = {
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
+Avoid generic AI buzzwords. Sound like a human growth hacker.
 
 [CONTENT]
 {raw_content}
@@ -195,13 +197,13 @@ You must strictly use these XML tags:
 
 <METADATA>
 [VIRAL TITLES]
-(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'.)
+(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'. Use specific numbers. Banned words: 'Unleash', 'Discover', 'Secret')
 - Option A: 
 - Option B: 
 - Option C: 
 
 [THUMBNAIL IDEAS]
-1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew.)
+1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. NO TEXT IN PROMPT.)
 2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail. e.g., "SELL NOW?", "IT'S OVER.", "THE TRUTH")
 
 [SEO HASHTAGS]
@@ -211,25 +213,25 @@ You must strictly use these XML tags:
 YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive 20,000+ character documentary script based on the newsletter in ENGLISH.
 Focus on: Cold Open Hook, Greeting, and Chapter 1 (Current Situation Analysis).
-EXPAND DEEPLY. Use analogies and psychological insights.
+ANTI-AI FATIGUE: Do NOT sound like an AI. Be punchy, direct, and slightly informal. Use analogies.
 [NEWSLETTER]
 {raw_content}
 
 Rules: 
 - OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags like [VO], [Scene 1]. ONLY text to be read by TTS.
-- Start immediately with a provocative cold open hook, followed by: "Hello, this is Warm Insight. Today, we're going to talk about [Topic]. Leaving a like and subscribing is a huge help to us!"
+- Start immediately with a provocative cold open hook (e.g. "If you think [X] is safe, look at this number..."), followed by: "Hello, this is Warm Insight. Today, we're going to talk about [Topic]. Leaving a like and subscribing is a huge help to us!"
 Wrap in <PART1> tags."""
 
 YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
-You MUST expand massively using verified historical context (compare it to 2008, 1999, or 1970s).
+You MUST expand massively using verified historical context (compare it to 2008, 1999, or 1970s). Provide CONCRETE numbers, not generalizations.
 Do not summarize; spend at least 500 words on EACH historical comparison or context point.
-Rules: Spoken words ONLY in English. NO structural tags.
+Rules: Spoken words ONLY in English. NO structural tags. NO AI fluff ("in today's ever-changing landscape").
 Wrap in <PART2> tags."""
 
 YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
-Provide concrete strategies.
+Provide concrete, counterintuitive strategies. Tell them exactly what NOT to do.
 Rules: Spoken words ONLY in English. NO structural tags.
 End exactly with: "We couldn't fit all the deep-dive details and practical strategies into this video. Check out the Warm Insight newsletter in the pinned comment and description for the full text summary. Visit www.warminsight.com. See you there."
 Wrap in <PART3> tags."""
@@ -484,7 +486,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE
+# 🛡️ SYSTEM UTILS & API ENGINE (WP Loopback Spoofing)
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -502,7 +504,6 @@ def check_env_vars():
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        # 🚨 일반 requests 모듈을 cloudscraper (scraper)로 100% 교체 완료
         resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
         try:
             resp_json = resp.json()
@@ -688,7 +689,6 @@ def fetch_news_pool(cat, max_items=15):
     items = set()
     for url in feeds:
         try:
-            # 🚨 스크래퍼 사용
             resp = scraper.get(url, headers=EXTERNAL_HEADERS, timeout=15)
             if resp.status_code == 200:
                 d = feedparser.parse(resp.text)
@@ -707,7 +707,7 @@ def fetch_news_pool(cat, max_items=15):
     return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
-# 🧠 1. FOUNDATION DATABASE & PROMPTS
+# 🧠 1. FOUNDATION DATABASE & PROMPTS (ANTI-FATIGUE UPGRADED)
 # ═══════════════════════════════════════════════
 FOUNDATION_TOPICS = [
     "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
@@ -725,33 +725,21 @@ FOUNDATION_TOPICS = [
 FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are the "smart friend" who explains money to absolute beginners — channel Morning Brew + Milk Road energy. You text your friend the news, not write a textbook.
 
+🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
+- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial", "Vital", "Landscape", "Dive deep".
+- DO NOT sound like an AI. Be punchy, direct, and slightly informal.
+- ALWAYS use specific, concrete examples. Instead of "a lot of money", say "$2.5 million". Instead of "tech companies", say "Apple and Nvidia".
+- Use counterintuitive (반직관적) angles. Tell them what EVERYONE ELSE gets wrong first.
+
 YOUR PERSONALITY:
 - You're the friend texting at 9pm: "OK so this thing happened today and you HAVE to know about it"
 - You use "you" and "I" constantly. Never "investors" or "one should"
-- You're allowed to admit when something's weird: "OK this part is honestly kinda boring, but stay with me"
-- You use SPECIFIC everyday analogies (Netflix subscription wars, ordering Uber Eats, dating apps, Costco runs)
-- You're funny without trying too hard. Warm, not cold. Smart, not nerdy.
+- You use SPECIFIC everyday analogies (Netflix subscription wars, ordering Uber Eats, Costco runs)
 
-EMOJI POLICY (USE FREELY):
-- Headlines can have emojis: "Bitcoin Just Did THIS 🚀"
-- Body emojis welcome: 💡 for insights, 👀 for "look at this", 🚨 for alerts, 🤔 for "let's think", 💸 for money
-- Don't overdo it — 3-5 emojis per article is the sweet spot
-- Use them where they actually help readability, not as decoration
-
-CASUAL EXPRESSION RULES (BALANCED):
-- USE contractions freely: it's, that's, you'd, won't, didn't, here's, that'll
+CASUAL EXPRESSION RULES:
 - USE conversational openers: "OK so...", "Look,", "Real talk,", "Here's the thing:"
-- USE personal opinion phrases: "Honestly,", "My take?", "If you ask me,"
-- BANNED slang: gonna, wanna, kinda, lol, lmao, fr, ngl (too informal for finance)
 - BANNED textbook phrases: "in conclusion", "moreover", "furthermore", "it is important to note"
-
-WRITING RULES (NON-NEGOTIABLE):
-- Average sentence length: 12-15 words MAX
-- One idea per paragraph. Paragraphs are 2-3 sentences MAX
-- Start sentences with "And", "But", "So", "Here's the thing" — conversational openers
-- BANNED words: leverage, utilize, paradigm, robust, optimize, synergy, holistic, deep-dive, unpack, navigate, ecosystem, framework, stakeholders
-- USE instead: "look", "okay so", "here's why", "the truth is", "real talk", "the kicker is"
-- Drop a relatable joke or aside ONCE per article. Not more. Not less.
+- Average sentence length: 12-15 words MAX. Paragraphs are 2-3 sentences MAX.
 
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
@@ -765,9 +753,9 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [2026 Guide], odd numbers, or 'How to' formats.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to invest in etfs for beginners' NOT just 'etf')</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that forces the user to click to find the answer. End with a provocative question.)</EXCERPT>
-<DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an easy everyday analogy. e.g., "Think of it like a fruit basket...")</DEFINITION>
-<WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care about this concept and how it builds wealth.)</WHY_MATTERS>
-<HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, actionable steps for a beginner to start using this concept today. Format as a bulleted list or numbered steps within the paragraph.)</HOW_TO_START>
+<DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy. Do not use generic dictionary definitions.)</DEFINITION>
+<WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages to prove your point.)</WHY_MATTERS>
+<HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
 
 <POLL_QUESTION>(A provocative multiple-choice question related to this topic for the reader. e.g., "What is your biggest fear when investing?")</POLL_QUESTION>
 <POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
@@ -776,7 +764,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🧠 2. PHILOSOPHY DATABASE & PROMPTS
+# 🧠 2. PHILOSOPHY DATABASE & PROMPTS (ANTI-FATIGUE UPGRADED)
 # ═══════════════════════════════════════════════
 PHILOSOPHY_TOPICS = [
     "Love money through action, not just unrequited longing",
@@ -789,11 +777,14 @@ PHILOSOPHY_TOPICS = [
 ]
 
 PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are an elite philosophical life strategist and writer, heavily influenced by classical literature and pragmatic wealth philosophies.
-Your objective is to create a daily insight post in ENGLISH that delivers profound, unfiltered truths about personal growth, wealth accumulation, and psychological resilience.
-You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
-Your writing must be direct, concise, and unapologetic. Use short, plain sentences. Do not sugar-coat reality.
-NEVER use the following words or phrases: 'dive into', 'unleash', 'game-changing', 'buckle up', 'embark on this journey', 'delve', 'explore', 'supercharge', 'basically', 'in conclusion'.
+You are an elite philosophical life strategist. You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
+
+🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
+- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Embark on this journey", "Supercharge", "Basically", "In conclusion".
+- DO NOT sound like a generic self-help guru. Be harsh, direct, and unapologetic. 
+- ALWAYS provide a COUNTER-NARRATIVE (e.g., if everyone says 'hustle', talk about 'strategic rest').
+- Use short, punchy sentences. Do not sugar-coat reality.
+
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
 PHILOSOPHY_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -807,10 +798,10 @@ OUTPUT FORMAT REQUIREMENT:
 You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
 
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it deeply thought-provoking and highly clickable. Format idea: 'The Psychology Behind [X]' or 'Why You Struggle With [Y]'.)</TITLE>
-<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition search intent. E.g. 'how to overcome financial anxiety' NOT just 'money psychology')</SEO_KEYWORD>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition search intent.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that targets a painful truth and promises a solution. End with a strong question.)</EXCERPT>
-<ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme)</ANCHOR>
-<REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses and logically argue for voluntary fatigue and action.)</REFLECTION>
+<ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme. Make it sound like a quote from Marcus Aurelius or Naval Ravikant.)</ANCHOR>
+<REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses heavily.)</REFLECTION>
 <CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
 
 <POLL_QUESTION>(A provocative multiple-choice question related to this topic. e.g., "What is currently holding you back the most?")</POLL_QUESTION>
@@ -820,7 +811,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🧠 3. MONEY HACK (SIDE HUSTLE) 무한 생성 엔진
+# 🧠 3. MONEY HACK (SIDE HUSTLE) 무한 생성 엔진 (ANTI-FATIGUE UPGRADED)
 # ═══════════════════════════════════════════════
 MH_NICHES = [
     "Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", 
@@ -838,6 +829,13 @@ MH_AI_TOOLS = [
 
 MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are an elite side-hustle expert and digital business coach. Your objective is to write a highly actionable, step-by-step 'Money Hack' guide that helps normal people make an extra $1,000/month.
+
+🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
+- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "Passive income machine", "Get rich quick", "Revolutionize".
+- DO NOT sound like a scammy internet marketer. Acknowledge the grind. Be ruthlessly practical.
+- ALWAYS use specific tool names, actual dollar amounts, and exact timeframes (e.g., "Spend 2 hours on Canva doing X").
+- If there's a downside or hard part to the hustle, MENTION IT.
+
 Your tone is motivating, direct, and incredibly practical. No fluff. 
 You MUST wrap your content EXACTLY in the XML tags requested."""
 
@@ -853,9 +851,9 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [Step-by-Step], numbers, or 'How to' formats.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to make money with canva templates')</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
-<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now.)</CONCEPT>
-<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today to reach the $1,000/month milestone.)</STEP_BY_STEP_TOOL>
-<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits.)</PRO_TIP>
+<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
+<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
+<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
 
 <POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
 <POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
@@ -864,7 +862,7 @@ You MUST output your response by wrapping your content EXACTLY in the XML tags l
 """
 
 # ═══════════════════════════════════════════════
-# 🎨 4. TWO-PART PROMPTS (REGULAR NEWS)
+# 🎨 4. TWO-PART PROMPTS (REGULAR NEWS) (ANTI-FATIGUE UPGRADED)
 # ═══════════════════════════════════════════════
 
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -873,31 +871,30 @@ You are Warm Insight's lead writer. Your mission: turn daily market chaos into c
 ═══ THE GOLDEN RULE ═══
 Imagine your reader is your friend Sarah, a 32-year-old marketing manager who knows nothing about finance but is curious. She'll close the tab in 5 seconds if you sound like Wall Street. BUT she'll also close it if you just repeat what she saw on Twitter. Give her ONE thing she didn't know.
 
-═══ ⛔ ANTI-CLICHÉ RULES (CRITICAL) ═══
-
+═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
 BANNED CONTENT (NEVER WRITE THESE — they make readers stop):
 - "AI is still the boss" / "AI is here to stay" / "AI revolution"
+- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial landscape"
 - "Tech stocks are thriving" / "betting against X is a bad idea"
 - "The trend is your friend" / "this time it's different"
-- "Smart money is moving" without specifying WHERE
+- "Smart money is moving" without specifying EXACTLY WHERE
 - "It's important to note" / "investors should consider"
-- ANY statement that sounds like a Reuters headline summary
+- ANY statement that sounds like a generic Reuters headline summary
 
 REQUIRED CONTENT (MUST INCLUDE):
-- ONE counterintuitive insight that 80% of readers don't know
-- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, ticker prices)
-- AT LEAST 1 specific company decision/move 
-- ONE historical or comparative reference
+- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
+- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
+- AT LEAST 1 specific company decision/move.
+- ONE historical or comparative reference.
 
 ═══ THESIS COHERENCE RULE ═══
-1. Pick ONE central thesis from the news
-2. Build your ENTIRE article around that single thesis
-3. IGNORE news that doesn't support or contrast with your thesis
+1. Pick ONE central thesis from the news.
+2. Build your ENTIRE article around that single thesis.
+3. IGNORE news that doesn't support or contrast with your thesis.
 
 ═══ WRITING RULES ═══
 - Sentences MAX 15 words. Short hits harder than long.
 - Each paragraph MAX 3 sentences. Visual breathing room matters.
-- BANNED words: leverage, paradigm, robust, holistic, deep-dive, navigate, unpack, optimize, regulatory bodies, ecosystem, framework, stakeholders
 - USE: "here's the deal", "OK so", "real talk", "look", "between us", "the kicker is"
 
 Write PART 1 of an Insight newsletter on {cat} in ENGLISH.
@@ -938,8 +935,9 @@ PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your ho
 PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
 
-═══ ANTI-CLICHÉ REMINDER ═══
-NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates.
+═══ 🔥 ANTI-CLICHÉ REMINDER ═══
+NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates. 
+If you find yourself writing a vague sentence, DELETE IT and replace it with a hard data point.
 
 ═══ TONE RULES ═══
 - Sentences MAX 15 words, Paragraphs MAX 3 sentences.
@@ -1504,7 +1502,6 @@ def build_html(tier, cat, raw, author, tf, title):
     
     html += _build_pillar_link("Insight") 
     html += _build_poll(raw, cat)
-    
     html += _build_branded_footer()
     html += f"""
     <p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">
@@ -1721,13 +1718,12 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 (완벽 분리/텍스트 제거 폴백 탑재)
+# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 
 # ═══════════════════════════════════════════════
 def make_medium_thumbnail(cat):
     print(f"    [AI] Generating Premium Editorial Thumbnail for Medium...")
     client = _get_gemini_client()
     
-    # 🚨 잡지 커버 수준의 미디엄 전용 고품질 프롬프트 (글씨 절대 금지)
     prompts = {
         "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words, no letters.",
         "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words, no letters.",
@@ -1742,7 +1738,6 @@ def make_medium_thumbnail(cat):
     prompt = prompts.get(cat, prompts["Economy"])
     
     try:
-        # 🚨 구글 API 404 에러 방지를 위해 가장 안정적인 imagen 001 버전 지정
         result = client.models.generate_images(
             model='imagen-3.0-generate-001',
             prompt=prompt,
@@ -1753,7 +1748,6 @@ def make_medium_thumbnail(cat):
         print("    ✅ Medium Editorial Thumbnail Generated Successfully!")
         return result.generated_images[0].image.image_bytes
     except Exception as e:
-        # 🚨 AI 서버 거부 시, 글씨 있는 웹사이트용이 아니라 파이썬 자체의 '글씨 없는 추상화' 그리기
         print(f"    ⚠️ Medium AI Image Gen failed. Generating custom abstract fallback... ({e})")
         W, H = 1200, 630
         CAT_STYLES = {
@@ -1771,11 +1765,9 @@ def make_medium_thumbnail(cat):
         img = Image.new("RGBA", (W, H), style["bg1"])
         draw = ImageDraw.Draw(img)
 
-        # 고급스럽고 추상적인 기하학적 배경 구성 (글씨 절대 없음)
         draw.ellipse([W*0.5, -H*0.2, W*1.3, H*1.2], fill=style["bg2"])
         draw.ellipse([-W*0.1, H*0.4, W*0.4, H*1.5], fill="#00000030")
         
-        # 엣지 있는 포인트 악센트 선과 도형
         draw.line([(W*0.15, H*0.2), (W*0.25, H*0.2)], fill=style.get("acc", "#ffffff"), width=8)
         draw.ellipse([W*0.8, H*0.75, W*0.82, H*0.75+W*0.02], fill=style.get("acc", "#ffffff"))
         draw.rectangle([W*0.15, H*0.8, W*0.4, H*0.82], fill=style.get("acc", "#ffffff"))
@@ -1786,7 +1778,7 @@ def make_medium_thumbnail(cat):
         return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎬 6-슬라이드 숏폼 카루셀 & 비디오 생성 (전체 복구)
+# 🎬 6-슬라이드 숏폼 카루셀 & 비디오 생성
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
     print("   🎥 Generating SMOOTH 20-second TikTok-Compatible Reels Video...")
@@ -1994,7 +1986,6 @@ def generate_vip_carousel(raw_content, cat):
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
     try:
-        # 🚨 스크래퍼 객체를 사용하여 업로드 (WAF 우회)
         resp = scraper.post(
             f"{WP_URL}/wp-json/wp/v2/media",
             headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
@@ -2049,7 +2040,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        # 🚨 스크래퍼를 사용하여 포스팅 (WAF 우회)
         r = scraper.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
             json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30
@@ -2064,7 +2054,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                 print(f"   ✅ Published: {link}")
                 
                 if raw_for_cards:
-                    # 소셜 비디오/유튜브 스크립트는 정규 뉴스에만 발송
                     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
                         if tier == "vip" or tier == "unified":
                             img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
@@ -2074,7 +2063,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                         yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
                         if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
 
-                    # 🚨 365 챌린지를 포함한 전 카테고리 미디엄 이메일 발송
                     send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
                 
                 return True
@@ -2094,7 +2082,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.43 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.44 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2126,7 +2114,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.43 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.44 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2158,7 +2146,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.43 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.44 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2209,9 +2197,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.43 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.44 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.43 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.44 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
