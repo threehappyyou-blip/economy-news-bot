@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.44)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.45)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -28,8 +28,9 @@
 #  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
 #  23. [버그 픽스] AI 썸네일 생성 실패 시 웹사이트 썸네일을 재사용하지 않고, 파이썬 기반의 '텍스트 없는' 추상적 디자인 썸네일 강제 생성 로직 구현
 #  24. [확장] 365 챌린지 유입 극대화를 위해 Foundation, Catalyst, Money Hack 카테고리도 모두 Medium Draft 이메일 발송되도록 파이프라인 전면 개조
-#  25. [코드 무결성] 2,298줄 원본 로직 무손실 100% 풀 복구 완료
+#  25. [코드 무결성] 원본 로직 무손실 100% 풀 복구 완료
 #  26. [프롬프트 극강화] 🔥 'AI 피로도' 원천 차단: 전 카테고리 프롬프트에 극한의 Anti-Cliche 룰, 반직관성(Counterintuitive), 구체적 숫자/명사 강제 적용
+#  27. [마케팅 확장] 🚀 북미 커뮤니티(레딧, 쿼라) 타겟 바이럴 게릴라 포스팅 템플릿 이메일 자동 발송 기능 추가 완료
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -411,6 +412,69 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         print("   ✅ Medium Teaser Draft Email Sent (with Medium Exclusive Thumbnail)!")
     except Exception as e:
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
+# ═══════════════════════════════════════════════
+def send_community_viral_email(title, original_link, raw_content, cat):
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
+    print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
+
+    if cat == "Foundation":
+        content_body = f"📖 What is it?\n{xtag(raw_content, 'DEFINITION')}\n\n💡 Why It Matters\n{xtag(raw_content, 'WHY_MATTERS')}\n\n🚀 How to Start Today\n{xtag(raw_content, 'HOW_TO_START')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    elif cat == "The Daily Catalyst":
+        content_body = f"❝ The Anchor ❞\n{xtag(raw_content, 'ANCHOR')}\n\nThe Reflection\n{xtag(raw_content, 'REFLECTION')}\n\n⚡ The Daily Catalyst\n{xtag(raw_content, 'CATALYST')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    elif cat == "Money Hack":
+        content_body = f"💡 The Concept\n{xtag(raw_content, 'CONCEPT')}\n\n🛠️ Step-by-Step Execution\n{xtag(raw_content, 'STEP_BY_STEP_TOOL')}\n\n🔥 Pro Tip\n{xtag(raw_content, 'PRO_TIP')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    else:
+        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
+        content_body = f"Executive Summary\n{xtag(raw_content, 'EXECUTIVE_SUMMARY')}\n\n💡 Plain English\n{xtag(raw_content, 'PLAIN_ENGLISH')}\n\n{xtag(raw_content, 'HEADLINE')}\n{raw_m.strip()}"
+        tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
+
+    content_body_html = content_body.replace('\n', '<br>')
+    
+    clean_title = _clean_seo_title(title)
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = EMAIL_RECEIVER
+        msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
+
+        body = f"""
+        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
+            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div style="background: #ef4444; padding: 25px; color: #ffffff;">
+                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
+                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy & Paste to r/povertyfinance, r/sidehustle, or Quora!</p>
+                </div>
+                <div style="padding: 30px;">
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
+                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
+                        I wrote a 5-minute guide for absolute beginners on {cat}: {clean_title} — Hope this helps someone today!
+                    </div>
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
+                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: Georgia, serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
+                        Hey guys, I know finance jargon can be super overwhelming when you're just starting out. Here is a super plain-English breakdown I put together:<br><br>
+                        {content_body_html}<br><br>
+                        ---<br>
+                        <strong>TL;DR (한 줄 요약):</strong> {tldr}<br><br>
+                        <em>(P.S. I break down daily market news and finance basics like this over at my blog <a href="{original_link}" style="color: #2563eb; text-decoration: underline;">Warm Insight</a> if anyone wants to read more!)</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        msg.attach(MIMEText(body, 'html'))
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_SENDER, EMAIL_PASS)
+            server.send_message(msg)
+        print("   ✅ Community Viral Draft Email Sent!")
+    except Exception as e:
+        print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
 # ✉️ 슬림 이메일 (인스타/숏폼용)
@@ -1718,7 +1782,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 
+# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 (완벽 분리/텍스트 제거 폴백 탑재)
 # ═══════════════════════════════════════════════
 def make_medium_thumbnail(cat):
     print(f"    [AI] Generating Premium Editorial Thumbnail for Medium...")
@@ -1982,6 +2046,69 @@ def generate_vip_carousel(raw_content, cat):
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 # ═══════════════════════════════════════════════
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
+# ═══════════════════════════════════════════════
+def send_community_viral_email(title, original_link, raw_content, cat):
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
+    print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
+
+    if cat == "Foundation":
+        content_body = f"📖 What is it?\n{xtag(raw_content, 'DEFINITION')}\n\n💡 Why It Matters\n{xtag(raw_content, 'WHY_MATTERS')}\n\n🚀 How to Start Today\n{xtag(raw_content, 'HOW_TO_START')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    elif cat == "The Daily Catalyst":
+        content_body = f"❝ The Anchor ❞\n{xtag(raw_content, 'ANCHOR')}\n\nThe Reflection\n{xtag(raw_content, 'REFLECTION')}\n\n⚡ The Daily Catalyst\n{xtag(raw_content, 'CATALYST')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    elif cat == "Money Hack":
+        content_body = f"💡 The Concept\n{xtag(raw_content, 'CONCEPT')}\n\n🛠️ Step-by-Step Execution\n{xtag(raw_content, 'STEP_BY_STEP_TOOL')}\n\n🔥 Pro Tip\n{xtag(raw_content, 'PRO_TIP')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    else:
+        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
+        content_body = f"Executive Summary\n{xtag(raw_content, 'EXECUTIVE_SUMMARY')}\n\n💡 Plain English\n{xtag(raw_content, 'PLAIN_ENGLISH')}\n\n{xtag(raw_content, 'HEADLINE')}\n{raw_m.strip()}"
+        tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
+
+    content_body_html = content_body.replace('\n', '<br>')
+    
+    clean_title = _clean_seo_title(title)
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = EMAIL_RECEIVER
+        msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
+
+        body = f"""
+        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
+            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div style="background: #ef4444; padding: 25px; color: #ffffff;">
+                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
+                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy & Paste to r/povertyfinance, r/sidehustle, or Quora!</p>
+                </div>
+                <div style="padding: 30px;">
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
+                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
+                        I wrote a 5-minute guide for absolute beginners on {cat}: {clean_title} — Hope this helps someone today!
+                    </div>
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
+                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: Georgia, serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
+                        Hey guys, I know finance jargon can be super overwhelming when you're just starting out. Here is a super plain-English breakdown I put together:<br><br>
+                        {content_body_html}<br><br>
+                        ---<br>
+                        <strong>TL;DR:</strong> {tldr}<br><br>
+                        <em>(P.S. I break down daily market news and finance basics like this over at my blog <a href="{original_link}" style="color: #2563eb; text-decoration: underline;">Warm Insight</a> if anyone wants to read more!)</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        msg.attach(MIMEText(body, 'html'))
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_SENDER, EMAIL_PASS)
+            server.send_message(msg)
+        print("   ✅ Community Viral Draft Email Sent!")
+    except Exception as e:
+        print(f"   ❌ Community Viral Draft Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
 # PUBLISHER & CORE LOGIC
 # ═══════════════════════════════════════════════
 def _upload_image(img_bytes, filename):
@@ -2064,6 +2191,9 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                         if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
 
                     send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
+                    
+                    # 🚨 커뮤니티(레딧/쿼라) 바이럴 포스팅 이메일 발송 추가
+                    send_community_viral_email(display_title, link, raw_for_cards, cat)
                 
                 return True
             else:
@@ -2082,7 +2212,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.44 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.45 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2114,7 +2244,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.44 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.45 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2146,7 +2276,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.44 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.45 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2197,9 +2327,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.44 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.45 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.44 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.45 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
