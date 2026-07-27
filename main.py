@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.51)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.52)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -36,6 +36,7 @@
 #  30. [텍스트 렌더링 픽스] 🚨 숏폼 영상 내 텍스트 잘림(Truncation) 및 겹침 현상 해결을 위해 폰트 사이즈 최적화 및 좌우 여백(Max Width 900px) 마진 대폭 강화
 #  31. [비주얼 다이내믹 픽스] 🔥 슬라이드가 넘어갈 때마다 이미지가 역동적으로 확대(Scale UP)되는 애니메이션 효과를 부여하여 지루함 원천 차단
 #  32. [AI 이미지 엔진 픽스] 🚨 Google Imagen 404 에러 발생 시, 억지 도형(동그라미/네모)을 그리지 않고 무설치/무료 대체 AI API(Pollinations)를 자동 호출하여 고퀄리티 다크심리학 이미지를 100% 강제 생성해내는 우회 로직 탑재
+#  33. [다이내믹 스토리텔링 픽스] 🚨 단일 이미지 반복의 지루함을 없애기 위해 훅/스탯/데이터/결론 문맥에 맞춘 4개의 다른 AI 이미지를 각각 생성하여 슬라이드별로 교차 적용하는 다중 이미지 파이프라인 탑재
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -1851,7 +1852,7 @@ def make_medium_thumbnail(cat):
         return buf.getvalue()
 
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Dark Psychology Reels Video (Optimized)...")
+    print("   🎥 Generating 15-Sec Dark Psychology Dynamic Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1861,6 +1862,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
     try:
         SLIDE_DURATION = 2.6
         CROSSFADE_DURATION = 0.2
+        # 🚨 슬라이드마다 확대되는 역동적 애니메이션 적용
         ZOOM_START = 1.0
         ZOOM_END = 1.08
 
@@ -1890,16 +1892,17 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         )
         with open(temp_path, 'rb') as f: mp4_bytes = f.read()
         os.remove(temp_path)
-        print(f"   ✅ Dark Psychology 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
+        print(f"   ✅ Dynamic Dark Psychology 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
         return mp4_bytes
     except Exception as e:
         print(f"   ❌ Video Encoding Failed: {e}")
         return None
 
 def generate_vip_carousel(raw_content, cat):
-    print("   🎨 Generating DARK PSYCHOLOGY 6-Slide Vertical Carousel...")
+    print("   🎨 Generating DYNAMIC 4-IMAGE Dark Psychology Carousel...")
     client = _get_gemini_client()
 
+    # 🚨 프롬프트에서 4개의 각기 다른 이미지를 생성하도록 지시
     sys_inst = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
     You are a TOP-TIER viral content creator for finance Instagram/TikTok. Write entirely in ENGLISH.
     Your job: Extract data + write COPY THAT STOPS THE SCROLL.
@@ -1921,7 +1924,10 @@ def generate_vip_carousel(raw_content, cat):
     <REELS_SCRIPT>60-second spoken script with hook-stat-story-CTA structure</REELS_SCRIPT>
     <IG_CAPTION>Caption with hook, value, CTA, 15+ hashtags</IG_CAPTION>
     <SMART_COMMENT>Bloomberg/WSJ-style comment for free traffic</SMART_COMMENT>
-    <VISUAL_PROMPT>A surreal, minimalist, pale white humanoid figure (featureless face, glowing white skin) interacting with glowing red graphs or conceptual objects related to {cat}. Stark pitch-black background, mysterious 'dark psychology' aesthetic. High contrast, clean lines, cinematic lighting. No text, no words.</VISUAL_PROMPT>
+    <VISUAL_PROMPT_1>A minimalist pale white humanoid stickman figure reacting in shock/confusion about {cat}. Stark black background, dark psychology style, vivid red glowing accents. No text.</VISUAL_PROMPT_1>
+    <VISUAL_PROMPT_2>A minimalist pale white humanoid stickman figure looking closely at glowing red data/numbers. Stark black background, dark psychology style. No text.</VISUAL_PROMPT_2>
+    <VISUAL_PROMPT_3>A minimalist pale white humanoid stickman figure manipulating or controlling glowing red and yellow market elements. Stark black background, dark psychology style. No text.</VISUAL_PROMPT_3>
+    <VISUAL_PROMPT_4>A minimalist pale white humanoid stickman figure walking forward with enlightenment, dark psychology style, glowing yellow/red light. No text.</VISUAL_PROMPT_4>
     <ITEM1>TICKER | Value with % or $</ITEM1>
     <ITEM2>TICKER | Value with % or $</ITEM2>
     <ITEM3>TICKER | Value with % or $</ITEM3>
@@ -1940,7 +1946,11 @@ def generate_vip_carousel(raw_content, cat):
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
-    visual_prompt = xtag(raw_data, "VISUAL_PROMPT") or f"A minimalist white humanoid figure interacting with {cat} concepts, stark black background, dark psychology style, vivid red glowing accents. No text."
+    
+    vp1 = xtag(raw_data, "VISUAL_PROMPT_1") or f"A minimalist white humanoid figure shocked about {cat}, dark psychology style, stark black background, red glowing accents. No text."
+    vp2 = xtag(raw_data, "VISUAL_PROMPT_2") or f"A minimalist white humanoid figure staring at glowing data, dark psychology style, stark black background. No text."
+    vp3 = xtag(raw_data, "VISUAL_PROMPT_3") or f"A minimalist white humanoid figure holding glowing market charts, dark psychology style, stark black background. No text."
+    vp4 = xtag(raw_data, "VISUAL_PROMPT_4") or f"A minimalist white humanoid figure enlightened, dark psychology style, stark black background, glowing aura. No text."
 
     data_points = []
     for i in range(1, 6):
@@ -1977,46 +1987,39 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    ai_img = None
-    try:
-        print("    [AI] Generating Dark Psychology Humanoid Visual with Gemini...")
-        result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
-            prompt=visual_prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"
-            )
-        )
-        ai_bytes = result.generated_images[0].image.image_bytes
-        ai_img_raw = Image.open(io.BytesIO(ai_bytes)).convert("RGBA")
-        ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
-        
-        mask = Image.new("L", (1080, 1080), 255)
-        mask_draw = ImageDraw.Draw(mask)
-        for y in range(780, 1080):
-            alpha = int(255 - (y - 780) * (255 / 300))
-            mask_draw.line([(0, y), (1080, y)], fill=alpha)
-        ai_img_raw.putalpha(mask)
-        ai_img = ai_img_raw
-    except Exception as e:
-        print(f"    ⚠️ Gemini Image Gen failed (404/Block). Trying Pollinations AI Fallback... ({e})")
+    # 🚨 AI 이미지 생성 엔진 (각 슬라이드별로 다르게 4번 호출)
+    def fetch_dark_psy_image(prompt_text):
+        ai_img_raw = None
         try:
-            prompt_encoded = urllib.parse.quote(visual_prompt)
-            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true"
-            resp = scraper.get(url, timeout=30)
-            if resp.status_code == 200:
-                print("    ✅ Pollinations Dark Psychology Image Generated!")
-                ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
-                ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
-                mask = Image.new("L", (1080, 1080), 255)
-                mask_draw = ImageDraw.Draw(mask)
-                for y in range(780, 1080):
-                    alpha = int(255 - (y - 780) * (255 / 300))
-                    mask_draw.line([(0, y), (1080, y)], fill=alpha)
-                ai_img_raw.putalpha(mask)
-                ai_img = ai_img_raw
-        except Exception as ex:
-            print(f"    ⚠️ Both AI Gen Failed. Using geometry fallback. ({ex})")
+            print(f"    [AI] Gen Dynamic Visual: {prompt_text[:30]}...")
+            result = client.models.generate_images(
+                model='imagen-3.0-generate-001',
+                prompt=prompt_text,
+                config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg")
+            )
+            ai_bytes = result.generated_images[0].image.image_bytes
+            ai_img_raw = Image.open(io.BytesIO(ai_bytes)).convert("RGBA")
+        except Exception as e:
+            try:
+                prompt_encoded = urllib.parse.quote(prompt_text)
+                url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true"
+                resp = scraper.get(url, timeout=15)
+                if resp.status_code == 200:
+                    ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+            except:
+                pass
+        
+        if ai_img_raw:
+            ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
+            mask = Image.new("L", (1080, 1080), 255)
+            mask_draw = ImageDraw.Draw(mask)
+            for y in range(780, 1080):
+                alpha = int(255 - (y - 780) * (255 / 300))
+                mask_draw.line([(0, y), (1080, y)], fill=alpha)
+            ai_img_raw.putalpha(mask)
+            return ai_img_raw
+        else:
+            # 최종 Fallback
             ai_img_raw = Image.new("RGBA", (1080, 1080), "#09090b")
             d = ImageDraw.Draw(ai_img_raw)
             d.ellipse([440, 200, 640, 400], fill="#ffffff") 
@@ -2028,11 +2031,17 @@ def generate_vip_carousel(raw_content, cat):
                 alpha = int(255 - (y - 780) * (255 / 300))
                 mask_draw.line([(0, y), (1080, y)], fill=alpha)
             ai_img_raw.putalpha(mask)
-            ai_img = ai_img_raw
+            return ai_img_raw
 
-    def paste_bg(d_img):
-        if ai_img:
-            d_img.paste(ai_img, (0, 100), ai_img)
+    # 슬라이드별 다른 이미지 생성
+    img_hook = fetch_dark_psy_image(vp1)
+    img_stat = fetch_dark_psy_image(vp2)
+    img_data = fetch_dark_psy_image(vp3)
+    img_out  = fetch_dark_psy_image(vp4)
+
+    def paste_bg(d_img, target_ai_img):
+        if target_ai_img:
+            d_img.paste(target_ai_img, (0, 100), target_ai_img)
 
     def wrap_lines(text, font, max_width):
         words = text.split()
@@ -2049,13 +2058,12 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
+    # 1. 훅 (Hook) 슬라이드
     img1 = Image.new("RGB", (W, H), BG)
-    paste_bg(img1)
+    paste_bg(img1, img_hook)
     d1 = ImageDraw.Draw(img1)
-    
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
-    
     hook_lines = wrap_lines(hook_text.upper(), font_title, 900) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
@@ -2064,8 +2072,9 @@ def generate_vip_carousel(raw_content, cat):
         y_text += 105 
     d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
 
+    # 2. 충격 스탯 (Shock Stat) 슬라이드
     img2 = Image.new("RGB", (W, H), BG)
-    paste_bg(img2)
+    paste_bg(img2, img_stat)
     d2 = ImageDraw.Draw(img2)
     d2.text((W//2, 1180), "THE NUMBER", fill=RED, font=font_sub, anchor="mm")
     shock_lines = wrap_lines(shock_stat.upper(), font_mega, 900)
@@ -2075,12 +2084,13 @@ def generate_vip_carousel(raw_content, cat):
         y_text += 145 
     d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
 
+    # 3~5. 데이터포인트 슬라이드
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
         item = data_points[idx]
         img_d = Image.new("RGB", (W, H), BG)
-        paste_bg(img_d)
+        paste_bg(img_d, img_data)
         d = ImageDraw.Draw(img_d)
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
@@ -2096,8 +2106,9 @@ def generate_vip_carousel(raw_content, cat):
             d.ellipse([dx-15, dot_y-15, dx+15, dot_y+15], fill=color)
         data_imgs.append(img_d)
 
+    # 6. 통찰 및 CTA 슬라이드
     img6 = Image.new("RGB", (W, H), BG)
-    paste_bg(img6)
+    paste_bg(img6, img_out)
     d6 = ImageDraw.Draw(img6)
     d6.text((W//2, 1150), "THE TAKEAWAY", fill=RED, font=font_sub, anchor="mm")
     insight_lines = wrap_lines(insight_line.upper(), font_title, 900)
@@ -2554,7 +2565,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.52 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2586,7 +2597,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.52 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2618,7 +2629,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.52 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2669,9 +2680,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.51 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.52 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.51 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.52 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
