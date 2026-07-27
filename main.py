@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.50)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.51)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
@@ -35,10 +35,11 @@
 #  29. [숏폼 비디오 혁신] 🔥 다크 심리학 채널 100% 동기화: 흑백 대비 + 하얀 졸라맨/더미 인물 + 붉은/노란빛 오브젝트 기반의 일러스트 생성 프롬프트 적용
 #  30. [텍스트 렌더링 픽스] 🚨 숏폼 영상 내 텍스트 잘림(Truncation) 및 겹침 현상 해결을 위해 폰트 사이즈 최적화 및 좌우 여백(Max Width 900px) 마진 대폭 강화
 #  31. [비주얼 다이내믹 픽스] 🔥 슬라이드가 넘어갈 때마다 이미지가 역동적으로 확대(Scale UP)되는 애니메이션 효과를 부여하여 지루함 원천 차단
+#  32. [AI 이미지 엔진 픽스] 🚨 Google Imagen 404 에러 발생 시, 억지 도형(동그라미/네모)을 그리지 않고 무설치/무료 대체 AI API(Pollinations)를 자동 호출하여 고퀄리티 다크심리학 이미지를 100% 강제 생성해내는 우회 로직 탑재
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
-import urllib.request
+import urllib.request, urllib.parse
 import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
@@ -1811,7 +1812,16 @@ def make_medium_thumbnail(cat):
         print("    ✅ Medium Editorial Thumbnail Generated Successfully!")
         return result.generated_images[0].image.image_bytes
     except Exception as e:
-        print(f"    ⚠️ Medium AI Image Gen failed. Generating custom abstract fallback... ({e})")
+        print(f"    ⚠️ Medium AI Image Gen failed. Trying Pollinations AI... ({e})")
+        try:
+            prompt_encoded = urllib.parse.quote(prompt)
+            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1200&height=630&nologo=true"
+            resp = scraper.get(url, timeout=30)
+            if resp.status_code == 200:
+                print("    ✅ Medium Pollinations Thumbnail Generated Successfully!")
+                return resp.content
+        except:
+            pass
         W, H = 1200, 630
         CAT_STYLES = {
             "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
@@ -1841,7 +1851,7 @@ def make_medium_thumbnail(cat):
         return buf.getvalue()
 
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Dark Psychology Reels Video...")
+    print("   🎥 Generating 15-Sec Dark Psychology Reels Video (Optimized)...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1911,7 +1921,7 @@ def generate_vip_carousel(raw_content, cat):
     <REELS_SCRIPT>60-second spoken script with hook-stat-story-CTA structure</REELS_SCRIPT>
     <IG_CAPTION>Caption with hook, value, CTA, 15+ hashtags</IG_CAPTION>
     <SMART_COMMENT>Bloomberg/WSJ-style comment for free traffic</SMART_COMMENT>
-    <VISUAL_PROMPT>A minimalist, pale white humanoid figure (like an expressive stick figure or featureless human) interacting with glowing graphs or conceptual objects related to {cat}. Stark black background, dark psychology aesthetic, vivid red and yellow glowing accents. High contrast, simple but highly expressive. No text, no words.</VISUAL_PROMPT>
+    <VISUAL_PROMPT>A surreal, minimalist, pale white humanoid figure (featureless face, glowing white skin) interacting with glowing red graphs or conceptual objects related to {cat}. Stark pitch-black background, mysterious 'dark psychology' aesthetic. High contrast, clean lines, cinematic lighting. No text, no words.</VISUAL_PROMPT>
     <ITEM1>TICKER | Value with % or $</ITEM1>
     <ITEM2>TICKER | Value with % or $</ITEM2>
     <ITEM3>TICKER | Value with % or $</ITEM3>
@@ -1930,7 +1940,7 @@ def generate_vip_carousel(raw_content, cat):
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
-    visual_prompt = xtag(raw_data, "VISUAL_PROMPT") or f"A minimalist white humanoid dummy interacting with {cat} concepts, stark black background, dark psychology style, vivid red and yellow glowing accents. No text."
+    visual_prompt = xtag(raw_data, "VISUAL_PROMPT") or f"A minimalist white humanoid figure interacting with {cat} concepts, stark black background, dark psychology style, vivid red glowing accents. No text."
 
     data_points = []
     for i in range(1, 6):
@@ -1969,7 +1979,7 @@ def generate_vip_carousel(raw_content, cat):
 
     ai_img = None
     try:
-        print("    [AI] Generating Dark Psychology Humanoid Visual...")
+        print("    [AI] Generating Dark Psychology Humanoid Visual with Gemini...")
         result = client.models.generate_images(
             model='imagen-3.0-generate-001',
             prompt=visual_prompt,
@@ -1989,21 +1999,36 @@ def generate_vip_carousel(raw_content, cat):
         ai_img_raw.putalpha(mask)
         ai_img = ai_img_raw
     except Exception as e:
-        print(f"    ⚠️ Dark Video Image Gen failed. Using abstract fallback... ({e})")
-        ai_img_raw = Image.new("RGBA", (1080, 1080), "#09090b")
-        d = ImageDraw.Draw(ai_img_raw)
-        
-        d.ellipse([440, 200, 640, 400], fill="#ffffff") 
-        d.rounded_rectangle([400, 430, 680, 750], radius=50, fill="#ffffff") 
-        d.ellipse([500, 500, 580, 580], fill="#ef4444") 
-        
-        mask = Image.new("L", (1080, 1080), 255)
-        mask_draw = ImageDraw.Draw(mask)
-        for y in range(780, 1080):
-            alpha = int(255 - (y - 780) * (255 / 300))
-            mask_draw.line([(0, y), (1080, y)], fill=alpha)
-        ai_img_raw.putalpha(mask)
-        ai_img = ai_img_raw
+        print(f"    ⚠️ Gemini Image Gen failed (404/Block). Trying Pollinations AI Fallback... ({e})")
+        try:
+            prompt_encoded = urllib.parse.quote(visual_prompt)
+            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true"
+            resp = scraper.get(url, timeout=30)
+            if resp.status_code == 200:
+                print("    ✅ Pollinations Dark Psychology Image Generated!")
+                ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+                ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
+                mask = Image.new("L", (1080, 1080), 255)
+                mask_draw = ImageDraw.Draw(mask)
+                for y in range(780, 1080):
+                    alpha = int(255 - (y - 780) * (255 / 300))
+                    mask_draw.line([(0, y), (1080, y)], fill=alpha)
+                ai_img_raw.putalpha(mask)
+                ai_img = ai_img_raw
+        except Exception as ex:
+            print(f"    ⚠️ Both AI Gen Failed. Using geometry fallback. ({ex})")
+            ai_img_raw = Image.new("RGBA", (1080, 1080), "#09090b")
+            d = ImageDraw.Draw(ai_img_raw)
+            d.ellipse([440, 200, 640, 400], fill="#ffffff") 
+            d.rounded_rectangle([400, 430, 680, 750], radius=50, fill="#ffffff") 
+            d.ellipse([500, 500, 580, 580], fill="#ef4444") 
+            mask = Image.new("L", (1080, 1080), 255)
+            mask_draw = ImageDraw.Draw(mask)
+            for y in range(780, 1080):
+                alpha = int(255 - (y - 780) * (255 / 300))
+                mask_draw.line([(0, y), (1080, y)], fill=alpha)
+            ai_img_raw.putalpha(mask)
+            ai_img = ai_img_raw
 
     def paste_bg(d_img):
         if ai_img:
@@ -2529,7 +2554,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.50 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.51 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2561,7 +2586,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.50 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.51 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2593,7 +2618,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.50 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.51 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2644,9 +2669,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.50 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.51 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.50 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.51 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
