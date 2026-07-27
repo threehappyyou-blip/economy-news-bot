@@ -32,8 +32,9 @@
 #  26. [프롬프트 극강화] 🔥 'AI 피로도' 원천 차단: 전 카테고리 프롬프트에 극한의 Anti-Cliche 룰, 반직관성(Counterintuitive), 구체적 숫자/명사 강제 적용
 #  27. [마케팅 확장] 🚀 북미 커뮤니티(레딧, 쿼라) 타겟 바이럴 게릴라 포스팅 템플릿 이메일 자동 발송 기능 추가 완료
 #  28. [이메일 누락 픽스] 🚨 구글 메일 서버의 대용량 자동화 첨부파일 사전 차단(Silent Drop) 현상 해결을 위해 비디오 비트레이트를 2500k로 다이어트 완료
-#  29. [숏폼 비디오 혁신] 🔥 다크 심리학 채널 100% 동기화: 흑백 대비 + 하얀 졸라맨 인물 + 붉은/노란빛 오브젝트 기반의 일러스트 생성 프롬프트 적용
+#  29. [숏폼 비디오 혁신] 🔥 다크 심리학 채널 100% 동기화: 흑백 대비 + 하얀 졸라맨/더미 인물 + 붉은/노란빛 오브젝트 기반의 일러스트 생성 프롬프트 적용
 #  30. [텍스트 렌더링 픽스] 🚨 숏폼 영상 내 텍스트 잘림(Truncation) 및 겹침 현상 해결을 위해 폰트 사이즈 최적화 및 좌우 여백(Max Width 900px) 마진 대폭 강화
+#  31. [비주얼 다이내믹 픽스] 🔥 슬라이드가 넘어갈 때마다 이미지가 역동적으로 확대(Scale UP)되는 애니메이션 효과를 부여하여 지루함 원천 차단
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -1582,9 +1583,6 @@ def build_html(tier, cat, raw, author, tf, title):
     """
     return sanitize(html)
 
-# ═══════════════════════════════════════════════════════════════
-# 🖼️ 썸네일 엔진 
-# ═══════════════════════════════════════════════════════════════
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
         try:
@@ -1843,7 +1841,7 @@ def make_medium_thumbnail(cat):
         return buf.getvalue()
 
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Dark Psychology Reels Video (Optimized Bitrate)...")
+    print("   🎥 Generating 15-Sec Dark Psychology Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1851,7 +1849,6 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         print(f"   ❌ MoviePy import failed: {e}")
         return None
     try:
-        # 🚨 15초(14.6초) 길이를 위한 정밀 타이밍
         SLIDE_DURATION = 2.6
         CROSSFADE_DURATION = 0.2
         ZOOM_START = 1.0
@@ -1872,7 +1869,6 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         temp_path = temp_file.name
         temp_file.close()
 
-        # 🚨 비트레이트를 2500k로 유지하여 메일 발송 우회
         video.write_videofile(
             temp_path, fps=30, codec='libx264', bitrate='2500k', audio=False, preset='fast',
             ffmpeg_params=[
@@ -1915,7 +1911,7 @@ def generate_vip_carousel(raw_content, cat):
     <REELS_SCRIPT>60-second spoken script with hook-stat-story-CTA structure</REELS_SCRIPT>
     <IG_CAPTION>Caption with hook, value, CTA, 15+ hashtags</IG_CAPTION>
     <SMART_COMMENT>Bloomberg/WSJ-style comment for free traffic</SMART_COMMENT>
-    <VISUAL_PROMPT>A minimalist white faceless humanoid figure (like a simple 3D dummy or stickman) interacting with glowing objects or graphs representing {cat}. Stark black background, mysterious 'dark psychology' aesthetic. Use vivid glowing red and gold accents. High contrast, clean lines, highly expressive. No text, no letters.</VISUAL_PROMPT>
+    <VISUAL_PROMPT>A minimalist, pale white humanoid figure (like an expressive stick figure or featureless human) interacting with glowing graphs or conceptual objects related to {cat}. Stark black background, dark psychology aesthetic, vivid red and yellow glowing accents. High contrast, simple but highly expressive. No text, no words.</VISUAL_PROMPT>
     <ITEM1>TICKER | Value with % or $</ITEM1>
     <ITEM2>TICKER | Value with % or $</ITEM2>
     <ITEM3>TICKER | Value with % or $</ITEM3>
@@ -1952,7 +1948,6 @@ def generate_vip_carousel(raw_content, cat):
             {"ticker": "$ETH", "val": "+2.3%"}
         ]
 
-    # 🚨 영상 무드 셋팅: 완전한 블랙 배경, 레드/화이트 포인트 
     W, H = 1080, 1920
     BG = "#000000"
     WHITE = "#ffffff"
@@ -1965,15 +1960,13 @@ def generate_vip_carousel(raw_content, cat):
         try: return ImageFont.truetype(p, s)
         except: return ImageFont.load_default()
 
-    # 🚨 글씨 잘림(Truncation) 방지를 위한 폰트 사이즈 다이어트
-    font_title = lf(ft_path, 95)    # 기존 110에서 축소
-    font_huge = lf(ft_path, 200)    # 기존 220에서 축소
-    font_mega = lf(ft_path, 135)    # 기존 150에서 축소
+    font_title = lf(ft_path, 95)    
+    font_huge = lf(ft_path, 200)    
+    font_mega = lf(ft_path, 135)    
     font_sub = lf(ft_path, 55)
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    # 🚨 AI 이미지 생성 (다크 심리학 인물 1080x1080 상단 배치용)
     ai_img = None
     try:
         print("    [AI] Generating Dark Psychology Humanoid Visual...")
@@ -1988,7 +1981,6 @@ def generate_vip_carousel(raw_content, cat):
         ai_img_raw = Image.open(io.BytesIO(ai_bytes)).convert("RGBA")
         ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
         
-        # 하단 300px 페이드 아웃 효과 (블랙 배경과 자연스럽게 섞이도록)
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
         for y in range(780, 1080):
@@ -1997,14 +1989,13 @@ def generate_vip_carousel(raw_content, cat):
         ai_img_raw.putalpha(mask)
         ai_img = ai_img_raw
     except Exception as e:
-        print(f"    ⚠️ Dark Video Image Gen failed. Using fallback dummy... ({e})")
+        print(f"    ⚠️ Dark Video Image Gen failed. Using abstract fallback... ({e})")
         ai_img_raw = Image.new("RGBA", (1080, 1080), "#09090b")
         d = ImageDraw.Draw(ai_img_raw)
         
-        # 파이썬으로 억지 생성하는 졸라맨/더미 Fallback
-        d.ellipse([440, 200, 640, 400], fill="#ffffff") # Head
-        d.rounded_rectangle([400, 430, 680, 750], radius=50, fill="#ffffff") # Body
-        d.ellipse([500, 500, 580, 580], fill="#ef4444") # Glowing heart/core
+        d.ellipse([440, 200, 640, 400], fill="#ffffff") 
+        d.rounded_rectangle([400, 430, 680, 750], radius=50, fill="#ffffff") 
+        d.ellipse([500, 500, 580, 580], fill="#ef4444") 
         
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
@@ -2025,7 +2016,7 @@ def generate_vip_carousel(raw_content, cat):
         for ww in words:
             test_str = " ".join(line + [ww])
             try: tw = d.textlength(test_str, font=font)
-            except: tw = len(test_str) * 40 # Fallback 
+            except: tw = len(test_str) * 40  
             if tw < max_width: line.append(ww)
             else:
                 if line: lines.append(" ".join(line))
@@ -2033,7 +2024,6 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    # 1. 훅 (Hook) 슬라이드
     img1 = Image.new("RGB", (W, H), BG)
     paste_bg(img1)
     d1 = ImageDraw.Draw(img1)
@@ -2041,16 +2031,14 @@ def generate_vip_carousel(raw_content, cat):
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    # 🚨 양옆 글씨 잘림 방지를 위해 max_width를 980에서 900으로 줄임
     hook_lines = wrap_lines(hook_text.upper(), font_title, 900) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
         color = RED if i == len(hook_lines)-1 else WHITE
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
-        y_text += 105 # 줄간격 최적화
+        y_text += 105 
     d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
 
-    # 2. 충격 스탯 (Shock Stat) 슬라이드
     img2 = Image.new("RGB", (W, H), BG)
     paste_bg(img2)
     d2 = ImageDraw.Draw(img2)
@@ -2059,10 +2047,9 @@ def generate_vip_carousel(raw_content, cat):
     y_text = 1350
     for ln in shock_lines[:3]:
         d2.text((W//2, y_text), ln, fill=WHITE, font=font_mega, anchor="mm")
-        y_text += 145 # 줄간격 최적화
+        y_text += 145 
     d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
 
-    # 3~5. 데이터포인트 슬라이드
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
@@ -2084,7 +2071,6 @@ def generate_vip_carousel(raw_content, cat):
             d.ellipse([dx-15, dot_y-15, dx+15, dot_y+15], fill=color)
         data_imgs.append(img_d)
 
-    # 6. 통찰 및 CTA 슬라이드
     img6 = Image.new("RGB", (W, H), BG)
     paste_bg(img6)
     d6 = ImageDraw.Draw(img6)
