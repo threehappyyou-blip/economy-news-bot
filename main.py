@@ -1,19 +1,37 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.46)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.47)
 #
 # 핵심 복구 및 변경 사항:
 #   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
 #   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
-#   3. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
-#   4. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
-#   5. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신을 Cloudscraper로 100% 전면 교체
-#   6. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
-#   7. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
-#   8. [숏폼 비디오 혁신] 🔥 다크 & 인텐스(Dark & Intense) 무드의 15초 릴스/쇼츠 비디오 자동 생성 엔진 전면 개조 탑재
-#   9. [비디오 AI 확장] 뉴스 문맥을 분석하여 기괴하고 몰입감 있는 다크 톤의 AI 이미지를 영상 상단에 자동 생성 및 합성
-#  10. [비디오 렌더링 픽스] 29초 제한 통과 및 몰입도 극대화를 위해 슬라이드당 2.6초, 총 14.6초로 타이밍 정밀 조정 완료
+#   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
+#   4. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
+#   5. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
+#   6. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
+#   7. [SEO 픽스] 전 카테고리(Insight, On-Chain, Catalyst) 프리미엄 호기심 유발(Curiosity Gap) 로직 적용
+#   8. [UX 픽스] 실전 중심 Action Plan 프롬프트 강화 및 Executive Summary 바로 밑으로 배치 변경
+#   9. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
+#  10. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
+#  11. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
+#  12. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
+#  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
+#  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신 및 외부 요청을 Cloudscraper로 100% 전면 교체 적용 
+#  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 안정화 버전(imagen-3.0-generate-001)으로 조정
+#  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
+#  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
+#  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
+#  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
+#  20. [마케팅 픽스] Medium 썸네일 누락 해결을 위해, 생성된 AI 썸네일 이미지를 Draft 이메일에 파일로 자동 첨부
+#  21. [유튜브 픽스] 유튜브 썸네일 프롬프트에 시선을 사로잡는 강력한 텍스트(Text/Copy) 추천 항목 추가
+#  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
+#  23. [버그 픽스] AI 썸네일 생성 실패 시 웹사이트 썸네일을 재사용하지 않고, 파이썬 기반의 '텍스트 없는' 추상적 디자인 썸네일 강제 생성 로직 구현
+#  24. [확장] 365 챌린지 유입 극대화를 위해 Foundation, Catalyst, Money Hack 카테고리도 모두 Medium Draft 이메일 발송되도록 파이프라인 전면 개조
+#  25. [코드 무결성] 원본 로직 무손실 100% 풀 복구 완료
+#  26. [프롬프트 극강화] 🔥 'AI 피로도' 원천 차단: 전 카테고리 프롬프트에 극한의 Anti-Cliche 룰, 반직관성(Counterintuitive), 구체적 숫자/명사 강제 적용
+#  27. [마케팅 확장] 🚀 북미 커뮤니티(레딧, 쿼라) 타겟 바이럴 게릴라 포스팅 템플릿 이메일 자동 발송 기능 추가 완료
+#  28. [숏폼 비디오 혁신] 🔥 기괴한 다크톤 전면 삭제! 브랜드 톤앤매너(Navy & Emerald Green)에 맞춘 깔끔하고 문맥에 맞는(Contextual) 3D 아이콘 숏폼 엔진 탑재 완료
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -478,7 +496,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         if video_mp4_bytes:
             vid_tag = f"""
             <div style="margin-bottom: 25px; text-align:center; padding: 25px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
-                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 15-Sec Dark Reels Video Attached!</p>
+                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 15-Sec Clean Reels Video Attached!</p>
                 <div style="font-size: 45px; margin: 15px 0;">✨ 📹 ✨</div>
                 <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">100% Compatible with IG Reels / TikTok / YT Shorts.</p>
                 <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">Download <strong>WarmInsight_{cat}_Video.mp4</strong> attached below.</p>
@@ -1766,7 +1784,7 @@ def make_thumbnail(title_text, cat, tier):
     return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 (완벽 분리/텍스트 제거 폴백 탑재)
+# 🖼️ 미디엄 전용 하이엔드 썸네일 엔진 
 # ═══════════════════════════════════════════════
 def make_medium_thumbnail(cat):
     print(f"    [AI] Generating Premium Editorial Thumbnail for Medium...")
@@ -1826,10 +1844,10 @@ def make_medium_thumbnail(cat):
         return buf.getvalue()
 
 # ═══════════════════════════════════════════════
-# 🎬 6-슬라이드 다크 & 인텐스 15초 비디오 엔진 전면 개조
+# 🎬 6-슬라이드 깔끔 & 몰입형 15초 비디오 엔진 (v46.9.47)
 # ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Dark & Intense TikTok/Reels Video...")
+    print("   🎥 Generating 15-Sec Clean & Engaging TikTok/Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1837,7 +1855,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         print(f"   ❌ MoviePy import failed: {e}")
         return None
     try:
-        # 🚨 15초(14.6초) 길이를 위한 정밀 타이밍 세팅
+        # 🚨 15초(14.6초) 길이를 위한 정밀 타이밍 유지 (가장 이상적인 텐션)
         SLIDE_DURATION = 2.6
         CROSSFADE_DURATION = 0.2
         ZOOM_START = 1.0
@@ -1869,14 +1887,14 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         )
         with open(temp_path, 'rb') as f: mp4_bytes = f.read()
         os.remove(temp_path)
-        print(f"   ✅ Dark 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
+        print(f"   ✅ Clean 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
         return mp4_bytes
     except Exception as e:
         print(f"   ❌ Video Encoding Failed: {e}")
         return None
 
 def generate_vip_carousel(raw_content, cat):
-    print("   🎨 Generating DARK & INTENSE 6-Slide Vertical Carousel...")
+    print("   🎨 Generating CLEAN & ENGAGING 6-Slide Vertical Carousel...")
     client = _get_gemini_client()
 
     sys_inst = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -1900,7 +1918,7 @@ def generate_vip_carousel(raw_content, cat):
     <REELS_SCRIPT>60-second spoken script with hook-stat-story-CTA structure</REELS_SCRIPT>
     <IG_CAPTION>Caption with hook, value, CTA, 15+ hashtags</IG_CAPTION>
     <SMART_COMMENT>Bloomberg/WSJ-style comment for free traffic</SMART_COMMENT>
-    <VISUAL_PROMPT>A surreal, dark, intense, and mysterious 3D illustration representing the core topic of this news. Dark psychology vibe, stark shadows, glowing red or white eyes/accents, eerie. No text, no words.</VISUAL_PROMPT>
+    <VISUAL_PROMPT>A clean, bright, eye-catching 3D icon or flat vector illustration representing the core topic of this news. Friendly, professional, engaging corporate memphis style. No text, no words, no letters.</VISUAL_PROMPT>
     <ITEM1>TICKER | Value with % or $</ITEM1>
     <ITEM2>TICKER | Value with % or $</ITEM2>
     <ITEM3>TICKER | Value with % or $</ITEM3>
@@ -1919,7 +1937,7 @@ def generate_vip_carousel(raw_content, cat):
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
-    visual_prompt = xtag(raw_data, "VISUAL_PROMPT") or f"A surreal, dark, intense illustration representing {cat}. Dark psychology vibe, stark shadows, red and black. No text."
+    visual_prompt = xtag(raw_data, "VISUAL_PROMPT") or f"A clean, eye-catching 3D icon representing {cat}. Friendly, professional. No text."
 
     data_points = []
     for i in range(1, 6):
@@ -1937,11 +1955,12 @@ def generate_vip_carousel(raw_content, cat):
             {"ticker": "$ETH", "val": "+2.3%"}
         ]
 
-    # 🚨 영상 무드 셋팅: 완전한 블랙 배경, 레드/화이트 포인트 
+    # 🚨 브랜드 테마 반영 (Navy & Emerald Green & White & Gold)
     W, H = 1080, 1920
-    BG = "#000000"
-    WHITE = "#ffffff"
-    RED = "#ef4444"
+    BG = "#0f172a"          # 웜인사이트 메인 네이비 배경
+    WHITE = "#f8fafc"
+    ACCENT = "#10b981"      # 에메랄드 그린 (웹사이트 포인트 컬러)
+    YELLOW = "#f59e0b"      # 골드/옐로우 포인트
     GRAY = "#94a3b8"
 
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
@@ -1957,10 +1976,10 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 55)
     font_alert = lf(ft_path, 80)
 
-    # 🚨 AI 이미지 생성 (다크 무드 1080x1080 상단 배치용)
+    # 🚨 AI 이미지 생성 (세련되고 문맥에 맞는 3D/플랫 일러스트)
     ai_img = None
     try:
-        print("    [AI] Generating Dark & Intense Video Visual...")
+        print("    [AI] Generating Clean & Contextual Video Visual...")
         result = client.models.generate_images(
             model='imagen-3.0-generate-001',
             prompt=visual_prompt,
@@ -1972,7 +1991,7 @@ def generate_vip_carousel(raw_content, cat):
         ai_img_raw = Image.open(io.BytesIO(ai_bytes)).convert("RGBA")
         ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
         
-        # 하단 300px 페이드 아웃 효과 (블랙 배경과 자연스럽게 섞이도록)
+        # 하단 300px 페이드 아웃 효과 (네이비 배경과 자연스럽게 섞이도록)
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
         for y in range(780, 1080):
@@ -1981,13 +2000,13 @@ def generate_vip_carousel(raw_content, cat):
         ai_img_raw.putalpha(mask)
         ai_img = ai_img_raw
     except Exception as e:
-        print(f"    ⚠️ Dark Video Image Gen failed. Using dark abstract fallback... ({e})")
-        # 실패 시 파이썬 PIL로 그리는 다크 레드 추상화 폴백
-        ai_img_raw = Image.new("RGBA", (1080, 1080), "#09090b")
+        print(f"    ⚠️ Video Image Gen failed. Using clean geometric fallback... ({e})")
+        # 실패 시 파이썬 PIL로 그리는 깔끔한 에메랄드/네이비 추상화 폴백
+        ai_img_raw = Image.new("RGBA", (1080, 1080), BG)
         d = ImageDraw.Draw(ai_img_raw)
-        d.ellipse([300, 300, 780, 780], fill="#450a0a")
-        d.ellipse([400, 400, 680, 680], fill="#7f1d1d")
-        d.ellipse([500, 500, 580, 580], fill="#ef4444")
+        d.rounded_rectangle([300, 300, 780, 780], radius=80, fill="#1e3a8a", outline="#3b82f6", width=15)
+        d.ellipse([450, 450, 630, 630], fill="#10b981")
+        d.line([(350, 600), (540, 400), (730, 500)], fill="#f59e0b", width=25)
         
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
@@ -2021,13 +2040,13 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(img1)
     d1 = ImageDraw.Draw(img1)
     
-    d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
+    d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=ACCENT)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
     hook_lines = wrap_lines(hook_text.upper(), font_title, 980)
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
-        color = RED if i == len(hook_lines)-1 else WHITE
+        color = YELLOW if i == len(hook_lines)-1 else WHITE
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 120
     d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
@@ -2036,7 +2055,7 @@ def generate_vip_carousel(raw_content, cat):
     img2 = Image.new("RGB", (W, H), BG)
     paste_bg(img2)
     d2 = ImageDraw.Draw(img2)
-    d2.text((W//2, 1180), "THE NUMBER", fill=RED, font=font_sub, anchor="mm")
+    d2.text((W//2, 1180), "THE NUMBER", fill=ACCENT, font=font_sub, anchor="mm")
     shock_lines = wrap_lines(shock_stat.upper(), font_mega, 980)
     y_text = 1350
     for ln in shock_lines[:3]:
@@ -2052,17 +2071,17 @@ def generate_vip_carousel(raw_content, cat):
         img_d = Image.new("RGB", (W, H), BG)
         paste_bg(img_d)
         d = ImageDraw.Draw(img_d)
-        d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
+        d.text((W//2, 1150), cat.upper(), fill=ACCENT, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         d.text((W//2, 1400), item['ticker'], fill=WHITE, font=font_title, anchor="mm")
         val_str = item['val']
-        val_color = RED if '-' in val_str else WHITE
+        val_color = "#ef4444" if '-' in val_str else ACCENT
         d.text((W//2, 1550), val_str, fill=val_color, font=font_huge, anchor="mm")
         
         dot_y = 1800
         for di in range(3):
             dx = W//2 + (di - 1) * 60
-            color = RED if di == idx else "#3f3f46"
+            color = ACCENT if di == idx else "#334155"
             d.ellipse([dx-15, dot_y-15, dx+15, dot_y+15], fill=color)
         data_imgs.append(img_d)
 
@@ -2070,13 +2089,13 @@ def generate_vip_carousel(raw_content, cat):
     img6 = Image.new("RGB", (W, H), BG)
     paste_bg(img6)
     d6 = ImageDraw.Draw(img6)
-    d6.text((W//2, 1150), "THE TAKEAWAY", fill=RED, font=font_sub, anchor="mm")
+    d6.text((W//2, 1150), "THE TAKEAWAY", fill=ACCENT, font=font_sub, anchor="mm")
     insight_lines = wrap_lines(insight_line.upper(), font_title, 980)
     y_text = 1250
     for ln in insight_lines[:3]:
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
         y_text += 120
-    d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
+    d6.text((W//2, 1650), cta_hook.upper(), fill=YELLOW, font=font_alert, anchor="mm")
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
 
     image_bytes_list = []
@@ -2250,7 +2269,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.46 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.47 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2282,7 +2301,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.46 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.47 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2314,7 +2333,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.46 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.47 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2365,9 +2384,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.46 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.47 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.46 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.47 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
