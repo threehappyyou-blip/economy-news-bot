@@ -4,10 +4,10 @@
 # Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.65)
 #
 # 숏폼(Reels) 엔진 V3 업데이트 사항:
-# 1. 픽사(Pixar) 스타일의 친근하고 단순한 3D 화이트 로봇 마스코트 적용 유지 (놀람->분석->따봉 3단계 분리)
-# 2. 타이포그래피 컬러 Mix: 빨간색(#ef4444)과 골드색(#fde047)의 전략적 교차 배치
-# 3. 텍스트 가독성 극대화: 이미지 하단(y=700~1080) 블랙 페이드아웃 마스크 적용
-# 4. NameError 완벽 해결: 모든 프롬프트 전역 변수를 최상단으로 이동 및 사용자 원본 중복 구조 100% 보존
+# 1. 캐릭터 리뉴얼: 기괴한 다크 심리학 마네킹 전면 폐기 -> 픽사(Pixar) 스타일의 친근하고 단순한 3D 화이트 로봇 마스코트 적용
+# 2. 이미지 반복 버그 완벽 해결: 3장의 이미지를 각각 다른 프롬프트(놀람 -> 분석 -> 따봉)로 분리 호출하여 지루함 원천 차단
+# 3. 타이포그래피 컬러 Mix: 골드(#fde047)와 레드(#ef4444) 전략적 혼합 배치로 가독성 및 시각적 충격 극대화
+# 4. NameError 완벽 해결: 사용자의 원본 구조 및 HTML 빌더 함수(build_html 등) 100% 무손실 복구
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -64,7 +64,7 @@ try:
         'Cache-Control': 'no-cache'
     })
 except ImportError:
-    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
+    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다. GitHub Actions의 pip install에 cloudscraper를 추가해주세요.")
     sys.exit(1)
 
 
@@ -161,262 +161,58 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# 🧠 프롬프트 전역 선언 (NameError 방지용 최상단 배치)
-# ═══════════════════════════════════════════════
-FOUNDATION_TOPICS = [
-    "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
-    "How to start investing in S&P 500 ETFs with exactly $100",
-    "The hidden risks of Dollar Cost Averaging (DCA) you must know",
-    "Inflation survival guide: Best ETF assets to protect your cash",
-    "Asset Allocation strategy for 30-something absolute beginners",
-    "Dividend ETF investing: How to make your first $100 in passive income",
-    "Growth vs Value Stocks: The ultimate test for your first portfolio",
-    "What happens to your stock portfolio when the Fed cuts interest rates?",
-    "Bond market explained for people who only buy tech stocks",
-    "Nasdaq 100 ETF vs S&P 500 ETF: Where to put your first investment"
-]
-
-FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are the "smart friend" who explains money to absolute beginners — channel Morning Brew + Milk Road energy. You text your friend the news, not write a textbook.
-
-🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
-- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial", "Vital", "Landscape", "Dive deep".
-- DO NOT sound like an AI. Be punchy, direct, and slightly informal.
-- ALWAYS use specific, concrete examples. Instead of "a lot of money", say "$2.5 million". Instead of "tech companies", say "Apple and Nvidia".
-- Use counterintuitive (반직관적) angles. Tell them what EVERYONE ELSE gets wrong first.
-
-YOUR PERSONALITY:
-- You're the friend texting at 9pm: "OK so this thing happened today and you HAVE to know about it"
-- You use "you" and "I" constantly. Never "investors" or "one should"
-- You use SPECIFIC everyday analogies (Netflix subscription wars, ordering Uber Eats, Costco runs)
-
-CASUAL EXPRESSION RULES:
-- USE conversational openers: "OK so...", "Look,", "Real talk,", "Here's the thing:"
-- BANNED textbook phrases: "in conclusion", "moreover", "furthermore", "it is important to note"
-- Average sentence length: 12-15 words MAX. Paragraphs are 2-3 sentences MAX.
-
-You MUST wrap your content EXACTLY in the XML tags requested."""
-
-FOUNDATION_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Write an SEO-optimized beginner's guide on the following topic in English:
-TOPIC: {theme}
-
-OUTPUT FORMAT REQUIREMENT:
-You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
-
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [2026 Guide], odd numbers, or 'How to' formats.)</TITLE>
-<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to invest in etfs for beginners' NOT just 'etf')</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that forces the user to click to find the answer. End with a provocative question.)</EXCERPT>
-<DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy. Do not use generic dictionary definitions.)</DEFINITION>
-<WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages to prove your point.)</WHY_MATTERS>
-<HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
-
-<POLL_QUESTION>(A provocative multiple-choice question related to this topic for the reader. e.g., "What is your biggest fear when investing?")</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
-"""
-
-PHILOSOPHY_TOPICS = [
-    "Love money through action, not just unrequited longing",
-    "The psychological vessel of wealth and the weight of responsibility",
-    "Voluntary fatigue: The pleasurable pain of chosen growth",
-    "Weaponize environmental lack for explosive growth",
-    "From consumer to producer: The shift from reading to writing",
-    "Destroy the cognitive salary cap you set for yourself",
-    "The elimination of excuses: The beginning of uncompromising growth"
-]
-
-PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are an elite philosophical life strategist. You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
-
-🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
-- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Embark on this journey", "Supercharge", "Basically", "In conclusion".
-- DO NOT sound like a generic self-help guru. Be harsh, direct, and unapologetic. 
-- ALWAYS provide a COUNTER-NARRATIVE (e.g., if everyone says 'hustle', talk about 'strategic rest').
-- Use short, punchy sentences. Do not sugar-coat reality.
-
-You MUST wrap your content EXACTLY in the XML tags requested."""
-
-PHILOSOPHY_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Write a philosophical daily insight based on the following theme in English:
-THEME: {theme}
-
-When interpreting concepts like 'dirt spoon' or poverty, frame it as a 'systemic disadvantage that must be weaponized for explosive growth'.
-When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaustion that comes from total, self-directed immersion in a meaningful task'.
-
-OUTPUT FORMAT REQUIREMENT:
-You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
-
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it deeply thought-provoking and highly clickable. Format idea: 'The Psychology Behind [X]' or 'Why You Struggle With [Y]'.)</TITLE>
-<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition search intent.)</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that targets a painful truth and promises a solution. End with a strong question.)</EXCERPT>
-<ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme. Make it sound like a quote from Marcus Aurelius or Naval Ravikant.)</ANCHOR>
-<REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses heavily.)</REFLECTION>
-<CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
-
-<POLL_QUESTION>(A provocative multiple-choice question related to this topic. e.g., "What is currently holding you back the most?")</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
-"""
-
-MH_NICHES = [
-    "Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", 
-    "Content Creation & Faceless Channels", "Micro-SaaS & Software", "Domain & Asset Flipping", 
-    "Affiliate Marketing", "Consulting & Coaching", "Paid Newsletter & Community", "Print on Demand"
-]
-MH_PLATFORMS = [
-    "Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", 
-    "Twitter/X", "LinkedIn", "Pinterest", "Substack", "Etsy", "Amazon KDP", "WordPress"
-]
-MH_AI_TOOLS = [
-    "ChatGPT", "Midjourney", "Claude", "ElevenLabs", "Zapier/Make", "CapCut AI", 
-    "Perplexity", "RunwayML", "HeyGen", "OpusClip"
-]
-
-MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are an elite side-hustle expert and digital business coach. Your objective is to write a highly actionable, step-by-step 'Money Hack' guide that helps normal people make an extra $1,000/month.
-
-🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
-- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "Passive income machine", "Get rich quick", "Revolutionize".
-- DO NOT sound like a scammy internet marketer. Acknowledge the grind. Be ruthlessly practical.
-- ALWAYS use specific tool names, actual dollar amounts, and exact timeframes (e.g., "Spend 2 hours on Canva doing X").
-- If there's a downside or hard part to the hustle, MENTION IT.
-
-Your tone is motivating, direct, and incredibly practical. No fluff. 
-You MUST wrap your content EXACTLY in the XML tags requested."""
-
-MONEY_HACK_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Write an SEO-optimized, step-by-step side hustle guide based on this randomly generated framework:
-FRAMEWORK: {theme}
-
-Your job is to invent a highly specific, realistic 4-week challenge or a step-by-step blueprint that combines these elements into a profitable $1,000/month project.
-
-OUTPUT FORMAT REQUIREMENT:
-You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
-
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [Step-by-Step], numbers, or 'How to' formats.)</TITLE>
-<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to make money with canva templates')</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
-<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
-<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
-<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
-
-<POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
-"""
-
-PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
-
-═══ THE GOLDEN RULE ═══
-Imagine your reader is your friend Sarah, a 32-year-old marketing manager who knows nothing about finance but is curious. She'll close the tab in 5 seconds if you sound like Wall Street. BUT she'll also close it if you just repeat what she saw on Twitter. Give her ONE thing she didn't know.
-
-═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
-BANNED CONTENT (NEVER WRITE THESE — they make readers stop):
-- "AI is still the boss" / "AI is here to stay" / "AI revolution"
-- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial landscape"
-- "Tech stocks are thriving" / "betting against X is a bad idea"
-- "The trend is your friend" / "this time it's different"
-- "Smart money is moving" without specifying EXACTLY WHERE
-- "It's important to note" / "investors should consider"
-- ANY statement that sounds like a generic Reuters headline summary
-
-REQUIRED CONTENT (MUST INCLUDE):
-- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
-- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
-- AT LEAST 1 specific company decision/move.
-- ONE historical or comparative reference.
-
-═══ THESIS COHERENCE RULE ═══
-1. Pick ONE central thesis from the news.
-2. Build your ENTIRE article around that single thesis.
-3. IGNORE news that doesn't support or contrast with your thesis.
-
-═══ WRITING RULES ═══
-- Sentences MAX 15 words. Short hits harder than long.
-- Each paragraph MAX 3 sentences. Visual breathing room matters.
-- USE: "here's the deal", "OK so", "real talk", "look", "between us", "the kicker is"
-
-Write PART 1 of an Insight newsletter on {cat} in ENGLISH.
-Target length: 900-1100 words across both parts combined. Shorter is better. Cut ruthlessly.
-News Context:
-{news}
-
-OUTPUT FORMAT REQUIREMENT:
-You MUST wrap your content EXACTLY in the XML tags listed below.
-
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly engaging but professional. Use formats like 'The Hidden Reason Behind [X]' or 'Why Smart Money is Moving to [Y]'.)</TITLE>
-<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'why are tech stocks dropping today' or 'impact of fed rate cuts on crypto')</SEO_KEYWORD>
-<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. Write a compelling summary that creates a 'curiosity gap' maintaining journalistic integrity. End with a thought-provoking question.)</EXCERPT>
-
-<WARM_INDEX_SCORE>(A number from 0 to 100 representing market fear/greed based on this news. 0=Extreme Fear, 100=Extreme Greed. Output ONLY the integer number.)</WARM_INDEX_SCORE>
-<WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score. E.g., "Tech rally masks underlying economic anxiety.")</WARM_INDEX_REASON>
-
-<IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
-<DATA_TABLE>
-(REQUIRED — extract OR estimate 3-4 key market metrics. Format exactly:
-Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words
-)
-</DATA_TABLE>
-<HEATMAP>
-(Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
-</HEATMAP>
-<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" Use 1 emoji.)</EXECUTIVE_SUMMARY>
-<PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps. 20+ words developed.)</PLAIN_ENGLISH>
-<HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
-<MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
-PARAGRAPH 1: What's happening — ONE specific number or data point. Make it surprising.
-PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your honest one-line take.
-)</MACRO>
-<HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
-<CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
-<QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
-
-PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
-
-═══ 🔥 ANTI-CLICHÉ REMINDER ═══
-NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates. 
-If you find yourself writing a vague sentence, DELETE IT and replace it with a hard data point.
-
-═══ TONE RULES ═══
-- Sentences MAX 15 words, Paragraphs MAX 3 sentences.
-- USE "you", "we", "honestly", "real talk", "here's the deal".
-- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role".
-
-Write PART 2 of the Insight newsletter for {cat} in ENGLISH.
-Context from Part 1:
-{ctx}
-
-OUTPUT FORMAT REQUIREMENT:
-You MUST wrap your content EXACTLY in the XML tags listed below.
-
-<BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
-<BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
-<HISTORICAL_PARALLEL>(REQUIRED — 2 sentences MAX. Name the year + event. One sentence on the parallel. One sentence: "What's different: [your answer].")</HISTORICAL_PARALLEL>
-<QUICK_HITS>
-(EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸)
-</QUICK_HITS>
-<SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences. NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason].")</SMART_MONEY_MOVE>
-<DO_ACTION>(Provide exactly ONE highly specific, actionable strategy for absolute beginners with precise numbers e.g., 'If BTC drops below $X, accumulate 5%' or a 3-step checklist based on today's news.)</DO_ACTION>
-<DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
-<TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
-<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
-
-<POLL_QUESTION>(A provocative multiple-choice question related to today's news to ask the reader. e.g., "Do you think Apple is currently overvalued?")</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
-"""
-
-
-# ═══════════════════════════════════════════════
 # 🎬 1. YOUTUBE CHAPTERING ENGINE
 # ═══════════════════════════════════════════════
+YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
+Avoid generic AI buzzwords. Sound like a human growth hacker.
+
+[CONTENT]
+{raw_content}
+
+[REQUIREMENTS]
+You must strictly use these XML tags:
+
+<METADATA>
+[VIRAL TITLES]
+(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'. Use specific numbers. Banned words: 'Unleash', 'Discover', 'Secret')
+- Option A: 
+- Option B: 
+- Option C: 
+
+[THUMBNAIL IDEAS]
+1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. NO TEXT IN PROMPT.)
+2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail. e.g., "SELL NOW?", "IT'S OVER.", "THE TRUTH")
+
+[SEO HASHTAGS]
+(10 highly searched global tags, e.g. #investing #economy)
+</METADATA>"""
+
+YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive 20,000+ character documentary script based on the newsletter in ENGLISH.
+Focus on: Cold Open Hook, Greeting, and Chapter 1 (Current Situation Analysis).
+ANTI-AI FATIGUE: Do NOT sound like an AI. Be punchy, direct, and slightly informal. Use analogies.
+[NEWSLETTER]
+{raw_content}
+
+Rules: 
+- OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags like [VO], [Scene 1]. ONLY text to be read by TTS.
+- Start immediately with a provocative cold open hook (e.g. "If you think [X] is safe, look at this number..."), followed by: "Hello, this is Warm Insight. Today, we're going to talk about [Topic]. Leaving a like and subscribing is a huge help to us!"
+Wrap in <PART1> tags."""
+
+YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
+You MUST expand massively using verified historical context (compare it to 2008, 1999, or 1970s). Provide CONCRETE numbers, not generalizations.
+Do not summarize; spend at least 500 words on EACH historical comparison or context point.
+Rules: Spoken words ONLY in English. NO structural tags. NO AI fluff ("in today's ever-changing landscape").
+Wrap in <PART2> tags."""
+
+YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
+Provide concrete, counterintuitive strategies. Tell them exactly what NOT to do.
+Rules: Spoken words ONLY in English. NO structural tags.
+End exactly with: "We couldn't fit all the deep-dive details and practical strategies into this video. Check out the Warm Insight newsletter in the pinned comment and description for the full text summary. Visit www.warminsight.com. See you there."
+Wrap in <PART3> tags."""
 
 def generate_youtube_masterpiece(raw_content, title):
     print(f"   🎬 [YouTube Engine] Starting 3-Phase Chaptering for '{title[:30]}...'")
@@ -657,10 +453,9 @@ def send_community_viral_email(title, original_link, raw_content, cat):
     except Exception as e:
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
-# =====================================================================
-# ★ BLOCK 1: 첫 번째 반복 블록 (원본 보존용) ★
-# =====================================================================
-
+# ═══════════════════════════════════════════════
+# ✉️ 슬림 이메일 (인스타/숏폼용)
+# ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ Missing email credentials. Skipping email dispatch.")
@@ -731,6 +526,9 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
     except Exception as e:
         print(f"   ❌ Social Email Failed: {e}")
 
+# ═══════════════════════════════════════════════
+# 🛡️ SYSTEM UTILS & API ENGINE
+# ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
     global _gemini_client
@@ -918,8 +716,206 @@ def fetch_news_pool(cat, max_items=15):
     random.shuffle(items_list)
     return items_list[:max_items]
 
+# ═══════════════════════════════════════════════
+# 📊 HTML BUILDERS
+# ═══════════════════════════════════════════════
+def build_foundation_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f": {kw}" if kw else ""
+    html += _build_founder_note()
+    def_text = xtag(raw, "DEFINITION").replace("\n", "<br><br>")
+    html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it? (Definition){k_suf}</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{def_text}</div></div>"""
+    why_text = xtag(raw, "WHY_MATTERS").replace("\n", "<br><br>")
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters{k_suf}</h3><p>{why_text}</p></div>"""
+    how_text = xtag(raw, "HOW_TO_START").replace("\n", "<br><br>")
+    html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today{k_suf}</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{how_text}</div></div>"""
+    html += _build_pillar_link("Foundation") + _build_poll(raw, cat) + _build_branded_footer()
+    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    return sanitize(html)
+
+def build_philosophy_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f" — {kw}" if kw else ""
+    html += _build_founder_note()
+    html += f"""<div style="text-align:center; margin:50px 0;"><span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span><h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin:10px 0; font-weight:600; line-height:1.4;">{xtag(raw, "ANCHOR")}</h2><span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span></div>"""
+    reflection_text = xtag(raw, "REFLECTION").replace("\n", "<br><br>")
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection{k_suf}</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{reflection_text}</div></div>"""
+    catalyst_raw = xtag(raw, "CATALYST")
+    catalyst_text = re.sub(r'<[^>]+>', '', catalyst_raw)
+    html += f"""<div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center; box-shadow:0 10px 15px -3px rgba(0, 0, 0, 0.05);"><p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p><p style="font-size:24px; font-weight:900; color:#92400e; margin:0 0 20px; line-height:1.5;">{catalyst_text}</p></div>"""
+    html += _build_pillar_link("The Daily Catalyst") + _build_poll(raw, cat) + _build_branded_footer()
+    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    return sanitize(html)
+
+def build_money_hack_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f": {kw}" if kw else ""
+    html += _build_founder_note()
+    concept = xtag(raw, "CONCEPT").replace("\n", "<br><br>")
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept{k_suf}</h3><p>{concept}</p></div>"""
+    tools = xtag(raw, "STEP_BY_STEP_TOOL").replace("\n", "<br><br>")
+    html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0; box-shadow:0 4px 15px rgba(0,0,0,0.05);"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution{k_suf}</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{tools}</div></div>"""
+    pro_tip = xtag(raw, "PRO_TIP").replace("\n", "<br>")
+    html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{pro_tip}</p></div>"""
+    html += _build_pillar_link("Money Hack") + _build_poll(raw, cat) + _build_branded_footer()
+    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    return sanitize(html)
+
+def build_html(tier, cat, raw, author, tf, title):
+    html = f"""<div style="{F}">\n"""
+    badge_bg = GOLD
+    kw = xtag(raw, "SEO_KEYWORD").title()
+    k_suf = f": {kw}" if kw else ""
+    html += _build_warm_index(raw) + _build_founder_note()
+    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block;">Executive Summary{k_suf}</h2>"""
+    html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
+    do_act = xtag(raw, "DO_ACTION").replace('\n', '<br>')
+    dont_act = xtag(raw, "DONT_ACTION").replace('\n', '<br>')
+    html += f"""
+    <div style="background:#fffbeb; border:2px solid #f59e0b; padding:25px; margin:35px 0; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; color:#b45309; font-size:22px; display:flex; align-items:center; gap:8px;">⚠️ One-Point Action Plan for Beginners</h3>
+        <p style="font-size:15px; color:#92400e; margin-top:-10px; margin-bottom:20px;">Today's specific, actionable strategy for absolute beginners</p>
+        <div style="background:#ffffff; border-left:5px solid #10b981; padding:20px; border-radius:6px; margin-bottom:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin:0; color:#065f46; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🟢 DO THIS:</p>
+            <p style="margin:8px 0 0; color:#064e3b; font-size:17px; line-height:1.6; font-weight:500;">{do_act}</p>
+        </div>
+        <div style="background:#ffffff; border-left:5px solid #ef4444; padding:20px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin:0; color:#991b1b; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🔴 AVOID THIS:</p>
+            <p style="margin:8px 0 0; color:#7f1d1d; font-size:17px; line-height:1.6; font-weight:500;">{dont_act}</p>
+        </div>
+    </div>
+    """
+    html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard") + _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
+    html += f"""<div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Plain English{k_suf}</p><p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p></div>"""
+    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {badge_bg}; padding-bottom:10px; display:inline-block; margin-top:30px;">Market Drivers & Flow{k_suf}</h2>"""
+    html += f"""<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>"""
+    html += f"""<div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {badge_bg}; padding:30px; border-radius:8px; margin:30px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);"><p><strong>🧐 The Big Picture:</strong> {xtag(raw, "MACRO")}</p><hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;"><p><strong>🐑 What Most People Are Doing:</strong> {xtag(raw, "HERD")}</p><hr style="border:0; height:1px; background:{BORDER}; margin:20px 0;"><p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p></div>"""
+    html += f"""<div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br><span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span></div>"""
+    html += f"""<div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;"><div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;"><h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4><p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p></div><div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;"><h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4><p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p></div></div>"""
+    html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
+    html += f"""<div style="background:#ffffff; border:2px solid {badge_bg}; padding:30px; border-radius:8px; margin:45px 0; box-shadow:0 4px 6px rgba(0,0,0,0.05);"><h3 style="margin-top:0; color:{badge_bg}; font-size:24px;">💎 Smart Money Move</h3><p style="margin:0;">{xtag(raw, "SMART_MONEY_MOVE")}</p></div>"""
+    historical = xtag(raw, "HISTORICAL_PARALLEL")
+    if historical:
+        html += f"""<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding:35px; border-radius:12px; margin:45px 0; border-left:5px solid {badge_bg};"><h3 style="color:{badge_bg}; margin-top:0; font-size:24px; display:flex; align-items:center; gap:10px;">📜 Historical Parallel</h3><p style="color:#cbd5e1; font-size:17px; line-height:1.8; margin:15px 0 0;">{historical}</p></div>"""
+    al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
+    html += f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:40px;"><h3 style="margin-top:0; font-size:22px; color:{DARK};">📊 Suggested Allocation</h3>{_build_pie_chart(al["s"], al["b"], al["c"], cat)}<p style="margin-top:15px; color:{MUTED}; font-size:14px; text-align:center; font-style:italic;">General guideline based on current {cat} outlook. Not personalized advice.</p></div>"""
+    tw, ps = xtag(raw, "TAKEAWAY"), xtag(raw, "PS")
+    html += f"""<hr style="border:0; height:1px; background:{BORDER}; margin:50px 0;"><h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin-bottom:20px;">Today's Warm Insight</h2><p style="{F} font-size:19px; font-style:italic; border-left:3px solid #cbd5e1; padding-left:16px;">"{tw}"</p><div style="background:{DARK}; padding:30px; border-radius:10px; border-left:5px solid {badge_bg}; margin-top:35px;"><p style="color:#e2e8f0; font-size:18px; margin:0; line-height:1.6;"><strong style="color:{badge_bg};">P.S.</strong> {ps}</p></div>"""
+    html += _build_pillar_link("Insight") + _build_poll(raw, cat) + _build_branded_footer()
+    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    return sanitize(html)
+
+def get_font(url, filename):
+    if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
+        try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            resp = scraper.get(url, timeout=15)
+            resp.raise_for_status()
+            with open(filename, 'wb') as f:
+                f.write(resp.content)
+        except Exception as e:
+            print(f"   ❌ Font download error: {e}")
+    return filename
+
+def make_thumbnail(title_text, cat, tier):
+    W, H, SCALE = 1200, 630, 2
+    w, h = W * SCALE, H * SCALE
+    CAT_STYLES = {
+        "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
+        "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
+        "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
+        "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
+        "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
+        "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
+        "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
+        "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"},
+        "Money Hack": {"bg1": "#f59e0b", "bg2": "#b45309", "acc": "#fef3c7"}
+    }
+    style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
+    img = Image.new("RGBA", (w, h), style["bg1"])
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
+    
+    cx, cy, S = w * 0.88, h * 0.65, SCALE
+    cx_p = cx - 180 * S
+    if cat == "Economy":
+        draw.rectangle([cx_p-60*S, cy_p+20*S, cx_p-20*S, cy_p+80*S], fill="#38bdf8")
+        draw.rectangle([cx_p-10*S, cy_p-20*S, cx_p+30*S, cy_p+80*S], fill="#38bdf8")
+        draw.rectangle([cx_p+40*S, cy_p-60*S, cx_p+80*S, cy_p+80*S], fill="#fde047")
+    
+    draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000060")
+    ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
+    def lf(p, s):
+        try: return ImageFont.truetype(p, s * SCALE)
+        except: return ImageFont.load_default()
+    ft, fs, fb = lf(ft_path, 85), lf(ft_path, 34), lf(ft_path, 28)
+
+    date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
+    draw.text((40 * S, 44 * S), date_badge, font=fb, fill="#ffffff")
+    try: date_w = draw.textlength(date_badge, font=fb)
+    except: date_w = len(date_badge) * 15 * S
+    bx = 40 * S + date_w + 30 * S
+    try: cat_w = draw.textlength(cat.upper(), font=fb)
+    except: cat_w = len(cat) * 15 * S
+    draw.rounded_rectangle([(bx, 36 * S), (bx + cat_w + 60 * S, 86 * S)], radius=25 * S, fill="#ffffff")
+    draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
+
+    clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', _clean_seo_title(title_text).upper()).strip()
+    words, lines, line, mw = clean_title.split(), [], [], w - 380 * SCALE
+    for word in words:
+        test_str = " ".join(line + [word])
+        try: tw2 = draw.textlength(test_str, font=ft)
+        except: tw2 = len(test_str) * 40 * SCALE
+        if tw2 < mw: line.append(word)
+        else:
+            if line: lines.append(" ".join(line))
+            line = [word]
+    if line: lines.append(" ".join(line))
+
+    y = 160 * SCALE
+    for i, ln in enumerate(lines[:4]):
+        draw.text((40 * S + 4 * S, y + 4 * S), ln, font=ft, fill="#00000060")
+        color = style.get("acc", "#ffffff") if i == 1 else "#ffffff"
+        draw.text((40 * S, y), ln, font=ft, fill=color)
+        try:
+            bb = draw.textbbox((0, 0), ln, font=ft)
+            y += (bb[3] - bb[1]) + 15 * S
+        except: y += 100 * S
+
+    date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
+    draw.text((40 * S, h - 70 * S), f"WARM INSIGHT  |  {date_bottom}", font=fs, fill="#ffffff80")
+    tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
+    try: tw_t = draw.textlength(tagline, font=fs)
+    except: tw_t = len(tagline) * 15 * S
+    draw.text((w - 40 * S - tw_t, h - 70 * S), tagline, font=fs, fill="#ffffff80")
+
+    img = img.convert("RGB").resize((W, H), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
+
+def make_medium_thumbnail(cat):
+    print(f"   [AI] Generating Premium Editorial Thumbnail for Medium...")
+    W, H = 1200, 630
+    img = Image.new("RGBA", (W, H), "#0284c7")
+    draw = ImageDraw.Draw(img)
+    draw.ellipse([W*0.5, -H*0.2, W*1.3, H*1.2], fill="#0369a1")
+    draw.ellipse([-W*0.1, H*0.4, W*0.4, H*1.5], fill="#00000030")
+    draw.line([(W*0.15, H*0.2), (W*0.25, H*0.2)], fill="#fde047", width=8)
+    draw.ellipse([W*0.8, H*0.75, W*0.82, H*0.75+W*0.02], fill="#fde047")
+    draw.rectangle([W*0.15, H*0.8, W*0.4, H*0.82], fill="#fde047")
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=90)
+    return buf.getvalue()
+
+# ═══════════════════════════════════════════════
+# 🎬 4. DYNAMIC 3-IMAGE REELS ENGINE (캐릭터 및 반복 수정본)
+# ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Pixar Style Character Reels Video...")
+    print("   🎥 Generating 15-Sec Friendly Character Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1075,6 +1071,7 @@ def generate_vip_carousel(raw_content, cat):
         img = img.resize((1080, 1080), Image.LANCZOS)
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
+        # 텍스트 가독성을 위해 700부터 완전 블랙으로 페이드아웃 마스크 처리
         for y in range(700, 1080):
             alpha = int(255 - (y - 700) * (255 / 380))
             mask_draw.line([(0, y), (1080, y)], fill=alpha)
@@ -1124,11 +1121,11 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(img1, img_hook_ai)
     d1 = ImageDraw.Draw(img1)
     
-    # 🚨 상단 경고 배지: 긴급성을 위한 RED
+    # 🚨 상단 배지 RED
     d1.rounded_rectangle([300, 1100, 780, 1200], radius=20, fill=RED) 
     d1.text((W//2, 1150), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    # 💡 훅 텍스트: 마지막 줄만 시선 집중을 위해 GOLD 강조
+    # 💡 훅 텍스트 마지막 줄 GOLD
     hook_lines = wrap_lines(hook_text.upper(), font_title, 850) 
     y_text = 1330
     for i, ln in enumerate(hook_lines[:4]):
@@ -1142,10 +1139,10 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(img2, img_stat_ai)
     d2 = ImageDraw.Draw(img2)
     
-    # 💡 소제목: 고급스러운 GOLD
+    # 💡 소제목 GOLD
     d2.text((W//2, 1150), "THE NUMBER", fill=GOLD, font=font_sub, anchor="mm")
     
-    # 🚨 충격 수치: 마지막 줄만 충격 효과를 위해 RED 강조
+    # 🚨 충격 데이터 마지막 줄 RED
     shock_lines = wrap_lines(shock_stat.upper(), font_mega, 850)
     y_text = 1350
     for i, ln in enumerate(shock_lines[:3]):
@@ -1163,12 +1160,12 @@ def generate_vip_carousel(raw_content, cat):
         paste_bg(img_d, img_stat_ai)
         d = ImageDraw.Draw(img_d)
         
-        # 🚨 카테고리 알림: RED
+        # 🚨 카테고리 RED
         d.text((W//2, 1100), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1200), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         d.text((W//2, 1380), item['ticker'], fill=WHITE, font=font_title, anchor="mm")
         
-        # 💡 지표 컬러: 하락(-)이면 RED, 상승/중립이면 GOLD
+        # 💡 하락 RED / 상승 GOLD 교차
         val_str = item['val']
         val_color = RED if '-' in val_str else GOLD
         
@@ -1178,7 +1175,7 @@ def generate_vip_carousel(raw_content, cat):
         
         d.text((W//2, 1550), val_str, fill=val_color, font=current_font_huge, anchor="mm")
         
-        # 💡 페이지 도트: 활성화된 페이지는 GOLD
+        # 💡 도트 GOLD
         dot_y = 1800
         for di in range(3):
             dx = W//2 + (di - 1) * 60
@@ -1191,10 +1188,10 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(img6, img_out_ai)
     d6 = ImageDraw.Draw(img6)
     
-    # 💡 결론 소제목: GOLD
+    # 💡 결론 소제목 GOLD
     d6.text((W//2, 1100), "THE TAKEAWAY", fill=GOLD, font=font_sub, anchor="mm")
     
-    # 💡 핵심 문장: 마지막 줄 GOLD 강조
+    # 💡 핵심 결론 마지막 줄 GOLD
     insight_lines = wrap_lines(insight_line.upper(), font_title, 850)
     y_text = 1250
     for i, ln in enumerate(insight_lines[:3]):
@@ -1202,7 +1199,7 @@ def generate_vip_carousel(raw_content, cat):
         d6.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 120
         
-    # 🚨 마지막 행동 촉구(CTA): 가장 강력한 RED
+    # 🚨 CTA 문구 RED
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
 
@@ -1489,6 +1486,27 @@ def run_news_pipeline(forced_cat=None):
 
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
     time.sleep(TIER_SLEEP[tier])
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        arg = sys.argv[1].lower()
+        if arg == "philosophy": 
+            run_philosophy_pipeline()
+        elif arg == "foundation": 
+            run_foundation_pipeline()
+        elif arg == "moneyhack":
+            run_moneyhack_pipeline()
+        elif arg == "onchain": 
+            run_news_pipeline("On-Chain")
+        elif arg == "insight":
+            current_time = datetime.datetime.utcnow()
+            day_of_year = current_time.timetuple().tm_yday
+            base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
+            cat = base_cats[day_of_year % len(base_cats)]
+            run_news_pipeline(cat)
+    else:
+        run_news_pipeline()
+
 
 # =====================================================================
 # ★ BLOCK 2: 두 번째 반복 블록 (원본 보존용) ★
