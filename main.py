@@ -1,41 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.51)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.60)
 #
-# 핵심 복구 및 변경 사항:
-#   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
-#   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
-#   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
-#   4. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
-#   5. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
-#   6. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
-#   7. [SEO 픽스] 전 카테고리(Insight, On-Chain, Catalyst) 프리미엄 호기심 유발(Curiosity Gap) 로직 적용
-#   8. [UX 픽스] 실전 중심 Action Plan 프롬프트 강화 및 Executive Summary 바로 밑으로 배치 변경
-#   9. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
-#  10. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
-#  11. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
-#  12. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
-#  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
-#  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신 및 외부 요청을 Cloudscraper로 100% 전면 교체 적용 
-#  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 안정화 버전(imagen-3.0-generate-001)으로 조정
-#  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
-#  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
-#  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
-#  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
-#  20. [마케팅 픽스] Medium 썸네일 누락 해결을 위해, 생성된 AI 썸네일 이미지를 Draft 이메일에 파일로 자동 첨부
-#  21. [유튜브 픽스] 유튜브 썸네일 프롬프트에 시선을 사로잡는 강력한 텍스트(Text/Copy) 추천 항목 추가
-#  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
-#  23. [버그 픽스] AI 썸네일 생성 실패 시 웹사이트 썸네일을 재사용하지 않고, 파이썬 기반의 '텍스트 없는' 추상적 디자인 썸네일 강제 생성 로직 구현
-#  24. [확장] 365 챌린지 유입 극대화를 위해 Foundation, Catalyst, Money Hack 카테고리도 모두 Medium Draft 이메일 발송되도록 파이프라인 전면 개조
-#  25. [코드 무결성] 원본 로직 무손실 100% 풀 복구 완료
-#  26. [프롬프트 극강화] 🔥 'AI 피로도' 원천 차단: 전 카테고리 프롬프트에 극한의 Anti-Cliche 룰, 반직관성(Counterintuitive), 구체적 숫자/명사 강제 적용
-#  27. [마케팅 확장] 🚀 북미 커뮤니티(레딧, 쿼라) 타겟 바이럴 게릴라 포스팅 템플릿 이메일 자동 발송 기능 추가 완료
-#  28. [이메일 누락 픽스] 🚨 구글 메일 서버의 대용량 자동화 첨부파일 사전 차단(Silent Drop) 현상 해결을 위해 비디오 비트레이트를 2500k로 다이어트 완료
-#  29. [숏폼 비디오 혁신] 🔥 다크 심리학 채널 100% 동기화: 흑백 대비 + 하얀 졸라맨/더미 인물 + 붉은/노란빛 오브젝트 기반의 일러스트 생성 프롬프트 적용
-#  30. [텍스트 렌더링 픽스] 🚨 숏폼 영상 내 텍스트 잘림(Truncation) 및 겹침 현상 해결을 위해 폰트 사이즈 최적화 및 좌우 여백(Max Width 900px) 마진 대폭 강화
-#  31. [비주얼 다이내믹 픽스] 🔥 슬라이드가 넘어갈 때마다 이미지가 역동적으로 확대(Scale UP)되는 애니메이션 효과를 부여하여 지루함 원천 차단
-#  32. [AI 이미지 엔진 픽스] 🚨 Google Imagen 404 에러 발생 시, 억지 도형(동그라미/네모)을 그리지 않고 무설치/무료 대체 AI API(Pollinations)를 자동 호출하여 고퀄리티 다크심리학 이미지를 100% 강제 생성해내는 우회 로직 탑재
+# [안내] 
+# 이 코드는 전체 2,700줄 코드 중 [1부]에 해당합니다. 
+# 이어지는 [2부], [3부] 코드와 합쳐서 하나의 main.py 파일로 사용해 주세요.
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -750,9 +720,6 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# ═══════════════════════════════════════════════
-# 📰 NEWS POOLING
-# ═══════════════════════════════════════════════
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1037,9 +1004,8 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
 <POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
 """
-
 # ═══════════════════════════════════════════════
-# 📊 VISUAL DATA BUILDERS & HTML
+# 📊 VISUAL DATA BUILDERS & HTML (원본 100% 보존)
 # ═══════════════════════════════════════════════
 
 def _build_warm_index(raw_data):
@@ -1301,9 +1267,6 @@ def _build_founder_note():
     </div>
     """
 
-# ═══════════════════════════════════════════════
-# 🎨 HTML BUILDERS
-# ═══════════════════════════════════════════════
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     
@@ -1851,7 +1814,7 @@ def make_medium_thumbnail(cat):
         return buf.getvalue()
 
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Dark Psychology Reels Video (Optimized)...")
+    print("   🎥 Generating 15-Sec Dark Psychology Dynamic Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1890,14 +1853,14 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         )
         with open(temp_path, 'rb') as f: mp4_bytes = f.read()
         os.remove(temp_path)
-        print(f"   ✅ Dark Psychology 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
+        print(f"   ✅ Dynamic Dark Psychology 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
         return mp4_bytes
     except Exception as e:
         print(f"   ❌ Video Encoding Failed: {e}")
         return None
 
 def generate_vip_carousel(raw_content, cat):
-    print("   🎨 Generating DARK PSYCHOLOGY 6-Slide Vertical Carousel...")
+    print("   🎨 Generating DYNAMIC 4-IMAGE Dark Psychology Carousel...")
     client = _get_gemini_client()
 
     sys_inst = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -1921,7 +1884,6 @@ def generate_vip_carousel(raw_content, cat):
     <REELS_SCRIPT>60-second spoken script with hook-stat-story-CTA structure</REELS_SCRIPT>
     <IG_CAPTION>Caption with hook, value, CTA, 15+ hashtags</IG_CAPTION>
     <SMART_COMMENT>Bloomberg/WSJ-style comment for free traffic</SMART_COMMENT>
-    <VISUAL_PROMPT>A surreal, minimalist, pale white humanoid figure (featureless face, glowing white skin) interacting with glowing red graphs or conceptual objects related to {cat}. Stark pitch-black background, mysterious 'dark psychology' aesthetic. High contrast, clean lines, cinematic lighting. No text, no words.</VISUAL_PROMPT>
     <ITEM1>TICKER | Value with % or $</ITEM1>
     <ITEM2>TICKER | Value with % or $</ITEM2>
     <ITEM3>TICKER | Value with % or $</ITEM3>
@@ -1940,7 +1902,12 @@ def generate_vip_carousel(raw_content, cat):
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
-    visual_prompt = xtag(raw_data, "VISUAL_PROMPT") or f"A minimalist white humanoid figure interacting with {cat} concepts, stark black background, dark psychology style, vivid red glowing accents. No text."
+    
+    vp_base = f"A creepy pale featureless white mannequin humanoid figure, pitch black background, surrounded by glowing red abstract objects representing {cat}. Dark psychology aesthetic, mysterious, highly detailed 3D render. No text."
+    vp1 = vp_base + " The humanoid is reacting in shock, holding its head, looking at a crashing red graph."
+    vp2 = vp_base + " The humanoid is carefully analyzing a glowing red data sphere in its hands."
+    vp3 = vp_base + " The humanoid is touching and manipulating floating red digital nodes and charts."
+    vp4 = vp_base + " The humanoid is standing confidently looking forward with a powerful glowing red aura."
 
     data_points = []
     for i in range(1, 6):
@@ -1964,7 +1931,8 @@ def generate_vip_carousel(raw_content, cat):
     RED = "#ef4444"
     GRAY = "#94a3b8"
 
-    ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
+    import urllib.request, urllib.parse
+    ft_path = "fonts/BebasNeue-Regular.ttf"
 
     def lf(p, s):
         try: return ImageFont.truetype(p, s)
@@ -1977,36 +1945,14 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    ai_img = None
-    try:
-        print("    [AI] Generating Dark Psychology Humanoid Visual with Gemini...")
-        result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
-            prompt=visual_prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"
-            )
-        )
-        ai_bytes = result.generated_images[0].image.image_bytes
-        ai_img_raw = Image.open(io.BytesIO(ai_bytes)).convert("RGBA")
-        ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
-        
-        mask = Image.new("L", (1080, 1080), 255)
-        mask_draw = ImageDraw.Draw(mask)
-        for y in range(780, 1080):
-            alpha = int(255 - (y - 780) * (255 / 300))
-            mask_draw.line([(0, y), (1080, y)], fill=alpha)
-        ai_img_raw.putalpha(mask)
-        ai_img = ai_img_raw
-    except Exception as e:
-        print(f"    ⚠️ Gemini Image Gen failed (404/Block). Trying Pollinations AI Fallback... ({e})")
+    def fetch_dark_psy_image(prompt_text, seed):
         try:
-            prompt_encoded = urllib.parse.quote(visual_prompt)
-            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true"
-            resp = scraper.get(url, timeout=30)
-            if resp.status_code == 200:
-                print("    ✅ Pollinations Dark Psychology Image Generated!")
-                ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+            prompt_encoded = urllib.parse.quote(prompt_text)
+            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={seed}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=15) as response:
+                img_data = response.read()
+                ai_img_raw = Image.open(io.BytesIO(img_data)).convert("RGBA")
                 ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
                 mask = Image.new("L", (1080, 1080), 255)
                 mask_draw = ImageDraw.Draw(mask)
@@ -2014,11 +1960,37 @@ def generate_vip_carousel(raw_content, cat):
                     alpha = int(255 - (y - 780) * (255 / 300))
                     mask_draw.line([(0, y), (1080, y)], fill=alpha)
                 ai_img_raw.putalpha(mask)
-                ai_img = ai_img_raw
-        except Exception as ex:
-            print(f"    ⚠️ Both AI Gen Failed. Using geometry fallback. ({ex})")
-            ai_img_raw = Image.new("RGBA", (1080, 1080), "#09090b")
-            d = ImageDraw.Draw(ai_img_raw)
+                return ai_img_raw
+        except Exception as e:
+            print(f"    ⚠️ Image Gen failed: {e}")
+            return None
+
+    print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
+    img_hook_ai = fetch_dark_psy_image(vp1, random.randint(1, 100000))
+    time.sleep(5)
+    img_stat_ai = fetch_dark_psy_image(vp2, random.randint(1, 100000))
+    time.sleep(5)
+    img_data_ai = fetch_dark_psy_image(vp3, random.randint(1, 100000))
+    time.sleep(5)
+    img_out_ai  = fetch_dark_psy_image(vp4, random.randint(1, 100000))
+
+    last_good_img = None
+    for img in [img_hook_ai, img_stat_ai, img_data_ai, img_out_ai]:
+        if img:
+            last_good_img = img
+            break
+
+    if not img_hook_ai: img_hook_ai = last_good_img
+    if not img_stat_ai: img_stat_ai = last_good_img
+    if not img_data_ai: img_data_ai = last_good_img
+    if not img_out_ai: img_out_ai = last_good_img
+
+    def paste_bg(d_img, target_ai_img):
+        if target_ai_img:
+            d_img.paste(target_ai_img, (0, 100), target_ai_img)
+        else:
+            fallback_img = Image.new("RGBA", (1080, 1080), "#09090b")
+            d = ImageDraw.Draw(fallback_img)
             d.ellipse([440, 200, 640, 400], fill="#ffffff") 
             d.rounded_rectangle([400, 430, 680, 750], radius=50, fill="#ffffff") 
             d.ellipse([500, 500, 580, 580], fill="#ef4444") 
@@ -2027,12 +1999,8 @@ def generate_vip_carousel(raw_content, cat):
             for y in range(780, 1080):
                 alpha = int(255 - (y - 780) * (255 / 300))
                 mask_draw.line([(0, y), (1080, y)], fill=alpha)
-            ai_img_raw.putalpha(mask)
-            ai_img = ai_img_raw
-
-    def paste_bg(d_img):
-        if ai_img:
-            d_img.paste(ai_img, (0, 100), ai_img)
+            fallback_img.putalpha(mask)
+            d_img.paste(fallback_img, (0, 100), fallback_img)
 
     def wrap_lines(text, font, max_width):
         words = text.split()
@@ -2050,13 +2018,12 @@ def generate_vip_carousel(raw_content, cat):
         return lines
 
     img1 = Image.new("RGB", (W, H), BG)
-    paste_bg(img1)
+    paste_bg(img1, img_hook_ai)
     d1 = ImageDraw.Draw(img1)
-    
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    hook_lines = wrap_lines(hook_text.upper(), font_title, 900) 
+    hook_lines = wrap_lines(hook_text.upper(), font_title, 850) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
         color = RED if i == len(hook_lines)-1 else WHITE
@@ -2065,14 +2032,14 @@ def generate_vip_carousel(raw_content, cat):
     d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
 
     img2 = Image.new("RGB", (W, H), BG)
-    paste_bg(img2)
+    paste_bg(img2, img_stat_ai)
     d2 = ImageDraw.Draw(img2)
     d2.text((W//2, 1180), "THE NUMBER", fill=RED, font=font_sub, anchor="mm")
-    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 900)
+    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 850)
     y_text = 1350
     for ln in shock_lines[:3]:
         d2.text((W//2, y_text), ln, fill=WHITE, font=font_mega, anchor="mm")
-        y_text += 145 
+        y_text += 140 
     d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
 
     data_imgs = []
@@ -2080,14 +2047,21 @@ def generate_vip_carousel(raw_content, cat):
         if idx >= len(data_points): break
         item = data_points[idx]
         img_d = Image.new("RGB", (W, H), BG)
-        paste_bg(img_d)
+        paste_bg(img_d, img_data_ai)
         d = ImageDraw.Draw(img_d)
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         d.text((W//2, 1400), item['ticker'], fill=WHITE, font=font_title, anchor="mm")
+        
         val_str = item['val']
         val_color = RED if '-' in val_str else WHITE
-        d.text((W//2, 1550), val_str, fill=val_color, font=font_huge, anchor="mm")
+        
+        current_huge_size = 200
+        if len(val_str) > 6:
+            current_huge_size = int(200 * (6 / len(val_str)))
+        current_font_huge = lf(ft_path, max(90, current_huge_size))
+        
+        d.text((W//2, 1550), val_str, fill=val_color, font=current_font_huge, anchor="mm")
         
         dot_y = 1800
         for di in range(3):
@@ -2097,10 +2071,10 @@ def generate_vip_carousel(raw_content, cat):
         data_imgs.append(img_d)
 
     img6 = Image.new("RGB", (W, H), BG)
-    paste_bg(img6)
+    paste_bg(img6, img_out_ai)
     d6 = ImageDraw.Draw(img6)
     d6.text((W//2, 1150), "THE TAKEAWAY", fill=RED, font=font_sub, anchor="mm")
-    insight_lines = wrap_lines(insight_line.upper(), font_title, 900)
+    insight_lines = wrap_lines(insight_line.upper(), font_title, 850)
     y_text = 1250
     for ln in insight_lines[:3]:
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
@@ -2113,350 +2087,6 @@ def generate_vip_carousel(raw_content, cat):
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, all_frames)
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
-
-def send_community_viral_email(title, original_link, raw_content, cat):
-    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
-    print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
-
-    if cat == "Foundation":
-        content_body = f"📖 What is it?\n{xtag(raw_content, 'DEFINITION')}\n\n💡 Why It Matters\n{xtag(raw_content, 'WHY_MATTERS')}\n\n🚀 How to Start Today\n{xtag(raw_content, 'HOW_TO_START')}"
-        tldr = xtag(raw_content, "EXCERPT")
-    elif cat == "The Daily Catalyst":
-        content_body = f"❝ The Anchor ❞\n{xtag(raw_content, 'ANCHOR')}\n\nThe Reflection\n{xtag(raw_content, 'REFLECTION')}\n\n⚡ The Daily Catalyst\n{xtag(raw_content, 'CATALYST')}"
-        tldr = xtag(raw_content, "EXCERPT")
-    elif cat == "Money Hack":
-        content_body = f"💡 The Concept\n{xtag(raw_content, 'CONCEPT')}\n\n🛠️ Step-by-Step Execution\n{xtag(raw_content, 'STEP_BY_STEP_TOOL')}\n\n🔥 Pro Tip\n{xtag(raw_content, 'PRO_TIP')}"
-        tldr = xtag(raw_content, "EXCERPT")
-    else:
-        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
-        content_body = f"Executive Summary\n{xtag(raw_content, 'EXECUTIVE_SUMMARY')}\n\n💡 Plain English\n{xtag(raw_content, 'PLAIN_ENGLISH')}\n\n{xtag(raw_content, 'HEADLINE')}\n{raw_m.strip()}"
-        tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
-
-    content_body_html = content_body.replace('\n', '<br>')
-    
-    clean_title = _clean_seo_title(title)
-
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
-
-        body = f"""
-        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
-            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div style="background: #ef4444; padding: 25px; color: #ffffff;">
-                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
-                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy & Paste to r/povertyfinance, r/sidehustle, or Quora!</p>
-                </div>
-                <div style="padding: 30px;">
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
-                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
-                        I wrote a 5-minute guide for absolute beginners on {cat}: {clean_title} — Hope this helps someone today!
-                    </div>
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
-                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: Georgia, serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
-                        Hey guys, I know finance jargon can be super overwhelming when you're just starting out. Here is a super plain-English breakdown I put together:<br><br>
-                        {content_body_html}<br><br>
-                        ---<br>
-                        <strong>TL;DR:</strong> {tldr}<br><br>
-                        <em>(P.S. I break down daily market news and finance basics like this over at my blog <a href="{original_link}" style="color: #2563eb; text-decoration: underline;">Warm Insight</a> if anyone wants to read more!)</em>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """
-        msg.attach(MIMEText(body, 'html'))
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASS)
-            server.send_message(msg)
-        print("   ✅ Community Viral Draft Email Sent!")
-    except Exception as e:
-        print(f"   ❌ Community Viral Draft Email Failed: {e}")
-
-def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
-    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
-        print("   ⚠️ Missing email credentials. Skipping email dispatch.")
-        return
-
-    print(f"   📧 Sending Social Slim Package to {EMAIL_RECEIVER}...")
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"🚨 {cat.upper()} REELS READY: {hook_text[:40]}..."
-
-        vid_tag = ""
-        if video_mp4_bytes:
-            vid_tag = f"""
-            <div style="margin-bottom: 25px; text-align:center; padding: 25px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
-                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 15-Sec Dark Psychology Reels Attached!</p>
-                <div style="font-size: 45px; margin: 15px 0;">✨ 📹 ✨</div>
-                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">100% Compatible with IG Reels / TikTok / YT Shorts.</p>
-                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">Download <strong>WarmInsight_{cat}_Video.mp4</strong> attached below.</p>
-            </div>
-            """
-
-        body = f"""
-        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f5; padding: 20px; color: #0f1419;">
-            {vid_tag}
-            <div style="background: #ffffff; border-left: 5px solid #eab308; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #ca8a04; font-size: 18px;">🎬 1-Min Reels Script</h3>
-                <p style="font-size: 14px; color: #52525b; margin-bottom: 15px;">Read this directly or plug into AI Voice.</p>
-                <div style="background: #fefce8; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; font-style: italic;">
-                    {reels_script.replace(chr(10), '<br>')}
-                </div>
-            </div>
-            <div style="background: #ffffff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #2563eb; font-size: 18px;">💬 Smart Community Comment</h3>
-                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; font-size: 15px; font-weight: bold; color: #1e3a8a;">
-                    "{smart_comment}"
-                </div>
-            </div>
-            <div style="background: #ffffff; border-left: 5px solid #10b981; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
-                <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
-            </div>
-            <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
-            <div style="text-align:center; margin-bottom: 20px;">
-                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    Read Full Post on Website →
-                </a>
-            </div>
-        </div>
-        """
-        msg.attach(MIMEText(body, 'html'))
-
-        if video_mp4_bytes:
-            try:
-                part = MIMEBase('video', 'mp4')
-                part.set_payload(video_mp4_bytes)
-                encoders.encode_base64(part)
-                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Video.mp4')
-                msg.attach(part)
-            except Exception as e:
-                print(f"   ⚠️ MP4 Attachment Error: {e}")
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASS)
-            server.send_message(msg)
-        print("   ✅ Social Email Sent Successfully!")
-    except Exception as e:
-        print(f"   ❌ Social Email Failed: {e}")
-
-def _get_gemini_client():
-    global _gemini_client
-    if _gemini_client is None: _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-    return _gemini_client
-
-def check_env_vars():
-    missing = [v for v, k in zip(["GEMINI_API_KEY", "WP_USERNAME", "WP_APP_PASSWORD"], [GEMINI_API_KEY, WP_USER, WP_APP_PASS]) if not k]
-    if missing:
-        print(f"❌ Missing Secrets: {missing}")
-        return False
-    return True
-
-def verify_wp_credentials():
-    print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
-    try:
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
-        try:
-            resp_json = resp.json()
-            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
-        except:
-            is_valid_json = False
-
-        if resp.status_code == 200 and is_valid_json: 
-            print("   ✅ WP Auth Successful!")
-            return True
-        else:
-            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
-            print(f"   💬 Server Response: {resp.text[:250]}")
-    except Exception as e: 
-        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
-    return False
-
-def call_gemini(client, model, prompt, sys_inst=None, retries=5):
-    if not sys_inst:
-        sys_inst = "You are an elite financial analyst. ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested."
-
-    config = types.GenerateContentConfig(
-        system_instruction=sys_inst,
-        temperature=0.7,
-        max_output_tokens=8192
-    )
-    for i in range(1, retries + 1):
-        try:
-            r = client.models.generate_content(model=model, contents=prompt, config=config)
-            if r.text: return str(r.text)
-        except Exception as e:
-            err = str(e)
-            print(f"    ⚠️ [Gemini API Error] {err}")
-
-            if "credits are depleted" in err or "billing" in err.lower():
-                print("    🚨 Credits depleted!")
-                return None
-
-            if "404" in err or "not found" in err.lower(): return None
-            if "503" in err or "UNAVAILABLE" in err:
-                wait = (15 * i) + random.uniform(-2, 5)
-                print(f"    ⏳ 503 Overload. Jitter Wait {wait:.1f}s...")
-                time.sleep(wait)
-            elif "429" in err:
-                print(f"    ⏳ 429 Quota Exceeded. Waiting...")
-                time.sleep(30 + random.uniform(0, 10))
-            elif i < retries: time.sleep(5 * i)
-    return None
-
-def gem_fb(tier, prompt, sys_inst=None):
-    client = _get_gemini_client()
-    for m in MODEL_PRI.get(tier, FAST_MODELS):
-        print(f"    [AI] Trying {m}...")
-        r = call_gemini(client, m, prompt, sys_inst)
-        if r: return r
-    return ""
-
-def xtag(raw, tag):
-    m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL | re.IGNORECASE)
-    if m:
-        res = m.group(1).strip()
-        res = re.sub(r"^`{3}(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
-        res = re.sub(r"\n`{3}$", "", res)
-        return res.strip()
-    return ""
-
-def sanitize(html):
-    html = re.sub(r"<script(?!\s+type=['\"]application/ld\+json['\"])[^>]*>.*?</script>", "", html, flags=re.DOTALL)
-    return re.sub(r"<iframe[^>]*>.*?</iframe>", "", html, flags=re.DOTALL)
-
-def make_slug(kw, title, cat):
-    base = kw if (kw and len(kw) > 4) else title
-    slug = re.sub(r"[^\w\s-]", "", base.lower())
-    slug = re.sub(r"[\s_]+", "-", slug).strip("-")[:55]
-    return f"{slug}-{datetime.datetime.utcnow().strftime('%m%d%H%M')}"
-
-def _clean_seo_title(title):
-    for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] ", "[VIP] ", "[Pro] "]:
-        title = title.replace(p, "")
-    return title.strip()
-
-def get_or_create_wp_category(cat_name):
-    slug = cat_name.lower().replace(" ", "-")
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r2.status_code in (200, 201): return r2.json()["id"]
-    except: pass
-    return None
-
-def get_or_create_wp_tag(tag_name):
-    slug = tag_name.lower().replace(" ", "-")
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r2.status_code in (200, 201): return r2.json()["id"]
-    except: pass
-    return None
-
-def get_wp_author_id(author_full_string):
-    search_name = author_full_string.split("&")[0].strip()
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200:
-            users = r.json()
-            if len(users) > 0: return users[0]["id"]
-    except: pass
-    return None
-
-def _get_latest_post_category_name():
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
-        if r.status_code == 200:
-            try: r_json = r.json()
-            except: return None
-            
-            if isinstance(r_json, list) and len(r_json) > 0:
-                cat_ids = r_json[0].get('categories', [])
-                if not cat_ids: return None
-                
-                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
-                if r_cats.status_code == 200:
-                    try: r_cats_json = r_cats.json()
-                    except: return None
-                    
-                    if isinstance(r_cats_json, list):
-                        cat_map = {c['id']: c['name'] for c in r_cats_json}
-                        for cid in cat_ids:
-                            name = cat_map.get(cid)
-                            if name in CATEGORIES:
-                                return name
-    except Exception as e:
-        print(f"   ⚠️ Failed to get latest category: {e}")
-    return None
-
-def already_published_today(cat):
-    try:
-        cat_slug = cat.lower().replace(" ", "-")
-        r = scraper.get(
-            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=WP_API_HEADERS,
-            auth=(WP_USER, WP_APP_PASS), timeout=15
-        )
-        if r.status_code != 200: return False
-        
-        try:
-            r_json = r.json()
-            if not isinstance(r_json, list) or not r_json: return False
-            cat_id = r_json[0]["id"]
-        except: return False
-
-        r2 = scraper.get(
-            f"{WP_URL}/wp-json/wp/v2/posts", headers=WP_API_HEADERS,
-            params={
-                "categories": cat_id,
-                "per_page": 1,
-                "status": "publish"
-            },
-            auth=(WP_USER, WP_APP_PASS), timeout=15
-        )
-        if r2.status_code == 200:
-            try:
-                r2_json = r2.json()
-                if isinstance(r2_json, list) and len(r2_json) > 0:
-                    latest_post = r2_json[0]
-                    post_date_gmt = latest_post.get("date_gmt", "")[:10] 
-                    today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
-                    
-                    if post_date_gmt == today_utc:
-                        print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
-                        return True
-            except: pass
-    except Exception as e:
-        print(f"   ⚠️ already_published_today check failed: {e}")
-    return False
-
-def fetch_news_pool(cat, max_items=15):
-    feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
-    items = set()
-    for url in feeds:
-        try:
-            resp = scraper.get(url, headers=EXTERNAL_HEADERS, timeout=15)
-            if resp.status_code == 200:
-                d = feedparser.parse(resp.text)
-                for e in d.entries[:40]:
-                    title = getattr(e, 'title', '').strip()
-                    summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
-                    if title and len(title) > 10: items.add(f"• {title}: {summary}")
-            else:
-                print(f"   ⚠️ RSS feed blocked by WAF or returned {resp.status_code}: {url}")
-        except Exception as ex:
-            print(f"   ⚠️ RSS feed error on {url}: {ex}")
-            pass
-            
-    items_list = list(items)
-    random.shuffle(items_list)
-    return items_list[:max_items]
 
 def _upload_image(img_bytes, filename):
     try:
@@ -2554,7 +2184,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.60 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2586,7 +2216,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.60 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2618,7 +2248,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.60 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -2669,9 +2299,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.51 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.60 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.51 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.60 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
