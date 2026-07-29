@@ -7,9 +7,7 @@
 # 1. 캐릭터 리뉴얼: 기괴한 다크 심리학 마네킹 전면 폐기 -> 픽사(Pixar) 스타일의 친근하고 단순한 3D 화이트 로봇 마스코트 적용
 # 2. 이미지 반복 버그 완벽 해결: 3장의 이미지를 각각 다른 프롬프트(놀람 -> 분석 -> 따봉)로 분리 호출하여 지루함 원천 차단
 # 3. 텍스트 가독성 극대화: 이미지 하단(y=700~1080) 블랙 페이드아웃 마스크 적용으로 텍스트 영역 완벽 분리
-# 4. 컬러 믹스: 강렬한 빨간색(경고/하락/CTA) + 골드색(강조/상승) 교차 배치
-# 5. 미사용 VIP 치환 로직(_clean_seo_title) 깔끔하게 삭제
-# 6. NameError 해결: 사용자의 2300줄 중복 원본 구조를 100% 완벽 보존
+# 4. NameError 해결: 사용자 원본 구조(중복 포함)를 100% 보존하되, 프롬프트 전역 변수를 최상단에 재배치하여 에러 원천 차단
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -163,58 +161,261 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
+# 🧠 프롬프트 전역 선언 (NameError 방지)
+# ═══════════════════════════════════════════════
+FOUNDATION_TOPICS = [
+    "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
+    "How to start investing in S&P 500 ETFs with exactly $100",
+    "The hidden risks of Dollar Cost Averaging (DCA) you must know",
+    "Inflation survival guide: Best ETF assets to protect your cash",
+    "Asset Allocation strategy for 30-something absolute beginners",
+    "Dividend ETF investing: How to make your first $100 in passive income",
+    "Growth vs Value Stocks: The ultimate test for your first portfolio",
+    "What happens to your stock portfolio when the Fed cuts interest rates?",
+    "Bond market explained for people who only buy tech stocks",
+    "Nasdaq 100 ETF vs S&P 500 ETF: Where to put your first investment"
+]
+
+FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are the "smart friend" who explains money to absolute beginners — channel Morning Brew + Milk Road energy. You text your friend the news, not write a textbook.
+
+🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
+- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial", "Vital", "Landscape", "Dive deep".
+- DO NOT sound like an AI. Be punchy, direct, and slightly informal.
+- ALWAYS use specific, concrete examples. Instead of "a lot of money", say "$2.5 million". Instead of "tech companies", say "Apple and Nvidia".
+- Use counterintuitive (반직관적) angles. Tell them what EVERYONE ELSE gets wrong first.
+
+YOUR PERSONALITY:
+- You're the friend texting at 9pm: "OK so this thing happened today and you HAVE to know about it"
+- You use "you" and "I" constantly. Never "investors" or "one should"
+- You use SPECIFIC everyday analogies (Netflix subscription wars, ordering Uber Eats, Costco runs)
+
+CASUAL EXPRESSION RULES:
+- USE conversational openers: "OK so...", "Look,", "Real talk,", "Here's the thing:"
+- BANNED textbook phrases: "in conclusion", "moreover", "furthermore", "it is important to note"
+- Average sentence length: 12-15 words MAX. Paragraphs are 2-3 sentences MAX.
+
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+FOUNDATION_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Write an SEO-optimized beginner's guide on the following topic in English:
+TOPIC: {theme}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [2026 Guide], odd numbers, or 'How to' formats.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to invest in etfs for beginners' NOT just 'etf')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that forces the user to click to find the answer. End with a provocative question.)</EXCERPT>
+<DEFINITION>(The 'What is it?' section. Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy. Do not use generic dictionary definitions.)</DEFINITION>
+<WHY_MATTERS>(The 'Why it matters' section. Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages to prove your point.)</WHY_MATTERS>
+<HOW_TO_START>(The 'How to apply it' section. Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to this topic for the reader. e.g., "What is your biggest fear when investing?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
+
+PHILOSOPHY_TOPICS = [
+    "Love money through action, not just unrequited longing",
+    "The psychological vessel of wealth and the weight of responsibility",
+    "Voluntary fatigue: The pleasurable pain of chosen growth",
+    "Weaponize environmental lack for explosive growth",
+    "From consumer to producer: The shift from reading to writing",
+    "Destroy the cognitive salary cap you set for yourself",
+    "The elimination of excuses: The beginning of uncompromising growth"
+]
+
+PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are an elite philosophical life strategist. You speak to the reader not as a marketer, but as a strict, wise mentor who demands action.
+
+🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
+- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Embark on this journey", "Supercharge", "Basically", "In conclusion".
+- DO NOT sound like a generic self-help guru. Be harsh, direct, and unapologetic. 
+- ALWAYS provide a COUNTER-NARRATIVE (e.g., if everyone says 'hustle', talk about 'strategic rest').
+- Use short, punchy sentences. Do not sugar-coat reality.
+
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+PHILOSOPHY_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Write a philosophical daily insight based on the following theme in English:
+THEME: {theme}
+
+When interpreting concepts like 'dirt spoon' or poverty, frame it as a 'systemic disadvantage that must be weaponized for explosive growth'.
+When discussing 'voluntary fatigue', explain it as 'the deeply rewarding exhaustion that comes from total, self-directed immersion in a meaningful task'.
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it deeply thought-provoking and highly clickable. Format idea: 'The Psychology Behind [X]' or 'Why You Struggle With [Y]'.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition search intent.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description that targets a painful truth and promises a solution. End with a strong question.)</EXCERPT>
+<ANCHOR>(The Classical Anchor: A one-sentence philosophical principle based on the theme. Make it sound like a quote from Marcus Aurelius or Naval Ravikant.)</ANCHOR>
+<REFLECTION>(The Modern Reflection: 3-4 paragraphs explaining how this principle connects to modern reality, financial anxiety, or career stagnation. Criticize passive excuses heavily.)</REFLECTION>
+<CATALYST>(The Daily Catalyst: A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to this topic. e.g., "What is currently holding you back the most?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
+
+MH_NICHES = [
+    "Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", 
+    "Content Creation & Faceless Channels", "Micro-SaaS & Software", "Domain & Asset Flipping", 
+    "Affiliate Marketing", "Consulting & Coaching", "Paid Newsletter & Community", "Print on Demand"
+]
+MH_PLATFORMS = [
+    "Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", 
+    "Twitter/X", "LinkedIn", "Pinterest", "Substack", "Etsy", "Amazon KDP", "WordPress"
+]
+MH_AI_TOOLS = [
+    "ChatGPT", "Midjourney", "Claude", "ElevenLabs", "Zapier/Make", "CapCut AI", 
+    "Perplexity", "RunwayML", "HeyGen", "OpusClip"
+]
+
+MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are an elite side-hustle expert and digital business coach. Your objective is to write a highly actionable, step-by-step 'Money Hack' guide that helps normal people make an extra $1,000/month.
+
+🔥 ANTI-CLICHÉ & ZERO-FLUFF POLICY (CRITICAL):
+- BANNED WORDS: "Delve into", "Unleash", "Game-changer", "Passive income machine", "Get rich quick", "Revolutionize".
+- DO NOT sound like a scammy internet marketer. Acknowledge the grind. Be ruthlessly practical.
+- ALWAYS use specific tool names, actual dollar amounts, and exact timeframes (e.g., "Spend 2 hours on Canva doing X").
+- If there's a downside or hard part to the hustle, MENTION IT.
+
+Your tone is motivating, direct, and incredibly practical. No fluff. 
+You MUST wrap your content EXACTLY in the XML tags requested."""
+
+MONEY_HACK_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+Write an SEO-optimized, step-by-step side hustle guide based on this randomly generated framework:
+FRAMEWORK: {theme}
+
+Your job is to invent a highly specific, realistic 4-week challenge or a step-by-step blueprint that combines these elements into a profitable $1,000/month project.
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST output your response by wrapping your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets like [Step-by-Step], numbers, or 'How to' formats.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'how to make money with canva templates')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
+<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
+<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
+
+PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
+
+═══ THE GOLDEN RULE ═══
+Imagine your reader is your friend Sarah, a 32-year-old marketing manager who knows nothing about finance but is curious. She'll close the tab in 5 seconds if you sound like Wall Street. BUT she'll also close it if you just repeat what she saw on Twitter. Give her ONE thing she didn't know.
+
+═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
+BANNED CONTENT (NEVER WRITE THESE — they make readers stop):
+- "AI is still the boss" / "AI is here to stay" / "AI revolution"
+- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial landscape"
+- "Tech stocks are thriving" / "betting against X is a bad idea"
+- "The trend is your friend" / "this time it's different"
+- "Smart money is moving" without specifying EXACTLY WHERE
+- "It's important to note" / "investors should consider"
+- ANY statement that sounds like a generic Reuters headline summary
+
+REQUIRED CONTENT (MUST INCLUDE):
+- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
+- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
+- AT LEAST 1 specific company decision/move.
+- ONE historical or comparative reference.
+
+═══ THESIS COHERENCE RULE ═══
+1. Pick ONE central thesis from the news.
+2. Build your ENTIRE article around that single thesis.
+3. IGNORE news that doesn't support or contrast with your thesis.
+
+═══ WRITING RULES ═══
+- Sentences MAX 15 words. Short hits harder than long.
+- Each paragraph MAX 3 sentences. Visual breathing room matters.
+- USE: "here's the deal", "OK so", "real talk", "look", "between us", "the kicker is"
+
+Write PART 1 of an Insight newsletter on {cat} in ENGLISH.
+Target length: 900-1100 words across both parts combined. Shorter is better. Cut ruthlessly.
+News Context:
+{news}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST wrap your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it highly engaging but professional. Use formats like 'The Hidden Reason Behind [X]' or 'Why Smart Money is Moving to [Y]'.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition. E.g., 'why are tech stocks dropping today' or 'impact of fed rate cuts on crypto')</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. Write a compelling summary that creates a 'curiosity gap' maintaining journalistic integrity. End with a thought-provoking question.)</EXCERPT>
+
+<WARM_INDEX_SCORE>(A number from 0 to 100 representing market fear/greed based on this news. 0=Extreme Fear, 100=Extreme Greed. Output ONLY the integer number.)</WARM_INDEX_SCORE>
+<WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score. E.g., "Tech rally masks underlying economic anxiety.")</WARM_INDEX_REASON>
+
+<IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
+<DATA_TABLE>
+(REQUIRED — extract OR estimate 3-4 key market metrics. Format exactly:
+Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words
+)
+</DATA_TABLE>
+<HEATMAP>
+(Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
+</HEATMAP>
+<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" Use 1 emoji.)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid: Costco runs, Netflix wars, dating apps. 20+ words developed.)</PLAIN_ENGLISH>
+<HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
+<MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
+PARAGRAPH 1: What's happening — ONE specific number or data point. Make it surprising.
+PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your honest one-line take.
+)</MACRO>
+<HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
+<CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
+<QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
+
+PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
+
+═══ 🔥 ANTI-CLICHÉ REMINDER ═══
+NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates. 
+If you find yourself writing a vague sentence, DELETE IT and replace it with a hard data point.
+
+═══ TONE RULES ═══
+- Sentences MAX 15 words, Paragraphs MAX 3 sentences.
+- USE "you", "we", "honestly", "real talk", "here's the deal".
+- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role".
+
+Write PART 2 of the Insight newsletter for {cat} in ENGLISH.
+Context from Part 1:
+{ctx}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST wrap your content EXACTLY in the XML tags listed below.
+
+<BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
+<BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
+<HISTORICAL_PARALLEL>(REQUIRED — 2 sentences MAX. Name the year + event. One sentence on the parallel. One sentence: "What's different: [your answer].")</HISTORICAL_PARALLEL>
+<QUICK_HITS>
+(EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸)
+</QUICK_HITS>
+<SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences. NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason].")</SMART_MONEY_MOVE>
+<DO_ACTION>(Provide exactly ONE highly specific, actionable strategy for absolute beginners with precise numbers e.g., 'If BTC drops below $X, accumulate 5%' or a 3-step checklist based on today's news.)</DO_ACTION>
+<DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
+<TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
+<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
+
+<POLL_QUESTION>(A provocative multiple-choice question related to today's news to ask the reader. e.g., "Do you think Apple is currently overvalued?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
+
+# ═══════════════════════════════════════════════
 # 🎬 1. YOUTUBE CHAPTERING ENGINE
 # ═══════════════════════════════════════════════
-YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
-Avoid generic AI buzzwords. Sound like a human growth hacker.
-
-[CONTENT]
-{raw_content}
-
-[REQUIREMENTS]
-You must strictly use these XML tags:
-
-<METADATA>
-[VIRAL TITLES]
-(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'. Use specific numbers. Banned words: 'Unleash', 'Discover', 'Secret')
-- Option A: 
-- Option B: 
-- Option C: 
-
-[THUMBNAIL IDEAS]
-1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. NO TEXT IN PROMPT.)
-2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail. e.g., "SELL NOW?", "IT'S OVER.", "THE TRUTH")
-
-[SEO HASHTAGS]
-(10 highly searched global tags, e.g. #investing #economy)
-</METADATA>"""
-
-YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive 20,000+ character documentary script based on the newsletter in ENGLISH.
-Focus on: Cold Open Hook, Greeting, and Chapter 1 (Current Situation Analysis).
-ANTI-AI FATIGUE: Do NOT sound like an AI. Be punchy, direct, and slightly informal. Use analogies.
-[NEWSLETTER]
-{raw_content}
-
-Rules: 
-- OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags like [VO], [Scene 1]. ONLY text to be read by TTS.
-- Start immediately with a provocative cold open hook (e.g. "If you think [X] is safe, look at this number..."), followed by: "Hello, this is Warm Insight. Today, we're going to talk about [Topic]. Leaving a like and subscribing is a huge help to us!"
-Wrap in <PART1> tags."""
-
-YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
-You MUST expand massively using verified historical context (compare it to 2008, 1999, or 1970s). Provide CONCRETE numbers, not generalizations.
-Do not summarize; spend at least 500 words on EACH historical comparison or context point.
-Rules: Spoken words ONLY in English. NO structural tags. NO AI fluff ("in today's ever-changing landscape").
-Wrap in <PART2> tags."""
-
-YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
-Provide concrete, counterintuitive strategies. Tell them exactly what NOT to do.
-Rules: Spoken words ONLY in English. NO structural tags.
-End exactly with: "We couldn't fit all the deep-dive details and practical strategies into this video. Check out the Warm Insight newsletter in the pinned comment and description for the full text summary. Visit www.warminsight.com. See you there."
-Wrap in <PART3> tags."""
 
 def generate_youtube_masterpiece(raw_content, title):
     print(f"   🎬 [YouTube Engine] Starting 3-Phase Chaptering for '{title[:30]}...'")
@@ -415,7 +616,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
 
     content_body_html = content_body.replace('\n', '<br>')
     
-    clean_title = _clean_seo_title(title)
+    clean_title = title.replace("[👑 VIP] ", "").replace("[💎 Pro] ", "").replace("[PRO] ", "").replace("[VIP] ", "").replace("[Pro] ", "").strip()
 
     try:
         msg = MIMEMultipart()
@@ -624,8 +825,7 @@ def make_slug(kw, title, cat):
     return f"{slug}-{datetime.datetime.utcnow().strftime('%m%d%H%M')}"
 
 def _clean_seo_title(title):
-    # 사용하지 않는 [VIP] 치환 로직 완전히 삭제
-    return title.strip()
+    return title.replace("[👑 VIP] ", "").replace("[💎 Pro] ", "").replace("[PRO] ", "").replace("[VIP] ", "").replace("[Pro] ", "").strip()
 
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
@@ -1446,8 +1646,7 @@ def make_thumbnail(title_text, cat, tier):
     draw.rounded_rectangle([(bx, 36 * S), (bx + cat_w + 60 * S, 86 * S)], radius=25 * S, fill="#ffffff")
     draw.text((bx + 30 * S, 44 * S), cat.upper(), font=fb, fill="#1e293b")
 
-    # 미사용 [VIP] 치환 로직 삭제 처리 완벽 반영 (단순 strip만 사용)
-    clean_title = title_text.upper().strip()
+    clean_title = _clean_seo_title(title_text).upper()
     clean_title = re.sub(r'^WARM INSIGHT\s*[:\-–]\s*', '', clean_title).strip()
 
     words = clean_title.split()
@@ -1476,6 +1675,7 @@ def make_thumbnail(title_text, cat, tier):
 
     date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
     draw.text((40 * S, h - 70 * S), f"WARM INSIGHT  |  {date_bottom}", font=fs, fill="#ffffff80")
+
     tagline = "AI-DRIVEN GLOBAL MARKET ANALYSIS"
     try: tw_t = draw.textlength(tagline, font=fs)
     except: tw_t = len(tagline) * 15 * S
@@ -1553,12 +1753,8 @@ def make_medium_thumbnail(cat):
         img.save(buf, format="JPEG", quality=90)
         return buf.getvalue()
 
-
-# ═══════════════════════════════════════════════
-# 🎬 4. DYNAMIC 3-IMAGE REELS ENGINE (캐릭터 및 반복 수정본)
-# ═══════════════════════════════════════════════
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Friendly Character Reels Video...")
+    print("   🎥 Generating 15-Sec Pixar Style Character Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -1666,8 +1862,8 @@ def generate_vip_carousel(raw_content, cat):
     W, H = 1080, 1920
     BG = "#000000"
     WHITE = "#ffffff"
-    GOLD = "#fde047"    # 가독성 및 프리미엄 상징
-    RED = "#ef4444"     # 긴급성 및 강조 상징
+    GOLD = "#fde047"
+    RED = "#ef4444"
     GRAY = "#94a3b8"
 
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
@@ -1683,7 +1879,7 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 60)
     font_alert = lf(ft_path, 90)
 
-    # 친근한 픽사 스타일 로봇 마스코트로 프롬프트 3단계 분리 (중복 원천 차단)
+    # 픽사 로봇 3단계 프롬프트
     vp_base = "A cute, friendly, extremely simple 3D white robot mascot with a smooth round head and simple smiling eyes. Pixar animation style. Clean dark minimalist studio background. Soft cinematic lighting. No text, no letters."
     vp1 = vp_base + f" The cute robot is looking surprised, putting its hands on its cheeks in shock. {cat} theme."
     vp2 = vp_base + f" The cute robot is holding a glowing magnifying glass, looking closely at a floating digital chart."
@@ -1715,7 +1911,7 @@ def generate_vip_carousel(raw_content, cat):
         img = img.resize((1080, 1080), Image.LANCZOS)
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
-        # 텍스트 가독성을 위해 700부터 완전 블랙으로 페이드아웃 마스크 처리
+        # 하단 텍스트 완벽 분리를 위해 y=700부터 블랙 마스크 처리
         for y in range(700, 1080):
             alpha = int(255 - (y - 700) * (255 / 380))
             mask_draw.line([(0, y), (1080, y)], fill=alpha)
@@ -1741,14 +1937,12 @@ def generate_vip_carousel(raw_content, cat):
 
     def paste_bg(d_img, target_ai_img):
         if target_ai_img:
-            # (0, 0) 상단에 밀착시켜 하단 여백을 완벽하게 확보
             d_img.paste(target_ai_img, (0, 0), target_ai_img)
         else:
-            # AI 생성 실패 시 보여줄 기본 친근한 도형 Fallback
             fallback_img = Image.new("RGBA", (1080, 1080), "#09090b")
             d = ImageDraw.Draw(fallback_img)
-            d.ellipse([440, 250, 640, 450], fill="#f8fafc") # 귀여운 머리 느낌
-            d.rounded_rectangle([460, 470, 620, 750], radius=40, fill="#f8fafc") # 몸통 느낌
+            d.ellipse([440, 250, 640, 450], fill="#f8fafc") 
+            d.rounded_rectangle([460, 470, 620, 750], radius=40, fill="#f8fafc") 
             mask = Image.new("L", (1080, 1080), 255)
             mask_draw = ImageDraw.Draw(mask)
             for y in range(700, 1080):
@@ -1772,17 +1966,15 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    # --- Slide 1 (Hook - 놀란 캐릭터 표출) ---
+    # --- Slide 1 (Hook) ---
     img1 = Image.new("RGB", (W, H), BG)
     paste_bg(img1, img_hook_ai)
     d1 = ImageDraw.Draw(img1)
     
-    # 🚨 상단 경고 배지: 긴급성을 위한 RED
-    d1.rounded_rectangle([300, 1100, 780, 1200], radius=20, fill=RED) 
+    d1.rounded_rectangle([250, 1100, 830, 1200], radius=20, fill=RED)
     d1.text((W//2, 1150), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    # 💡 훅 텍스트: 마지막 줄만 시선 집중을 위해 GOLD 강조
-    hook_lines = wrap_lines(hook_text.upper(), font_title, 850) 
+    hook_lines = wrap_lines(hook_text.upper(), font_title, 950) 
     y_text = 1330
     for i, ln in enumerate(hook_lines[:4]):
         color = GOLD if i == len(hook_lines[:4])-1 else WHITE
@@ -1790,16 +1982,14 @@ def generate_vip_carousel(raw_content, cat):
         y_text += 120 
     d1.text((W//2, 1820), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
 
-    # --- Slide 2 (Shock Stat - 데이터 분석 캐릭터 표출) ---
+    # --- Slide 2 (Shock Stat) ---
     img2 = Image.new("RGB", (W, H), BG)
     paste_bg(img2, img_stat_ai)
     d2 = ImageDraw.Draw(img2)
     
-    # 💡 소제목: 고급스러운 GOLD
     d2.text((W//2, 1150), "THE NUMBER", fill=GOLD, font=font_sub, anchor="mm")
     
-    # 🚨 충격 수치: 마지막 줄만 충격 효과를 위해 RED 강조
-    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 850)
+    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 950)
     y_text = 1350
     for i, ln in enumerate(shock_lines[:3]):
         color = RED if i == len(shock_lines[:3])-1 else WHITE
@@ -1807,7 +1997,7 @@ def generate_vip_carousel(raw_content, cat):
         y_text += 160 
     d2.text((W//2, 1820), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
 
-    # --- Slides 3~5 (Data Points - 분석 캐릭터 유지) ---
+    # --- Slides 3~5 (Data Points) ---
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
@@ -1816,12 +2006,10 @@ def generate_vip_carousel(raw_content, cat):
         paste_bg(img_d, img_stat_ai)
         d = ImageDraw.Draw(img_d)
         
-        # 🚨 카테고리 알림: RED
         d.text((W//2, 1100), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1200), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         d.text((W//2, 1380), item['ticker'], fill=WHITE, font=font_title, anchor="mm")
         
-        # 💡 지표 컬러: 하락(-)이면 RED, 상승/중립이면 GOLD
         val_str = item['val']
         val_color = RED if '-' in val_str else GOLD
         
@@ -1832,7 +2020,6 @@ def generate_vip_carousel(raw_content, cat):
         
         d.text((W//2, 1550), val_str, fill=val_color, font=current_font_huge, anchor="mm")
         
-        # 💡 페이지 도트: 활성화된 페이지는 GOLD
         dot_y = 1820
         for di in range(3):
             dx = W//2 + (di - 1) * 60
@@ -1840,23 +2027,20 @@ def generate_vip_carousel(raw_content, cat):
             d.ellipse([dx-15, dot_y-15, dx+15, dot_y+15], fill=color)
         data_imgs.append(img_d)
 
-    # --- Slide 6 (Takeaway - 따봉 캐릭터 표출) ---
+    # --- Slide 6 (Takeaway) ---
     img6 = Image.new("RGB", (W, H), BG)
     paste_bg(img6, img_out_ai)
     d6 = ImageDraw.Draw(img6)
     
-    # 💡 결론 소제목: GOLD
     d6.text((W//2, 1100), "THE TAKEAWAY", fill=GOLD, font=font_sub, anchor="mm")
     
-    # 💡 핵심 문장: 마지막 줄 GOLD 강조
-    insight_lines = wrap_lines(insight_line.upper(), font_title, 850)
+    insight_lines = wrap_lines(insight_line.upper(), font_title, 950)
     y_text = 1250
     for i, ln in enumerate(insight_lines[:3]):
         color = GOLD if i == len(insight_lines[:3])-1 else WHITE
         d6.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 120
         
-    # 🚨 마지막 행동 촉구(CTA): 가장 강력한 RED
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
     d6.text((W//2, 1800), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
 
@@ -2166,7 +2350,7 @@ if __name__ == "__main__":
 
 
 # =====================================================================
-# ★ BLOCK 2: 두 번째 반복 블록 (원본 보존용) ★
+# ★ BLOCK 2: 두 번째 반복 블록 (원본 100% 보존용 복제 블록) ★
 # =====================================================================
 
 # ═══════════════════════════════════════════════
@@ -2331,6 +2515,8 @@ def make_slug(kw, title, cat):
     return f"{slug}-{datetime.datetime.utcnow().strftime('%m%d%H%M')}"
 
 def _clean_seo_title(title):
+    for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] ", "[VIP] ", "[Pro] "]:
+        title = title.replace(p, "")
     return title.strip()
 
 def get_or_create_wp_category(cat_name):
@@ -2431,7 +2617,7 @@ def fetch_news_pool(cat, max_items=15):
     return items_list[:max_items]
 
 def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Friendly Character Reels Video...")
+    print("   🎥 Generating 15-Sec Pixar Style Character Reels Video...")
     try:
         import numpy as np
         from moviepy.editor import ImageClip, concatenate_videoclips
@@ -2549,12 +2735,12 @@ def generate_vip_carousel(raw_content, cat):
         try: return ImageFont.truetype(p, s)
         except: return ImageFont.load_default()
 
-    font_title = lf(ft_path, 115)    
+    font_title = lf(ft_path, 110)    
     font_huge = lf(ft_path, 220)    
     font_mega = lf(ft_path, 150)    
-    font_sub = lf(ft_path, 65)
-    font_data = lf(ft_path, 60)
-    font_alert = lf(ft_path, 90)
+    font_sub = lf(ft_path, 60)
+    font_data = lf(ft_path, 55)
+    font_alert = lf(ft_path, 80)
 
     vp_base = "A cute, friendly, extremely simple 3D white robot mascot with a smooth round head and simple smiling eyes. Pixar animation style. Clean dark minimalist studio background. Soft cinematic lighting. No text, no letters."
     vp1 = vp_base + f" The cute robot is looking surprised, putting its hands on its cheeks in shock. {cat} theme."
@@ -2587,6 +2773,7 @@ def generate_vip_carousel(raw_content, cat):
         img = img.resize((1080, 1080), Image.LANCZOS)
         mask = Image.new("L", (1080, 1080), 255)
         mask_draw = ImageDraw.Draw(mask)
+        # 하단 텍스트 완벽 분리를 위해 마스크 페이드 범위를 y=700으로 상향 적용
         for y in range(700, 1080):
             alpha = int(255 - (y - 700) * (255 / 380))
             mask_draw.line([(0, y), (1080, y)], fill=alpha)
@@ -2599,6 +2786,16 @@ def generate_vip_carousel(raw_content, cat):
     img_stat_ai = fetch_friendly_image(vp2, random.randint(1, 100000))
     time.sleep(2)
     img_out_ai  = fetch_friendly_image(vp3, random.randint(1, 100000))
+
+    last_good_img = None
+    for img in [img_hook_ai, img_stat_ai, img_out_ai]:
+        if img:
+            last_good_img = img
+            break
+
+    if not img_hook_ai: img_hook_ai = last_good_img
+    if not img_stat_ai: img_stat_ai = last_good_img
+    if not img_out_ai: img_out_ai = last_good_img
 
     def paste_bg(d_img, target_ai_img):
         if target_ai_img:
@@ -2635,16 +2832,16 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(img1, img_hook_ai)
     d1 = ImageDraw.Draw(img1)
     
-    d1.rounded_rectangle([300, 1100, 780, 1200], radius=20, fill=RED) 
+    d1.rounded_rectangle([250, 1100, 830, 1200], radius=20, fill=RED)
     d1.text((W//2, 1150), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    hook_lines = wrap_lines(hook_text.upper(), font_title, 850) 
-    y_text = 1330
+    hook_lines = wrap_lines(hook_text.upper(), font_title, 950) 
+    y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
         color = GOLD if i == len(hook_lines[:4])-1 else WHITE
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 120 
-    d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
+    d1.text((W//2, 1820), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
 
     img2 = Image.new("RGB", (W, H), BG)
     paste_bg(img2, img_stat_ai)
@@ -2652,13 +2849,13 @@ def generate_vip_carousel(raw_content, cat):
     
     d2.text((W//2, 1150), "THE NUMBER", fill=GOLD, font=font_sub, anchor="mm")
     
-    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 850)
+    shock_lines = wrap_lines(shock_stat.upper(), font_mega, 950)
     y_text = 1350
     for i, ln in enumerate(shock_lines[:3]):
         color = RED if i == len(shock_lines[:3])-1 else WHITE
         d2.text((W//2, y_text), ln, fill=color, font=font_mega, anchor="mm")
         y_text += 160 
-    d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
+    d2.text((W//2, 1820), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
 
     data_imgs = []
     for idx in range(3):
@@ -2676,12 +2873,13 @@ def generate_vip_carousel(raw_content, cat):
         val_color = RED if '-' in val_str else GOLD
         
         current_huge_size = 220
-        if len(val_str) > 6: current_huge_size = int(220 * (6 / len(val_str)))
-        current_font_huge = lf(ft_path, max(100, current_huge_size))
+        if len(val_str) > 6:
+            current_huge_size = int(220 * (6 / len(val_str)))
+        current_font_huge = lf(ft_path, max(90, current_huge_size))
         
         d.text((W//2, 1550), val_str, fill=val_color, font=current_font_huge, anchor="mm")
         
-        dot_y = 1800
+        dot_y = 1820
         for di in range(3):
             dx = W//2 + (di - 1) * 60
             color = GOLD if di == idx else "#3f3f46"
@@ -2694,7 +2892,7 @@ def generate_vip_carousel(raw_content, cat):
     
     d6.text((W//2, 1100), "THE TAKEAWAY", fill=GOLD, font=font_sub, anchor="mm")
     
-    insight_lines = wrap_lines(insight_line.upper(), font_title, 850)
+    insight_lines = wrap_lines(insight_line.upper(), font_title, 950)
     y_text = 1250
     for i, ln in enumerate(insight_lines[:3]):
         color = GOLD if i == len(insight_lines[:3])-1 else WHITE
@@ -2702,7 +2900,7 @@ def generate_vip_carousel(raw_content, cat):
         y_text += 120
         
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
-    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
+    d6.text((W//2, 1800), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
 
     image_bytes_list = []
     all_frames = [img1, img2] + data_imgs + [img6]
@@ -2797,28 +2995,3 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                 print(f"   ❌ [WAF Block Detected] Server returned 200 but no link was created.")
                 return False
         else:
-            print(f"   ❌ Publish failed. HTTP Status: {r.status_code}")
-    except Exception as e:
-        print(f"   ❌ Network error: {e}")
-    return False
-
-def run_foundation_pipeline():
-    cat = "Foundation"
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    
-    print(f"🚀 Starting v46.9.60 SEO Foundation Pipeline | Category: {cat}")
-    if not check_env_vars() or not verify_wp_credentials(): return
-
-    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
-    elif already_published_today(cat):
-        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
-        return
-
-    theme = random.choice(FOUNDATION_TOPICS)
-    tier = "premium"
-    raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
-    if raw:
-        title = xtag(raw, "TITLE")
-        kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "EXCERPT")
-        slug = make_slug
