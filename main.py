@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.51 - Repaired)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.52_FIXED)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -58,7 +58,7 @@ try:
         'Cache-Control': 'no-cache'
     })
 except ImportError:
-    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다. GitHub Actions의 pip install에 cloudscraper를 추가해주세요.")
+    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
 MODEL_PRI = {
@@ -87,16 +87,6 @@ PILLAR_PAGES = {
     "Foundation":         {"url": SITE_URL + "/category/foundation/",         "anchor": "Financial Foundation & Basics"},
     "The Daily Catalyst": {"url": SITE_URL + "/category/the-daily-catalyst/", "anchor": "The Daily Catalyst"},
     "Money Hack":         {"url": SITE_URL + "/category/money-hack/",         "anchor": "Money Hack & Side Hustles"},
-}
-
-CAT_RELATED = {
-    "Economy":  ["Tech", "Energy"],
-    "Politics": ["Economy", "Tech"],
-    "Tech":     ["Economy", "Health"],
-    "Health":   ["Economy", "Politics"],
-    "Energy":   ["Economy", "Politics"],
-    "On-Chain": ["Economy", "Tech"],
-    "Money Hack": ["Foundation", "Tech"],
 }
 
 VIP_AUTHORS = {
@@ -130,28 +120,20 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# 🧠 프롬프트 설정 (PROMPT_UNIFIED_P1 누락 복구)
+# 🧠 프롬프트 설정
 # ═══════════════════════════════════════════════
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
 
-═══ THE GOLDEN RULE ═══
-Imagine your reader is your friend Sarah, a 32-year-old marketing manager who knows nothing about finance but is curious. She'll close the tab in 5 seconds if you sound like Wall Street. BUT she'll also close it if you just repeat what she saw on Twitter. Give her ONE thing she didn't know.
-
 ═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
-BANNED CONTENT (NEVER WRITE THESE — they make readers stop):
+BANNED CONTENT (NEVER WRITE THESE):
 - "AI is still the boss" / "AI is here to stay" / "AI revolution"
-- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial landscape"
-- "Tech stocks are thriving" / "betting against X is a bad idea"
-- "The trend is your friend" / "this time it's different"
-- "Smart money is moving" without specifying EXACTLY WHERE
-- "It's important to note" / "investors should consider"
+- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world"
 
 REQUIRED CONTENT (MUST INCLUDE):
 - ONE counterintuitive (반직관적) insight that 80% of readers don't know.
-- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
+- AT LEAST 3 specific numbers (percentages, dollar amounts, dates).
 - AT LEAST 1 specific company decision/move.
-- ONE historical or comparative reference.
 
 Write PART 1 of an Insight newsletter on {cat} in ENGLISH. Target length: 900-1100 words across both parts combined.
 News Context:
@@ -159,7 +141,6 @@ News Context:
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. Write a 'curiosity gap' summary.)</EXCERPT>
@@ -185,22 +166,12 @@ PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your ho
 PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
 
-═══ 🔥 ANTI-CLICHÉ REMINDER ═══
-NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates. 
-If you find yourself writing a vague sentence, DELETE IT and replace it with a hard data point.
-
-═══ TONE RULES ═══
-- Sentences MAX 15 words, Paragraphs MAX 3 sentences.
-- USE "you", "we", "honestly", "real talk", "here's the deal".
-- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role".
-
 Write PART 2 of the Insight newsletter for {cat} in ENGLISH.
 Context from Part 1:
 {ctx}
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-
 <BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
 <BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
 <HISTORICAL_PARALLEL>(REQUIRED — 2 sentences MAX. Name the year + event. One sentence on the parallel. One sentence: "What's different: [your answer].")</HISTORICAL_PARALLEL>
@@ -268,41 +239,31 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
-Avoid generic AI buzzwords. Sound like a human growth hacker.
-
-[CONTENT]
-{raw_content}
-
-[REQUIREMENTS]
-You must strictly use these XML tags:
 <METADATA>
 [VIRAL TITLES]
 - Option A: 
 - Option B: 
 - Option C: 
-
 [THUMBNAIL IDEAS]
 1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. NO TEXT IN PROMPT.)
 2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail.)
-
 [SEO HASHTAGS]
 (10 highly searched global tags, e.g. #investing #economy)
 </METADATA>"""
 
 YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive 20,000+ character documentary script based on the newsletter in ENGLISH.
-Focus on: Cold Open Hook, Greeting, and Chapter 1 (Current Situation Analysis).
+You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive documentary script based on the newsletter in ENGLISH.
 [NEWSLETTER]
 {raw_content}
-Rules: OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags like [VO], [Scene 1]. Wrap in <PART1> tags."""
+Rules: OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags. Wrap in <PART1> tags."""
 
 YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive). Provide CONCRETE numbers, not generalizations.
-Rules: Spoken words ONLY in English. Wrap in <PART2> tags."""
+Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
+Rules: Spoken words ONLY in English. NO structural tags. Wrap in <PART2> tags."""
 
 YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan). Provide concrete, counterintuitive strategies.
-Rules: Spoken words ONLY in English. End exactly with: "We couldn't fit all the deep-dive details and practical strategies into this video. Check out the Warm Insight newsletter in the pinned comment and description for the full text summary. Visit www.warminsight.com. See you there." Wrap in <PART3> tags."""
+Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
+Rules: Spoken words ONLY in English. NO structural tags. Wrap in <PART3> tags."""
 
 def generate_youtube_masterpiece(raw_content, title):
     print(f"   🎬 [YouTube Engine] Starting 3-Phase Chaptering for '{title[:30]}...'")
@@ -623,11 +584,9 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
         except Exception as e:
             err = str(e)
             print(f"    ⚠️ [Gemini API Error] {err}")
-
             if "credits are depleted" in err or "billing" in err.lower():
                 print("    🚨 Credits depleted!")
                 return None
-
             if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
@@ -758,7 +717,6 @@ def already_published_today(cat):
                     latest_post = r2_json[0]
                     post_date_gmt = latest_post.get("date_gmt", "")[:10] 
                     today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
-                    
                     if post_date_gmt == today_utc:
                         print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
                         return True
@@ -784,7 +742,6 @@ def fetch_news_pool(cat, max_items=15):
         except Exception as ex:
             print(f"   ⚠️ RSS feed error on {url}: {ex}")
             pass
-            
     items_list = list(items)
     random.shuffle(items_list)
     return items_list[:max_items]
@@ -799,7 +756,6 @@ def _build_warm_index(raw_data):
     if score < 30: c_main, label, icon, grad = "#3b82f6", "Fear Zone", "❄️", "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
     elif score > 70: c_main, label, icon, grad = "#ef4444", "Greed Zone", "🔥", "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
     else: c_main, label, icon, grad = "#f59e0b", "Neutral", "⚖️", "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
-
     return f"""
     <div style="background:#ffffff; border:2px solid {BORDER}; border-radius:12px; padding:25px; margin:0 0 35px 0; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
@@ -825,7 +781,6 @@ def _build_poll(raw_data, cat="Market"):
     opt2 = xtag(raw_data, "POLL_OPT2").strip() or "Neutral – Waiting for more signals."
     opt3 = xtag(raw_data, "POLL_OPT3").strip() or "Bearish – Taking a cautious stance."
     opt3_html = f"""<a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt3}</a>""" if opt3 else ""
-
     return f"""
     <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin:50px 0; text-align:center;">
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px;">🗳️ What's your take?</h3>
@@ -842,7 +797,6 @@ def _build_data_table(raw_data, title="Market Dashboard"):
     if not raw_data: raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
     if len(lines) < 2: lines = lines + ["S&P 500 | 5,234 | UP | Index near recent highs", "Nasdaq 100 | 18,200 | UP | Tech leading the broader market"][:max(2, 3 - len(lines))]
-
     html = f"""
     <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px; display:inline-block;">📊 {title}</h3>
@@ -1355,11 +1309,9 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 영상 이탈률 방지를 위해 매번 랜덤한 색상 테마 적용
+    # 🚨 영상 피로도 개선 1 & 2: 매번 다른 컬러를 랜덤으로 픽업하여 다양성 부여 & 친근한 캐릭터(졸라맨/호빵맨) 도입
     colors = ["glowing neon blue", "vibrant emerald green", "striking neon purple", "bright amber gold", "intense crimson red"]
     random.shuffle(colors)
-    
-    # 🚨 거부감 드는 마네킹 대신 친근한 캐릭터(호빵맨/졸라맨 스타일)로 프롬프트 변경
     vp_base = f"A cute, approachable, smooth 3D minimalist character with a round friendly head, resembling a high-end polished stickman or Anpanman. Pitch black void background. Engaging, clean cinematic 8k render. No creepy vibes. No text."
     vp1 = vp_base + f" The character is looking surprised, pointing at a downward {colors[0]} line graph."
     vp2 = vp_base + f" Close up profile. The friendly character is carefully analyzing a floating {colors[1]} data sphere."
@@ -1372,7 +1324,7 @@ def generate_vip_carousel(raw_content, cat):
         if item and "|" in item:
             parts = item.split("|")
             raw_ticker = parts[0].strip()
-            # 🚨 텍스트 잘림 방지: 길이를 20자까지 여유롭게 허용
+            # 🚨 텍스트 잘림 방지 1: 글자 길이 제한을 10 -> 20자로 넉넉하게 확장
             if len(raw_ticker) > 20: raw_ticker = raw_ticker[:18] + ".."
             data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
 
@@ -1406,7 +1358,7 @@ def generate_vip_carousel(raw_content, cat):
     def fetch_dark_psy_image(prompt_text, seed):
         try:
             prompt_encoded = urllib.parse.quote(prompt_text)
-            # 🚨 캐시를 우회하고 무조건 새로운 이미지를 얻기 위해 random 난수 주입
+            # 🚨 캐시 우회를 위해 random.random() 난수 강제 주입
             url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={seed}&random={random.random()}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=15) as response:
@@ -1461,7 +1413,7 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성 향상: 60% 다크 블랙 필터 오버레이 적용 (붉은 기 제거)
+        # 🚨 가독성 향상: 60% 다크 블랙 필터 오버레이 적용 (붉은 빛 등 컬러가 텍스트를 방해하지 않음)
         dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 153))
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
@@ -1486,7 +1438,7 @@ def generate_vip_carousel(raw_content, cat):
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    # 🚨 텍스트 좌우 여백을 넓혀 잘림 완벽 방지 (max_width 950 적용)
+    # 🚨 텍스트 잘림 방지 2: 좌우 여백을 넓힘 (max_width 850 -> 950 적용)
     hook_lines = wrap_lines(hook_text.upper(), font_title, 950) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
@@ -1516,7 +1468,7 @@ def generate_vip_carousel(raw_content, cat):
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         
-        # 🚨 글자 수에 따른 폰트 사이즈 동적 스케일링 적용
+        # 🚨 텍스트 잘림 방지 3: 글자 길이에 따른 동적 스케일링(Dynamic Font Sizing) 완벽 적용
         ticker_str = item['ticker']
         t_size = 95
         if len(ticker_str) > 12: t_size = int(95 * (12 / len(ticker_str)))
@@ -1572,7 +1524,6 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
 
     content_body_html = content_body.replace('\n', '<br>')
-    
     clean_title = _clean_seo_title(title)
 
     try:
@@ -1614,7 +1565,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) - 🚨 릴스 대본 제거 완벽 반영본
+# ✉️ 슬림 이메일 (인스타/숏폼용) -> 🚨 1-Min Reels 대본 삭제 완료
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -1678,6 +1629,20 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print("   ✅ Social Email Sent Successfully!")
     except Exception as e:
         print(f"   ❌ Social Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
+# 🚨 _upload_image 함수 복구 완료!
+# ═══════════════════════════════════════════════
+def _upload_image(img_bytes, filename):
+    try:
+        resp = scraper.post(
+            f"{WP_URL}/wp-json/wp/v2/media",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
+            data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
+        )
+        if resp.status_code in (200, 201): return resp.json().get("id")
+    except: pass
+    return None
 
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None, med_img_bytes=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
@@ -1764,7 +1729,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.52 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1796,7 +1761,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.52 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1828,7 +1793,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.51 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.52 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1879,9 +1844,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.51 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.52 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.51 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.52 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
