@@ -1,41 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.51)
-#
-# 핵심 복구 및 변경 사항:
-#   1. [언어 통제] 글로벌 오디언스를 위한 100% 영문(English) 출력 프롬프트 강제 적용
-#   2. [신규 카테고리] 'On-Chain' 카테고리 추가 및 영미권 최상위 크립토 RSS 연동
-#   3. [스마트 스케줄링] 매주 화요일, 목요일 'On-Chain' 고정 발행 알고리즘 탑재
-#   4. [디자인 픽스] Founder Note를 최상단(Warm Index 직후)으로 이동 및 하단 중복 제거
-#   5. [디자인 픽스] On-Chain 등 텍스트 누락 시 Poll(투표창)이 깨지지 않도록 강력한 Fallback 추가
-#   6. [SEO 픽스] Foundation 카테고리 롱테일(Long-tail) 키워드 타겟팅 및 클릭 유도 프롬프트 강화
-#   7. [SEO 픽스] 전 카테고리(Insight, On-Chain, Catalyst) 프리미엄 호기심 유발(Curiosity Gap) 로직 적용
-#   8. [UX 픽스] 실전 중심 Action Plan 프롬프트 강화 및 Executive Summary 바로 밑으로 배치 변경
-#   9. [언어 픽스] Action Plan 박스 내 하드코딩된 한글 서브타이틀 영문으로 완전 교체 및 하단 중복 코드 제거
-#  10. [신규 파이프라인] 'Money Hack' 카테고리 전용 부업/실전 챌린지 자동화 파이프라인 추가 탑재
-#  11. [엔진 픽스] Money Hack 무한 주제 생성 엔진(Infinite Topic Engine) 탑재 (5년+ 무중단 자동화)
-#  12. [UX 픽스] 투표창 하단 댓글 유도 문구를 실제 댓글창 바로 위(뉴스레터 최하단)로 이동
-#  13. [SEO 픽스] 전 카테고리 H2/H3 태그에 포커스 키워드(SEO_KEYWORD)를 동적으로 결합하여 On-Page SEO 극대화
-#  14. [통신 픽스] Imunify360 WAF 차단 원천 해결: WP 내부 통신 및 외부 요청을 Cloudscraper로 100% 전면 교체 적용 
-#  15. [API 픽스] 404 NOT_FOUND 에러 해결을 위해 Imagen 모델을 안정화 버전(imagen-3.0-generate-001)으로 조정
-#  16. [신규 파이프라인] Medium(미디엄) 유기적 트래픽 유입을 위한 Teaser Draft 이메일 자동 발송 기능 추가
-#  17. [버그 픽스] SOCIAL_LINKS 변수를 최상단 CONFIG 영역에 고정하여 NameError 완벽 해결
-#  18. [UX 픽스] Medium Draft 이메일의 복사 영역을 미디엄 에디터에 완벽 호환되는 '순정 HTML' 구조로 개조 및 클렌징
-#  19. [마케팅 기능] Medium 이메일 내에 '대형+소형 SEO 키워드' 기반의 추천 태그(Topics) 5개 자동 생성 기능 추가
-#  20. [마케팅 픽스] Medium 썸네일 누락 해결을 위해, 생성된 AI 썸네일 이미지를 Draft 이메일에 파일로 자동 첨부
-#  21. [유튜브 픽스] 유튜브 썸네일 프롬프트에 시선을 사로잡는 강력한 텍스트(Text/Copy) 추천 항목 추가
-#  22. [마케팅 기능] 미디엄 전용(Medium Only) 하이엔드 에디토리얼 썸네일 독립 생성 엔진 탑재
-#  23. [버그 픽스] AI 썸네일 생성 실패 시 웹사이트 썸네일을 재사용하지 않고, 파이썬 기반의 '텍스트 없는' 추상적 디자인 썸네일 강제 생성 로직 구현
-#  24. [확장] 365 챌린지 유입 극대화를 위해 Foundation, Catalyst, Money Hack 카테고리도 모두 Medium Draft 이메일 발송되도록 파이프라인 전면 개조
-#  25. [코드 무결성] 🚨 원본 파일의 무한 중복 복사 꼬임 해결 및 100% 마스터 엔진 압축 통합 완료 (기능 손실 제로)
-#  26. [프롬프트 극강화] 🔥 'AI 피로도' 원천 차단: 전 카테고리 프롬프트에 극한의 Anti-Cliche 룰, 반직관성(Counterintuitive), 구체적 숫자/명사 강제 적용
-#  27. [마케팅 확장] 🚀 북미 커뮤니티(레딧, 쿼라) 타겟 바이럴 게릴라 포스팅 템플릿 이메일 자동 발송 기능 추가 완료
-#  28. [이메일 누락 픽스] 🚨 구글 메일 서버의 대용량 자동화 첨부파일 사전 차단(Silent Drop) 현상 해결을 위해 비디오 비트레이트를 2500k로 다이어트 완료
-#  29. [숏폼 비디오 혁신] 🔥 다크 심리학 채널 100% 동기화: 흑백 대비 + 친근한 졸라맨/호빵맨 + 무작위 네온 컬러 테마 적용 (이탈률 방어)
-#  30. [텍스트 렌더링 픽스] 🚨 숏폼 영상 내 텍스트 잘림(Truncation) 방지를 위한 동적 폰트 스케일링(Dynamic Scaling) 완벽 적용
-#  31. [비주얼 다이내믹 픽스] 🔥 60% 다크 오버레이 필터 추가로 가독성 완벽 개선 및 Pollinations 난수 부여로 무조건 새 이미지 생성
-#  32. [이메일 픽스] 🚨 소셜 발송 이메일 본문에서 1-Min Reels Script 박스 영구 삭제 완료
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.51 - Repaired)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -92,7 +58,7 @@ try:
         'Cache-Control': 'no-cache'
     })
 except ImportError:
-    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
+    print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다. GitHub Actions의 pip install에 cloudscraper를 추가해주세요.")
     sys.exit(1)
 
 MODEL_PRI = {
@@ -146,36 +112,12 @@ VIP_AUTHORS = {
 }
 
 RSS_FEEDS = {
-    "Economy": [
-        "https://feeds.reuters.com/reuters/businessNews",
-        "https://finance.yahoo.com/news/rssindex",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"
-    ],
-    "Politics": [
-        "https://feeds.reuters.com/Reuters/PoliticsNews",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113",
-        "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"
-    ],
-    "Tech": [
-        "https://feeds.reuters.com/reuters/technologyNews",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910",
-        "https://techcrunch.com/feed/"
-    ],
-    "Health": [
-        "https://feeds.reuters.com/reuters/healthNews",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108",
-        "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"
-    ],
-    "Energy": [
-        "https://oilprice.com/rss/main",
-        "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810",
-        "https://feeds.reuters.com/reuters/environment"
-    ],
-    "On-Chain": [
-        "https://cointelegraph.com/rss",
-        "https://www.coindesk.com/arc/outboundfeeds/rss/",
-        "https://cryptoslate.com/feed/"
-    ],
+    "Economy": ["https://feeds.reuters.com/reuters/businessNews", "https://finance.yahoo.com/news/rssindex", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"],
+    "Politics": ["https://feeds.reuters.com/Reuters/PoliticsNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113", "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"],
+    "Tech": ["https://feeds.reuters.com/reuters/technologyNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910", "https://techcrunch.com/feed/"],
+    "Health": ["https://feeds.reuters.com/reuters/healthNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108", "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"],
+    "Energy": ["https://oilprice.com/rss/main", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810", "https://feeds.reuters.com/reuters/environment"],
+    "On-Chain": ["https://cointelegraph.com/rss", "https://www.coindesk.com/arc/outboundfeeds/rss/", "https://cryptoslate.com/feed/"],
 }
 
 CAT_ALLOC = {
@@ -186,6 +128,140 @@ CAT_ALLOC = {
     "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
     "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
+
+# ═══════════════════════════════════════════════
+# 🧠 프롬프트 설정 (PROMPT_UNIFIED_P1 누락 복구)
+# ═══════════════════════════════════════════════
+PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
+
+═══ THE GOLDEN RULE ═══
+Imagine your reader is your friend Sarah, a 32-year-old marketing manager who knows nothing about finance but is curious. She'll close the tab in 5 seconds if you sound like Wall Street. BUT she'll also close it if you just repeat what she saw on Twitter. Give her ONE thing she didn't know.
+
+═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
+BANNED CONTENT (NEVER WRITE THESE — they make readers stop):
+- "AI is still the boss" / "AI is here to stay" / "AI revolution"
+- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world", "Crucial landscape"
+- "Tech stocks are thriving" / "betting against X is a bad idea"
+- "The trend is your friend" / "this time it's different"
+- "Smart money is moving" without specifying EXACTLY WHERE
+- "It's important to note" / "investors should consider"
+
+REQUIRED CONTENT (MUST INCLUDE):
+- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
+- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
+- AT LEAST 1 specific company decision/move.
+- ONE historical or comparative reference.
+
+Write PART 1 of an Insight newsletter on {cat} in ENGLISH. Target length: 900-1100 words across both parts combined.
+News Context:
+{news}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST wrap your content EXACTLY in the XML tags listed below.
+
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. Write a 'curiosity gap' summary.)</EXCERPT>
+<WARM_INDEX_SCORE>(A number from 0 to 100 representing market fear/greed based on this news. Output ONLY the integer.)</WARM_INDEX_SCORE>
+<WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score.)</WARM_INDEX_REASON>
+<IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
+<DATA_TABLE>
+(REQUIRED — extract OR estimate 3-4 key market metrics. Format exactly: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
+</DATA_TABLE>
+<HEATMAP>
+(Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
+</HEATMAP>
+<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" Use 1 emoji.)</EXECUTIVE_SUMMARY>
+<PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid. 20+ words developed.)</PLAIN_ENGLISH>
+<HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
+<MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
+PARAGRAPH 1: What's happening — ONE specific number or data point.
+PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your honest one-line take.)</MACRO>
+<HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
+<CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
+<QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
+
+PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
+
+═══ 🔥 ANTI-CLICHÉ REMINDER ═══
+NEVER write generic conclusions like: "AI is here to stay" or "Tech will continue to dominate". Always be SPECIFIC with numbers, tickers, names, dates. 
+If you find yourself writing a vague sentence, DELETE IT and replace it with a hard data point.
+
+═══ TONE RULES ═══
+- Sentences MAX 15 words, Paragraphs MAX 3 sentences.
+- USE "you", "we", "honestly", "real talk", "here's the deal".
+- BANNED: "regulatory bodies", "ecosystem", "framework", "also plays a role".
+
+Write PART 2 of the Insight newsletter for {cat} in ENGLISH.
+Context from Part 1:
+{ctx}
+
+OUTPUT FORMAT REQUIREMENT:
+You MUST wrap your content EXACTLY in the XML tags listed below.
+
+<BULL_CASE>(Optimistic scenario. 3-4 sentences. SPECIFIC: name a ticker, a price target, or a catalyst. End with one bold claim.)</BULL_CASE>
+<BEAR_CASE>(Pessimistic scenario. 3-4 sentences. SPECIFIC: name what breaks first, which ticker drops most, what price triggers panic.)</BEAR_CASE>
+<HISTORICAL_PARALLEL>(REQUIRED — 2 sentences MAX. Name the year + event. One sentence on the parallel. One sentence: "What's different: [your answer].")</HISTORICAL_PARALLEL>
+<QUICK_HITS>
+(EXACTLY 3 bullet points of OTHER relevant news. STRICT FORMAT — line MUST start with one of these emojis: 🚨 / 👀 / 🤔 / 💸)
+</QUICK_HITS>
+<SMART_MONEY_MOVE>(1 paragraph, MAX 3 sentences. NAME 1 specific ETF ticker. Then: "If I were you, I'd [specific action] because [specific reason].")</SMART_MONEY_MOVE>
+<DO_ACTION>(Provide exactly ONE highly specific, actionable strategy for absolute beginners with precise numbers e.g., 'If BTC drops below $X, accumulate 5%' or a 3-step checklist based on today's news.)</DO_ACTION>
+<DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
+<TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
+<PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
+<POLL_QUESTION>(A provocative multiple-choice question related to today's news to ask the reader. e.g., "Do you think Apple is currently overvalued?")</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+"""
+
+FOUNDATION_TOPICS = ["ETF vs Mutual Funds: Which is actually safer for absolute beginners?", "How to start investing in S&P 500 ETFs with exactly $100", "The hidden risks of Dollar Cost Averaging (DCA) you must know"]
+FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are the "smart friend" who explains money to absolute beginners. Use counterintuitive angles. Wrap your content EXACTLY in the XML tags requested."""
+FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic in English: TOPIC: {theme}
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets, odd numbers, or 'How to' formats.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy.)</DEFINITION>
+<WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages.)</WHY_MATTERS>
+<HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
+<POLL_QUESTION>(A provocative multiple-choice question related to this topic.)</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>"""
+
+PHILOSOPHY_TOPICS = ["Love money through action, not just unrequited longing", "The psychological vessel of wealth and the weight of responsibility", "Voluntary fatigue: The pleasurable pain of chosen growth"]
+PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite philosophical life strategist. Be harsh, direct, and unapologetic. Wrap your content EXACTLY in the XML tags requested."""
+PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the following theme in English: THEME: {theme}
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<ANCHOR>(A one-sentence philosophical principle based on the theme.)</ANCHOR>
+<REFLECTION>(3-4 paragraphs explaining how this principle connects to modern reality. Criticize passive excuses heavily.)</REFLECTION>
+<CATALYST>(A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
+<POLL_QUESTION>(A provocative multiple-choice question related to this topic.)</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>"""
+
+MH_NICHES = ["Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", "Micro-SaaS & Software", "Affiliate Marketing"]
+MH_PLATFORMS = ["Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", "Substack"]
+MH_AI_TOOLS = ["ChatGPT", "Midjourney", "Claude", "ElevenLabs", "Zapier/Make", "CapCut AI", "HeyGen"]
+
+MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite side-hustle expert and digital business coach. Wrap your content EXACTLY in the XML tags requested."""
+MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide based on this framework: FRAMEWORK: {theme}
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
+<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
+<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
+<POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
+<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
+<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
+<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>"""
 
 # ═══════════════════════════════════════════════
 # 🎬 1. YOUTUBE CHAPTERING ENGINE
@@ -199,17 +275,15 @@ Avoid generic AI buzzwords. Sound like a human growth hacker.
 
 [REQUIREMENTS]
 You must strictly use these XML tags:
-
 <METADATA>
 [VIRAL TITLES]
-(Exactly 3 options. Make them hyper-clickable using a 'Curiosity Gap' or 'Ultimate Benefit'. Use specific numbers. Banned words: 'Unleash', 'Discover', 'Secret')
 - Option A: 
 - Option B: 
 - Option C: 
 
 [THUMBNAIL IDEAS]
 1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. NO TEXT IN PROMPT.)
-2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail. e.g., "SELL NOW?", "IT'S OVER.", "THE TRUTH")
+2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail.)
 
 [SEO HASHTAGS]
 (10 highly searched global tags, e.g. #investing #economy)
@@ -218,48 +292,31 @@ You must strictly use these XML tags:
 YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive 20,000+ character documentary script based on the newsletter in ENGLISH.
 Focus on: Cold Open Hook, Greeting, and Chapter 1 (Current Situation Analysis).
-ANTI-AI FATIGUE: Do NOT sound like an AI. Be punchy, direct, and slightly informal. Use analogies.
 [NEWSLETTER]
 {raw_content}
-
-Rules: 
-- OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags like [VO], [Scene 1]. ONLY text to be read by TTS.
-- Start immediately with a provocative cold open hook (e.g. "If you think [X] is safe, look at this number..."), followed by: "Hello, this is Warm Insight. Today, we're going to talk about [Topic]. Leaving a like and subscribing is a huge help to us!"
-Wrap in <PART1> tags."""
+Rules: OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags like [VO], [Scene 1]. Wrap in <PART1> tags."""
 
 YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
-You MUST expand massively using verified historical context (compare it to 2008, 1999, or 1970s). Provide CONCRETE numbers, not generalizations.
-Do not summarize; spend at least 500 words on EACH historical comparison or context point.
-Rules: Spoken words ONLY in English. NO structural tags. NO AI fluff ("in today's ever-changing landscape").
-Wrap in <PART2> tags."""
+Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive). Provide CONCRETE numbers, not generalizations.
+Rules: Spoken words ONLY in English. Wrap in <PART2> tags."""
 
 YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
-Provide concrete, counterintuitive strategies. Tell them exactly what NOT to do.
-Rules: Spoken words ONLY in English. NO structural tags.
-End exactly with: "We couldn't fit all the deep-dive details and practical strategies into this video. Check out the Warm Insight newsletter in the pinned comment and description for the full text summary. Visit www.warminsight.com. See you there."
-Wrap in <PART3> tags."""
+Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan). Provide concrete, counterintuitive strategies.
+Rules: Spoken words ONLY in English. End exactly with: "We couldn't fit all the deep-dive details and practical strategies into this video. Check out the Warm Insight newsletter in the pinned comment and description for the full text summary. Visit www.warminsight.com. See you there." Wrap in <PART3> tags."""
 
 def generate_youtube_masterpiece(raw_content, title):
     print(f"   🎬 [YouTube Engine] Starting 3-Phase Chaptering for '{title[:30]}...'")
     client = _get_gemini_client()
-    
     meta_raw = gem_fb("Premium", YT_META_PROMPT.replace("{raw_content}", raw_content))
     meta = xtag(meta_raw, "METADATA")
-    
     p1_raw = gem_fb("Premium", YT_SCRIPT_P1.replace("{raw_content}", raw_content))
     p1 = xtag(p1_raw, "PART1")
-    
     p2_raw = gem_fb("Premium", YT_SCRIPT_P2)
     p2 = xtag(p2_raw, "PART2")
-    
     p3_raw = gem_fb("Premium", YT_SCRIPT_P3)
     p3 = xtag(p3_raw, "PART3")
-    
     full_script = f"{p1}\n\n{p2}\n\n{p3}"
     print(f"      🎯 Masterpiece Complete: {len(full_script):,} characters!")
-    
     return meta, full_script
 
 def send_youtube_script_email(post_title, meta, script):
@@ -270,7 +327,6 @@ def send_youtube_script_email(post_title, meta, script):
         msg['From'] = EMAIL_SENDER
         msg['To'] = YOUTUBE_EMAIL_RECEIVER
         msg['Subject'] = f"🎬 [YouTube Script Ready] {post_title[:40]}"
-
         body = f"""
         <div style="font-family: -apple-system, sans-serif; background: #f8fafc; padding: 20px;">
             <div style="max-width: 800px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -281,12 +337,10 @@ def send_youtube_script_email(post_title, meta, script):
                 <div style="padding: 30px;">
                     <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📋 YouTube Metadata & Thumbnail Copy</h3>
                     <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; white-space: pre-wrap; font-size: 15px; color: #334155; line-height: 1.6;">{meta}</div>
-                    
                     <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 35px;">🔗 Cross-Pollination (For Description/Pinned Comment)</h3>
                     <div style="background: #e0f2fe; border-left: 5px solid #0284c7; padding: 15px; border-radius: 4px; font-weight: bold; font-size: 16px; color: #0369a1; line-height: 1.5;">
                         👇 Check out the Warm Insight newsletter for a deeper dive and the full text summary: www.warminsight.com
                     </div>
-                    
                     <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 40px;">🎙️ Vrew Script (Copy & Paste)</h3>
                     <div style="background: #fefce8; padding: 20px; border: 1px solid #fde047; border-radius: 8px; white-space: pre-wrap; font-size: 16px; color: #1c1917; line-height: 1.8;">{script}</div>
                 </div>
@@ -309,34 +363,21 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
     print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
     
     if cat == "Foundation":
-        sec1_title = "📖 What is it?"
-        sec1_body = xtag(raw_content, "DEFINITION").replace('\n', '<br>')
-        sec2_title = "💡 Why It Matters"
-        sec2_body = xtag(raw_content, "WHY_MATTERS").replace('\n', '<br>')
-        sec3_title = "🚀 How to Start Today"
-        sec3_body = xtag(raw_content, "HOW_TO_START").replace('\n', '<br>')
+        sec1_title, sec1_body = "📖 What is it?", xtag(raw_content, "DEFINITION").replace('\n', '<br>')
+        sec2_title, sec2_body = "💡 Why It Matters", xtag(raw_content, "WHY_MATTERS").replace('\n', '<br>')
+        sec3_title, sec3_body = "🚀 How to Start Today", xtag(raw_content, "HOW_TO_START").replace('\n', '<br>')
     elif cat == "The Daily Catalyst":
-        sec1_title = "❝ The Anchor ❞"
-        sec1_body = xtag(raw_content, "ANCHOR").replace('\n', '<br>')
-        sec2_title = "The Reflection"
-        sec2_body = xtag(raw_content, "REFLECTION").replace('\n', '<br>')
-        sec3_title = "⚡ The Daily Catalyst"
-        sec3_body = xtag(raw_content, "CATALYST").replace('\n', '<br>')
+        sec1_title, sec1_body = "❝ The Anchor ❞", xtag(raw_content, "ANCHOR").replace('\n', '<br>')
+        sec2_title, sec2_body = "The Reflection", xtag(raw_content, "REFLECTION").replace('\n', '<br>')
+        sec3_title, sec3_body = "⚡ The Daily Catalyst", xtag(raw_content, "CATALYST").replace('\n', '<br>')
     elif cat == "Money Hack":
-        sec1_title = "💡 The Concept"
-        sec1_body = xtag(raw_content, "CONCEPT").replace('\n', '<br>')
-        sec2_title = "🛠️ Step-by-Step Execution"
-        sec2_body = xtag(raw_content, "STEP_BY_STEP_TOOL").replace('\n', '<br>')
-        sec3_title = "🔥 Pro Tip"
-        sec3_body = xtag(raw_content, "PRO_TIP").replace('\n', '<br>')
+        sec1_title, sec1_body = "💡 The Concept", xtag(raw_content, "CONCEPT").replace('\n', '<br>')
+        sec2_title, sec2_body = "🛠️ Step-by-Step Execution", xtag(raw_content, "STEP_BY_STEP_TOOL").replace('\n', '<br>')
+        sec3_title, sec3_body = "🔥 Pro Tip", xtag(raw_content, "PRO_TIP").replace('\n', '<br>')
     else:
-        sec1_title = "Executive Summary"
-        sec1_body = xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
-        sec2_title = "💡 Plain English"
-        sec2_body = xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
-        sec3_title = xtag(raw_content, "HEADLINE")
-        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
-        sec3_body = raw_m.strip().replace('\n', '<br><br>')
+        sec1_title, sec1_body = "Executive Summary", xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
+        sec2_title, sec2_body = "💡 Plain English", xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
+        sec3_title, sec3_body = xtag(raw_content, "HEADLINE"), xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "").strip().replace('\n', '<br><br>')
     
     kw_tag = kw.title() if kw else "Market Trends"
     if len(kw_tag) > 25: kw_tag = kw_tag[:25].strip() 
@@ -351,12 +392,10 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         body = f"""
         <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
             <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                
                 <div style="background: #10b981; padding: 25px; color: #ffffff;">
                     <h2 style="margin: 0; font-size: 22px;">✍️ Medium Teaser Post Ready</h2>
                     <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy the content below to drive traffic back to Warm Insight.</p>
                 </div>
-                
                 <div style="background: #ecfdf5; padding: 20px 25px; border-bottom: 1px solid #e2e8f0;">
                     <h3 style="color: #065f46; margin-top: 0; font-size: 16px;">🚨 CRITICAL SEO STEP (Canonical URL)</h3>
                     <ol style="color: #064e3b; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.6;">
@@ -365,41 +404,28 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
                         <li>Check <em>"This story was originally published elsewhere"</em>.</li>
                         <li>Paste this Exact URL: <strong><a href="{original_link}" style="color: #059669;">{original_link}</a></strong></li>
                     </ol>
-                    
                     <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🖼️ Don't forget the Thumbnail!</h3>
                     <p style="color: #064e3b; font-size: 14px; margin: 0;">
                         Download the attached image (<strong>thumbnail.jpg</strong>) and drag-and-drop it right under your Title in the Medium editor. Medium will automatically use it as the cover image!
                     </p>
-
                     <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🏷️ Recommended Medium Tags (Topics)</h3>
                     <p style="color: #064e3b; font-size: 14px; margin: 0; background: #d1fae5; padding: 10px; border-radius: 4px; font-weight: bold;">
                         Investing, Finance, {cat_tag}, Market Analysis, {kw_tag}
                     </p>
                 </div>
-
                 <div style="padding: 30px;">
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Copy From Here 👇</h3>
-                    
                     <div style="padding: 20px; background: #ffffff; color: #222222; font-family: Georgia, serif; border: 1px dashed #cbd5e1;">
-                        <h1>{title}</h1>
-                        <br>
-                        <h2>{sec1_title}</h2>
-                        <p>{sec1_body}</p>
-                        <br>
-                        <h2>{sec2_title}</h2>
-                        <p>{sec2_body}</p>
-                        <br>
-                        <h2>{sec3_title}</h2>
-                        <p>{sec3_body}</p>
-                        <br>
-                        <hr>
-                        <br>
+                        <h1>{title}</h1><br>
+                        <h2>{sec1_title}</h2><p>{sec1_body}</p><br>
+                        <h2>{sec2_title}</h2><p>{sec2_body}</p><br>
+                        <h2>{sec3_title}</h2><p>{sec3_body}</p><br>
+                        <hr><br>
                         <h2>🚀 Read the Full Deep Dive</h2>
                         <p>This is just the tip of the iceberg. To see the full deep dive, dashboard, and strategies, read the complete analysis on Warm Insight.</p>
                         <p><a href="{original_link}">👉 Click here to read the full report</a></p>
                     </div>
                 </div>
-
             </div>
         </div>
         """
@@ -439,7 +465,6 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
 
     content_body_html = content_body.replace('\n', '<br>')
-    
     clean_title = _clean_seo_title(title)
 
     try:
@@ -1330,11 +1355,11 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 영상 피로도 개선: 매 프레임별 컬러를 랜덤으로 픽업하여 다양성 부여
+    # 🚨 영상 이탈률 방지를 위해 매번 랜덤한 색상 테마 적용
     colors = ["glowing neon blue", "vibrant emerald green", "striking neon purple", "bright amber gold", "intense crimson red"]
     random.shuffle(colors)
-
-    # 🚨 캐릭터 변경: 기괴한 마네킹을 귀여운 호빵맨/세련된 졸라맨 느낌의 3D 캐릭터로 변경
+    
+    # 🚨 거부감 드는 마네킹 대신 친근한 캐릭터(호빵맨/졸라맨 스타일)로 프롬프트 변경
     vp_base = f"A cute, approachable, smooth 3D minimalist character with a round friendly head, resembling a high-end polished stickman or Anpanman. Pitch black void background. Engaging, clean cinematic 8k render. No creepy vibes. No text."
     vp1 = vp_base + f" The character is looking surprised, pointing at a downward {colors[0]} line graph."
     vp2 = vp_base + f" Close up profile. The friendly character is carefully analyzing a floating {colors[1]} data sphere."
@@ -1347,7 +1372,7 @@ def generate_vip_carousel(raw_content, cat):
         if item and "|" in item:
             parts = item.split("|")
             raw_ticker = parts[0].strip()
-            # 🚨 텍스트 잘림 방지: 길이 제한을 20자로 확대
+            # 🚨 텍스트 잘림 방지: 길이를 20자까지 여유롭게 허용
             if len(raw_ticker) > 20: raw_ticker = raw_ticker[:18] + ".."
             data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
 
@@ -1381,7 +1406,7 @@ def generate_vip_carousel(raw_content, cat):
     def fetch_dark_psy_image(prompt_text, seed):
         try:
             prompt_encoded = urllib.parse.quote(prompt_text)
-            # 🚨 Pollinations API 캐시 우회를 위해 무작위 난수 강제 부여 (매번 다른 사진 출력)
+            # 🚨 캐시를 우회하고 무조건 새로운 이미지를 얻기 위해 random 난수 주입
             url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={seed}&random={random.random()}"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req, timeout=15) as response:
@@ -1436,7 +1461,7 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성 향상: 60% 다크 블랙 필터 오버레이 적용
+        # 🚨 가독성 향상: 60% 다크 블랙 필터 오버레이 적용 (붉은 기 제거)
         dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 153))
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
@@ -1528,16 +1553,131 @@ def generate_vip_carousel(raw_content, cat):
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
-def _upload_image(img_bytes, filename):
+def send_community_viral_email(title, original_link, raw_content, cat):
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
+    print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
+
+    if cat == "Foundation":
+        content_body = f"📖 What is it?\n{xtag(raw_content, 'DEFINITION')}\n\n💡 Why It Matters\n{xtag(raw_content, 'WHY_MATTERS')}\n\n🚀 How to Start Today\n{xtag(raw_content, 'HOW_TO_START')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    elif cat == "The Daily Catalyst":
+        content_body = f"❝ The Anchor ❞\n{xtag(raw_content, 'ANCHOR')}\n\nThe Reflection\n{xtag(raw_content, 'REFLECTION')}\n\n⚡ The Daily Catalyst\n{xtag(raw_content, 'CATALYST')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    elif cat == "Money Hack":
+        content_body = f"💡 The Concept\n{xtag(raw_content, 'CONCEPT')}\n\n🛠️ Step-by-Step Execution\n{xtag(raw_content, 'STEP_BY_STEP_TOOL')}\n\n🔥 Pro Tip\n{xtag(raw_content, 'PRO_TIP')}"
+        tldr = xtag(raw_content, "EXCERPT")
+    else:
+        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
+        content_body = f"Executive Summary\n{xtag(raw_content, 'EXECUTIVE_SUMMARY')}\n\n💡 Plain English\n{xtag(raw_content, 'PLAIN_ENGLISH')}\n\n{xtag(raw_content, 'HEADLINE')}\n{raw_m.strip()}"
+        tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
+
+    content_body_html = content_body.replace('\n', '<br>')
+    
+    clean_title = _clean_seo_title(title)
+
     try:
-        resp = scraper.post(
-            f"{WP_URL}/wp-json/wp/v2/media",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
-            data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
-        )
-        if resp.status_code in (200, 201): return resp.json().get("id")
-    except: pass
-    return None
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = EMAIL_RECEIVER
+        msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
+
+        body = f"""
+        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
+            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div style="background: #ef4444; padding: 25px; color: #ffffff;">
+                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
+                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy & Paste to r/povertyfinance, r/sidehustle, or Quora!</p>
+                </div>
+                <div style="padding: 30px;">
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
+                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
+                        I wrote a 5-minute guide for absolute beginners on {cat}: {clean_title} — Hope this helps someone today!
+                    </div>
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
+                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: Georgia, serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
+                        Hey guys, I know finance jargon can be super overwhelming when you're just starting out. Here is a super plain-English breakdown I put together:<br><br>
+                        {content_body_html}<br><br>
+                        ---<br>
+                        <strong>TL;DR:</strong> {tldr}<br><br>
+                        <em>(P.S. I break down daily market news and finance basics like this over at my blog <a href="{original_link}" style="color: #2563eb; text-decoration: underline;">Warm Insight</a> if anyone wants to read more!)</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        msg.attach(MIMEText(body, 'html'))
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_SENDER, EMAIL_PASS)
+            server.send_message(msg)
+        print("   ✅ Community Viral Draft Email Sent!")
+    except Exception as e:
+        print(f"   ❌ Community Viral Draft Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
+# ✉️ 슬림 이메일 (인스타/숏폼용) - 🚨 릴스 대본 제거 완벽 반영본
+# ═══════════════════════════════════════════════
+def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
+        print("   ⚠️ Missing email credentials. Skipping email dispatch.")
+        return
+
+    print(f"   📧 Sending Social Slim Package to {EMAIL_RECEIVER}...")
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = EMAIL_RECEIVER
+        msg['Subject'] = f"🚨 {cat.upper()} REELS READY: {hook_text[:40]}..."
+
+        vid_tag = ""
+        if video_mp4_bytes:
+            vid_tag = f"""
+            <div style="margin-bottom: 25px; text-align:center; padding: 25px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
+                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 15-Sec Dark Psychology Reels Attached!</p>
+                <div style="font-size: 45px; margin: 15px 0;">✨ 📹 ✨</div>
+                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">100% Compatible with IG Reels / TikTok / YT Shorts.</p>
+                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">Download <strong>WarmInsight_{cat}_Video.mp4</strong> attached below.</p>
+            </div>
+            """
+
+        body = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f5; padding: 20px; color: #0f1419;">
+            {vid_tag}
+            <div style="background: #ffffff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #2563eb; font-size: 18px;">💬 Smart Community Comment</h3>
+                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; font-size: 15px; font-weight: bold; color: #1e3a8a;">
+                    "{smart_comment}"
+                </div>
+            </div>
+            <div style="background: #ffffff; border-left: 5px solid #10b981; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
+                <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
+            </div>
+            <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
+            <div style="text-align:center; margin-bottom: 20px;">
+                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
+                    Read Full Post on Website →
+                </a>
+            </div>
+        </div>
+        """
+        msg.attach(MIMEText(body, 'html'))
+
+        if video_mp4_bytes:
+            try:
+                part = MIMEBase('video', 'mp4')
+                part.set_payload(video_mp4_bytes)
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Video.mp4')
+                msg.attach(part)
+            except Exception as e:
+                print(f"   ⚠️ MP4 Attachment Error: {e}")
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_SENDER, EMAIL_PASS)
+            server.send_message(msg)
+        print("   ✅ Social Email Sent Successfully!")
+    except Exception as e:
+        print(f"   ❌ Social Email Failed: {e}")
 
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None, med_img_bytes=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
