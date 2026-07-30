@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.61_UI_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.62_CTA_ALIGN_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -451,7 +451,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) 
+# ✉️ 슬림 이메일 (인스타/숏폼용)
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -761,7 +761,6 @@ def _build_warm_index(raw_data):
     </div>
     """
 
-# 🚨 새롭게 개조된 직관적이고 세련된 '댓글 유도 CTA 박스' (수술 2: 버튼 텍스트 중앙 정렬 완료)
 def _build_comment_cta(raw_data, cat="Market"):
     question = xtag(raw_data, "COMMENT_QUESTION").strip() or f"What are your thoughts on today's {cat} market? Let us know below!"
     return f"""
@@ -769,16 +768,14 @@ def _build_comment_cta(raw_data, cat="Market"):
         <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
         <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
-        <a href="#respond" style="display:inline-block; background:{DARK}; color:#ffffff; padding:15px 35px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; line-height:1.2; vertical-align:middle; box-sizing:border-box; margin:0;">
+        <a href="#respond" style="display:inline-flex; align-items:center; justify-content:center; background:{DARK}; color:#ffffff; height:54px; padding:0 35px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; line-height:1; box-sizing:border-box; margin:0 auto;">
             Leave a Comment 👇
         </a>
     </div>
     """
 
-# 🚨 수술 1: AI가 마음대로 만든 마크다운 테이블(---)을 걸러내고 표가 절대 깨지지 않게 강력한 정제 로직 추가
 def _build_data_table(raw_data, title="Market Dashboard"):
     if not raw_data: raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
-    # 마크다운 표의 선(---)이나 AI가 마음대로 뱉은 헤더(Asset Name) 등을 무시하고 실제 값만 추출
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l and '---' not in l and 'Asset Name' not in l and 'Asset/Metric' not in l]
     if len(lines) < 2: lines = lines + ["S&P 500 | 5,234 | UP | Tech earnings boost", "Nasdaq 100 | 18,200 | UP | AI infrastructure growth"][:max(0, 2 - len(lines))]
     html = f"""
@@ -794,7 +791,6 @@ def _build_data_table(raw_data, title="Market Dashboard"):
             </tr></thead><tbody>
     """
     for line in lines[:5]:
-        # 파이프(|) 양옆의 공백 요소를 제거하여 데이터 밀림 현상 원천 차단
         parts = [p.strip() for p in line.split('|') if p.strip()]
         if len(parts) >= 4:
             asset, value, trend, insight = parts[:4]
@@ -1624,7 +1620,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.61_UI_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1656,7 +1652,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.61_UI_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1688,7 +1684,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.61_UI_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1739,9 +1735,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.61_UI_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.61_UI_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
