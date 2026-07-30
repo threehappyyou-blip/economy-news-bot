@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.57_FIXED_WP_AUTH)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.58_FINAL_WP_AUTH)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -39,8 +39,9 @@ SOCIAL_LINKS = {
     "tiktok": "https://www.tiktok.com/@warminsight"
 }
 
+# 🚨 Imunify360 방화벽 우회를 위한 순정 WordPress 루프백 헤더 복구
 WP_API_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'User-Agent': 'WordPress/6.5; ' + SITE_URL,
     'Accept': 'application/json'
 }
 
@@ -464,7 +465,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) -> 🚨 1-Min Reels 대본 삭제 완료
+# ✉️ 슬림 이메일 (인스타/숏폼용) 
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -530,7 +531,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE (🚨 순정 requests로 롤백 완료)
+# 🛡️ SYSTEM UTILS & API ENGINE 
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -545,7 +546,7 @@ def check_env_vars():
         return False
     return True
 
-# 🚨 워드프레스 통신부는 WAF 회피를 위해 모두 기본 requests 로 롤백
+# 🚨 워드프레스 통신부는 WAF 방화벽 우회를 위해 순정 requests로 완전히 롤백
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
@@ -628,6 +629,7 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
+# 🚨 워드프레스 통신 구간을 모두 순정 requests 모듈로 롤백 적용 완료
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
@@ -723,7 +725,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# 외부 요청은 여전히 scraper 유지 (RSS 긁어오기)
+# 외부 뉴스 가져올 때만 방화벽 회피용 scraper 사용 유지
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1218,7 +1220,7 @@ def make_medium_thumbnail(cat):
         img.save(buf, format="JPEG", quality=90)
         return buf.getvalue()
 
-# 🚨 1번 수술: 배경과 텍스트 레이어를 완벽하게 분리하여 합성 (글씨는 고정, 배경만 은은하게 줌인)
+# 🚨 레이어 분리 기법을 적용하여 텍스트는 고정하고 배경만 부드럽게 줌인/줌아웃
 def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
     print("   🎥 Generating 15-Sec Dynamic Dark Psychology Reels Video (Separated Layers)...")
     try:
@@ -1444,7 +1446,7 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성을 해치지 않으면서 캐릭터를 돋보이게 하는 30% 다크 오버레이 필터 유지
+        # 🚨 가독성을 위해 다크 필터를 적용하되, 너무 어둡지 않게 30% 수준으로 조정
         dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 75)) 
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
@@ -1551,19 +1553,21 @@ def generate_vip_carousel(raw_content, cat):
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
-    # 이메일 발송 썸네일(첫 번째 슬라이드의 합성본) 처리
+    # 이메일 발송용 썸네일을 위한 처리 (레이어가 분리되었으므로 첫 장만 따로 합쳐서 반환)
     image_bytes_list = []
     
-    # 🚨 영상 제작 엔진으로 배경/텍스트 분리된 리스트를 통째로 넘겨 합성
+    # 🚨 분리된 레이어를 합성엔진으로 전달
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames)
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 def _upload_image(img_bytes, filename):
     try:
-        resp = scraper.post(
+        headers = WP_API_HEADERS.copy()
+        headers.update({"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"})
+        resp = requests.post(
             f"{WP_URL}/wp-json/wp/v2/media",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"}, 
+            headers=headers, 
             data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
@@ -1615,8 +1619,9 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        r = scraper.post(
+        r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
+            headers=WP_API_HEADERS,
             json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30
         )
         if r.status_code in (200, 201):
@@ -1655,7 +1660,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.56 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1687,7 +1692,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.56 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1719,7 +1724,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.56 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1770,9 +1775,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.56 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.56 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
