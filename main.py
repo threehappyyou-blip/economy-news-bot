@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.54_FIXED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.55_FINAL)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -540,7 +540,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE (🚨 누락되었던 15개 필수 함수 전면 복구)
+# 🛡️ SYSTEM UTILS & API ENGINE
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -591,11 +591,9 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
         except Exception as e:
             err = str(e)
             print(f"    ⚠️ [Gemini API Error] {err}")
-
             if "credits are depleted" in err or "billing" in err.lower():
                 print("    🚨 Credits depleted!")
                 return None
-
             if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
@@ -755,9 +753,6 @@ def fetch_news_pool(cat, max_items=15):
     random.shuffle(items_list)
     return items_list[:max_items]
 
-# ═══════════════════════════════════════════════
-# 📊 VISUAL DATA BUILDERS & HTML
-# ═══════════════════════════════════════════════
 def _build_warm_index(raw_data):
     score_str = xtag(raw_data, "WARM_INDEX_SCORE")
     reason = xtag(raw_data, "WARM_INDEX_REASON")
@@ -1241,16 +1236,13 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         return None
     try:
         SLIDE_DURATION = 2.6
-        CROSSFADE_DURATION = 0.2
-        ZOOM_START = 1.0
-        ZOOM_END = 1.08
+        CROSSFADE_DURATION = 0.3
 
         clips = []
         for i, frame in enumerate(frames_images):
             frame_np = np.array(frame.convert('RGB'))
             clip = ImageClip(frame_np).set_duration(SLIDE_DURATION)
-            if i % 2 == 0: clip = clip.resize(lambda t: ZOOM_START + (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
-            else: clip = clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+            # 🚨 줌인/줌아웃 효과 완전 삭제 (글씨 가독성 확보 및 PPT 슬라이드처럼 깔끔하게 전환)
             clip = clip.set_position(('center', 'center'))
             if i > 0: clip = clip.crossfadein(CROSSFADE_DURATION)
             clips.append(clip)
@@ -1321,11 +1313,8 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 영상 피로도 개선: 매 프레임별 컬러를 랜덤으로 픽업하여 다양성 부여
     colors = ["glowing neon blue", "vibrant emerald green", "striking neon purple", "bright amber gold", "intense crimson red"]
     random.shuffle(colors)
-    
-    # 🚨 친근한 캐릭터(호빵맨/졸라맨) 로직 적용 및 무작위 테마색 배정
     vp_base = f"A cute, approachable, smooth 3D minimalist character with a round friendly head, resembling a high-end polished stickman or Anpanman. Pitch black void background. Engaging, clean cinematic 8k render. No creepy vibes. No text."
     vp1 = vp_base + f" The character is looking surprised, pointing at a downward {colors[0]} line graph."
     vp2 = vp_base + f" Close up profile. The friendly character is carefully analyzing a floating {colors[1]} data sphere."
@@ -1338,7 +1327,6 @@ def generate_vip_carousel(raw_content, cat):
         if item and "|" in item:
             parts = item.split("|")
             raw_ticker = parts[0].strip()
-            # 🚨 텍스트 잘림 방지를 위해 20자까지 여유 허용
             if len(raw_ticker) > 20: raw_ticker = raw_ticker[:18] + ".."
             data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
 
@@ -1370,7 +1358,6 @@ def generate_vip_carousel(raw_content, cat):
     font_alert = lf(ft_path, 75)
 
     def generate_carousel_image(prompt_text):
-        # 1. 1차 시도 (Gemini 고품질 생성)
         try:
             client = _get_gemini_client()
             result = client.models.generate_images(
@@ -1393,7 +1380,6 @@ def generate_vip_carousel(raw_content, cat):
         except Exception as e:
             print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-        # 2. 2차 시도 (Pollinations AI + Cloudscraper 우회 및 난수 적용)
         try:
             prompt_encoded = urllib.parse.quote(prompt_text)
             url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true&random={random.random()}"
@@ -1437,7 +1423,6 @@ def generate_vip_carousel(raw_content, cat):
         if target_ai_img:
             d_img.paste(target_ai_img, (0, 100), target_ai_img)
         else:
-            # 완벽하게 실패했을 경우 대비 추상적인 백업 이미지 (하얀 막대기 방지)
             fallback_img = Image.new("RGBA", (1080, 1080), "#09090b")
             d = ImageDraw.Draw(fallback_img)
             for r in range(400, 0, -10):
@@ -1451,8 +1436,8 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성 향상: 60% 다크 블랙 필터 오버레이 강제 적용
-        dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 153))
+        # 🚨 가독성 향상: 60% 블랙 필터를 30% 수준으로 대폭 낮춰 캐릭터 선명도 확보
+        dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 75)) # 투명도 153 -> 75
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
     def wrap_lines(text, font, max_width):
@@ -1476,7 +1461,6 @@ def generate_vip_carousel(raw_content, cat):
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
     
-    # 텍스트 최대 폭을 950px로 넉넉하게 주어 잘림 완벽 차단
     hook_lines = wrap_lines(hook_text.upper(), font_title, 950) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
@@ -1506,7 +1490,6 @@ def generate_vip_carousel(raw_content, cat):
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         
-        # 🚨 글자 수에 따라 동적으로 폰트 크기 자동 조절 (Truncation 원천 차단)
         ticker_str = item['ticker']
         t_size = 95
         if len(ticker_str) > 12: t_size = int(95 * (12 / len(ticker_str)))
@@ -1639,7 +1622,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.54 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.55 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1671,7 +1654,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.54 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.55 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1703,7 +1686,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.54 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.55 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1754,9 +1737,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.54 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.55 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.54 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.55 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
