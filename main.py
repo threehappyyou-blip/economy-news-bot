@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.58_FINAL_WP_AUTH)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.59_ULTIMATE_WAF_BYPASS)
 # ═══════════════════════════════════════════════════════════════
 
-import os, sys, traceback, time, random, re, datetime, io, math
+import os, sys, traceback, time, random, re, datetime, io, math, base64
 import urllib.request, urllib.parse
 import requests
 import feedparser
@@ -39,12 +39,6 @@ SOCIAL_LINKS = {
     "tiktok": "https://www.tiktok.com/@warminsight"
 }
 
-# 🚨 Imunify360 방화벽 우회를 위한 순정 WordPress 루프백 헤더 복구
-WP_API_HEADERS = {
-    'User-Agent': 'WordPress/6.5; ' + SITE_URL,
-    'Accept': 'application/json'
-}
-
 EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
@@ -61,6 +55,17 @@ try:
 except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
+
+# 🚨 Imunify360 방화벽 원천 차단을 막기 위한 선제적 인증(Preemptive Auth) 헤더 생성 함수
+def _get_wp_headers():
+    auth_str = f"{WP_USER}:{WP_APP_PASS}"
+    b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
+    return {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Authorization': f'Basic {b64_auth}',
+        'Cache-Control': 'no-cache'
+    }
 
 MODEL_PRI = {
     "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
@@ -465,7 +470,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) 
+# ✉️ 슬림 이메일 (인스타/숏폼용)
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -546,11 +551,10 @@ def check_env_vars():
         return False
     return True
 
-# 🚨 워드프레스 통신부는 WAF 방화벽 우회를 위해 순정 requests로 완전히 롤백
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -629,13 +633,12 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
-# 🚨 워드프레스 통신 구간을 모두 순정 requests 모듈로 롤백 적용 완료
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=_get_wp_headers(), json={"name": cat_name, "slug": slug}, timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -643,9 +646,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=_get_wp_headers(), json={"name": tag_name, "slug": slug}, timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -653,7 +656,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=_get_wp_headers(), params={"search": search_name}, timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -662,7 +665,7 @@ def get_wp_author_id(author_full_string):
 
 def _get_latest_post_category_name():
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -671,7 +674,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=_get_wp_headers(), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -689,9 +692,8 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
-        r = requests.get(
-            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=WP_API_HEADERS,
-            auth=(WP_USER, WP_APP_PASS), timeout=15
+        r = scraper.get(
+            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=_get_wp_headers(), timeout=15
         )
         if r.status_code != 200: return False
         
@@ -701,14 +703,14 @@ def already_published_today(cat):
             cat_id = r_json[0]["id"]
         except: return False
 
-        r2 = requests.get(
-            f"{WP_URL}/wp-json/wp/v2/posts", headers=WP_API_HEADERS,
+        r2 = scraper.get(
+            f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(),
             params={
                 "categories": cat_id,
                 "per_page": 1,
                 "status": "publish"
             },
-            auth=(WP_USER, WP_APP_PASS), timeout=15
+            timeout=15
         )
         if r2.status_code == 200:
             try:
@@ -725,7 +727,6 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# 외부 뉴스 가져올 때만 방화벽 회피용 scraper 사용 유지
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1220,7 +1221,6 @@ def make_medium_thumbnail(cat):
         img.save(buf, format="JPEG", quality=90)
         return buf.getvalue()
 
-# 🚨 레이어 분리 기법을 적용하여 텍스트는 고정하고 배경만 부드럽게 줌인/줌아웃
 def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
     print("   🎥 Generating 15-Sec Dynamic Dark Psychology Reels Video (Separated Layers)...")
     try:
@@ -1233,11 +1233,10 @@ def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
         SLIDE_DURATION = 2.6
         CROSSFADE_DURATION = 0.3
         ZOOM_START = 1.0
-        ZOOM_END = 1.06 # 매우 은은하고 고급스러운 줌 효과
+        ZOOM_END = 1.06 
 
         clips = []
         for i in range(len(bg_frames)):
-            # 1. 배경 레이어 (이미지가 천천히 확대/축소됨)
             bg_np = np.array(bg_frames[i].convert('RGB'))
             bg_clip = ImageClip(bg_np).set_duration(SLIDE_DURATION)
             if i % 2 == 0: 
@@ -1246,14 +1245,11 @@ def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
                 bg_clip = bg_clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
             bg_clip = bg_clip.set_position(('center', 'center'))
 
-            # 2. 텍스트 레이어 (아무 효과 없이 화면 정중앙에 완전 고정)
             txt_np = np.array(text_frames[i].convert('RGBA'))
             txt_clip = ImageClip(txt_np).set_duration(SLIDE_DURATION).set_position(('center', 'center'))
             
-            # 3. 두 레이어를 하나로 합성
             comp_clip = CompositeVideoClip([bg_clip, txt_clip], size=(1080, 1920)).set_duration(SLIDE_DURATION)
 
-            # 슬라이드 넘어갈 때 스르륵(Fade) 효과 부여
             if i > 0: comp_clip = comp_clip.crossfadein(CROSSFADE_DURATION)
             clips.append(comp_clip)
 
@@ -1446,7 +1442,6 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성을 위해 다크 필터를 적용하되, 너무 어둡지 않게 30% 수준으로 조정
         dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 75)) 
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
@@ -1465,7 +1460,6 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    # 🚨 레이어 분리 작업을 위한 프레임별 분할 리스트 초기화
     bg_frames = []
     text_frames = []
 
@@ -1474,7 +1468,7 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(bg1, img_hook_ai)
     bg_frames.append(bg1)
 
-    txt1 = Image.new("RGBA", (W, H), (0,0,0,0)) # 완전히 투명한 텍스트 필름 레이어
+    txt1 = Image.new("RGBA", (W, H), (0,0,0,0)) 
     d1 = ImageDraw.Draw(txt1)
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
@@ -1553,22 +1547,19 @@ def generate_vip_carousel(raw_content, cat):
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
-    # 이메일 발송용 썸네일을 위한 처리 (레이어가 분리되었으므로 첫 장만 따로 합쳐서 반환)
     image_bytes_list = []
-    
-    # 🚨 분리된 레이어를 합성엔진으로 전달
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames)
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 def _upload_image(img_bytes, filename):
     try:
-        headers = WP_API_HEADERS.copy()
+        headers = _get_wp_headers()
         headers.update({"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"})
-        resp = requests.post(
+        resp = scraper.post(
             f"{WP_URL}/wp-json/wp/v2/media",
             headers=headers, 
-            data=img_bytes, auth=(WP_USER, WP_APP_PASS), timeout=30
+            data=img_bytes, timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
     except: pass
@@ -1619,10 +1610,10 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        r = requests.post(
+        r = scraper.post(
             f"{WP_URL}/wp-json/wp/v2/posts",
-            headers=WP_API_HEADERS,
-            json=post_data, auth=(WP_USER, WP_APP_PASS), timeout=30
+            headers=_get_wp_headers(),
+            json=post_data, timeout=30
         )
         if r.status_code in (200, 201):
             try:
@@ -1660,7 +1651,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1692,7 +1683,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1724,7 +1715,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1775,9 +1766,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.58_FINAL_WP_AUTH Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
