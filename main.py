@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.55_FINAL)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.56_LAYER_SEP)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -87,16 +87,6 @@ PILLAR_PAGES = {
     "Foundation":         {"url": SITE_URL + "/category/foundation/",         "anchor": "Financial Foundation & Basics"},
     "The Daily Catalyst": {"url": SITE_URL + "/category/the-daily-catalyst/", "anchor": "The Daily Catalyst"},
     "Money Hack":         {"url": SITE_URL + "/category/money-hack/",         "anchor": "Money Hack & Side Hustles"},
-}
-
-CAT_RELATED = {
-    "Economy":  ["Tech", "Energy"],
-    "Politics": ["Economy", "Tech"],
-    "Tech":     ["Economy", "Health"],
-    "Health":   ["Economy", "Politics"],
-    "Energy":   ["Economy", "Politics"],
-    "On-Chain": ["Economy", "Tech"],
-    "Money Hack": ["Foundation", "Tech"],
 }
 
 VIP_AUTHORS = {
@@ -474,7 +464,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) -> 🚨 1-Min Reels 대본 삭제 완료
+# ✉️ 슬림 이메일 (인스타/숏폼용) 
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -1226,26 +1216,41 @@ def make_medium_thumbnail(cat):
         img.save(buf, format="JPEG", quality=90)
         return buf.getvalue()
 
-def generate_video_mp4(cat, hook_text, data_points, frames_images):
-    print("   🎥 Generating 15-Sec Dark Psychology Reels Video (Optimized)...")
+# 🚨 1번 해결 기법 반영: 배경 이미지(은은한 줌)와 텍스트 이미지(고정)를 레이어로 분리 합성
+def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
+    print("   🎥 Generating 15-Sec Dynamic Dark Psychology Reels Video (Separated Layers)...")
     try:
         import numpy as np
-        from moviepy.editor import ImageClip, concatenate_videoclips
+        from moviepy.editor import ImageClip, CompositeVideoClip, concatenate_videoclips
     except ImportError as e:
         print(f"   ❌ MoviePy import failed: {e}")
         return None
     try:
         SLIDE_DURATION = 2.6
         CROSSFADE_DURATION = 0.3
+        ZOOM_START = 1.0
+        ZOOM_END = 1.06 # 매우 은은하고 고급스러운 줌 효과
 
         clips = []
-        for i, frame in enumerate(frames_images):
-            frame_np = np.array(frame.convert('RGB'))
-            clip = ImageClip(frame_np).set_duration(SLIDE_DURATION)
-            # 🚨 줌인/줌아웃 효과 완전 삭제 (글씨 가독성 확보 및 PPT 슬라이드처럼 깔끔하게 전환)
-            clip = clip.set_position(('center', 'center'))
-            if i > 0: clip = clip.crossfadein(CROSSFADE_DURATION)
-            clips.append(clip)
+        for i in range(len(bg_frames)):
+            # 1. 배경 레이어 (움직임 부여)
+            bg_np = np.array(bg_frames[i].convert('RGB'))
+            bg_clip = ImageClip(bg_np).set_duration(SLIDE_DURATION)
+            if i % 2 == 0: 
+                bg_clip = bg_clip.resize(lambda t: ZOOM_START + (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+            else: 
+                bg_clip = bg_clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+            bg_clip = bg_clip.set_position(('center', 'center'))
+
+            # 2. 텍스트 레이어 (완전 고정, 투명 배경)
+            txt_np = np.array(text_frames[i].convert('RGBA'))
+            txt_clip = ImageClip(txt_np).set_duration(SLIDE_DURATION).set_position(('center', 'center'))
+            
+            # 3. 레이어 합성
+            comp_clip = CompositeVideoClip([bg_clip, txt_clip], size=(1080, 1920)).set_duration(SLIDE_DURATION)
+
+            if i > 0: comp_clip = comp_clip.crossfadein(CROSSFADE_DURATION)
+            clips.append(comp_clip)
 
         video = concatenate_videoclips(clips, padding=-CROSSFADE_DURATION, method="compose")
         temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
@@ -1263,7 +1268,7 @@ def generate_video_mp4(cat, hook_text, data_points, frames_images):
         )
         with open(temp_path, 'rb') as f: mp4_bytes = f.read()
         os.remove(temp_path)
-        print(f"   ✅ Dark Psychology 15s Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
+        print(f"   ✅ Dark Psychology 15s Layered Video Extracted! ({len(mp4_bytes)/1024/1024:.1f}MB)")
         return mp4_bytes
     except Exception as e:
         print(f"   ❌ Video Encoding Failed: {e}")
@@ -1436,8 +1441,8 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성 향상: 60% 블랙 필터를 30% 수준으로 대폭 낮춰 캐릭터 선명도 확보
-        dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 75)) # 투명도 153 -> 75
+        # 🚨 가독성을 위해 다크 필터를 적용하되, 너무 어둡지 않게 약 30% 수준으로 하향 조정
+        dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 75)) 
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
     def wrap_lines(text, font, max_width):
@@ -1455,12 +1460,19 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    img1 = Image.new("RGB", (W, H), BG)
-    paste_bg(img1, img_hook_ai)
-    d1 = ImageDraw.Draw(img1)
+    # 🚨 레이어 분리 기법을 위한 리스트 초기화
+    bg_frames = []
+    text_frames = []
+
+    # Slide 1
+    bg1 = Image.new("RGB", (W, H), BG)
+    paste_bg(bg1, img_hook_ai)
+    bg_frames.append(bg1)
+
+    txt1 = Image.new("RGBA", (W, H), (0,0,0,0)) # 투명 텍스트 레이어
+    d1 = ImageDraw.Draw(txt1)
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
-    
     hook_lines = wrap_lines(hook_text.upper(), font_title, 950) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
@@ -1468,10 +1480,15 @@ def generate_vip_carousel(raw_content, cat):
         d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 105 
     d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
+    text_frames.append(txt1)
 
-    img2 = Image.new("RGB", (W, H), BG)
-    paste_bg(img2, img_stat_ai)
-    d2 = ImageDraw.Draw(img2)
+    # Slide 2
+    bg2 = Image.new("RGB", (W, H), BG)
+    paste_bg(bg2, img_stat_ai)
+    bg_frames.append(bg2)
+
+    txt2 = Image.new("RGBA", (W, H), (0,0,0,0))
+    d2 = ImageDraw.Draw(txt2)
     d2.text((W//2, 1180), "THE NUMBER", fill=RED, font=font_sub, anchor="mm")
     shock_lines = wrap_lines(shock_stat.upper(), font_mega, 950)
     y_text = 1350
@@ -1479,14 +1496,20 @@ def generate_vip_carousel(raw_content, cat):
         d2.text((W//2, y_text), ln, fill=WHITE, font=font_mega, anchor="mm")
         y_text += 140 
     d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
+    text_frames.append(txt2)
 
+    # Data Slides
     data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
         item = data_points[idx]
-        img_d = Image.new("RGB", (W, H), BG)
-        paste_bg(img_d, img_data_ai)
-        d = ImageDraw.Draw(img_d)
+        
+        bg_d = Image.new("RGB", (W, H), BG)
+        paste_bg(bg_d, img_data_ai)
+        bg_frames.append(bg_d)
+
+        txt_d = Image.new("RGBA", (W, H), (0,0,0,0))
+        d = ImageDraw.Draw(txt_d)
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         
@@ -1506,11 +1529,15 @@ def generate_vip_carousel(raw_content, cat):
             dx = W//2 + (di - 1) * 60
             color = RED if di == idx else "#3f3f46"
             d.ellipse([dx-15, dot_y-15, dx+15, dot_y+15], fill=color)
-        data_imgs.append(img_d)
+        text_frames.append(txt_d)
 
-    img6 = Image.new("RGB", (W, H), BG)
-    paste_bg(img6, img_out_ai)
-    d6 = ImageDraw.Draw(img6)
+    # Slide 6
+    bg6 = Image.new("RGB", (W, H), BG)
+    paste_bg(bg6, img_out_ai)
+    bg_frames.append(bg6)
+
+    txt6 = Image.new("RGBA", (W, H), (0,0,0,0))
+    d6 = ImageDraw.Draw(txt6)
     d6.text((W//2, 1150), "THE TAKEAWAY", fill=RED, font=font_sub, anchor="mm")
     insight_lines = wrap_lines(insight_line.upper(), font_title, 950)
     y_text = 1250
@@ -1519,10 +1546,13 @@ def generate_vip_carousel(raw_content, cat):
         y_text += 105
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
+    text_frames.append(txt6)
 
+    # 이메일 발송용 썸네일을 위한 처리 (레이어가 분리되었으므로 첫 장만 따로 합쳐서 반환)
     image_bytes_list = []
-    all_frames = [img1, img2] + data_imgs + [img6]
-    video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, all_frames)
+    
+    # 🚨 분리된 레이어를 합성엔진으로 전달
+    video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames)
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
@@ -1622,7 +1652,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.55 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.56 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1654,7 +1684,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.55 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.56 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1686,7 +1716,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.55 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.56 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1737,9 +1767,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.55 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.56 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.55 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.56 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
