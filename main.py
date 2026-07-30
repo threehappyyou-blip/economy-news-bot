@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.53)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.54_FIXED)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -87,6 +87,16 @@ PILLAR_PAGES = {
     "Foundation":         {"url": SITE_URL + "/category/foundation/",         "anchor": "Financial Foundation & Basics"},
     "The Daily Catalyst": {"url": SITE_URL + "/category/the-daily-catalyst/", "anchor": "The Daily Catalyst"},
     "Money Hack":         {"url": SITE_URL + "/category/money-hack/",         "anchor": "Money Hack & Side Hustles"},
+}
+
+CAT_RELATED = {
+    "Economy":  ["Tech", "Energy"],
+    "Politics": ["Economy", "Tech"],
+    "Tech":     ["Economy", "Health"],
+    "Health":   ["Economy", "Politics"],
+    "Energy":   ["Economy", "Politics"],
+    "On-Chain": ["Economy", "Tech"],
+    "Money Hack": ["Foundation", "Tech"],
 }
 
 VIP_AUTHORS = {
@@ -464,7 +474,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) 
+# ✉️ 슬림 이메일 (인스타/숏폼용) -> 🚨 1-Min Reels 대본 삭제 완료
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -528,6 +538,222 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print("   ✅ Social Email Sent Successfully!")
     except Exception as e:
         print(f"   ❌ Social Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
+# 🛡️ SYSTEM UTILS & API ENGINE (🚨 누락되었던 15개 필수 함수 전면 복구)
+# ═══════════════════════════════════════════════
+_gemini_client = None
+def _get_gemini_client():
+    global _gemini_client
+    if _gemini_client is None: _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    return _gemini_client
+
+def check_env_vars():
+    missing = [v for v, k in zip(["GEMINI_API_KEY", "WP_USERNAME", "WP_APP_PASSWORD"], [GEMINI_API_KEY, WP_USER, WP_APP_PASS]) if not k]
+    if missing:
+        print(f"❌ Missing Secrets: {missing}")
+        return False
+    return True
+
+def verify_wp_credentials():
+    print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
+    try:
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
+        try:
+            resp_json = resp.json()
+            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
+        except:
+            is_valid_json = False
+
+        if resp.status_code == 200 and is_valid_json: 
+            print("   ✅ WP Auth Successful!")
+            return True
+        else:
+            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
+            print(f"   💬 Server Response: {resp.text[:250]}")
+    except Exception as e: 
+        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
+    return False
+
+def call_gemini(client, model, prompt, sys_inst=None, retries=5):
+    if not sys_inst:
+        sys_inst = "You are an elite financial analyst. ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You MUST strictly follow the required output format. You MUST wrap EVERY section of your response in the exact XML tags requested."
+
+    config = types.GenerateContentConfig(
+        system_instruction=sys_inst,
+        temperature=0.7,
+        max_output_tokens=8192
+    )
+    for i in range(1, retries + 1):
+        try:
+            r = client.models.generate_content(model=model, contents=prompt, config=config)
+            if r.text: return str(r.text)
+        except Exception as e:
+            err = str(e)
+            print(f"    ⚠️ [Gemini API Error] {err}")
+
+            if "credits are depleted" in err or "billing" in err.lower():
+                print("    🚨 Credits depleted!")
+                return None
+
+            if "404" in err or "not found" in err.lower(): return None
+            if "503" in err or "UNAVAILABLE" in err:
+                wait = (15 * i) + random.uniform(-2, 5)
+                print(f"    ⏳ 503 Overload. Jitter Wait {wait:.1f}s...")
+                time.sleep(wait)
+            elif "429" in err:
+                print(f"    ⏳ 429 Quota Exceeded. Waiting...")
+                time.sleep(30 + random.uniform(0, 10))
+            elif i < retries: time.sleep(5 * i)
+    return None
+
+def gem_fb(tier, prompt, sys_inst=None):
+    client = _get_gemini_client()
+    for m in MODEL_PRI.get(tier, FAST_MODELS):
+        print(f"    [AI] Trying {m}...")
+        r = call_gemini(client, m, prompt, sys_inst)
+        if r: return r
+    return ""
+
+def xtag(raw, tag):
+    m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL | re.IGNORECASE)
+    if m:
+        res = m.group(1).strip()
+        res = re.sub(r"^`{3}(html|xml|text|markdown)?\n", "", res, flags=re.IGNORECASE)
+        res = re.sub(r"\n`{3}$", "", res)
+        return res.strip()
+    return ""
+
+def sanitize(html):
+    html = re.sub(r"<script(?!\s+type=['\"]application/ld\+json['\"])[^>]*>.*?</script>", "", html, flags=re.DOTALL)
+    return re.sub(r"<iframe[^>]*>.*?</iframe>", "", html, flags=re.DOTALL)
+
+def make_slug(kw, title, cat):
+    base = kw if (kw and len(kw) > 4) else title
+    slug = re.sub(r"[^\w\s-]", "", base.lower())
+    slug = re.sub(r"[\s_]+", "-", slug).strip("-")[:55]
+    return f"{slug}-{datetime.datetime.utcnow().strftime('%m%d%H%M')}"
+
+def _clean_seo_title(title):
+    for p in ["[👑 VIP] ", "[💎 Pro] ", "[PRO] ", "[VIP] ", "[PRO]", "[VIP]", "[Pro] ", "[VIP] ", "[Pro] "]:
+        title = title.replace(p, "")
+    return title.strip()
+
+def get_or_create_wp_category(cat_name):
+    slug = cat_name.lower().replace(" ", "-")
+    try:
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r2.status_code in (200, 201): return r2.json()["id"]
+    except: pass
+    return None
+
+def get_or_create_wp_tag(tag_name):
+    slug = tag_name.lower().replace(" ", "-")
+    try:
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r2.status_code in (200, 201): return r2.json()["id"]
+    except: pass
+    return None
+
+def get_wp_author_id(author_full_string):
+    search_name = author_full_string.split("&")[0].strip()
+    try:
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200:
+            users = r.json()
+            if len(users) > 0: return users[0]["id"]
+    except: pass
+    return None
+
+def _get_latest_post_category_name():
+    try:
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        if r.status_code == 200:
+            try: r_json = r.json()
+            except: return None
+            
+            if isinstance(r_json, list) and len(r_json) > 0:
+                cat_ids = r_json[0].get('categories', [])
+                if not cat_ids: return None
+                
+                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+                if r_cats.status_code == 200:
+                    try: r_cats_json = r_cats.json()
+                    except: return None
+                    
+                    if isinstance(r_cats_json, list):
+                        cat_map = {c['id']: c['name'] for c in r_cats_json}
+                        for cid in cat_ids:
+                            name = cat_map.get(cid)
+                            if name in CATEGORIES:
+                                return name
+    except Exception as e:
+        print(f"   ⚠️ Failed to get latest category: {e}")
+    return None
+
+def already_published_today(cat):
+    try:
+        cat_slug = cat.lower().replace(" ", "-")
+        r = scraper.get(
+            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=WP_API_HEADERS,
+            auth=(WP_USER, WP_APP_PASS), timeout=15
+        )
+        if r.status_code != 200: return False
+        
+        try:
+            r_json = r.json()
+            if not isinstance(r_json, list) or not r_json: return False
+            cat_id = r_json[0]["id"]
+        except: return False
+
+        r2 = scraper.get(
+            f"{WP_URL}/wp-json/wp/v2/posts", headers=WP_API_HEADERS,
+            params={
+                "categories": cat_id,
+                "per_page": 1,
+                "status": "publish"
+            },
+            auth=(WP_USER, WP_APP_PASS), timeout=15
+        )
+        if r2.status_code == 200:
+            try:
+                r2_json = r2.json()
+                if isinstance(r2_json, list) and len(r2_json) > 0:
+                    latest_post = r2_json[0]
+                    post_date_gmt = latest_post.get("date_gmt", "")[:10] 
+                    today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+                    if post_date_gmt == today_utc:
+                        print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
+                        return True
+            except: pass
+    except Exception as e:
+        print(f"   ⚠️ already_published_today check failed: {e}")
+    return False
+
+def fetch_news_pool(cat, max_items=15):
+    feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
+    items = set()
+    for url in feeds:
+        try:
+            resp = scraper.get(url, headers=EXTERNAL_HEADERS, timeout=15)
+            if resp.status_code == 200:
+                d = feedparser.parse(resp.text)
+                for e in d.entries[:40]:
+                    title = getattr(e, 'title', '').strip()
+                    summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
+                    if title and len(title) > 10: items.add(f"• {title}: {summary}")
+            else:
+                print(f"   ⚠️ RSS feed blocked by WAF or returned {resp.status_code}: {url}")
+        except Exception as ex:
+            print(f"   ⚠️ RSS feed error on {url}: {ex}")
+            pass
+    items_list = list(items)
+    random.shuffle(items_list)
+    return items_list[:max_items]
 
 # ═══════════════════════════════════════════════
 # 📊 VISUAL DATA BUILDERS & HTML
@@ -1095,9 +1321,11 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 1번 수술: 기괴한 이미지를 없애고, 친근하고 귀여운 3D 캐릭터 도입 및 랜덤 컬러 
+    # 🚨 영상 피로도 개선: 매 프레임별 컬러를 랜덤으로 픽업하여 다양성 부여
     colors = ["glowing neon blue", "vibrant emerald green", "striking neon purple", "bright amber gold", "intense crimson red"]
     random.shuffle(colors)
+    
+    # 🚨 친근한 캐릭터(호빵맨/졸라맨) 로직 적용 및 무작위 테마색 배정
     vp_base = f"A cute, approachable, smooth 3D minimalist character with a round friendly head, resembling a high-end polished stickman or Anpanman. Pitch black void background. Engaging, clean cinematic 8k render. No creepy vibes. No text."
     vp1 = vp_base + f" The character is looking surprised, pointing at a downward {colors[0]} line graph."
     vp2 = vp_base + f" Close up profile. The friendly character is carefully analyzing a floating {colors[1]} data sphere."
@@ -1110,7 +1338,7 @@ def generate_vip_carousel(raw_content, cat):
         if item and "|" in item:
             parts = item.split("|")
             raw_ticker = parts[0].strip()
-            # 🚨 4번 수술: 텍스트 잘림 방지를 위해 20자까지 여유롭게 허용
+            # 🚨 텍스트 잘림 방지를 위해 20자까지 여유 허용
             if len(raw_ticker) > 20: raw_ticker = raw_ticker[:18] + ".."
             data_points.append({"ticker": raw_ticker, "val": parts[1].strip()})
 
@@ -1142,7 +1370,7 @@ def generate_vip_carousel(raw_content, cat):
     font_alert = lf(ft_path, 75)
 
     def generate_carousel_image(prompt_text):
-        # 1. First attempt with Gemini (Produces high quality 3D like Video 1)
+        # 1. 1차 시도 (Gemini 고품질 생성)
         try:
             client = _get_gemini_client()
             result = client.models.generate_images(
@@ -1165,11 +1393,11 @@ def generate_vip_carousel(raw_content, cat):
         except Exception as e:
             print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-        # 2. Second attempt with Pollinations (using scraper and random seed to bypass cache/blocks)
+        # 2. 2차 시도 (Pollinations AI + Cloudscraper 우회 및 난수 적용)
         try:
             prompt_encoded = urllib.parse.quote(prompt_text)
-            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true"
-            resp = scraper.get(url, timeout=30) # Scraper solves the 403 Forbidden issue!
+            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true&random={random.random()}"
+            resp = scraper.get(url, timeout=30)
             if resp.status_code == 200:
                 ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
                 ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
@@ -1209,7 +1437,7 @@ def generate_vip_carousel(raw_content, cat):
         if target_ai_img:
             d_img.paste(target_ai_img, (0, 100), target_ai_img)
         else:
-            # 완전 실패했을 때 나오는 최후의 비상용 로직(2번 영상 원인)을 추상적이고 예쁘게 변경
+            # 완벽하게 실패했을 경우 대비 추상적인 백업 이미지 (하얀 막대기 방지)
             fallback_img = Image.new("RGBA", (1080, 1080), "#09090b")
             d = ImageDraw.Draw(fallback_img)
             for r in range(400, 0, -10):
@@ -1223,7 +1451,7 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 3번 수술: 가독성 확보를 위해 배경 전체에 60% 다크 블랙 오버레이 강제 적용
+        # 🚨 가독성 향상: 60% 다크 블랙 필터 오버레이 강제 적용
         dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 153))
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
@@ -1278,7 +1506,7 @@ def generate_vip_carousel(raw_content, cat):
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         
-        # 🚨 4번 수술: 글자 수에 따라 동적으로 폰트 크기 자동 조절 (절대 화면 밖으로 나가지 않음)
+        # 🚨 글자 수에 따라 동적으로 폰트 크기 자동 조절 (Truncation 원천 차단)
         ticker_str = item['ticker']
         t_size = 95
         if len(ticker_str) > 12: t_size = int(95 * (12 / len(ticker_str)))
@@ -1411,7 +1639,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.53 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.54 SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1443,7 +1671,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.53 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.54 Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1475,7 +1703,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.53 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.54 Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1526,9 +1754,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.53 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.54 Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.53 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.54 Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
