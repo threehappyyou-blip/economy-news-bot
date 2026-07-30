@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.59_ULTIMATE_WAF_BYPASS)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.60_CLEAN_UX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -34,11 +34,6 @@ EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 MEDIUM_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 
-SOCIAL_LINKS = {
-    "youtube": "https://www.youtube.com/@WarmInsightyou",
-    "tiktok": "https://www.tiktok.com/@warminsight"
-}
-
 EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
@@ -56,7 +51,7 @@ except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
-# 🚨 Imunify360 방화벽 원천 차단을 막기 위한 선제적 인증(Preemptive Auth) 헤더 생성 함수
+# 🚨 Imunify360 방화벽 우회를 위한 선제적 인증 헤더
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
@@ -67,8 +62,8 @@ def _get_wp_headers():
         'Cache-Control': 'no-cache'
     }
 
+# 🚨 tier 버그 픽스: 대문자 "Premium" 사용 시 정상적으로 pro 모델이 작동합니다.
 MODEL_PRI = {
-    "Royal Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
     "Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"], 
     "unified": ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 }
@@ -126,7 +121,7 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
-# 🧠 프롬프트 설정 
+# 🧠 프롬프트 설정 (투표 옵션 삭제 및 COMMENT_QUESTION 추가)
 # ═══════════════════════════════════════════════
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
@@ -189,10 +184,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
 <PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
-<POLL_QUESTION>(A provocative multiple-choice question related to today's news to ask the reader. e.g., "Do you think Apple is currently overvalued?")</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
 
 FOUNDATION_TOPICS = ["ETF vs Mutual Funds: Which is actually safer for absolute beginners?", "How to start investing in S&P 500 ETFs with exactly $100", "The hidden risks of Dollar Cost Averaging (DCA) you must know"]
@@ -204,10 +196,7 @@ FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following 
 <DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy.)</DEFINITION>
 <WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages.)</WHY_MATTERS>
 <HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
-<POLL_QUESTION>(A provocative multiple-choice question related to this topic.)</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>"""
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 PHILOSOPHY_TOPICS = ["Love money through action, not just unrequited longing", "The psychological vessel of wealth and the weight of responsibility", "Voluntary fatigue: The pleasurable pain of chosen growth"]
 PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite philosophical life strategist. Be harsh, direct, and unapologetic. Wrap your content EXACTLY in the XML tags requested."""
@@ -218,10 +207,7 @@ PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the followin
 <ANCHOR>(A one-sentence philosophical principle based on the theme.)</ANCHOR>
 <REFLECTION>(3-4 paragraphs explaining how this principle connects to modern reality. Criticize passive excuses heavily.)</REFLECTION>
 <CATALYST>(A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
-<POLL_QUESTION>(A provocative multiple-choice question related to this topic.)</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>"""
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 MH_NICHES = ["Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", "Micro-SaaS & Software", "Affiliate Marketing"]
 MH_PLATFORMS = ["Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", "Substack"]
@@ -235,10 +221,7 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
 <STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
-<POLL_QUESTION>(A provocative multiple-choice question related to starting this side hustle.)</POLL_QUESTION>
-<POLL_OPT1>(Option 1, max 6 words)</POLL_OPT1>
-<POLL_OPT2>(Option 2, max 6 words)</POLL_OPT2>
-<POLL_OPT3>(Option 3, max 6 words)</POLL_OPT3>"""
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 # ═══════════════════════════════════════════════
 # 🎬 1. YOUTUBE CHAPTERING ENGINE
@@ -748,6 +731,9 @@ def fetch_news_pool(cat, max_items=15):
     random.shuffle(items_list)
     return items_list[:max_items]
 
+# ═══════════════════════════════════════════════
+# 📊 VISUAL DATA BUILDERS & HTML
+# ═══════════════════════════════════════════════
 def _build_warm_index(raw_data):
     score_str = xtag(raw_data, "WARM_INDEX_SCORE")
     reason = xtag(raw_data, "WARM_INDEX_REASON")
@@ -777,21 +763,17 @@ def _build_warm_index(raw_data):
     </div>
     """
 
-def _build_poll(raw_data, cat="Market"):
-    question = xtag(raw_data, "POLL_QUESTION").strip() or f"What is your perspective on today's {cat} news?"
-    opt1 = xtag(raw_data, "POLL_OPT1").strip() or "Bullish – I see an opportunity."
-    opt2 = xtag(raw_data, "POLL_OPT2").strip() or "Neutral – Waiting for more signals."
-    opt3 = xtag(raw_data, "POLL_OPT3").strip() or "Bearish – Taking a cautious stance."
-    opt3_html = f"""<a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt3}</a>""" if opt3 else ""
+# 🚨 새롭게 개조된 직관적이고 세련된 '댓글 유도 CTA 박스'
+def _build_comment_cta(raw_data, cat="Market"):
+    question = xtag(raw_data, "COMMENT_QUESTION").strip() or f"What are your thoughts on today's {cat} market? Let us know below!"
     return f"""
-    <div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:12px; padding:30px; margin:50px 0; text-align:center;">
-        <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px;">🗳️ What's your take?</h3>
-        <p style="font-size:18px; font-weight:600; color:{SLATE}; margin-bottom:25px;">"{question}"</p>
-        <div style="display:flex; flex-direction:column; gap:12px; max-width:400px; margin:0 auto;">
-            <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt1}</a>
-            <a href="#respond" style="display:block; background:#ffffff; border:2px solid {BORDER}; color:{DARK}; padding:14px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;" onmouseover="this.style.borderColor='{GOLD}'; this.style.backgroundColor='#fefce8';" onmouseout="this.style.borderColor='{BORDER}'; this.style.backgroundColor='#ffffff';">{opt2}</a>
-            {opt3_html}
-        </div>
+    <div style="background:{BG_LIGHT}; border:2px solid {GOLD}; border-radius:12px; padding:35px; margin:50px 0; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
+        <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
+        <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
+        <a href="#respond" style="display:inline-block; background:{DARK}; color:#ffffff; padding:14px 30px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; transition:all 0.2s;">
+            Leave a Comment 👇
+        </a>
     </div>
     """
 
@@ -864,47 +846,39 @@ def _build_pillar_link(target_cat):
     if not pillar: return ""
     return f"""<div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);"><p style="margin:0; font-size:16px; color:#1e293b;"><strong style="color:#2563eb;">📚 Deep Dive:</strong> Want to master this topic? Check out our complete guide to <a href="{pillar['url']}" style="color:#2563eb; text-decoration:underline; font-weight:700;">{pillar['anchor']}</a>.</p></div>"""
 
-def _build_branded_footer():
-    si = ""
-    if SOCIAL_LINKS.get("youtube"): si += f"""<a href="{SOCIAL_LINKS["youtube"]}" target="_blank" style="display:inline-block; background:#FF0000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">▶ YouTube</a>"""
-    if SOCIAL_LINKS.get("tiktok"): si += f"""<a href="{SOCIAL_LINKS["tiktok"]}" target="_blank" style="display:inline-block; background:#000000; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; font-weight:bold; text-decoration:none; margin:0 4px;">🎵 TikTok</a>"""
-    return f"""<div style="background:{DARK}; padding:35px; border-radius:10px; margin-top:30px;"><p style="font-size:24px; font-weight:bold; color:{GOLD}; margin:0 0 12px; text-align:center;">Warm Insight</p><p style="font-size:14px; color:#94a3b8; text-align:center; margin:0 0 16px;">AI-Driven Global Market Analysis</p><div style="text-align:center; margin-bottom:16px;">{si}</div><div style="text-align:center; margin-bottom:16px; font-size:13px;"><a href="{SITE_URL}/about-us/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">About</a><a href="{SITE_URL}/privacy-policy/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">Privacy</a><a href="{SITE_URL}/terms/" style="color:#cbd5e1; text-decoration:none; margin:0 8px;">Terms</a></div><p style="font-size:13px; color:#64748b; margin:0; text-align:center;">All analysis is for informational purposes only. Not financial advice.<br>&copy; {datetime.datetime.utcnow().year} Warm Insight. All rights reserved.</p></div>"""
-
-def _build_founder_note():
-    return f"""<div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); border:2px solid {GOLD}; border-radius:14px; padding:30px; margin:40px 0;"><div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;"><div style="min-width:70px; height:70px; border-radius:50%; background:{GOLD}; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900; color:#fff;">J</div><div style="flex:1; min-width:250px;"><p style="font-size:13px; font-weight:800; color:#92400e; margin:0 0 6px; text-transform:uppercase; letter-spacing:1.5px;">A NOTE FROM THE FOUNDER</p><p style="font-size:18px; font-weight:700; color:{DARK}; margin:0 0 10px; line-height:1.4;">Hey, I'm Jiho. I built Warm Insight because I was tired of finance content being either too dumbed-down or too academic.</p><p style="font-size:15px; color:{SLATE}; margin:0; line-height:1.6;">Every article here is designed to give you ONE thing: a clearer view of your money than you had 5 minutes ago. If it ever stops doing that, tell me directly. I read every reply.</p></div></div></div>"""
-
+# 🚨 가짜 창업자 노트 및 중복 푸터 완전 삭제 적용
 def build_foundation_html(raw, author, tf, title, cat):
-    html = f"""<div style="{F}">\n{_build_founder_note()}"""
+    html = f"""<div style="{F}">\n"""
     html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it?</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{xtag(raw, "DEFINITION").replace(chr(10), '<br><br>')}</div></div>"""
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
-    html += _build_pillar_link("Foundation") + _build_poll(raw, cat) + _build_branded_footer()
-    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    html += _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_philosophy_html(raw, author, tf, title, cat):
-    html = f"""<div style="{F}">\n{_build_founder_note()}"""
+    html = f"""<div style="{F}">\n"""
     html += f"""<div style="text-align:center; margin:50px 0;"><span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span><h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin:10px 0; font-weight:600; line-height:1.4;">{xtag(raw, "ANCHOR")}</h2><span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span></div>"""
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "REFLECTION").replace(chr(10), '<br><br>')}</div></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center;"><p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p><p style="font-size:24px; font-weight:900; color:#92400e; margin:0 0 20px; line-height:1.5;">{re.sub(r'<[^>]+>', '', xtag(raw, "CATALYST"))}</p><p style="font-size:15px; color:#b45309; margin:0; font-style:italic;">Don't just read. Take out a pen and write your answer now.</p></div>"""
-    html += _build_pillar_link("The Daily Catalyst") + _build_poll(raw, cat) + _build_branded_footer()
-    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    html += _build_pillar_link("The Daily Catalyst") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_money_hack_html(raw, author, tf, title, cat):
-    html = f"""<div style="{F}">\n{_build_founder_note()}"""
+    html = f"""<div style="{F}">\n"""
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3><p>{xtag(raw, "CONCEPT").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
     html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
-    html += _build_pillar_link("Money Hack") + _build_poll(raw, cat) + _build_branded_footer()
-    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p></div>"""
+    html += _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_html(tier, cat, raw, author, tf, title):
-    html = f"""<div style="{F}">\n{_build_warm_index(raw)}{_build_founder_note()}"""
+    html = f"""<div style="{F}">\n{_build_warm_index(raw)}"""
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
     html += f"""<div style="background:#fffbeb; border:2px solid #f59e0b; padding:25px; margin:35px 0; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -959,9 +933,8 @@ def build_html(tier, cat, raw, author, tf, title):
     <div style="background:{DARK}; padding:30px; border-radius:10px; border-left:5px solid {GOLD}; margin-top:35px;">
         <p style="color:#e2e8f0; font-size:18px; margin:0;"><strong style="color:{GOLD};">P.S.</strong> {xtag(raw, "PS")}</p>
     </div>"""
-    html += _build_pillar_link("Insight") + _build_poll(raw, cat) + _build_branded_footer()
-    html += f"""<p style="font-size:17px; font-weight:800; color:{DARK}; text-align:center; margin-top:50px; margin-bottom:10px;">💬 Click to join the discussion below! 👇</p>
-    <p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    html += _build_pillar_link("Insight") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def get_font(url, filename):
@@ -1306,7 +1279,7 @@ def generate_vip_carousel(raw_content, cat):
     <ITEM4>TICKER | Value with % or $</ITEM4>
     <ITEM5>TICKER | Value with % or $</ITEM5>
     """
-    raw_data = gem_fb("vip", raw_content, sys_inst)
+    raw_data = gem_fb("Premium", raw_content, sys_inst)
 
     main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} ALERT"
     badge_text = xtag(raw_data, "BADGE") or "IMPACT: HIGH"
@@ -1574,11 +1547,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         insight_cat_id = get_or_create_wp_category("Insight")
 
     if tier == "unified": tag_id = get_or_create_wp_tag("Insight")
-    elif tier == "vip": tag_id = get_or_create_wp_tag("VIP")
+    elif tier == "Premium": tag_id = get_or_create_wp_tag("Pro")
     else: tag_id = get_or_create_wp_tag("Pro")
 
     author_id = get_wp_author_id(author_name)
-    display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack"] or tier == "unified" else (f"[VIP] {title}" if tier == "vip" else f"[Pro] {title}")
+    display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack"] or tier == "unified" else f"[Pro] {title}"
 
     post_data = {
         "title": display_title,
@@ -1626,7 +1599,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                 
                 if raw_for_cards:
                     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-                        if tier == "vip" or tier == "unified":
+                        if tier == "Premium" or tier == "unified":
                             img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                             if video_mp4_bytes:
                                 send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
@@ -1651,7 +1624,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.60_CLEAN_UX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1660,7 +1633,7 @@ def run_foundation_pipeline():
         return
 
     theme = random.choice(FOUNDATION_TOPICS)
-    tier = "premium"
+    tier = "Premium"
     raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
     if raw:
         title = xtag(raw, "TITLE")
@@ -1683,7 +1656,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.60_CLEAN_UX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1692,7 +1665,7 @@ def run_philosophy_pipeline():
         return
 
     theme = random.choice(PHILOSOPHY_TOPICS)
-    tier = "premium"
+    tier = "Premium"
     raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
     if raw:
         title = xtag(raw, "TITLE")
@@ -1715,7 +1688,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.60_CLEAN_UX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1729,7 +1702,7 @@ def run_moneyhack_pipeline():
     theme = f"Niche: {niche} | Core Platform: {platform} | AI Automation Tool: {ai_tool}"
     print(f"   🎲 Random Framework Selected: {theme}")
 
-    tier = "premium"
+    tier = "Premium"
     raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
     if raw:
         title = xtag(raw, "TITLE")
@@ -1766,9 +1739,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.60_CLEAN_UX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.59_ULTIMATE_WAF_BYPASS Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.60_CLEAN_UX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
