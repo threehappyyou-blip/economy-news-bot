@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.56_LAYER_SEP)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.57_FIXED_WP_AUTH)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math
@@ -40,7 +40,7 @@ SOCIAL_LINKS = {
 }
 
 WP_API_HEADERS = {
-    'User-Agent': 'WordPress/6.5; ' + SITE_URL,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     'Accept': 'application/json'
 }
 
@@ -464,7 +464,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용) 
+# ✉️ 슬림 이메일 (인스타/숏폼용) -> 🚨 1-Min Reels 대본 삭제 완료
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
@@ -530,7 +530,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE
+# 🛡️ SYSTEM UTILS & API ENGINE (🚨 순정 requests로 롤백 완료)
 # ═══════════════════════════════════════════════
 _gemini_client = None
 def _get_gemini_client():
@@ -545,10 +545,11 @@ def check_env_vars():
         return False
     return True
 
+# 🚨 워드프레스 통신부는 WAF 회피를 위해 모두 기본 requests 로 롤백
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
+        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -630,9 +631,9 @@ def _clean_seo_title(title):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=WP_API_HEADERS, json={"name": cat_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -640,9 +641,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=WP_API_HEADERS, json={"name": tag_name, "slug": slug}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -650,7 +651,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=WP_API_HEADERS, params={"search": search_name}, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -659,7 +660,7 @@ def get_wp_author_id(author_full_string):
 
 def _get_latest_post_category_name():
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -668,7 +669,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
+                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=WP_API_HEADERS, auth=(WP_USER, WP_APP_PASS), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -686,7 +687,7 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
-        r = scraper.get(
+        r = requests.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=WP_API_HEADERS,
             auth=(WP_USER, WP_APP_PASS), timeout=15
         )
@@ -698,7 +699,7 @@ def already_published_today(cat):
             cat_id = r_json[0]["id"]
         except: return False
 
-        r2 = scraper.get(
+        r2 = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts", headers=WP_API_HEADERS,
             params={
                 "categories": cat_id,
@@ -722,6 +723,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
+# 외부 요청은 여전히 scraper 유지 (RSS 긁어오기)
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1216,7 +1218,7 @@ def make_medium_thumbnail(cat):
         img.save(buf, format="JPEG", quality=90)
         return buf.getvalue()
 
-# 🚨 1번 해결 기법 반영: 배경 이미지(은은한 줌)와 텍스트 이미지(고정)를 레이어로 분리 합성
+# 🚨 1번 수술: 배경과 텍스트 레이어를 완벽하게 분리하여 합성 (글씨는 고정, 배경만 은은하게 줌인)
 def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
     print("   🎥 Generating 15-Sec Dynamic Dark Psychology Reels Video (Separated Layers)...")
     try:
@@ -1233,7 +1235,7 @@ def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
 
         clips = []
         for i in range(len(bg_frames)):
-            # 1. 배경 레이어 (움직임 부여)
+            # 1. 배경 레이어 (이미지가 천천히 확대/축소됨)
             bg_np = np.array(bg_frames[i].convert('RGB'))
             bg_clip = ImageClip(bg_np).set_duration(SLIDE_DURATION)
             if i % 2 == 0: 
@@ -1242,13 +1244,14 @@ def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
                 bg_clip = bg_clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
             bg_clip = bg_clip.set_position(('center', 'center'))
 
-            # 2. 텍스트 레이어 (완전 고정, 투명 배경)
+            # 2. 텍스트 레이어 (아무 효과 없이 화면 정중앙에 완전 고정)
             txt_np = np.array(text_frames[i].convert('RGBA'))
             txt_clip = ImageClip(txt_np).set_duration(SLIDE_DURATION).set_position(('center', 'center'))
             
-            # 3. 레이어 합성
+            # 3. 두 레이어를 하나로 합성
             comp_clip = CompositeVideoClip([bg_clip, txt_clip], size=(1080, 1920)).set_duration(SLIDE_DURATION)
 
+            # 슬라이드 넘어갈 때 스르륵(Fade) 효과 부여
             if i > 0: comp_clip = comp_clip.crossfadein(CROSSFADE_DURATION)
             clips.append(comp_clip)
 
@@ -1441,7 +1444,7 @@ def generate_vip_carousel(raw_content, cat):
             fallback_img.putalpha(mask)
             d_img.paste(fallback_img, (0, 100), fallback_img)
             
-        # 🚨 가독성을 위해 다크 필터를 적용하되, 너무 어둡지 않게 약 30% 수준으로 하향 조정
+        # 🚨 가독성을 해치지 않으면서 캐릭터를 돋보이게 하는 30% 다크 오버레이 필터 유지
         dark_overlay = Image.new("RGBA", (W, H), (0, 0, 0, 75)) 
         d_img.paste(dark_overlay, (0, 0), dark_overlay)
 
@@ -1460,7 +1463,7 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    # 🚨 레이어 분리 기법을 위한 리스트 초기화
+    # 🚨 레이어 분리 작업을 위한 프레임별 분할 리스트 초기화
     bg_frames = []
     text_frames = []
 
@@ -1469,7 +1472,7 @@ def generate_vip_carousel(raw_content, cat):
     paste_bg(bg1, img_hook_ai)
     bg_frames.append(bg1)
 
-    txt1 = Image.new("RGBA", (W, H), (0,0,0,0)) # 투명 텍스트 레이어
+    txt1 = Image.new("RGBA", (W, H), (0,0,0,0)) # 완전히 투명한 텍스트 필름 레이어
     d1 = ImageDraw.Draw(txt1)
     d1.rounded_rectangle([300, 1150, 780, 1250], radius=20, fill=RED)
     d1.text((W//2, 1200), f"🚨 {cat.upper()} ALERT", fill=WHITE, font=font_alert, anchor="mm")
@@ -1548,10 +1551,10 @@ def generate_vip_carousel(raw_content, cat):
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
-    # 이메일 발송용 썸네일을 위한 처리 (레이어가 분리되었으므로 첫 장만 따로 합쳐서 반환)
+    # 이메일 발송 썸네일(첫 번째 슬라이드의 합성본) 처리
     image_bytes_list = []
     
-    # 🚨 분리된 레이어를 합성엔진으로 전달
+    # 🚨 영상 제작 엔진으로 배경/텍스트 분리된 리스트를 통째로 넘겨 합성
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames)
 
     return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
