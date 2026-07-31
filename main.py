@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.64_CTA_BRUTEFORCE_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.65_VREW_FULL_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -222,7 +222,7 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 # ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE
+# 🎬 1. YOUTUBE CHAPTERING ENGINE (🚨 VREW 완벽 호환 및 분량 펌핑)
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
@@ -239,18 +239,42 @@ Based on the following newsletter content, generate a YouTube Metadata package i
 </METADATA>"""
 
 YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 of a massive documentary script based on the newsletter in ENGLISH.
+You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 (Introduction & The Hook) of a MASSIVE documentary script based on the newsletter in ENGLISH.
 [NEWSLETTER]
 {raw_content}
-Rules: OUTPUT ONLY SPOKEN WORDS IN ENGLISH. NO structural tags. Wrap in <PART1> tags."""
+
+═══ 🔥 CRITICAL VREW TTS RULES (DO NOT FAIL) ═══
+1. ABSOLUTELY NO STAGE DIRECTIONS, NO MUSIC CUES, NO SOUND EFFECTS.
+2. DO NOT USE parentheses () or brackets [].
+3. ONLY output the exact narrative monologue to be spoken by the voiceover.
+
+═══ 📈 LENGTH REQUIREMENT (CRITICAL) ═══
+EXPAND VASTLY. Target length: MINIMUM 1,500 words for this part alone. Do NOT just summarize the newsletter. You must dramatically expand the concepts. Create a cinematic, suspenseful opening, explain the core concepts as if speaking to a beginner, use highly detailed analogies, and build massive curiosity. 
+Rules: NO structural tags. Wrap in <PART1> tags."""
 
 YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Continue the English script from Part 1 seamlessly. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
-Rules: Spoken words ONLY in English. NO structural tags. Wrap in <PART2> tags."""
+
+═══ 🔥 CRITICAL VREW TTS RULES (DO NOT FAIL) ═══
+1. ABSOLUTELY NO STAGE DIRECTIONS, NO MUSIC CUES, NO SOUND EFFECTS.
+2. DO NOT USE parentheses () or brackets [].
+3. ONLY output the exact narrative monologue to be spoken by the voiceover.
+
+═══ 📈 LENGTH REQUIREMENT (CRITICAL) ═══
+EXPAND VASTLY. Target length: MINIMUM 1,500 words for this part alone. Go extremely deep into the data. Compare the current situation to historical parallels in extreme detail (e.g., 2008 crash, Dot-com bubble, 1970s inflation). Explain the exact 'why' behind the numbers, and relentlessly analyze the psychological behavior of retail investors vs smart money institutions.
+Rules: NO structural tags. Wrap in <PART2> tags."""
 
 YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-Complete the English script. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
-Rules: Spoken words ONLY in English. NO structural tags. Wrap in <PART3> tags."""
+Complete the English script seamlessly. Write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan).
+
+═══ 🔥 CRITICAL VREW TTS RULES (DO NOT FAIL) ═══
+1. ABSOLUTELY NO STAGE DIRECTIONS, NO MUSIC CUES, NO SOUND EFFECTS.
+2. DO NOT USE parentheses () or brackets [].
+3. ONLY output the exact narrative monologue to be spoken by the voiceover.
+
+═══ 📈 LENGTH REQUIREMENT (CRITICAL) ═══
+EXPAND VASTLY. Target length: MINIMUM 1,500 words for this part alone. Provide hyper-detailed bull and bear case scenarios. Give a relentless, step-by-step actionable guide for viewers on what to do with their portfolio today. End with a powerful, thought-provoking philosophical outro.
+Rules: NO structural tags. Wrap in <PART3> tags."""
 
 def generate_youtube_masterpiece(raw_content, title):
     print(f"   🎬 [YouTube Engine] Starting 3-Phase Chaptering for '{title[:30]}...'")
@@ -761,7 +785,7 @@ def _build_warm_index(raw_data):
     </div>
     """
 
-# 🚨 테마 간섭을 완전히 차단하는 강력한 브루트포스(Brute-force) 세로 중앙 정렬 적용
+# 🚨 테마 간섭을 차단하는 무식하고 강력한 패딩 방식(Brute-force)으로 버튼 수술 완료
 def _build_comment_cta(raw_data, cat="Market"):
     question = xtag(raw_data, "COMMENT_QUESTION").strip() or f"What are your thoughts on today's {cat} market? Let us know below!"
     return f"""
@@ -769,7 +793,7 @@ def _build_comment_cta(raw_data, cat="Market"):
         <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
         <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
-        <a href="#respond" style="display:inline-block !important; height:54px !important; line-height:54px !important; background:{DARK} !important; color:#ffffff !important; padding:0 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
+        <a href="#respond" style="display:inline-block !important; background:{DARK} !important; color:#ffffff !important; padding:0 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; line-height:54px !important; height:54px !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
     </div>
     """
 
@@ -1619,7 +1643,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.64_CTA_BRUTEFORCE_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.65_VREW_FULL_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1651,7 +1675,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.64_CTA_BRUTEFORCE_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1683,7 +1707,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.64_CTA_BRUTEFORCE_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1734,9 +1758,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.64_CTA_BRUTEFORCE_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.64_CTA_BRUTEFORCE_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
