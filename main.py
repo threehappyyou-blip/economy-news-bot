@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.62_CTA_ALIGN_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.63_CTA_PADDING_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -761,6 +761,7 @@ def _build_warm_index(raw_data):
     </div>
     """
 
+# 🚨 테마 간섭을 차단하고 텍스트를 위아래 16px 패딩으로 강제 중앙 정렬
 def _build_comment_cta(raw_data, cat="Market"):
     question = xtag(raw_data, "COMMENT_QUESTION").strip() or f"What are your thoughts on today's {cat} market? Let us know below!"
     return f"""
@@ -768,7 +769,7 @@ def _build_comment_cta(raw_data, cat="Market"):
         <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
         <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
-        <a href="#respond" style="display:inline-flex; align-items:center; justify-content:center; background:{DARK}; color:#ffffff; height:54px; padding:0 35px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; line-height:1; box-sizing:border-box; margin:0 auto;">
+        <a href="#respond" style="display:inline-block; background:{DARK}; color:#ffffff; padding:16px 35px; border-radius:8px; text-decoration:none; font-weight:700; font-size:16px; line-height:normal; box-sizing:border-box; margin:0 auto; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
             Leave a Comment 👇
         </a>
     </div>
@@ -1620,7 +1621,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.63_CTA_PADDING_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1652,7 +1653,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.63_CTA_PADDING_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1684,7 +1685,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.63_CTA_PADDING_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1735,9 +1736,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.63_CTA_PADDING_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.62_CTA_ALIGN_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.63_CTA_PADDING_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
