@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.66_YOUTUBE_SCRIPT_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.67_YOUTUBE_META_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -222,10 +222,17 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 # ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE (🚨 컨텍스트 릴레이 및 지문 차단 완벽 적용)
+# 🎬 1. YOUTUBE CHAPTERING ENGINE (🚨 누락된 {raw_content} 메타데이터 변수 복구 완료)
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
+
+[NEWSLETTER]
+{raw_content}
+
+OUTPUT REQUIREMENT:
+Wrap your response EXACTLY in <METADATA> and </METADATA> tags.
+
 <METADATA>
 [VIRAL TITLES]
 - Option A: 
@@ -1664,7 +1671,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.65_VREW_FULL_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1696,7 +1703,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1728,7 +1735,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1779,9 +1786,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.65_VREW_FULL_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
