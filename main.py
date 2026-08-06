@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.70_CUTE_MASCOT_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.71_HUMAN_REDDIT_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -442,11 +442,29 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 (🚨 휴먼 톤 AI 엔진 전격 교체)
 # ═══════════════════════════════════════════════
+def generate_reddit_post(raw_content, cat, original_link):
+    print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
+    client = _get_gemini_client()
+    sys_inst = """CRITICAL RULE: Write entirely in ENGLISH. You are a 20-something retail investor posting on Reddit. You are NOT an AI.
+    TONE: Casual, cynical, conversational "bro" tone. Use slang (tbh, ngl, crazy, wild, fwiw, bros).
+    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1). Do NOT sound like an article. Make it look like you typed it on your phone on the toilet. Use all lowercase for some sentences."""
+    
+    prompt = f"""Read this formal analysis and rewrite the core insight into a viral Reddit post for {cat} subreddits.
+    [ANALYSIS]
+    {raw_content}
+    
+    [OUTPUT FORMAT]
+    <REDDIT_TITLE>(Max 12 words. Clickbaity but casual, e.g., tbh I think everyone is wrong about...)</REDDIT_TITLE>
+    <REDDIT_BODY>(2-3 short paragraphs. No formatting. Sound like a real dude sharing a thought. At the very end, casually drop this exact link: {original_link} like "btw found this breakdown here: [link] if u care")</REDDIT_BODY>
+    """
+    raw = gem_fb("Premium", prompt, sys_inst)
+    return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
+
 def send_community_viral_email(title, original_link, raw_content, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
-    print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
+    print(f"   📧 Generating and Sending Human-like Community Viral Draft to {EMAIL_RECEIVER}...")
 
     target_subreddits = "r/povertyfinance, r/sidehustle"
     if cat == "On-Chain":
@@ -462,22 +480,20 @@ def send_community_viral_email(title, original_link, raw_content, cat):
     elif cat == "The Daily Catalyst":
         target_subreddits = "r/povertyfinance (또는 마인드셋 관련 서브레딧)"
 
-    if cat == "Foundation":
-        content_body = f"📖 What is it?\n{xtag(raw_content, 'DEFINITION')}\n\n💡 Why It Matters\n{xtag(raw_content, 'WHY_MATTERS')}\n\n🚀 How to Start Today\n{xtag(raw_content, 'HOW_TO_START')}"
-        tldr = xtag(raw_content, "EXCERPT")
-    elif cat == "The Daily Catalyst":
-        content_body = f"❝ The Anchor ❞\n{xtag(raw_content, 'ANCHOR')}\n\nThe Reflection\n{xtag(raw_content, 'REFLECTION')}\n\n⚡ The Daily Catalyst\n{xtag(raw_content, 'CATALYST')}"
-        tldr = xtag(raw_content, "EXCERPT")
-    elif cat == "Money Hack":
-        content_body = f"💡 The Concept\n{xtag(raw_content, 'CONCEPT')}\n\n🛠️ Step-by-Step Execution\n{xtag(raw_content, 'STEP_BY_STEP_TOOL')}\n\n🔥 Pro Tip\n{xtag(raw_content, 'PRO_TIP')}"
-        tldr = xtag(raw_content, "EXCERPT")
+    # AI 기반 레딧 전용 텍스트 생성
+    r_title, r_body = generate_reddit_post(raw_content, cat, original_link)
+    
+    # 생성 실패 시 폴백
+    if not r_title or not r_body:
+        clean_title = _clean_seo_title(title)
+        r_title = f"Quick thoughts on {cat} today"
+        r_body = f"Hey guys, just wanted to share this piece I read today. Makes a lot of sense. tbh u should check it out: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>Warm Insight</a>"
     else:
-        raw_m = xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "")
-        content_body = f"Executive Summary\n{xtag(raw_content, 'EXECUTIVE_SUMMARY')}\n\n💡 Plain English\n{xtag(raw_content, 'PLAIN_ENGLISH')}\n\n{xtag(raw_content, 'HEADLINE')}\n{raw_m.strip()}"
-        tldr = xtag(raw_content, "TAKEAWAY") or xtag(raw_content, "EXECUTIVE_SUMMARY")
-
-    content_body_html = content_body.replace('\n', '<br>')
-    clean_title = _clean_seo_title(title)
+        r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
+        r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
+        r_body = r_body.replace('\n', '<br>')
+        
+    clean_title = r_title.replace('<REDDIT_TITLE>', '').replace('</REDDIT_TITLE>', '')
 
     try:
         msg = MIMEMultipart()
@@ -494,20 +510,16 @@ def send_community_viral_email(title, original_link, raw_content, cat):
                         <span style="font-size: 14px; opacity: 0.9; display: block; margin-bottom: 4px;">🎯 AI 추천 타겟 커뮤니티:</span>
                         <strong style="font-size: 18px;">{target_subreddits}</strong>
                     </div>
-                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">해당 커뮤니티에 아래 내용을 복사해서 붙여넣으세요!</p>
+                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">해당 커뮤니티에 아래 내용을 복사해서 붙여넣으세요! (휴먼 톤 적용 완료)</p>
                 </div>
                 <div style="padding: 30px;">
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
                     <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
-                        I wrote a 5-minute guide for absolute beginners on {cat}: {clean_title} — Hope this helps someone today!
+                        {clean_title}
                     </div>
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
-                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: Georgia, serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
-                        Hey guys, I know finance jargon can be super overwhelming when you're just starting out. Here is a super plain-English breakdown I put together:<br><br>
-                        {content_body_html}<br><br>
-                        ---<br>
-                        <strong>TL;DR:</strong> {tldr}<br><br>
-                        <em>(P.S. I break down daily market news and finance basics like this over at my blog <a href="{original_link}" style="color: #2563eb; text-decoration: underline;">Warm Insight</a> if anyone wants to read more!)</em>
+                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
+                        {r_body}
                     </div>
                 </div>
             </div>
@@ -1015,7 +1027,6 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 귀여운 픽사/디즈니 스타일 마스코트로 프롬프트 전면 수정 완료
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1705,7 +1716,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.71_HUMAN_REDDIT_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1737,7 +1748,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.71_HUMAN_REDDIT_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1769,7 +1780,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.71_HUMAN_REDDIT_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1820,9 +1831,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.71_HUMAN_REDDIT_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.71_HUMAN_REDDIT_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
