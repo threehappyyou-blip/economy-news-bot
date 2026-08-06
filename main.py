@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.67_YOUTUBE_META_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.68_IMAGE_RETRY_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -222,7 +222,7 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 # ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE (🚨 누락된 {raw_content} 메타데이터 변수 복구 완료)
+# 🎬 1. YOUTUBE CHAPTERING ENGINE
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
@@ -821,7 +821,7 @@ def _build_comment_cta(raw_data, cat="Market"):
         <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
         <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
-        <a href="#respond" style="display:inline-block !important; background:{DARK} !important; color:#ffffff !important; padding:16px 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; line-height:normal !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
+        <a href="#respond" style="display:inline-block !important; background:{DARK} !important; color:#ffffff !important; padding:0 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; line-height:54px !important; height:54px !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
     </div>
     """
 
@@ -997,6 +997,56 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 이미지 생성 로직 초강화: 구글 실패 시 Pollinations 무조건 성공하도록 45초 타임아웃, 3회 재시도 적용
+def generate_carousel_image(prompt_text):
+    try:
+        client = _get_gemini_client()
+        result = client.models.generate_images(
+            model='imagen-3.0-generate-002', # 최신 모델로 버전업
+            prompt=prompt_text,
+            config=types.GenerateImagesConfig(
+                number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"
+            )
+        )
+        img_data = result.generated_images[0].image.image_bytes
+        ai_img_raw = Image.open(io.BytesIO(img_data)).convert("RGBA")
+        ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
+        mask = Image.new("L", (1080, 1080), 255)
+        mask_draw = ImageDraw.Draw(mask)
+        for y in range(780, 1080):
+            alpha = int(255 - (y - 780) * (255 / 300))
+            mask_draw.line([(0, y), (1080, y)], fill=alpha)
+        ai_img_raw.putalpha(mask)
+        return ai_img_raw
+    except Exception as e:
+        print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
+
+    # 구글 API 실패 시 최후의 보루 Pollinations 3회 집요한 재시도 로직
+    prompt_encoded = urllib.parse.quote(prompt_text)
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true"
+    
+    for attempt in range(3):
+        try:
+            print(f"    🔄 Pollinations Attempt {attempt+1}/3...")
+            resp = requests.get(url, timeout=45) # timeout 대폭 증가 및 순정 requests 사용
+            if resp.status_code == 200:
+                ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
+                ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
+                mask = Image.new("L", (1080, 1080), 255)
+                mask_draw = ImageDraw.Draw(mask)
+                for y in range(780, 1080):
+                    alpha = int(255 - (y - 780) * (255 / 300))
+                    mask_draw.line([(0, y), (1080, y)], fill=alpha)
+                ai_img_raw.putalpha(mask)
+                print("    ✅ Pollinations Success!")
+                return ai_img_raw
+        except Exception as e:
+            print(f"    ⚠️ Pollinations Attempt {attempt+1} failed: {e}")
+            time.sleep(3)
+    
+    print("    ❌ All Image Gen APIs Failed.")
+    return None
+
 def make_thumbnail(title_text, cat, tier):
     W, H, SCALE = 1200, 630, 2
     w, h = W * SCALE, H * SCALE
@@ -1032,7 +1082,7 @@ def make_thumbnail(title_text, cat, tier):
         print(f"    [AI] Requesting Mascot Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
+            model='imagen-3.0-generate-002',
             prompt=AI_PROMPTS.get(cat, AI_PROMPTS["Economy"]),
             config=types.GenerateImagesConfig(
                 number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
@@ -1194,7 +1244,7 @@ def make_medium_thumbnail(cat):
     
     try:
         result = client.models.generate_images(
-            model='imagen-3.0-generate-001',
+            model='imagen-3.0-generate-002',
             prompt=prompt,
             config=types.GenerateImagesConfig(
                 number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
@@ -1204,15 +1254,19 @@ def make_medium_thumbnail(cat):
         return result.generated_images[0].image.image_bytes
     except Exception as e:
         print(f"    ⚠️ Medium AI Image Gen failed. Trying Pollinations AI... ({e})")
-        try:
-            prompt_encoded = urllib.parse.quote(prompt)
-            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1200&height=630&nologo=true"
-            resp = scraper.get(url, timeout=30)
-            if resp.status_code == 200:
-                print("    ✅ Medium Pollinations Thumbnail Generated Successfully!")
-                return resp.content
-        except:
-            pass
+        prompt_encoded = urllib.parse.quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1200&height=630&nologo=true"
+        for attempt in range(3):
+            try:
+                resp = requests.get(url, timeout=45)
+                if resp.status_code == 200:
+                    print("    ✅ Medium Pollinations Thumbnail Generated Successfully!")
+                    return resp.content
+            except Exception as e2:
+                print(f"    ⚠️ Pollinations Medium Attempt {attempt+1} failed: {e2}")
+                time.sleep(3)
+
+        # 모두 실패시 fallback
         W, H = 1200, 630
         CAT_STYLES = {
             "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
@@ -1383,48 +1437,6 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    def generate_carousel_image(prompt_text):
-        try:
-            client = _get_gemini_client()
-            result = client.models.generate_images(
-                model='imagen-3.0-generate-001',
-                prompt=prompt_text,
-                config=types.GenerateImagesConfig(
-                    number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"
-                )
-            )
-            img_data = result.generated_images[0].image.image_bytes
-            ai_img_raw = Image.open(io.BytesIO(img_data)).convert("RGBA")
-            ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
-            mask = Image.new("L", (1080, 1080), 255)
-            mask_draw = ImageDraw.Draw(mask)
-            for y in range(780, 1080):
-                alpha = int(255 - (y - 780) * (255 / 300))
-                mask_draw.line([(0, y), (1080, y)], fill=alpha)
-            ai_img_raw.putalpha(mask)
-            return ai_img_raw
-        except Exception as e:
-            print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
-
-        try:
-            prompt_encoded = urllib.parse.quote(prompt_text)
-            url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true&random={random.random()}"
-            resp = scraper.get(url, timeout=30)
-            if resp.status_code == 200:
-                ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
-                ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
-                mask = Image.new("L", (1080, 1080), 255)
-                mask_draw = ImageDraw.Draw(mask)
-                for y in range(780, 1080):
-                    alpha = int(255 - (y - 780) * (255 / 300))
-                    mask_draw.line([(0, y), (1080, y)], fill=alpha)
-                ai_img_raw.putalpha(mask)
-                return ai_img_raw
-        except Exception as e:
-            print(f"    ⚠️ Pollinations Image Gen failed: {e}")
-        
-        return None
-
     print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
     img_hook_ai = generate_carousel_image(vp1)
     time.sleep(3)
@@ -1449,11 +1461,18 @@ def generate_vip_carousel(raw_content, cat):
         if target_ai_img:
             d_img.paste(target_ai_img, (0, 100), target_ai_img)
         else:
+            # 완벽한 폴백 (둘다 실패시, 카테고리 컬러로 원을 그림)
+            cat_colors = {
+                "Economy": (2, 132, 199), "Politics": (220, 38, 38),
+                "Tech": (99, 102, 241), "Health": (5, 150, 105),
+                "Energy": (234, 88, 12), "On-Chain": (139, 92, 246)
+            }
+            c_rgb = cat_colors.get(cat, (245, 158, 11))
             fallback_img = Image.new("RGBA", (1080, 1080), "#09090b")
             d = ImageDraw.Draw(fallback_img)
             for r in range(400, 0, -10):
                 alpha = int(255 * (1 - r/400))
-                d.ellipse([540-r, 500-r, 540+r, 500+r], fill=(59, 130, 246, alpha))
+                d.ellipse([540-r, 500-r, 540+r, 500+r], fill=(c_rgb[0], c_rgb[1], c_rgb[2], alpha))
             mask = Image.new("L", (1080, 1080), 255)
             mask_draw = ImageDraw.Draw(mask)
             for y in range(780, 1080):
@@ -1671,7 +1690,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1703,7 +1722,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1735,7 +1754,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1786,9 +1805,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.67_YOUTUBE_META_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
