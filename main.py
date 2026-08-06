@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.68_IMAGE_RETRY_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.69_REDDIT_TARGETING)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -442,11 +442,26 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 (🚨 레딧 타겟팅 적용)
 # ═══════════════════════════════════════════════
 def send_community_viral_email(title, original_link, raw_content, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
     print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
+
+    # 🎯 카테고리별 맞춤 레딧 커뮤니티 매핑
+    target_subreddits = "r/povertyfinance, r/sidehustle"
+    if cat == "On-Chain":
+        target_subreddits = "r/CryptoCurrency"
+    elif cat == "Tech":
+        target_subreddits = "r/technology, r/stocks"
+    elif cat in ["Economy", "Energy", "Politics"]:
+        target_subreddits = "r/stocks, r/UKPersonalFinance"
+    elif cat == "Money Hack":
+        target_subreddits = "r/sidehustle"
+    elif cat == "Foundation":
+        target_subreddits = "r/povertyfinance, r/UKPersonalFinance"
+    elif cat == "The Daily Catalyst":
+        target_subreddits = "r/povertyfinance (또는 마인드셋 관련 서브레딧)"
 
     if cat == "Foundation":
         content_body = f"📖 What is it?\n{xtag(raw_content, 'DEFINITION')}\n\n💡 Why It Matters\n{xtag(raw_content, 'WHY_MATTERS')}\n\n🚀 How to Start Today\n{xtag(raw_content, 'HOW_TO_START')}"
@@ -476,7 +491,11 @@ def send_community_viral_email(title, original_link, raw_content, cat):
             <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                 <div style="background: #ef4444; padding: 25px; color: #ffffff;">
                     <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
-                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy & Paste to r/povertyfinance, r/sidehustle, or Quora!</p>
+                    <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; margin-top: 15px;">
+                        <span style="font-size: 14px; opacity: 0.9; display: block; margin-bottom: 4px;">🎯 AI 추천 타겟 커뮤니티:</span>
+                        <strong style="font-size: 18px;">{target_subreddits}</strong>
+                    </div>
+                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">해당 커뮤니티에 아래 내용을 복사해서 붙여넣으세요!</p>
                 </div>
                 <div style="padding: 30px;">
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
@@ -997,12 +1016,11 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 이미지 생성 로직 초강화: 구글 실패 시 Pollinations 무조건 성공하도록 45초 타임아웃, 3회 재시도 적용
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
         result = client.models.generate_images(
-            model='imagen-3.0-generate-002', # 최신 모델로 버전업
+            model='imagen-3.0-generate-002',
             prompt=prompt_text,
             config=types.GenerateImagesConfig(
                 number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"
@@ -1021,14 +1039,13 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-    # 구글 API 실패 시 최후의 보루 Pollinations 3회 집요한 재시도 로직
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true"
     
     for attempt in range(3):
         try:
             print(f"    🔄 Pollinations Attempt {attempt+1}/3...")
-            resp = requests.get(url, timeout=45) # timeout 대폭 증가 및 순정 requests 사용
+            resp = requests.get(url, timeout=45)
             if resp.status_code == 200:
                 ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
                 ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
@@ -1266,7 +1283,6 @@ def make_medium_thumbnail(cat):
                 print(f"    ⚠️ Pollinations Medium Attempt {attempt+1} failed: {e2}")
                 time.sleep(3)
 
-        # 모두 실패시 fallback
         W, H = 1200, 630
         CAT_STYLES = {
             "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
@@ -1461,7 +1477,6 @@ def generate_vip_carousel(raw_content, cat):
         if target_ai_img:
             d_img.paste(target_ai_img, (0, 100), target_ai_img)
         else:
-            # 완벽한 폴백 (둘다 실패시, 카테고리 컬러로 원을 그림)
             cat_colors = {
                 "Economy": (2, 132, 199), "Politics": (220, 38, 38),
                 "Tech": (99, 102, 241), "Health": (5, 150, 105),
@@ -1690,7 +1705,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.69_REDDIT_TARGETING SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1722,7 +1737,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1754,7 +1769,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1805,9 +1820,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.68_IMAGE_RETRY_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
