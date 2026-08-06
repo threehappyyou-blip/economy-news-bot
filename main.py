@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.69_REDDIT_TARGETING)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.70_CUTE_MASCOT_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -442,13 +442,12 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 (🚨 레딧 타겟팅 적용)
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
 # ═══════════════════════════════════════════════
 def send_community_viral_email(title, original_link, raw_content, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
     print(f"   📧 Generating and Sending Community Viral Draft to {EMAIL_RECEIVER}...")
 
-    # 🎯 카테고리별 맞춤 레딧 커뮤니티 매핑
     target_subreddits = "r/povertyfinance, r/sidehustle"
     if cat == "On-Chain":
         target_subreddits = "r/CryptoCurrency"
@@ -840,7 +839,7 @@ def _build_comment_cta(raw_data, cat="Market"):
         <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
         <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
         <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
-        <a href="#respond" style="display:inline-block !important; background:{DARK} !important; color:#ffffff !important; padding:0 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; line-height:54px !important; height:54px !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
+        <a href="#respond" style="display:inline-block !important; background:{DARK} !important; color:#ffffff !important; padding:16px 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; line-height:normal !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
     </div>
     """
 
@@ -1016,6 +1015,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 귀여운 픽사/디즈니 스타일 마스코트로 프롬프트 전면 수정 완료
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1409,13 +1409,13 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    colors = ["glowing neon blue", "vibrant emerald green", "striking neon purple", "bright amber gold", "intense crimson red"]
+    colors = ["blue", "green", "purple", "gold", "red"]
     random.shuffle(colors)
-    vp_base = f"A cute, approachable, smooth 3D minimalist character with a round friendly head, resembling a high-end polished stickman or Anpanman. Pitch black void background. Engaging, clean cinematic 8k render. No creepy vibes. No text."
-    vp1 = vp_base + f" The character is looking surprised, pointing at a downward {colors[0]} line graph."
-    vp2 = vp_base + f" Close up profile. The friendly character is carefully analyzing a floating {colors[1]} data sphere."
-    vp3 = vp_base + f" Medium shot. The character is dynamically touching floating {colors[2]} digital nodes and charts."
-    vp4 = vp_base + f" The character is standing confidently with a powerful {colors[3]} aura."
+    vp_base = "A highly detailed, ultra-cute Pixar-style 3D mascot character. It is a friendly, bright, adorable futuristic little robot with big expressive eyes and a warm smile. Clean, dark minimalist background with soft professional studio lighting. High-end 3D animation style, extremely approachable and lovable. No text, no creepy vibes."
+    vp1 = vp_base + f" The cute character is looking surprised and excited, pointing an explaining finger at a glowing {colors[0]} upward trending hologram chart."
+    vp2 = vp_base + f" Close up. The friendly character is acting like a smart teacher, looking through cute round glasses and examining a floating {colors[1]} data sphere."
+    vp3 = vp_base + f" Medium shot. The adorable character is dynamically explaining something, interacting with a glowing {colors[2]} digital dashboard."
+    vp4 = vp_base + f" The character is standing confidently, smiling brightly and giving a thumbs up, with a soft {colors[3]} glowing aura around it."
 
     data_points = []
     for i in range(1, 6):
@@ -1705,7 +1705,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.69_REDDIT_TARGETING SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1737,7 +1737,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1769,7 +1769,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1820,9 +1820,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.69_REDDIT_TARGETING Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.70_CUTE_MASCOT_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
