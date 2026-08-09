@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.72_ART_TOY_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.77_BUILD_HTML_RESTORED)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -442,7 +442,7 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 
 # ═══════════════════════════════════════════════
 def generate_reddit_post(raw_content, cat, original_link):
     print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
@@ -807,7 +807,218 @@ def fetch_news_pool(cat, max_items=15):
     random.shuffle(items_list)
     return items_list[:max_items]
 
-# 🚨 완벽한 카카오톡 레퍼런스 스타일: 흰색 둥근 큰 머리 + 까만 두 점눈 + 아트 토이 느낌 + 네온 조명
+def _build_warm_index(raw_data):
+    score_str = xtag(raw_data, "WARM_INDEX_SCORE")
+    reason = xtag(raw_data, "WARM_INDEX_REASON")
+    if not score_str: return ""
+    try: score = int(re.sub(r'[^0-9]', '', score_str))
+    except: return ""
+    score = max(0, min(100, score))
+    if score < 30: c_main, label, icon, grad = "#3b82f6", "Fear Zone", "❄️", "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
+    elif score > 70: c_main, label, icon, grad = "#ef4444", "Greed Zone", "🔥", "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
+    else: c_main, label, icon, grad = "#f59e0b", "Neutral", "⚖️", "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
+    return f"""
+    <div style="background:#ffffff; border:2px solid {BORDER}; border-radius:12px; padding:25px; margin:0 0 35px 0; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+            <div>
+                <span style="font-size:13px; font-weight:800; color:{MUTED}; text-transform:uppercase; letter-spacing:1px;">Today's Warm Index</span>
+                <div style="font-size:20px; font-weight:800; color:{DARK}; margin-top:4px;">{icon} {label}</div>
+            </div>
+            <div style="text-align:right;">
+                <span style="font-size:32px; font-weight:900; color:{c_main}; line-height:1;">{score}</span>
+                <span style="font-size:14px; color:{MUTED}; font-weight:600;">/ 100</span>
+            </div>
+        </div>
+        <div style="background:#e2e8f0; height:10px; border-radius:5px; overflow:hidden; position:relative; margin-bottom:12px;">
+            <div style="background:{grad}; height:100%; width:{score}%; border-radius:5px; transition:width 1s ease-in-out;"></div>
+        </div>
+        <p style="margin:0; font-size:14px; color:{SLATE}; font-style:italic; text-align:center;">"{reason}"</p>
+    </div>
+    """
+
+def _build_comment_cta(raw_data, cat="Market"):
+    question = xtag(raw_data, "COMMENT_QUESTION").strip() or f"What are your thoughts on today's {cat} market? Let us know below!"
+    return f"""
+    <div style="background:{BG_LIGHT}; border:2px solid {GOLD}; border-radius:12px; padding:35px; margin:50px 0; text-align:center; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <p style="font-size:14px; font-weight:800; color:{GOLD}; text-transform:uppercase; letter-spacing:1.5px; margin:0 0 10px;">💬 Join the Conversation</p>
+        <h3 style="margin-top:0; font-size:22px; color:{DARK}; margin-bottom:20px; line-height:1.4;">{question}</h3>
+        <p style="font-size:16px; color:{SLATE}; margin-bottom:25px;">Share your insights or portfolio strategy with the Warm Insight community.</p>
+        <a href="#respond" style="display:inline-block !important; background:{DARK} !important; color:#ffffff !important; padding:16px 35px !important; border-radius:8px !important; text-decoration:none !important; font-weight:700 !important; font-size:16px !important; line-height:normal !important; margin:0 auto !important; box-shadow:0 4px 6px rgba(0,0,0,0.1) !important;">Leave a Comment 👇</a>
+    </div>
+    """
+
+def _build_data_table(raw_data, title="Market Dashboard"):
+    if not raw_data: raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
+    lines = [l.strip() for l in raw_data.split('\n') if '|' in l and '---' not in l and 'Asset Name' not in l and 'Asset/Metric' not in l]
+    if len(lines) < 2: lines = lines + ["S&P 500 | 5,234 | UP | Tech earnings boost", "Nasdaq 100 | 18,200 | UP | AI infrastructure growth"][:max(0, 2 - len(lines))]
+    html = f"""
+    <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px; display:inline-block;">📊 {title}</h3>
+        <div style="overflow-x:auto; margin-top:15px;">
+        <table style="width:100%; border-collapse:collapse; font-family:-apple-system,sans-serif;">
+            <thead><tr style="background:{BG_LIGHT}; text-align:left; border-bottom:2px solid {BORDER};">
+                <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px; white-space:nowrap;">Asset/Metric</th>
+                <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px; white-space:nowrap;">Status</th>
+                <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px; white-space:nowrap;">Trend</th>
+                <th style="padding:14px; color:{SLATE}; font-weight:700; font-size:15px;">Key Insight</th>
+            </tr></thead><tbody>
+    """
+    for line in lines[:5]:
+        parts = [p.strip() for p in line.split('|') if p.strip()]
+        if len(parts) >= 4:
+            asset, value, trend, insight = parts[:4]
+            t_upper = trend.upper()
+            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢"
+            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴"
+            else: t_color, t_icon = "#f59e0b", "🟡"
+            html += f"""<tr style="border-bottom:1px solid {BORDER};"><td style="padding:14px; font-weight:600; color:{DARK};">{asset}</td><td style="padding:14px; color:{SLATE}; font-family:monospace; font-size:15px; font-weight:bold;">{value}</td><td style="padding:14px; font-weight:bold; color:{t_color};">{t_icon} {trend.upper()}</td><td style="padding:14px; color:{MUTED}; font-size:15px; line-height:1.6;">{insight}</td></tr>"""
+    html += "</tbody></table></div></div>"
+    return html
+
+def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
+    if not raw_data: return ""
+    lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
+    if not lines: return ""
+    html = f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px;">🌡️ {title}</h3>"""
+    colors = ["#dc2626", "#ea580c", "#ca8a04", "#059669", "#3b82f6"]
+    for i, line in enumerate(lines[:5]):
+        parts = [p.strip() for p in line.split('|')]
+        if len(parts) >= 2:
+            name = parts[0]
+            try: pct = int(re.sub(r'[^0-9]', '', parts[1]))
+            except: pct = 50
+            pct = max(0, min(100, pct))
+            c = colors[0] if pct > 75 else (colors[1] if pct > 50 else (colors[3] if pct < 30 else colors[2]))
+            html += f"""<div style="margin-top:18px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span style="font-weight:600; font-size:15px; color:{DARK};">{name}</span><span style="font-weight:900; font-size:15px; color:{c};">{pct}%</span></div><div style="background:#e2e8f0; height:12px; border-radius:6px; overflow:hidden;"><div style="background:{c}; height:100%; width:{pct}%; border-radius:6px;"></div></div></div>"""
+    html += "</div>"
+    return html
+
+def _build_quick_hits(raw_data):
+    if not raw_data: return ""
+    lines = [l.strip() for l in raw_data.split('\n') if l.strip()]
+    if not lines: return ""
+    items_html = ""
+    for i, line in enumerate(lines[:3]):
+        clean = line.replace("-", "").replace("*", "").strip()
+        if clean and clean[0] not in "🚨👀🤔💸📈📉🔥💡🤯": clean = f"{['🚨', '👀', '💸'][i % 3]} {clean}"
+        items_html += f"""<li style="margin-bottom:12px; color:{SLATE};">{clean}</li>"""
+    return f"""<div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; text-transform:uppercase; letter-spacing:1px;">⚡ Quick Hits</h3><ul style="{F} margin:0; padding-left:20px;">{items_html}</ul></div>"""
+
+def _build_pie_chart(s, b, c, cat):
+    c_s, c_b, c_c = {"Economy": ("#2563eb", "#60a5fa", "#dbeafe"), "Politics": ("#dc2626", "#f87171", "#fee2e2"), "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"), "Health": ("#059669", "#34d399", "#d1fae5"), "Energy": ("#d97706", "#fbbf24", "#fef3c7"), "On-Chain": ("#8b5cf6", "#a78bfa", "#ede9fe")}.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
+    circ = 565.49
+    sd, bd, cd = circ*s/100, circ*b/100, circ*c/100
+    pie = f"""<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;"><circle cx="100" cy="100" r="90" fill="none" stroke="{c_s}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_b}" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_c}" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/><text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text><text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg><div style="display:flex;justify-content:center;gap:20px;"><span style="color:{c_s};font-weight:bold;">● Stocks/Assets {s}%</span><span style="color:{c_b};font-weight:bold;">● Safe {b}%</span><span style="color:{c_c};font-weight:bold;">● Cash {c}%</span></div>"""
+    return pie
+
+def _build_pillar_link(target_cat):
+    pillar = PILLAR_PAGES.get(target_cat)
+    if not pillar: return ""
+    return f"""<div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);"><p style="margin:0; font-size:16px; color:#1e293b;"><strong style="color:#2563eb;">📚 Deep Dive:</strong> Want to master this topic? Check out our complete guide to <a href="{pillar['url']}" style="color:#2563eb; text-decoration:underline; font-weight:700;">{pillar['anchor']}</a>.</p></div>"""
+
+def build_foundation_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it?</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{xtag(raw, "DEFINITION").replace(chr(10), '<br><br>')}</div></div>"""
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
+    html += _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
+
+def build_philosophy_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<div style="text-align:center; margin:50px 0;"><span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span><h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin:10px 0; font-weight:600; line-height:1.4;">{xtag(raw, "ANCHOR")}</h2><span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span></div>"""
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "REFLECTION").replace(chr(10), '<br><br>')}</div></div>"""
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center;"><p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p><p style="font-size:24px; font-weight:900; color:#92400e; margin:0 0 20px; line-height:1.5;">{re.sub(r'<[^>]+>', '', xtag(raw, "CATALYST"))}</p><p style="font-size:15px; color:#b45309; margin:0; font-style:italic;">Don't just read. Take out a pen and write your answer now.</p></div>"""
+    html += _build_pillar_link("The Daily Catalyst") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
+
+def build_money_hack_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3><p>{xtag(raw, "CONCEPT").replace(chr(10), '<br><br>')}</p></div>"""
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
+    html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
+    html += _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
+
+def build_html(tier, cat, raw, author, tf, title):
+    html = f"""<div style="{F}">\n{_build_warm_index(raw)}"""
+    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px;">Executive Summary</h2>"""
+    html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
+    html += f"""<div style="background:#fffbeb; border:2px solid #f59e0b; padding:25px; margin:35px 0; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0; color:#b45309; font-size:22px; display:flex; align-items:center; gap:8px;">⚠️ One-Point Action Plan for Beginners</h3>
+        <p style="font-size:15px; color:#92400e; margin-top:-10px; margin-bottom:20px;">Today's specific, actionable strategy for absolute beginners</p>
+        <div style="background:#ffffff; border-left:5px solid #10b981; padding:20px; border-radius:6px; margin-bottom:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin:0; color:#065f46; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🟢 DO THIS:</p>
+            <p style="margin:8px 0 0; color:#064e3b; font-size:17px; line-height:1.6; font-weight:500;">{xtag(raw, "DO_ACTION").replace(chr(10), '<br>')}</p>
+        </div>
+        <div style="background:#ffffff; border-left:5px solid #ef4444; padding:20px; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <p style="margin:0; color:#991b1b; font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">🔴 AVOID THIS:</p>
+            <p style="margin:8px 0 0; color:#7f1d1d; font-size:17px; line-height:1.6; font-weight:500;">{xtag(raw, "DONT_ACTION").replace(chr(10), '<br>')}</p>
+        </div>
+    </div>"""
+    html += _build_data_table(xtag(raw, "DATA_TABLE"), "Market Dashboard")
+    html += _build_progress_bars(xtag(raw, "HEATMAP"), "Sector Risk Heatmap")
+    html += f"""<div style="background:#faf5ff; border-left:5px solid #8b5cf6; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;">
+        <p style="font-size:20px; font-weight:800; color:#4c1d95; margin:0 0 12px;">💡 Plain English</p><p style="margin:0;">{xtag(raw, "PLAIN_ENGLISH")}</p>
+    </div>"""
+    html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; margin-top:30px;">Market Drivers & Flow</h2>"""
+    html += f"""<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>"""
+    html += f"""<div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {GOLD}; padding:30px; border-radius:8px; margin:30px 0;">
+        <p><strong>🧐 The Big Picture:</strong> {xtag(raw, "MACRO")}</p><hr><p><strong>🐑 What Most People Are Doing:</strong> {xtag(raw, "HERD")}</p><hr><p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p>
+    </div><div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0;">
+        <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br><span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
+    </div>"""
+    html += f"""<div style="display:flex; flex-wrap:wrap; gap:20px; margin:40px 0;">
+        <div style="flex:1; min-width:250px; background:#ecfdf5; border:2px solid #10b981; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#065f46;">🐂 Bull Case</h4><p style="margin:0; color:#064e3b;">{xtag(raw, "BULL_CASE")}</p>
+        </div>
+        <div style="flex:1; min-width:250px; background:#fef2f2; border:2px solid #ef4444; border-radius:8px; padding:25px;">
+            <h4 style="margin-top:0; font-size:22px; color:#991b1b;">🐻 Bear Case</h4><p style="margin:0; color:#7f1d1d;">{xtag(raw, "BEAR_CASE")}</p>
+        </div>
+    </div>"""
+    html += _build_quick_hits(xtag(raw, "QUICK_HITS"))
+    html += f"""<div style="background:#ffffff; border:2px solid {GOLD}; padding:30px; border-radius:8px; margin:45px 0;">
+        <h3 style="margin-top:0; color:{GOLD}; font-size:24px;">💎 Smart Money Move</h3><p style="margin:0;">{xtag(raw, "SMART_MONEY_MOVE")}</p>
+    </div>"""
+    if xtag(raw, "HISTORICAL_PARALLEL"):
+        html += f"""<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding:35px; border-radius:12px; margin:45px 0; border-left:5px solid {GOLD};">
+            <h3 style="color:{GOLD}; margin-top:0; font-size:24px;">📜 Historical Parallel</h3><p style="color:#cbd5e1; font-size:17px; margin:15px 0 0;">{xtag(raw, "HISTORICAL_PARALLEL")}</p>
+        </div>"""
+    al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
+    html += f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:40px;">
+        <h3 style="margin-top:0; font-size:22px; color:{DARK};">📊 Suggested Allocation</h3>{_build_pie_chart(al["s"], al["b"], al["c"], cat)}
+        <p style="margin-top:15px; color:{MUTED}; font-size:14px; text-align:center; font-style:italic;">General guideline based on current {cat} outlook. Not personalized advice.</p>
+    </div>"""
+    html += f"""<hr style="border:0; height:1px; background:{BORDER}; margin:50px 0;">
+    <h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin-bottom:20px;">Today's Warm Insight</h2>
+    <p style="{F} font-size:19px; font-style:italic; border-left:3px solid #cbd5e1; padding-left:16px;">"{xtag(raw, "TAKEAWAY")}"</p>
+    <div style="background:{DARK}; padding:30px; border-radius:10px; border-left:5px solid {GOLD}; margin-top:35px;">
+        <p style="color:#e2e8f0; font-size:18px; margin:0;"><strong style="color:{GOLD};">P.S.</strong> {xtag(raw, "PS")}</p>
+    </div>"""
+    html += _build_pillar_link("Insight") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
+
+def get_font(url, filename):
+    if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
+        try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            print(f"    📥 Downloading font from {url}...")
+            resp = scraper.get(url, timeout=15)
+            resp.raise_for_status()
+            with open(filename, 'wb') as f: f.write(resp.content)
+            print("    ✅ Font downloaded successfully.")
+        except Exception as e:
+            print(f"    ❌ Font download error: {e}")
+    return filename
+
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1201,7 +1412,7 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    colors = ["neon red", "neon blue", "neon green", "neon purple", "neon orange", "neon pink"]
+    colors = ["neon red", "neon purple", "neon green", "neon orange", "neon blue", "neon pink"]
     random.shuffle(colors)
     
     # 🚨 카카오톡 레퍼런스(2번 사진) 완벽 구현: 기괴한 눈/팔다리 버그를 막고 완벽한 3D 아트 토이 스타일로 고정
@@ -1586,107 +1797,6 @@ def send_community_viral_email(title, original_link, raw_content, cat):
     except Exception as e:
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
-def run_foundation_pipeline():
-    cat = "Foundation"
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    
-    print(f"🚀 Starting v46.9.72_ART_TOY_FIX SEO Foundation Pipeline | Category: {cat}")
-    if not check_env_vars() or not verify_wp_credentials(): return
-
-    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
-    elif already_published_today(cat):
-        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
-        return
-
-    theme = random.choice(FOUNDATION_TOPICS)
-    tier = "Premium"
-    raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
-    if raw:
-        title = xtag(raw, "TITLE")
-        kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "EXCERPT")
-        slug = make_slug(kw, title, cat)
-        author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
-        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        
-        html = build_foundation_html(raw, author, tf, title, cat)
-        img_bytes = make_thumbnail(title, cat, tier)
-        if not img_bytes or len(img_bytes) < 1000:
-            print(f"   ❌ Thumbnail error. Aborting.")
-            return
-            
-        med_img_bytes = make_medium_thumbnail(cat)
-        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
-
-def run_philosophy_pipeline():
-    cat = "The Daily Catalyst"
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    
-    print(f"🚀 Starting v46.9.72_ART_TOY_FIX Catalyst Pipeline | Category: {cat}")
-    if not check_env_vars() or not verify_wp_credentials(): return
-
-    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
-    elif already_published_today(cat):
-        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
-        return
-
-    theme = random.choice(PHILOSOPHY_TOPICS)
-    tier = "Premium"
-    raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
-    if raw:
-        title = xtag(raw, "TITLE")
-        kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "EXCERPT")
-        slug = make_slug(kw, title, cat)
-        author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
-        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        
-        html = build_philosophy_html(raw, author, tf, title, cat)
-        img_bytes = make_thumbnail(title, cat, tier)
-        if not img_bytes or len(img_bytes) < 1000:
-            print(f"   ❌ Thumbnail error. Aborting.")
-            return
-
-        med_img_bytes = make_medium_thumbnail(cat)
-        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
-
-def run_moneyhack_pipeline():
-    cat = "Money Hack"
-    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
-    
-    print(f"🚀 Starting v46.9.72_ART_TOY_FIX Money Hack Pipeline | Category: {cat}")
-    if not check_env_vars() or not verify_wp_credentials(): return
-
-    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
-    elif already_published_today(cat):
-        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
-        return
-
-    niche = random.choice(MH_NICHES)
-    platform = random.choice(MH_PLATFORMS)
-    ai_tool = random.choice(MH_AI_TOOLS)
-    theme = f"Niche: {niche} | Core Platform: {platform} | AI Automation Tool: {ai_tool}"
-    print(f"   🎲 Random Framework Selected: {theme}")
-
-    tier = "Premium"
-    raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
-    if raw:
-        title = xtag(raw, "TITLE")
-        kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "EXCERPT")
-        slug = make_slug(kw, title, cat)
-        author = VIP_AUTHORS.get(cat, "Warm Insight Growth Team")
-        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
-        
-        html = build_money_hack_html(raw, author, tf, title, cat)
-        img_bytes = make_thumbnail(title, cat, tier)
-        if not img_bytes or len(img_bytes) < 1000:
-            print(f"   ❌ Thumbnail error. Aborting.")
-            return
-
-        med_img_bytes = make_medium_thumbnail(cat)
-        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
-
 def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
     day_of_week = current_time.weekday()
@@ -1705,9 +1815,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.72_ART_TOY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.77_BUILD_HTML_RESTORED Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.72_ART_TOY_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.77_BUILD_HTML_RESTORED Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
