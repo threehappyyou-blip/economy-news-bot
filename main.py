@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.90_SYNTAX_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.91_FINAL_RESTORED)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -38,7 +38,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 뉴스 크롤링 전용 스크래퍼 (워드프레스 접속에는 절대 사용하지 않음)
+# 🚨 Imunify360 WAF를 안전하게 통과하는 Cloudscraper (복구 완료)
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -52,7 +52,6 @@ except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
-# 워드프레스 통신 전용 순정 헤더
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
@@ -618,11 +617,11 @@ def check_env_vars():
         return False
     return True
 
-# 워드프레스 통신 전용 (순정 requests 사용)
+# 워드프레스 통신 전용 (순정 scraper 사용으로 원상 복구)
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -704,9 +703,9 @@ def _clean_seo_title(title):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=_get_wp_headers(), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=_get_wp_headers(), json={"name": cat_name, "slug": slug}, timeout=15)
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=_get_wp_headers(), json={"name": cat_name, "slug": slug}, timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -714,9 +713,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=_get_wp_headers(), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=_get_wp_headers(), json={"name": tag_name, "slug": slug}, timeout=15)
+        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=_get_wp_headers(), json={"name": tag_name, "slug": slug}, timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -724,7 +723,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=_get_wp_headers(), params={"search": search_name}, timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=_get_wp_headers(), params={"search": search_name}, timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -733,7 +732,7 @@ def get_wp_author_id(author_full_string):
 
 def _get_latest_post_category_name():
     try:
-        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=_get_wp_headers(), timeout=15)
+        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -742,7 +741,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=_get_wp_headers(), timeout=15)
+                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=_get_wp_headers(), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -760,7 +759,7 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
-        r = requests.get(
+        r = scraper.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=_get_wp_headers(), timeout=15
         )
         if r.status_code != 200: return False
@@ -771,7 +770,7 @@ def already_published_today(cat):
             cat_id = r_json[0]["id"]
         except: return False
 
-        r2 = requests.get(
+        r2 = scraper.get(
             f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(),
             params={
                 "categories": cat_id,
@@ -1029,7 +1028,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 형태의 오해를 완벽 차단! 네온 오브젝트를 프롬프트 최우선으로 배치하여 "빛나는 차트를 들고 있는 하얀 캐릭터" 강제
+# 🚨 네온 불빛 최우선 강제 프롬프트 적용 (원상복구됨)
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1059,7 +1058,7 @@ def generate_carousel_image(prompt_text):
     for attempt in range(3):
         try:
             print(f"    🔄 Pollinations Attempt {attempt+1}/3...")
-            resp = requests.get(url, timeout=45)
+            resp = scraper.get(url, timeout=45)
             if resp.status_code == 200:
                 ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
                 ai_img_raw = ai_img_raw.resize((1080, 1080), Image.LANCZOS)
@@ -1289,7 +1288,7 @@ def make_medium_thumbnail(cat):
         url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1200&height=630&nologo=true"
         for attempt in range(3):
             try:
-                resp = requests.get(url, timeout=45)
+                resp = scraper.get(url, timeout=45)
                 if resp.status_code == 200:
                     print("    ✅ Medium Pollinations Thumbnail Generated Successfully!")
                     return resp.content
@@ -1423,23 +1422,23 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 카카오톡 이미지 맞춤형 컬러: 골드, 빨강, 보라, 초록
+    # 🚨 카카오톡 이미지 맞춤형 컬러 세팅
     colors_neon = [
         ("neon gold", "golden glowing light"),
         ("neon red", "red glowing light"),
         ("neon purple", "purple glowing light"),
+        ("neon yellow", "yellow glowing light"),
         ("neon emerald green", "bright green glowing light")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 수정됨: 네온 조명과 소품을 프롬프트 최전방에 배치하여 AI가 조명을 절대 누락하지 못하게 강제함
-    vp1 = f"A brilliant, intensely bright {colors_neon[0][0]} glowing neon arrow graph stick held by a cute white 3D character with a large smooth round head and thin arms and legs. The vibrant {colors_neon[0][1]} strongly reflects off the glossy white head and floor in a pitch-black studio room. Sharp contrast, cinematic lighting, Pop Mart 3D figure style, adorable, high quality render, no text."
-    
-    vp2 = f"A cute white 3D figure with a large round head and thin arms, holding and pointing a bright {colors_neon[1][0]} glowing neon laser pointer wand like a teacher. The intense {colors_neon[1][1]} casts a vivid rim light reflection on the character's white face and shiny body in a dark studio. Pop Mart toy style, high contrast, no text."
-    
-    vp3 = f"A cute white 3D character with a big round head and thin limbs touching a bright {colors_neon[2][0]} glowing neon chart line on the dark ground. The striking {colors_neon[2][1]} brightly illuminates the figure's face and creates colorful reflections on the glossy dark floor. High quality 3D render, kawaii style, no text."
-    
-    vp4 = f"A cute white 3D figure standing next to a stunning {colors_neon[3][0]} glowing neon light beam, pointing forward with a thin arm to teach an insight. The bright {colors_neon[3][1]} creates strong colorful highlights on the white character's head against a dark moody background. 8k resolution, 3D art toy, no text."
+    # 🚨 형태의 오해를 완벽히 제거한 '하얀색 디자이너 토이' 및 '네온 불빛 우선 생성' 프롬프트
+    vp_base = "A high-end 3D macro photography of a cute, friendly white designer art toy figure. The character has a perfectly round, smooth white spherical head with two cute black dot eyes and a tiny smile. It has a small white body with thin, clearly visible arms and legs. The figure is standing on a dark reflective floor in a pitch-black cinematic studio. Highly detailed, kawaii aesthetic. Absolutely no text, no extra limbs, no weird mutations."
+
+    vp1 = vp_base + f" The cute character is acting like a smart teacher, using its thin arm to confidently point at a bright {colors_neon[0][0]} glowing upward arrow. The vibrant {colors_neon[0][1]} strongly reflects on its glossy white face."
+    vp2 = vp_base + f" The cute character is standing proudly, holding a bright {colors_neon[1][0]} glowing laser stick to teach the audience. The vibrant {colors_neon[1][1]} creates a beautiful rim light on the figure."
+    vp3 = vp_base + f" The cute character is curiously touching a bright {colors_neon[2][0]} glowing chart line floating in the air. The vibrant {colors_neon[2][1]} vividly illuminates its smooth white head."
+    vp4 = vp_base + f" The cute character is making a welcoming teaching gesture next to a stunning {colors_neon[3][0]} glowing light trail. The vibrant {colors_neon[3][1]} elegantly reflects on the glossy surface."
 
     data_points = []
     for i in range(1, 6):
@@ -1640,17 +1639,6 @@ def _upload_image(img_bytes, filename):
             data=img_bytes, timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
-        
-        # 1차 실패 시 스텔스 모드로 재시도
-        print("   ⚠️ Media Upload failed. Retrying with Stealth Mode...")
-        stealth_headers = _get_stealth_headers()
-        stealth_headers.update({"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"})
-        resp2 = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/media",
-            headers=stealth_headers, 
-            data=img_bytes, timeout=30
-        )
-        if resp2.status_code in (200, 201): return resp2.json().get("id")
     except: pass
     return None
 
@@ -1698,9 +1686,8 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         "post_tier": tier.upper(),
     }
 
-    # 1차 발행 시도
     try:
-        r = requests.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(), json=post_data, timeout=30)
+        r = scraper.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(), json=post_data, timeout=30)
         if r.status_code in (200, 201):
             try: link = r.json().get('link')
             except: link = None
@@ -1709,22 +1696,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
                 _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title)
                 return True
     except: pass
-
-    # 2차 발행 시도 (스텔스 모드)
-    print("   ⚠️ Publish failed. Retrying with Stealth Mode...")
-    time.sleep(3)
-    try:
-        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_stealth_headers(), json=post_data, timeout=30)
-        if r2.status_code in (200, 201):
-            try: link = r2.json().get('link')
-            except: link = None
-            if link:
-                print(f"   ✅ Published (Stealth Mode): {link}")
-                _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title)
-                return True
-        print(f"   ❌ Publish completely failed. Status: {r2.status_code}")
-    except Exception as e:
-        print(f"   ❌ Final Publish Network error: {e}")
     return False
 
 def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
@@ -1745,7 +1716,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.90_SYNTAX_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.91_FINAL_RESTORED SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1777,7 +1748,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.90_SYNTAX_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.91_FINAL_RESTORED Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1809,7 +1780,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.90_SYNTAX_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.91_FINAL_RESTORED Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1860,9 +1831,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.90_SYNTAX_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.91_FINAL_RESTORED Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.90_SYNTAX_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.91_FINAL_RESTORED Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
