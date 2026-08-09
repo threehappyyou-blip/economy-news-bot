@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.75_NEON_STICKMAN_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.76_FINAL_ART_TOY_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -442,26 +442,32 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 (🚨 빈칸 증발 완벽 해결)
 # ═══════════════════════════════════════════════
 def generate_reddit_post(raw_content, cat, original_link):
     print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
     client = _get_gemini_client()
-    sys_inst = """You are a friendly, helpful retail investor actively participating in a Reddit community.
-    TONE: Casual, conversational, insightful. Use simple formatting.
-    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR".
-    CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS. Output strictly valid tags."""
     
-    prompt = f"""Summarize the core insight of this analysis into a casual, engaging Reddit post for {cat} investors.
-    [ANALYSIS]
-    {raw_content}
+    # AI가 포맷을 무시하지 못하도록 아주 엄격한 단일 지시 하달
+    sys_inst = """You are a casual retail investor on Reddit.
+    Write a title and a body based on the analysis.
+    YOU MUST FORMAT EXACTLY LIKE THIS AND OUTPUT NOTHING ELSE:
+    <REDDIT_TITLE>your casual title here</REDDIT_TITLE>
+    <REDDIT_BODY>your casual body here</REDDIT_BODY>"""
     
-    [OUTPUT FORMAT STRICTLY REQUIRED]
-    <REDDIT_TITLE>casual engaging title here (max 12 words)</REDDIT_TITLE>
-    <REDDIT_BODY>2-3 short paragraphs of casual discussion here. End with this exact link: {original_link}</REDDIT_BODY>
-    """
+    prompt = f"Rewrite this for a {cat} subreddit.\n\n{raw_content}\n\nOUTPUT FORMAT:\n<REDDIT_TITLE>catchy title here</REDDIT_TITLE>\n<REDDIT_BODY>casual text here, ending with {original_link}</REDDIT_BODY>"
+    
     raw = gem_fb("Premium", prompt, sys_inst)
-    return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
+    t = xtag(raw, "REDDIT_TITLE")
+    b = xtag(raw, "REDDIT_BODY")
+    
+    # 🚨 AI가 말을 안 들어서 태그 추출에 실패하면, 원본 응답 통째로 꽂아 넣는 스마트 폴백!
+    if not t or not b:
+        print("   ⚠️ XML Tag parsing failed. Using Raw AI output as fallback...")
+        t = f"Quick thoughts on the {cat} market"
+        b = raw.strip() + f"\n\nLink: {original_link}"
+        
+    return t, b
 
 def send_community_viral_email(title, original_link, raw_content, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
@@ -483,17 +489,8 @@ def send_community_viral_email(title, original_link, raw_content, cat):
 
     r_title, r_body = generate_reddit_post(raw_content, cat, original_link)
     
-    if not r_title or not r_body:
-        print("   ⚠️ AI missed Reddit tags. Using Smart Fallback...")
-        clean_title = _clean_seo_title(title)
-        r_title = f"Quick thought on {cat} market trends"
-        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "The market is shifting in some really interesting ways right now."
-        r_body = f"Hey guys, been tracking the market and wanted to share this thought.\n\n{fallback_insight}\n\nHonestly makes a lot of sense when you look at the bigger picture. Found a deeper dive on this here: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>{original_link}</a> if anyone wants to check it out."
-    else:
-        r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
-        r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
-        r_body = r_body.replace('\n', '<br>')
-        
+    r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
+    r_body = r_body.replace('\n', '<br>')
     clean_title = r_title.replace('<REDDIT_TITLE>', '').replace('</REDDIT_TITLE>', '')
 
     try:
@@ -1028,7 +1025,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 카카오톡 이미지(3번 사진)와 100% 동일한 '광택있는 네온 스틱맨' 스타일 전면 적용
+# 🚨 카카오톡 이미지(3번 사진) 완벽 구현: 기괴함을 막고 둥글고 귀여운 3D 아트 토이(Art Toy) 스타일로 완전히 고정
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1425,12 +1422,12 @@ def generate_vip_carousel(raw_content, cat):
     colors = ["neon red", "neon purple", "neon green", "neon orange", "neon blue", "neon pink"]
     random.shuffle(colors)
     
-    # 🚨 카카오톡 이미지(3번 사진)와 100% 동일한 '빛나는 네온을 든 프리미엄 3D 스틱맨' 스타일 픽스
-    vp_base = "A high-quality 3D render of an incredibly cute, stylized 3D stickman mascot with a large, perfectly round head, big expressive cute eyes, a tiny smile, and thin limbs. The character has a smooth, glossy vinyl toy texture. Dark cinematic background. The scene is illuminated by striking, vibrant neon lighting reflecting beautifully on the character's surface. Adorable, Pixar-style designer toy, high-end 3D animation style. No text, no creepy vibes."
-    vp1 = vp_base + f" The cute character is looking excited, holding and pointing at a bright glowing {colors[0]} upward trending arrow line."
-    vp2 = vp_base + f" The cute character is standing confidently, holding a bright glowing {colors[1]} laser beam pointer like a wand."
-    vp3 = vp_base + f" The cute character is curiously touching a bright glowing {colors[2]} digital chart line flowing on the ground."
-    vp4 = vp_base + f" The cute character is smiling brightly, illuminated by a strong glowing {colors[3]} light beam that forms a chart."
+    # 🚨 카카오톡 3번 레퍼런스와 100% 동일한 고퀄리티 프리미엄 '팝마트(Pop Mart) 디자이너 토이' 스타일로 완벽 픽스
+    vp_base = "A masterpiece 3D render of a cute, friendly 'blind box' style designer toy character. It has a perfectly spherical oversized glossy white head, two simple big black dot eyes, a tiny cute smile, and a small minimal white body. It looks like a high-quality kawaii vinyl figure. The setting is a dark cinematic studio. Highly detailed, octane render, unreal engine 5 style. No text, no extra limbs."
+    vp1 = vp_base + f" The character is holding a glowing {colors[0]} neon upward trending arrow in its hand, with the neon light brilliantly reflecting on its glossy white face."
+    vp2 = vp_base + f" The character is pointing at a glowing {colors[1]} neon laser beam, with the neon light brilliantly reflecting on its glossy white face."
+    vp3 = vp_base + f" The character is touching a glowing {colors[2]} neon wave line, with the neon light brilliantly reflecting on its glossy white face."
+    vp4 = vp_base + f" The character is standing happily next to a glowing {colors[3]} neon light trail, with the neon light brilliantly reflecting on its glossy white face."
 
     data_points = []
     for i in range(1, 6):
@@ -1717,27 +1714,29 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     return False
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 
 # ═══════════════════════════════════════════════
 def generate_reddit_post(raw_content, cat, original_link):
     print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
     client = _get_gemini_client()
+    sys_inst = """You are a casual retail investor on Reddit.
+    Write a title and a body based on the analysis.
+    YOU MUST FORMAT EXACTLY LIKE THIS AND OUTPUT NOTHING ELSE:
+    <REDDIT_TITLE>your casual title here</REDDIT_TITLE>
+    <REDDIT_BODY>your casual body here</REDDIT_BODY>"""
     
-    sys_inst = """You are a friendly, helpful retail investor actively participating in a Reddit community.
-    TONE: Casual, conversational, insightful. Use simple formatting.
-    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR".
-    CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS. Output strictly valid tags."""
+    prompt = f"Rewrite this for a {cat} subreddit.\n\n{raw_content}\n\nOUTPUT FORMAT:\n<REDDIT_TITLE>catchy title here</REDDIT_TITLE>\n<REDDIT_BODY>casual text here, ending with {original_link}</REDDIT_BODY>"
     
-    prompt = f"""Summarize the core insight of this analysis into a casual, engaging Reddit post for {cat} investors.
-    [ANALYSIS]
-    {raw_content}
-    
-    [OUTPUT FORMAT STRICTLY REQUIRED]
-    <REDDIT_TITLE>casual engaging title here (max 12 words)</REDDIT_TITLE>
-    <REDDIT_BODY>2-3 short paragraphs of casual discussion here. End with this exact link: {original_link}</REDDIT_BODY>
-    """
     raw = gem_fb("Premium", prompt, sys_inst)
-    return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
+    t = xtag(raw, "REDDIT_TITLE")
+    b = xtag(raw, "REDDIT_BODY")
+    
+    if not t or not b:
+        print("   ⚠️ XML Tag parsing failed. Using Raw AI output as fallback...")
+        t = f"Quick thoughts on the {cat} market"
+        b = raw.strip() + f"\n\nLink: {original_link}"
+        
+    return t, b
 
 def send_community_viral_email(title, original_link, raw_content, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
@@ -1759,17 +1758,8 @@ def send_community_viral_email(title, original_link, raw_content, cat):
 
     r_title, r_body = generate_reddit_post(raw_content, cat, original_link)
     
-    if not r_title or not r_body:
-        print("   ⚠️ AI missed Reddit tags. Using Smart Fallback...")
-        clean_title = _clean_seo_title(title)
-        r_title = f"Quick thought on {cat} market trends"
-        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "The market is shifting in some really interesting ways right now."
-        r_body = f"Hey guys, been tracking the market and wanted to share this thought.\n\n{fallback_insight}\n\nHonestly makes a lot of sense when you look at the bigger picture. Found a deeper dive on this here: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>{original_link}</a> if anyone wants to check it out."
-    else:
-        r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
-        r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
-        r_body = r_body.replace('\n', '<br>')
-        
+    r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
+    r_body = r_body.replace('\n', '<br>')
     clean_title = r_title.replace('<REDDIT_TITLE>', '').replace('</REDDIT_TITLE>', '')
 
     try:
@@ -1810,77 +1800,11 @@ def send_community_viral_email(title, original_link, raw_content, cat):
     except Exception as e:
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
-# ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용)
-# ═══════════════════════════════════════════════
-def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
-    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
-        print("   ⚠️ Missing email credentials. Skipping email dispatch.")
-        return
-
-    print(f"   📧 Sending Social Slim Package to {EMAIL_RECEIVER}...")
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"🚨 {cat.upper()} REELS READY: {hook_text[:40]}..."
-
-        vid_tag = ""
-        if video_mp4_bytes:
-            vid_tag = f"""
-            <div style="margin-bottom: 25px; text-align:center; padding: 25px; background: #0f172a; border-radius: 16px; border: 2px solid #10b981;">
-                <p style="color: #10b981; font-weight: 900; font-size: 18px; margin-top: 0; text-transform: uppercase;">🎬 15-Sec Dark Psychology Reels Attached!</p>
-                <div style="font-size: 45px; margin: 15px 0;">✨ 📹 ✨</div>
-                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 5px 0;">100% Compatible with IG Reels / TikTok / YT Shorts.</p>
-                <p style="color: #94a3b8; font-size: 13px; margin-bottom: 0; margin-top: 10px;">Download <strong>WarmInsight_{cat}_Video.mp4</strong> attached below.</p>
-            </div>
-            """
-
-        body = f"""
-        <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f5; padding: 20px; color: #0f1419;">
-            {vid_tag}
-            <div style="background: #ffffff; border-left: 5px solid #3b82f6; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #2563eb; font-size: 18px;">💬 Smart Community Comment</h3>
-                <div style="background: #eff6ff; padding: 15px; border-radius: 8px; font-size: 15px; font-weight: bold; color: #1e3a8a;">
-                    "{smart_comment}"
-                </div>
-            </div>
-            <div style="background: #ffffff; border-left: 5px solid #10b981; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
-                <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
-            </div>
-            <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
-            <div style="text-align:center; margin-bottom: 20px;">
-                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    Read Full Post on Website →
-                </a>
-            </div>
-        </div>
-        """
-        msg.attach(MIMEText(body, 'html'))
-
-        if video_mp4_bytes:
-            try:
-                part = MIMEBase('video', 'mp4')
-                part.set_payload(video_mp4_bytes)
-                encoders.encode_base64(part)
-                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Video.mp4')
-                msg.attach(part)
-            except Exception as e:
-                print(f"   ⚠️ MP4 Attachment Error: {e}")
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASS)
-            server.send_message(msg)
-        print("   ✅ Social Email Sent Successfully!")
-    except Exception as e:
-        print(f"   ❌ Social Email Failed: {e}")
-
 def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.75_NEON_STICKMAN_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.76_FINAL_ART_TOY_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1912,7 +1836,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.75_NEON_STICKMAN_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.76_FINAL_ART_TOY_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1944,7 +1868,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.75_NEON_STICKMAN_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.76_FINAL_ART_TOY_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1995,9 +1919,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.75_NEON_STICKMAN_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.76_FINAL_ART_TOY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.75_NEON_STICKMAN_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.76_FINAL_ART_TOY_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
