@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.77_BUILD_HTML_RESTORED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.79_PERFECT_STICKMAN_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -59,6 +59,19 @@ def _get_wp_headers():
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
         'Cache-Control': 'no-cache'
+    }
+
+# 🚨 Imunify360 WAF 스텔스 우회용 사파리 헤더
+def _get_stealth_headers():
+    auth_str = f"{WP_USER}:{WP_APP_PASS}"
+    b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
+    return {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': f'Basic {b64_auth}',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Accept-Language': 'en-US,en;q=0.9'
     }
 
 MODEL_PRI = {
@@ -612,22 +625,43 @@ def check_env_vars():
 
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
+    headers = _get_wp_headers()
+    
     try:
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=headers, timeout=25)
         try:
             resp_json = resp.json()
-            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
+            is_valid = isinstance(resp_json, dict) and "id" in resp_json
         except:
-            is_valid_json = False
+            is_valid = False
 
-        if resp.status_code == 200 and is_valid_json: 
+        if resp.status_code == 200 and is_valid: 
             print("   ✅ WP Auth Successful!")
             return True
+    except: pass
+
+    print("   ⚠️ 1차 접속 실패. WAF 우회 스텔스 모드로 재시도합니다...")
+    time.sleep(3)
+
+    try:
+        stealth_headers = _get_stealth_headers()
+        resp2 = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=stealth_headers, timeout=25)
+        
+        try:
+            resp_json = resp2.json()
+            is_valid = isinstance(resp_json, dict) and "id" in resp_json
+        except:
+            is_valid = False
+
+        if resp2.status_code == 200 and is_valid:
+            print("   ✅ WP Auth Successful (Stealth Mode)!")
+            return True
         else:
-            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
-            print(f"   💬 Server Response: {resp.text[:250]}")
-    except Exception as e: 
-        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
+            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp2.status_code})")
+            print(f"   💬 Server Response: {resp2.text[:250]}")
+    except Exception as e:
+        print(f"   ❌ WP Connection Error: {e}")
+
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -1019,6 +1053,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 완벽한 카카오톡 레퍼런스 스타일 픽스 (돌연변이 금지, 완벽한 둥근 얼굴 흰색 스틱맨 + 네온 조명)
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1412,16 +1447,16 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    colors = ["neon red", "neon purple", "neon green", "neon orange", "neon blue", "neon pink"]
+    colors = ["neon red", "neon blue", "neon green", "neon purple", "neon orange", "neon yellow"]
     random.shuffle(colors)
     
-    # 🚨 카카오톡 레퍼런스(2번 사진) 완벽 구현: 기괴한 눈/팔다리 버그를 막고 완벽한 3D 아트 토이 스타일로 고정
-    vp_base = "A masterpiece 3D macro photography of an extremely cute 'blind box' style designer toy figure. The character has a perfectly spherical oversized glossy white head, two distinct big black dot eyes, a tiny mouth, and a simple tiny white body with exactly two arms and two legs. It looks like a high-end kawaii vinyl figure. The setting is a dark cinematic studio. Brilliantly illuminated by vibrant neon lighting that beautifully reflects on the character's glossy white surface. Highly detailed, Unreal Engine 5 render. No text, absolutely no extra limbs."
+    # 🚨 카카오톡 이미지(4번 사진) 완벽 구현: 기괴함을 막고 물리적으로 정확한 하얀 구형 머리와 선형 팔다리를 가진 3D 캐릭터 지정
+    vp_base = "A high-quality 3D render of a cute, simple white stickman character. The character has a large, perfectly smooth, solid white spherical head with only two simple black dot eyes and a tiny simple smile. The body, arms, and legs are very thin, smooth, and white, perfectly resembling a 3D stick figure. The character is standing in a dark, moody cinematic studio. No text, no extra limbs, no weird abstract shapes. Exactly two thin arms and two thin legs."
 
-    vp1 = vp_base + f" The cute character is proudly holding a glowing {colors[0]} upward trending neon arrow in its hand."
-    vp2 = vp_base + f" The cute character is standing confidently, holding a bright glowing {colors[1]} neon laser pointer."
-    vp3 = vp_base + f" The cute character is curiously touching a glowing {colors[2]} neon digital wave line on the ground."
-    vp4 = vp_base + f" The cute character is smiling, standing next to a stunning glowing {colors[3]} neon light trail."
+    vp1 = vp_base + f" The cute white 3D stickman is holding a bright glowing {colors[0]} neon line that looks like an upward trending stock chart. The bright {colors[0]} neon light beautifully illuminates the character's white face."
+    vp2 = vp_base + f" The cute white 3D stickman is standing confidently, pointing forward with one hand, while a glowing {colors[1]} neon laser beam shines next to it. The bright {colors[1]} neon light beautifully illuminates the character."
+    vp3 = vp_base + f" The cute white 3D stickman is holding a glowing {colors[2]} neon straight line like a staff. The bright {colors[2]} neon light reflects softly on its smooth white round head."
+    vp4 = vp_base + f" The cute white 3D stickman is smiling brightly, standing proudly next to a bright glowing {colors[3]} neon arrow pointing up. The {colors[3]} neon light creates a cinematic rim light on the character."
 
     data_points = []
     for i in range(1, 6):
@@ -1622,6 +1657,17 @@ def _upload_image(img_bytes, filename):
             data=img_bytes, timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
+        
+        # 1차 실패 시 스텔스 모드로 재시도
+        print("   ⚠️ Media Upload failed. Retrying with Stealth Mode...")
+        stealth_headers = _get_stealth_headers()
+        stealth_headers.update({"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"})
+        resp2 = requests.post(
+            f"{WP_URL}/wp-json/wp/v2/media",
+            headers=stealth_headers, 
+            data=img_bytes, timeout=30
+        )
+        if resp2.status_code in (200, 201): return resp2.json().get("id")
     except: pass
     return None
 
@@ -1669,133 +1715,149 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         "post_tier": tier.upper(),
     }
 
+    # 1차 발행 시도
     try:
-        r = scraper.post(
-            f"{WP_URL}/wp-json/wp/v2/posts",
-            headers=_get_wp_headers(),
-            json=post_data, timeout=30
-        )
+        r = scraper.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(), json=post_data, timeout=30)
         if r.status_code in (200, 201):
-            try:
-                resp_json = r.json()
-                link = resp_json.get('link') if isinstance(resp_json, dict) else None
+            try: link = r.json().get('link')
             except: link = None
-            
             if link:
                 print(f"   ✅ Published: {link}")
-                
-                if raw_for_cards:
-                    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-                        if tier == "Premium" or tier == "unified":
-                            img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                            if video_mp4_bytes:
-                                send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
-                        
-                        yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
-                        if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
-
-                    send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
-                    send_community_viral_email(display_title, link, raw_for_cards, cat)
-                
+                _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title)
                 return True
-            else:
-                print(f"   ❌ [WAF Block Detected] Server returned 200 but no link was created.")
-                return False
-        else:
-            print(f"   ❌ Publish failed. HTTP Status: {r.status_code}")
+    except: pass
+
+    # 2차 발행 시도 (스텔스 모드)
+    print("   ⚠️ Publish failed. Retrying with Stealth Mode...")
+    time.sleep(3)
+    try:
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_stealth_headers(), json=post_data, timeout=30)
+        if r2.status_code in (200, 201):
+            try: link = r2.json().get('link')
+            except: link = None
+            if link:
+                print(f"   ✅ Published (Stealth Mode): {link}")
+                _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title)
+                return True
+        print(f"   ❌ Publish completely failed. Status: {r2.status_code}")
     except Exception as e:
-        print(f"   ❌ Network error: {e}")
+        print(f"   ❌ Final Publish Network error: {e}")
     return False
 
-def generate_reddit_post(raw_content, cat, original_link):
-    print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
-    client = _get_gemini_client()
-    sys_inst = """CRITICAL RULE: Write entirely in ENGLISH. You are a 20-something retail investor posting on Reddit. You are NOT an AI.
-    TONE: Casual, cynical, conversational "bro" tone. Use slang (tbh, ngl, crazy, wild, fwiw, bros).
-    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1). Do NOT sound like an article. Make it look like you typed it on your phone on the toilet.
-    CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS. NO EXCEPTIONS."""
-    
-    prompt = f"""Read this formal analysis and rewrite the core insight into a viral Reddit post for {cat} subreddits.
-    [ANALYSIS]
-    {raw_content}
-    
-    [OUTPUT FORMAT REQUIREMENT]
-    <REDDIT_TITLE>(Max 12 words. Clickbaity but casual, e.g., tbh I think everyone is wrong about...)</REDDIT_TITLE>
-    <REDDIT_BODY>(2-3 short paragraphs. No formatting. Sound like a real dude sharing a thought. At the very end, casually drop this exact link: {original_link} like "btw found this breakdown here: [link] if u care")</REDDIT_BODY>
-    """
-    raw = gem_fb("Premium", prompt, sys_inst)
-    return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
+def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
+    if raw_for_cards:
+        if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
+            if tier == "Premium" or tier == "unified":
+                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
+                if video_mp4_bytes:
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
+            
+            yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
+            if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
 
-def send_community_viral_email(title, original_link, raw_content, cat):
-    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
-    print(f"   📧 Generating and Sending Human-like Community Viral Draft to {EMAIL_RECEIVER}...")
+        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
+        send_community_viral_email(display_title, link, raw_for_cards, cat)
 
-    target_subreddits = "r/povertyfinance, r/sidehustle"
-    if cat == "On-Chain":
-        target_subreddits = "r/CryptoCurrency"
-    elif cat == "Tech":
-        target_subreddits = "r/technology, r/stocks"
-    elif cat in ["Economy", "Energy", "Politics"]:
-        target_subreddits = "r/stocks, r/UKPersonalFinance"
-    elif cat == "Money Hack":
-        target_subreddits = "r/sidehustle"
-    elif cat == "Foundation":
-        target_subreddits = "r/povertyfinance, r/UKPersonalFinance"
-    elif cat == "The Daily Catalyst":
-        target_subreddits = "r/povertyfinance (또는 마인드셋 관련 서브레딧)"
-
-    r_title, r_body = generate_reddit_post(raw_content, cat, original_link)
+def run_foundation_pipeline():
+    cat = "Foundation"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    if not r_title or not r_body:
-        print("   ⚠️ AI missed Reddit tags. Using Smart Fallback...")
-        clean_title = _clean_seo_title(title)
-        r_title = f"tbh people are sleeping on {cat} right now"
-        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "This market is moving crazy fast right now."
-        r_body = f"Hey guys, been tracking the market and wanted to share this thought.\n\n{fallback_insight}\n\nHonestly makes a lot of sense when u look at the bigger picture. btw found this deep dive here: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>{original_link}</a> if u care."
-    else:
-        r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
-        r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
-        r_body = r_body.replace('\n', '<br>')
+    print(f"🚀 Starting v46.9.79_PERFECT_STICKMAN_FIX SEO Foundation Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    theme = random.choice(FOUNDATION_TOPICS)
+    tier = "Premium"
+    raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         
-    clean_title = r_title.replace('<REDDIT_TITLE>', '').replace('</REDDIT_TITLE>', '')
+        html = build_foundation_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+            
+        med_img_bytes = make_medium_thumbnail(cat)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
 
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
+def run_philosophy_pipeline():
+    cat = "The Daily Catalyst"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.9.79_PERFECT_STICKMAN_FIX Catalyst Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
 
-        body = f"""
-        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
-            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div style="background: #ef4444; padding: 25px; color: #ffffff;">
-                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
-                    <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; margin-top: 15px;">
-                        <span style="font-size: 14px; opacity: 0.9; display: block; margin-bottom: 4px;">🎯 AI 추천 타겟 커뮤니티:</span>
-                        <strong style="font-size: 18px;">{target_subreddits}</strong>
-                    </div>
-                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">해당 커뮤니티에 아래 내용을 복사해서 붙여넣으세요! (휴먼 톤 적용 완료)</p>
-                </div>
-                <div style="padding: 30px;">
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
-                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
-                        {clean_title}
-                    </div>
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
-                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
-                        {r_body}
-                    </div>
-                </div>
-            </div>
-        </div>
-        """
-        msg.attach(MIMEText(body, 'html'))
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASS)
-            server.send_message(msg)
-        print("   ✅ Community Viral Draft Email Sent!")
-    except Exception as e:
-        print(f"   ❌ Community Viral Draft Email Failed: {e}")
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    theme = random.choice(PHILOSOPHY_TOPICS)
+    tier = "Premium"
+    raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_philosophy_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        med_img_bytes = make_medium_thumbnail(cat)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+
+def run_moneyhack_pipeline():
+    cat = "Money Hack"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.9.79_PERFECT_STICKMAN_FIX Money Hack Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    niche = random.choice(MH_NICHES)
+    platform = random.choice(MH_PLATFORMS)
+    ai_tool = random.choice(MH_AI_TOOLS)
+    theme = f"Niche: {niche} | Core Platform: {platform} | AI Automation Tool: {ai_tool}"
+    print(f"   🎲 Random Framework Selected: {theme}")
+
+    tier = "Premium"
+    raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Growth Team")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_money_hack_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        med_img_bytes = make_medium_thumbnail(cat)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
 
 def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
@@ -1815,9 +1877,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.77_BUILD_HTML_RESTORED Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.79_PERFECT_STICKMAN_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.77_BUILD_HTML_RESTORED Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.79_PERFECT_STICKMAN_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
