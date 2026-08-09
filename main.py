@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.85_SIMPLE_NEON_STICKMAN)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.86_REAL_CUTE_NEON_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1059,7 +1059,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 '기괴한 변형'을 막기 위해 초단순 3D 졸라맨(Stickman) 고정 + 가르치는 동작 + 지정 네온 컬러 적용 완료
+# 🚨 형태 단순화의 끝판왕: 불쾌한 디테일을 모두 빼고, 오직 "귀여운 하얀 3D 졸라맨 + 지정 네온 불빛"으로 강제
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1453,17 +1453,18 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 대표님 요청 컬러 팔레트 (골드, 빨강, 보라, 노랑, 초록)
+    # 🚨 지정해주신 5가지 컬러 세트 
     colors = ["neon gold", "neon red", "neon purple", "neon yellow", "neon green"]
     random.shuffle(colors)
     
-    # 🚨 기괴한 돌연변이를 막기 위해, 아주 심플하고 귀여운 화이트 3D 졸라맨(Stick figure)으로 강제 고정
-    vp_base = "A beautiful 3D render of a simple, cute minimalist 3D stickman character. The character has a perfectly round, white balloon-like head with a cute tiny smile and two simple dot eyes. The body and limbs are very thin, white stick-like wires. Standing in a dark, clean cinematic studio. Highly appealing, friendly, and adorable. Absolutely no weird mutations."
-
-    vp1 = vp_base + f" The cute 3D stickman is acting like a friendly teacher, pointing its thin stick arm at a beautiful glowing {colors[0]} neon light chart in the air."
-    vp2 = vp_base + f" The cute 3D stickman is proudly holding a glowing {colors[1]} neon wand like a teacher's pointer."
-    vp3 = vp_base + f" The cute 3D stickman is playfully touching a bright glowing {colors[2]} neon line floating near its hand."
-    vp4 = vp_base + f" The cute 3D stickman is raising its thin arm in a teaching gesture next to a glowing {colors[3]} neon light arrow."
+    # 🚨 형태의 오해를 완전히 차단한 "초단순 귀여운 3D 하얀색 피규어" + "선명한 네온 컬러" 조합
+    vp1 = f"A cute 3D white figure with a large round head, simple black dot eyes, and a small body with arms and legs. The figure is standing in a dark studio room, holding a brightly glowing {colors[0]} neon upward arrow. The {colors[0]} neon light vividly illuminates the character. High quality 3D render, cute art toy style, dark background, no text."
+    
+    vp2 = f"A cute 3D white figure with a large round head, simple black dot eyes, and a small body with arms and legs. The figure is standing in a dark studio room, pointing a brightly glowing {colors[1]} neon laser pointer. The {colors[1]} neon light vividly illuminates the character. High quality 3D render, cute art toy style, dark background, no text."
+    
+    vp3 = f"A cute 3D white figure with a large round head, simple black dot eyes, and a small body with arms and legs. The figure is standing in a dark studio room, touching a brightly glowing {colors[2]} neon chart line. The {colors[2]} neon light vividly illuminates the character. High quality 3D render, cute art toy style, dark background, no text."
+    
+    vp4 = f"A cute 3D white figure with a large round head, simple black dot eyes, and a small body with arms and legs. The figure is standing in a dark studio room, raising its arm next to a brightly glowing {colors[3]} neon light trail. The {colors[3]} neon light vividly illuminates the character. High quality 3D render, cute art toy style, dark background, no text."
 
     data_points = []
     for i in range(1, 6):
