@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.88_ORIGINAL_NETWORK_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.89_PURE_NETWORK_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -38,6 +38,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
+# 뉴스 크롤링 전용 스크래퍼 (워드프레스 접속에는 절대 사용하지 않음)
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -51,6 +52,7 @@ except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
+# 워드프레스 통신 전용 순정 헤더
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
@@ -616,10 +618,11 @@ def check_env_vars():
         return False
     return True
 
+# 워드프레스 통신 전용 (순정 requests 사용)
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
+        resp = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -701,9 +704,9 @@ def _clean_seo_title(title):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=_get_wp_headers(), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=_get_wp_headers(), json={"name": cat_name, "slug": slug}, timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=_get_wp_headers(), json={"name": cat_name, "slug": slug}, timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -711,9 +714,9 @@ def get_or_create_wp_category(cat_name):
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=_get_wp_headers(), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=_get_wp_headers(), json={"name": tag_name, "slug": slug}, timeout=15)
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=_get_wp_headers(), json={"name": tag_name, "slug": slug}, timeout=15)
         if r2.status_code in (200, 201): return r2.json()["id"]
     except: pass
     return None
@@ -721,7 +724,7 @@ def get_or_create_wp_tag(tag_name):
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=_get_wp_headers(), params={"search": search_name}, timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/users", headers=_get_wp_headers(), params={"search": search_name}, timeout=15)
         if r.status_code == 200:
             users = r.json()
             if len(users) > 0: return users[0]["id"]
@@ -730,7 +733,7 @@ def get_wp_author_id(author_full_string):
 
 def _get_latest_post_category_name():
     try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=_get_wp_headers(), timeout=15)
+        r = requests.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=_get_wp_headers(), timeout=15)
         if r.status_code == 200:
             try: r_json = r.json()
             except: return None
@@ -739,7 +742,7 @@ def _get_latest_post_category_name():
                 cat_ids = r_json[0].get('categories', [])
                 if not cat_ids: return None
                 
-                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=_get_wp_headers(), timeout=15)
+                r_cats = requests.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=_get_wp_headers(), timeout=15)
                 if r_cats.status_code == 200:
                     try: r_cats_json = r_cats.json()
                     except: return None
@@ -757,7 +760,7 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     try:
         cat_slug = cat.lower().replace(" ", "-")
-        r = scraper.get(
+        r = requests.get(
             f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=_get_wp_headers(), timeout=15
         )
         if r.status_code != 200: return False
@@ -768,7 +771,7 @@ def already_published_today(cat):
             cat_id = r_json[0]["id"]
         except: return False
 
-        r2 = scraper.get(
+        r2 = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(),
             params={
                 "categories": cat_id,
@@ -792,6 +795,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
+# 뉴스 크롤링은 외부 접속이므로 scraper 유지
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1025,7 +1029,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 네온 불빛 최우선 강제 프롬프트: 색깔 무시 버그 완벽 차단!
+# 🚨 형태의 오해를 완벽 차단! 네온 오브젝트를 프롬프트 최우선으로 배치하여 "빛나는 차트를 들고 있는 하얀 캐릭터" 강제
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1623,7 +1627,7 @@ def generate_vip_carousel(raw_content, cat):
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
         y_text += 105
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
-    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
+    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font_sub, anchor="mm")
     text_frames.append(txt6)
 
     image_bytes_list = []
@@ -1641,6 +1645,17 @@ def _upload_image(img_bytes, filename):
             data=img_bytes, timeout=30
         )
         if resp.status_code in (200, 201): return resp.json().get("id")
+        
+        # 1차 실패 시 스텔스 모드로 재시도
+        print("   ⚠️ Media Upload failed. Retrying with Stealth Mode...")
+        stealth_headers = _get_stealth_headers()
+        stealth_headers.update({"Content-Disposition": f'attachment; filename="{filename}"', "Content-Type": "image/jpeg"})
+        resp2 = requests.post(
+            f"{WP_URL}/wp-json/wp/v2/media",
+            headers=stealth_headers, 
+            data=img_bytes, timeout=30
+        )
+        if resp2.status_code in (200, 201): return resp2.json().get("id")
     except: pass
     return None
 
@@ -1688,49 +1703,54 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         "post_tier": tier.upper(),
     }
 
+    # 1차 발행 시도
     try:
-        r = scraper.post(
-            f"{WP_URL}/wp-json/wp/v2/posts",
-            headers=_get_wp_headers(),
-            json=post_data, timeout=30
-        )
+        r = requests.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(), json=post_data, timeout=30)
         if r.status_code in (200, 201):
-            try:
-                resp_json = r.json()
-                link = resp_json.get('link') if isinstance(resp_json, dict) else None
+            try: link = r.json().get('link')
             except: link = None
-            
             if link:
                 print(f"   ✅ Published: {link}")
-                
-                if raw_for_cards:
-                    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-                        if tier == "Premium" or tier == "unified":
-                            img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                            if video_mp4_bytes:
-                                send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
-                        
-                        yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
-                        if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
-
-                    send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
-                    send_community_viral_email(display_title, link, raw_for_cards, cat)
-                
+                _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title)
                 return True
-            else:
-                print(f"   ❌ [WAF Block Detected] Server returned 200 but no link was created.")
-                return False
-        else:
-            print(f"   ❌ Publish failed. HTTP Status: {r.status_code}")
+    except: pass
+
+    # 2차 발행 시도 (스텔스 모드)
+    print("   ⚠️ Publish failed. Retrying with Stealth Mode...")
+    time.sleep(3)
+    try:
+        r2 = requests.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_stealth_headers(), json=post_data, timeout=30)
+        if r2.status_code in (200, 201):
+            try: link = r2.json().get('link')
+            except: link = None
+            if link:
+                print(f"   ✅ Published (Stealth Mode): {link}")
+                _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title)
+                return True
+        print(f"   ❌ Publish completely failed. Status: {r2.status_code}")
     except Exception as e:
-        print(f"   ❌ Network error: {e}")
+        print(f"   ❌ Final Publish Network error: {e}")
     return False
+
+def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
+    if raw_for_cards:
+        if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
+            if tier == "Premium" or tier == "unified":
+                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
+                if video_mp4_bytes:
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
+            
+            yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
+            if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
+
+        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
+        send_community_viral_email(display_title, link, raw_for_cards, cat)
 
 def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.88_ORIGINAL_NETWORK_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1762,7 +1782,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.88_ORIGINAL_NETWORK_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1794,7 +1814,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.88_ORIGINAL_NETWORK_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1845,9 +1865,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.88_ORIGINAL_NETWORK_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.88_ORIGINAL_NETWORK_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
