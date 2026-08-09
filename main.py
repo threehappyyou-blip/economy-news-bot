@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.89_PURE_NETWORK_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.90_SYNTAX_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1423,27 +1423,22 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 카카오톡 레퍼런스 사진과 100% 일치하도록 프롬프트 구조 개조
-    # 네온 소품과 빛 반사를 프롬프트 최전면에 배치하여 AI가 색상과 네온을 무조건 생성하게 함
-    
+    # 🚨 카카오톡 이미지 맞춤형 컬러: 골드, 빨강, 보라, 초록
     colors_neon = [
+        ("neon gold", "golden glowing light"),
         ("neon red", "red glowing light"),
         ("neon purple", "purple glowing light"),
-        ("neon gold amber", "golden yellow glowing light"),
         ("neon emerald green", "bright green glowing light")
     ]
     random.shuffle(colors_neon)
     
-    # Slide 1: 네온 화살표 차트를 들고 포인트하는 포즈
+    # 🚨 수정됨: 네온 조명과 소품을 프롬프트 최전방에 배치하여 AI가 조명을 절대 누락하지 못하게 강제함
     vp1 = f"A brilliant, intensely bright {colors_neon[0][0]} glowing neon arrow graph stick held by a cute white 3D character with a large smooth round head and thin arms and legs. The vibrant {colors_neon[0][1]} strongly reflects off the glossy white head and floor in a pitch-black studio room. Sharp contrast, cinematic lighting, Pop Mart 3D figure style, adorable, high quality render, no text."
     
-    # Slide 2: 네온 지시봉 레이저를 들고 알려주는 포즈
     vp2 = f"A cute white 3D figure with a large round head and thin arms, holding and pointing a bright {colors_neon[1][0]} glowing neon laser pointer wand like a teacher. The intense {colors_neon[1][1]} casts a vivid rim light reflection on the character's white face and shiny body in a dark studio. Pop Mart toy style, high contrast, no text."
     
-    # Slide 3: 바닥의 네온 차트 선을 짚으며 설명하는 포즈
     vp3 = f"A cute white 3D character with a big round head and thin limbs touching a bright {colors_neon[2][0]} glowing neon chart line on the dark ground. The striking {colors_neon[2][1]} brightly illuminates the figure's face and creates colorful reflections on the glossy dark floor. High quality 3D render, kawaii style, no text."
     
-    # Slide 4: 네온 빛 줄기 옆에서 자신있게 가리키는 포즈
     vp4 = f"A cute white 3D figure standing next to a stunning {colors_neon[3][0]} glowing neon light beam, pointing forward with a thin arm to teach an insight. The bright {colors_neon[3][1]} creates strong colorful highlights on the white character's head against a dark moody background. 8k resolution, 3D art toy, no text."
 
     data_points = []
@@ -1627,7 +1622,7 @@ def generate_vip_carousel(raw_content, cat):
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
         y_text += 105
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
-    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font_sub, anchor="mm")
+    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
     image_bytes_list = []
@@ -1750,7 +1745,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.90_SYNTAX_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1782,7 +1777,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.90_SYNTAX_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1814,7 +1809,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.90_SYNTAX_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1865,9 +1860,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.90_SYNTAX_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.89_PURE_NETWORK_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.90_SYNTAX_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
