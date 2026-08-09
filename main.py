@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.85_FINAL_CUTE_HUMANOID)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.85_SIMPLE_NEON_STICKMAN)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1059,7 +1059,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 카카오톡 이미지 완벽 구현: 기괴함을 막고 "가르치는 얇은 팔다리" + "유광 화이트" + "쨍한 네온 컬러" 강제 고정
+# 🚨 '기괴한 변형'을 막기 위해 초단순 3D 졸라맨(Stickman) 고정 + 가르치는 동작 + 지정 네온 컬러 적용 완료
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1453,17 +1453,17 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 카카오톡 이미지 맞춤형 컬러: 골드, 빨강, 보라, 노랑, 초록
+    # 🚨 대표님 요청 컬러 팔레트 (골드, 빨강, 보라, 노랑, 초록)
     colors = ["neon gold", "neon red", "neon purple", "neon yellow", "neon green"]
     random.shuffle(colors)
     
-    # 🚨 선생님 모드 완벽 고정: 명확한 팔다리를 사용해 차트를 짚어주는 귀여운 모션 강제
-    vp_base = "A masterpiece 3D render of a cute, friendly pure white humanoid designer art toy figure acting like a smart teacher. The character has an oversized, perfectly round smooth head, two distinct big black dot eyes, and a cute little smile. It has a small body with thin, clearly visible arms and legs. It is standing in a pitch-black cinematic studio. Highly detailed, Unreal Engine 5. No text, no extra limbs."
+    # 🚨 기괴한 돌연변이를 막기 위해, 아주 심플하고 귀여운 화이트 3D 졸라맨(Stick figure)으로 강제 고정
+    vp_base = "A beautiful 3D render of a simple, cute minimalist 3D stickman character. The character has a perfectly round, white balloon-like head with a cute tiny smile and two simple dot eyes. The body and limbs are very thin, white stick-like wires. Standing in a dark, clean cinematic studio. Highly appealing, friendly, and adorable. Absolutely no weird mutations."
 
-    vp1 = vp_base + f" The cute character is acting like a friendly teacher, using its arm to confidently point at a bright glowing {colors[0]} neon upward arrow. The {colors[0]} neon light strongly reflects on its highly reflective glossy head."
-    vp2 = vp_base + f" The cute character is standing and teaching, proudly holding a bright glowing {colors[1]} neon laser pointer. The {colors[1]} neon light creates a stunning cinematic rim lighting on the figure."
-    vp3 = vp_base + f" The cute character is curiously touching a bright glowing {colors[2]} neon chart line hovering in the air. The {colors[2]} neon light vividly illuminates its smooth white face."
-    vp4 = vp_base + f" The cute character is giving a thumbs up with its distinct arm, standing next to a bright glowing {colors[3]} neon light trail. The {colors[3]} neon light beautifully reflects on the glossy surface."
+    vp1 = vp_base + f" The cute 3D stickman is acting like a friendly teacher, pointing its thin stick arm at a beautiful glowing {colors[0]} neon light chart in the air."
+    vp2 = vp_base + f" The cute 3D stickman is proudly holding a glowing {colors[1]} neon wand like a teacher's pointer."
+    vp3 = vp_base + f" The cute 3D stickman is playfully touching a bright glowing {colors[2]} neon line floating near its hand."
+    vp4 = vp_base + f" The cute 3D stickman is raising its thin arm in a teaching gesture next to a glowing {colors[3]} neon light arrow."
 
     data_points = []
     for i in range(1, 6):
@@ -1769,7 +1769,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.85_SIMPLE_NEON_STICKMAN SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1801,7 +1801,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.85_SIMPLE_NEON_STICKMAN Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1833,7 +1833,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.85_SIMPLE_NEON_STICKMAN Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1884,9 +1884,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.85_SIMPLE_NEON_STICKMAN Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.85_SIMPLE_NEON_STICKMAN Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
