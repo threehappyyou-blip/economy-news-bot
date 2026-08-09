@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.83_FINAL_CUTE_TOY_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.84_CUTE_TEACHER_TOY)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -59,6 +59,19 @@ def _get_wp_headers():
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
         'Cache-Control': 'no-cache'
+    }
+
+# 🚨 Imunify360 WAF 스텔스 우회용 사파리 헤더
+def _get_stealth_headers():
+    auth_str = f"{WP_USER}:{WP_APP_PASS}"
+    b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
+    return {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': f'Basic {b64_auth}',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Accept-Language': 'en-US,en;q=0.9'
     }
 
 MODEL_PRI = {
@@ -447,24 +460,21 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
 def generate_reddit_post(raw_content, cat, original_link):
     print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
     client = _get_gemini_client()
-    sys_inst = """You are a casual retail investor on Reddit.
-    Write a title and a body based on the analysis.
-    YOU MUST FORMAT EXACTLY LIKE THIS AND OUTPUT NOTHING ELSE:
-    <REDDIT_TITLE>your casual title here</REDDIT_TITLE>
-    <REDDIT_BODY>your casual body here</REDDIT_BODY>"""
+    sys_inst = """CRITICAL RULE: Write entirely in ENGLISH. You are a 20-something retail investor posting on Reddit. You are NOT an AI.
+    TONE: Casual, cynical, conversational "bro" tone. Use slang (tbh, ngl, crazy, wild, fwiw, bros).
+    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1). Do NOT sound like an article. Make it look like you typed it on your phone on the toilet.
+    CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS. NO EXCEPTIONS."""
     
-    prompt = f"Rewrite this for a {cat} subreddit.\n\n{raw_content}\n\nOUTPUT FORMAT:\n<REDDIT_TITLE>catchy title here</REDDIT_TITLE>\n<REDDIT_BODY>casual text here, ending with {original_link}</REDDIT_BODY>"
+    prompt = f"""Read this formal analysis and rewrite the core insight into a viral Reddit post for {cat} subreddits.
+    [ANALYSIS]
+    {raw_content}
     
+    [OUTPUT FORMAT REQUIREMENT]
+    <REDDIT_TITLE>(Max 12 words. Clickbaity but casual, e.g., tbh I think everyone is wrong about...)</REDDIT_TITLE>
+    <REDDIT_BODY>(2-3 short paragraphs. No formatting. Sound like a real dude sharing a thought. At the very end, casually drop this exact link: {original_link} like "btw found this breakdown here: [link] if u care")</REDDIT_BODY>
+    """
     raw = gem_fb("Premium", prompt, sys_inst)
-    t = xtag(raw, "REDDIT_TITLE")
-    b = xtag(raw, "REDDIT_BODY")
-    
-    if not t or not b:
-        print("   ⚠️ XML Tag parsing failed. Using Raw AI output as fallback...")
-        t = f"Quick thoughts on the {cat} market"
-        b = raw.strip() + f"\n\nLink: {original_link}"
-        
-    return t, b
+    return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
 
 def send_community_viral_email(title, original_link, raw_content, cat):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
@@ -486,8 +496,17 @@ def send_community_viral_email(title, original_link, raw_content, cat):
 
     r_title, r_body = generate_reddit_post(raw_content, cat, original_link)
     
-    r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
-    r_body = r_body.replace('\n', '<br>')
+    if not r_title or not r_body:
+        print("   ⚠️ AI missed Reddit tags. Using Smart Fallback...")
+        clean_title = _clean_seo_title(title)
+        r_title = f"tbh people are sleeping on {cat} right now"
+        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "This market is moving crazy fast right now."
+        r_body = f"Hey guys, been tracking the market and wanted to share this thought.\n\n{fallback_insight}\n\nHonestly makes a lot of sense when u look at the bigger picture. btw found this deep dive here: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>{original_link}</a> if u care."
+    else:
+        r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
+        r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
+        r_body = r_body.replace('\n', '<br>')
+        
     clean_title = r_title.replace('<REDDIT_TITLE>', '').replace('</REDDIT_TITLE>', '')
 
     try:
@@ -1040,7 +1059,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 카카오톡 이미지 완벽 구현: '하얀색 유광 재질'을 강제하여 까만 덩어리가 나오는 현상 원천 차단
+# 🚨 카카오톡 이미지 완벽 구현: 기괴한 덩어리를 막고 "가르치는 포즈의 명확한 팔다리" + "유광 화이트" + "쨍한 네온 컬러" 강제 고정
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1434,16 +1453,17 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    colors = ["vibrant neon red", "vibrant neon blue", "vibrant neon green", "vibrant neon purple", "vibrant neon orange", "vibrant neon yellow"]
+    # 🚨 대표님 요청사항: 골드, 빨간색, 보라색, 노란색, 초록색의 예쁜 네온 컬러 배열 고정
+    colors = ["neon gold", "neon red", "neon purple", "neon yellow", "neon green", "neon blue"]
     random.shuffle(colors)
     
-    # 🚨 카카오톡 이미지 완벽 구현: '하얀색 유광 재질'을 강제하여 까만 덩어리가 나오는 현상 원천 차단
-    vp_base = "A masterpiece 3D macro photography of a cute designer toy figure made of glossy WHITE plastic. The character has an oversized, perfectly round WHITE head with two simple black dot eyes and a tiny cute smile. It has a small WHITE body with thin, stick-like arms and legs. It is standing in a pitch-black cinematic studio. Highly detailed, Unreal Engine 5 render, cute pop-mart art toy aesthetic. No text, no extra limbs."
+    # 🚨 카카오톡 9번 레퍼런스 100% 매칭: 기괴함 방지, 명확한 얇은 팔다리, 가르치는 제스처, 유광 머리, 시네마틱 네온 반사
+    vp_base = "A high-end 3D render of a cute, glossy white designer art toy figure acting like a smart teacher. It has a massive, perfectly round spherical head with two big black dot eyes and a tiny cute mouth. The body is distinctly small with thin, visible stick-like arms and legs. It is standing on a dark glossy floor in a moody, dark cinematic studio. The figure looks like a premium Pop Mart collectible. Highly detailed, Unreal Engine 5. No text, no extra limbs."
 
-    vp1 = vp_base + f" The cute white figure is holding a bright glowing {colors[0]} neon upward arrow. The vibrant {colors[0]} neon light beautifully reflects on its glossy white face."
-    vp2 = vp_base + f" The cute white figure is standing and pointing forward, holding a bright glowing {colors[1]} neon laser stick. The vibrant {colors[1]} neon light beautifully reflects on its glossy white face."
-    vp3 = vp_base + f" The cute white figure is curiously looking at a bright glowing {colors[2]} neon chart line on the ground. The vibrant {colors[2]} neon light beautifully reflects on its glossy white face."
-    vp4 = vp_base + f" The cute white figure is smiling brightly, standing next to a stunning {colors[3]} neon light trail. The vibrant {colors[3]} neon light beautifully reflects on its glossy white face."
+    vp1 = vp_base + f" The cute figure is using its thin arm to confidently point a brightly glowing {colors[0]} upward arrow. The vibrant {colors[0]} light vividly reflects on its glossy white face."
+    vp2 = vp_base + f" The cute figure is holding a bright glowing {colors[1]} laser stick in its hand, making an explaining gesture. The {colors[1]} light creates a beautiful rim light on its face."
+    vp3 = vp_base + f" The cute figure is using its hand to trace a glowing {colors[2]} chart line floating in the air. The {colors[2]} light beautifully illuminates its white head."
+    vp4 = vp_base + f" The cute figure is standing proudly, pointing with its hand at a stunning {colors[3]} light trail. The {colors[3]} light elegantly reflects on the glossy surface."
 
     data_points = []
     for i in range(1, 6):
@@ -1749,7 +1769,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1781,7 +1801,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1813,7 +1833,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1864,9 +1884,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.84_CUTE_TEACHER_TOY Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
