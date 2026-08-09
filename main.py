@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.82_PERFECT_TOY_STICKMAN)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.83_FINAL_CUTE_TOY_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -59,19 +59,6 @@ def _get_wp_headers():
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
         'Cache-Control': 'no-cache'
-    }
-
-# 🚨 Imunify360 WAF 스텔스 우회용 사파리 헤더
-def _get_stealth_headers():
-    auth_str = f"{WP_USER}:{WP_APP_PASS}"
-    b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
-    return {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-        'Accept': 'application/json, text/plain, */*',
-        'Authorization': f'Basic {b64_auth}',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Accept-Language': 'en-US,en;q=0.9'
     }
 
 MODEL_PRI = {
@@ -1053,7 +1040,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 카카오톡 이미지(아트 토이, 완벽한 구형 머리, 귀여운 두 점눈, 얇은 팔다리, 유광 찰흙 질감, 선명한 네온 컬러) 프롬프트 완벽 고정
+# 🚨 카카오톡 이미지 완벽 구현: '하얀색 유광 재질'을 강제하여 까만 덩어리가 나오는 현상 원천 차단
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1447,16 +1434,16 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    colors = ["neon red", "neon purple", "neon green", "neon gold", "neon pink", "neon orange"]
+    colors = ["vibrant neon red", "vibrant neon blue", "vibrant neon green", "vibrant neon purple", "vibrant neon orange", "vibrant neon yellow"]
     random.shuffle(colors)
     
-    # 🚨 카카오톡 7번 사진 100% 매칭: 기괴함 방지, 유광 재질 아트토이 스틱맨으로 완벽 픽스
-    vp_base = "A high-end 3D render of a cute designer art toy character. It has an oversized, perfectly round, glossy spherical head with simple black dot eyes and a tiny mouth. The body is small, featuring very thin, stick-like arms and legs. It is standing on a dark reflective floor in a moody, dark cinematic studio. Highly detailed, 8k resolution, Unreal Engine 5 style. Absolutely no text, no letters, no extra limbs."
+    # 🚨 카카오톡 이미지 완벽 구현: '하얀색 유광 재질'을 강제하여 까만 덩어리가 나오는 현상 원천 차단
+    vp_base = "A masterpiece 3D macro photography of a cute designer toy figure made of glossy WHITE plastic. The character has an oversized, perfectly round WHITE head with two simple black dot eyes and a tiny cute smile. It has a small WHITE body with thin, stick-like arms and legs. It is standing in a pitch-black cinematic studio. Highly detailed, Unreal Engine 5 render, cute pop-mart art toy aesthetic. No text, no extra limbs."
 
-    vp1 = vp_base + f" The cute character is proudly holding a bright glowing {colors[0]} upward trending neon arrow. The {colors[0]} neon light strongly reflects on its glossy face."
-    vp2 = vp_base + f" The cute character is standing confidently, holding a bright glowing {colors[1]} neon laser pointer. The {colors[1]} neon light creates a beautiful rim light on the figure."
-    vp3 = vp_base + f" The cute character is curiously pointing at a glowing {colors[2]} neon chart line on the ground. The {colors[2]} neon light vividly illuminates its smooth head."
-    vp4 = vp_base + f" The cute character is smiling, illuminated by a stunning {colors[3]} neon light beam forming a chart shape. The {colors[3]} neon light elegantly reflects on the glossy surface."
+    vp1 = vp_base + f" The cute white figure is holding a bright glowing {colors[0]} neon upward arrow. The vibrant {colors[0]} neon light beautifully reflects on its glossy white face."
+    vp2 = vp_base + f" The cute white figure is standing and pointing forward, holding a bright glowing {colors[1]} neon laser stick. The vibrant {colors[1]} neon light beautifully reflects on its glossy white face."
+    vp3 = vp_base + f" The cute white figure is curiously looking at a bright glowing {colors[2]} neon chart line on the ground. The vibrant {colors[2]} neon light beautifully reflects on its glossy white face."
+    vp4 = vp_base + f" The cute white figure is smiling brightly, standing next to a stunning {colors[3]} neon light trail. The vibrant {colors[3]} neon light beautifully reflects on its glossy white face."
 
     data_points = []
     for i in range(1, 6):
@@ -1762,7 +1749,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.82_PERFECT_TOY_STICKMAN SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1794,7 +1781,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.82_PERFECT_TOY_STICKMAN Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1826,7 +1813,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.82_PERFECT_TOY_STICKMAN Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1877,9 +1864,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.82_PERFECT_TOY_STICKMAN Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.82_PERFECT_TOY_STICKMAN Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.83_FINAL_CUTE_TOY_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
