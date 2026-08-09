@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.84_CUTE_TEACHER_TOY)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.85_FINAL_CUTE_HUMANOID)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1059,7 +1059,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 카카오톡 이미지 완벽 구현: 기괴한 덩어리를 막고 "가르치는 포즈의 명확한 팔다리" + "유광 화이트" + "쨍한 네온 컬러" 강제 고정
+# 🚨 카카오톡 이미지 완벽 구현: 기괴함을 막고 "가르치는 얇은 팔다리" + "유광 화이트" + "쨍한 네온 컬러" 강제 고정
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1453,17 +1453,17 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 대표님 요청사항: 골드, 빨간색, 보라색, 노란색, 초록색의 예쁜 네온 컬러 배열 고정
-    colors = ["neon gold", "neon red", "neon purple", "neon yellow", "neon green", "neon blue"]
+    # 🚨 카카오톡 이미지 맞춤형 컬러: 골드, 빨강, 보라, 노랑, 초록
+    colors = ["neon gold", "neon red", "neon purple", "neon yellow", "neon green"]
     random.shuffle(colors)
     
-    # 🚨 카카오톡 9번 레퍼런스 100% 매칭: 기괴함 방지, 명확한 얇은 팔다리, 가르치는 제스처, 유광 머리, 시네마틱 네온 반사
-    vp_base = "A high-end 3D render of a cute, glossy white designer art toy figure acting like a smart teacher. It has a massive, perfectly round spherical head with two big black dot eyes and a tiny cute mouth. The body is distinctly small with thin, visible stick-like arms and legs. It is standing on a dark glossy floor in a moody, dark cinematic studio. The figure looks like a premium Pop Mart collectible. Highly detailed, Unreal Engine 5. No text, no extra limbs."
+    # 🚨 선생님 모드 완벽 고정: 명확한 팔다리를 사용해 차트를 짚어주는 귀여운 모션 강제
+    vp_base = "A masterpiece 3D render of a cute, friendly pure white humanoid designer art toy figure acting like a smart teacher. The character has an oversized, perfectly round smooth head, two distinct big black dot eyes, and a cute little smile. It has a small body with thin, clearly visible arms and legs. It is standing in a pitch-black cinematic studio. Highly detailed, Unreal Engine 5. No text, no extra limbs."
 
-    vp1 = vp_base + f" The cute figure is using its thin arm to confidently point a brightly glowing {colors[0]} upward arrow. The vibrant {colors[0]} light vividly reflects on its glossy white face."
-    vp2 = vp_base + f" The cute figure is holding a bright glowing {colors[1]} laser stick in its hand, making an explaining gesture. The {colors[1]} light creates a beautiful rim light on its face."
-    vp3 = vp_base + f" The cute figure is using its hand to trace a glowing {colors[2]} chart line floating in the air. The {colors[2]} light beautifully illuminates its white head."
-    vp4 = vp_base + f" The cute figure is standing proudly, pointing with its hand at a stunning {colors[3]} light trail. The {colors[3]} light elegantly reflects on the glossy surface."
+    vp1 = vp_base + f" The cute character is acting like a friendly teacher, using its arm to confidently point at a bright glowing {colors[0]} neon upward arrow. The {colors[0]} neon light strongly reflects on its highly reflective glossy head."
+    vp2 = vp_base + f" The cute character is standing and teaching, proudly holding a bright glowing {colors[1]} neon laser pointer. The {colors[1]} neon light creates a stunning cinematic rim lighting on the figure."
+    vp3 = vp_base + f" The cute character is curiously touching a bright glowing {colors[2]} neon chart line hovering in the air. The {colors[2]} neon light vividly illuminates its smooth white face."
+    vp4 = vp_base + f" The cute character is giving a thumbs up with its distinct arm, standing next to a bright glowing {colors[3]} neon light trail. The {colors[3]} neon light beautifully reflects on the glossy surface."
 
     data_points = []
     for i in range(1, 6):
