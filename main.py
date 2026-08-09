@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.79_PERFECT_STICKMAN_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.80_POP_MART_TOY_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -59,19 +59,6 @@ def _get_wp_headers():
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
         'Cache-Control': 'no-cache'
-    }
-
-# 🚨 Imunify360 WAF 스텔스 우회용 사파리 헤더
-def _get_stealth_headers():
-    auth_str = f"{WP_USER}:{WP_APP_PASS}"
-    b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
-    return {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15',
-        'Accept': 'application/json, text/plain, */*',
-        'Authorization': f'Basic {b64_auth}',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Accept-Language': 'en-US,en;q=0.9'
     }
 
 MODEL_PRI = {
@@ -625,43 +612,22 @@ def check_env_vars():
 
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
-    headers = _get_wp_headers()
-    
     try:
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=headers, timeout=25)
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
         try:
             resp_json = resp.json()
-            is_valid = isinstance(resp_json, dict) and "id" in resp_json
+            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
         except:
-            is_valid = False
+            is_valid_json = False
 
-        if resp.status_code == 200 and is_valid: 
+        if resp.status_code == 200 and is_valid_json: 
             print("   ✅ WP Auth Successful!")
             return True
-    except: pass
-
-    print("   ⚠️ 1차 접속 실패. WAF 우회 스텔스 모드로 재시도합니다...")
-    time.sleep(3)
-
-    try:
-        stealth_headers = _get_stealth_headers()
-        resp2 = requests.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=stealth_headers, timeout=25)
-        
-        try:
-            resp_json = resp2.json()
-            is_valid = isinstance(resp_json, dict) and "id" in resp_json
-        except:
-            is_valid = False
-
-        if resp2.status_code == 200 and is_valid:
-            print("   ✅ WP Auth Successful (Stealth Mode)!")
-            return True
         else:
-            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp2.status_code})")
-            print(f"   💬 Server Response: {resp2.text[:250]}")
-    except Exception as e:
-        print(f"   ❌ WP Connection Error: {e}")
-
+            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
+            print(f"   💬 Server Response: {resp.text[:250]}")
+    except Exception as e: 
+        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -1053,7 +1019,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 카카오톡 레퍼런스 스타일 픽스 (돌연변이 금지, 완벽한 둥근 얼굴 흰색 스틱맨 + 네온 조명)
+# 🚨 카카오톡 이미지(2번 사진) 100% 동일 구현: 둥근 얼굴 팝마트(Pop Mart) 피규어 스타일 픽스
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1447,16 +1413,16 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    colors = ["neon red", "neon blue", "neon green", "neon purple", "neon orange", "neon yellow"]
+    colors = ["neon red", "neon blue", "neon green", "neon purple", "neon orange", "neon pink"]
     random.shuffle(colors)
     
-    # 🚨 카카오톡 이미지(4번 사진) 완벽 구현: 기괴함을 막고 물리적으로 정확한 하얀 구형 머리와 선형 팔다리를 가진 3D 캐릭터 지정
-    vp_base = "A high-quality 3D render of a cute, simple white stickman character. The character has a large, perfectly smooth, solid white spherical head with only two simple black dot eyes and a tiny simple smile. The body, arms, and legs are very thin, smooth, and white, perfectly resembling a 3D stick figure. The character is standing in a dark, moody cinematic studio. No text, no extra limbs, no weird abstract shapes. Exactly two thin arms and two thin legs."
+    # 🚨 카카오톡 3번 사진 100% 매칭: 기괴한 변형 금지, 완벽한 백색 둥근 머리 피규어로 강제 고정
+    vp_base = "A masterpiece 3D render of a cute 'Pop Mart' style blind box designer toy figure. The character has an oversized, perfectly round, glossy white spherical head, two cute big black dot eyes, and a tiny smiling mouth. It has a small, simple glossy white body with short arms and legs. Standing in a dark cinematic studio with a pitch-black background. Highly detailed, adorable chibi aesthetic. No text, absolutely no extra limbs."
 
-    vp1 = vp_base + f" The cute white 3D stickman is holding a bright glowing {colors[0]} neon line that looks like an upward trending stock chart. The bright {colors[0]} neon light beautifully illuminates the character's white face."
-    vp2 = vp_base + f" The cute white 3D stickman is standing confidently, pointing forward with one hand, while a glowing {colors[1]} neon laser beam shines next to it. The bright {colors[1]} neon light beautifully illuminates the character."
-    vp3 = vp_base + f" The cute white 3D stickman is holding a glowing {colors[2]} neon straight line like a staff. The bright {colors[2]} neon light reflects softly on its smooth white round head."
-    vp4 = vp_base + f" The cute white 3D stickman is smiling brightly, standing proudly next to a bright glowing {colors[3]} neon arrow pointing up. The {colors[3]} neon light creates a cinematic rim light on the character."
+    vp1 = vp_base + f" The character is holding a brightly glowing {colors[0]} neon upward arrow. The intense {colors[0]} neon light powerfully illuminates and reflects off the character's glossy white face."
+    vp2 = vp_base + f" The character is holding a brightly glowing {colors[1]} neon straight stick like a wand. The intense {colors[1]} neon light powerfully illuminates and reflects off the character's glossy white face."
+    vp3 = vp_base + f" The character is pointing at a brightly glowing {colors[2]} neon curved line on the ground. The intense {colors[2]} neon light powerfully illuminates and reflects off the character's glossy white face."
+    vp4 = vp_base + f" The character is standing confidently, holding a brightly glowing {colors[3]} neon light trail. The intense {colors[3]} neon light powerfully illuminates and reflects off the character's glossy white face."
 
     data_points = []
     for i in range(1, 6):
