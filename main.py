@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.100_ULTIMATE_ART_TOY)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.101_ABSOLUTE_CONTROL)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -618,6 +618,7 @@ def check_env_vars():
         return False
     return True
 
+# 워드프레스 통신 전용 (순정 requests 사용)
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
@@ -794,6 +795,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
+# 뉴스 크롤링은 외부 접속이므로 scraper 유지
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1027,7 +1029,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 해부학적 제어(결정론적 픽스) 적용! 오직 "팝마트 피규어 미학"에 맞춰 생성
+# 🚨 30년 차 프로그래머의 극단적 통제 렌더링: 사람/동물 변형 완벽 차단!
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1422,25 +1424,24 @@ def generate_vip_carousel(raw_content, cat):
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
     colors_neon = [
+        ("neon gold", "golden glowing light"),
         ("neon red", "red glowing light"),
         ("neon purple", "purple glowing light"),
-        ("neon gold", "golden glowing light"),
-        ("neon emerald green", "green glowing light"),
-        ("neon blue", "blue glowing light")
+        ("neon green", "bright green glowing light"),
+        ("neon yellow", "bright yellow glowing light")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 30년 차 프로그래머의 불쾌한 골짜기 원천 차단 설계
-    # 해부학적 묘사 대신 "vinyl art toy(비닐 아트 토이)"와 "Pop Mart collectible(팝마트 콜렉터블)"이라는 스타일 키워드로 AI의 구조적 혼란을 제거했습니다.
-    vp_base = "A masterpiece 3D render of a cute, minimalist white vinyl art toy figure. The figure has a simple, smooth, glossy white humanoid design with a round head and small limbs, resembling a premium Pop Mart collectible. Standing in a pitch-black cinematic studio."
+    # 🚨 30년차 프로그래머의 극단적 통제 프롬프트 (기괴함, 사람, 동물 완벽 차단 및 가장 단순한 스틱맨 픽스)
+    vp_base = "A minimalist 3D icon style render of a cute abstract stickman character. The head is a perfectly smooth, giant glossy WHITE sphere. The face has ONLY two simple black dot eyes and a tiny smile. STRICTLY NO hair, NO ears, NO nose, NO clothes, NO animal features, NO human anatomy. The body is a tiny white oval with extremely thin, simple wire-like arms and legs. It is standing in a pitch-black studio."
 
-    vp1 = f"{vp_base} The cute figure is holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The intense {colors_neon[0][1]} beautifully illuminates and reflects off the glossy white figure. High contrast, adorable, perfectly proportioned."
-    
-    vp2 = f"{vp_base} The cute figure is acting like a teacher, pointing forward with a brightly glowing {colors_neon[1][0]} neon laser wand. The intense {colors_neon[1][1]} creates a stunning rim light on the white figure. High contrast, adorable, perfectly proportioned."
-    
-    vp3 = f"{vp_base} The cute figure is interacting with a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} vividly reflects off its smooth white face. High contrast, adorable, perfectly proportioned."
-    
-    vp4 = f"{vp_base} The cute figure is standing confidently next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} elegantly reflects on the glossy white surface. High contrast, adorable, perfectly proportioned."
+    vp1 = f"{vp_base} The cute character is proudly holding a brightly glowing {colors_neon[0][0]} neon upward arrow stick in its thin hand. The intense {colors_neon[0][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
+
+    vp2 = f"{vp_base} The cute character is pointing forward with a brightly glowing {colors_neon[1][0]} neon laser wand. The intense {colors_neon[1][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
+
+    vp3 = f"{vp_base} The cute character is curiously touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
+
+    vp4 = f"{vp_base} The cute character is raising its thin arm next to a stunning {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
 
     data_points = []
     for i in range(1, 6):
@@ -1623,7 +1624,7 @@ def generate_vip_carousel(raw_content, cat):
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
         y_text += 105
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
-    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
+    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font_sub, anchor="mm")
     text_frames.append(txt6)
 
     image_bytes_list = []
@@ -1730,7 +1731,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1762,7 +1763,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1794,7 +1795,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1845,9 +1846,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
