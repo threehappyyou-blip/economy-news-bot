@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.102_SYNTAX_PERFECTION)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.103_FINAL_ART_TOY_PERFECTION)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1029,6 +1029,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 30년 차 프로그래머의 극단적 통제 렌더링: 오직 "귀여운 화이트 아트 토이" + "네온 빛 반사"만 허용
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1422,21 +1423,29 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
+    # 🚨 대표님 맞춤 컬러 세트 (외계인 방지를 위한 물리적 강제 프롬프트 적용)
     colors_neon = [
-        ("neon gold", "golden glowing light"),
-        ("neon red", "red glowing light"),
-        ("neon purple", "purple glowing light"),
-        ("neon yellow", "yellow glowing light"),
-        ("neon emerald green", "bright green glowing light")
+        "vibrant neon red",
+        "vibrant neon purple",
+        "vibrant neon golden-orange",
+        "vibrant neon green",
+        "vibrant neon yellow"
     ]
     random.shuffle(colors_neon)
     
-    vp_base = "A high-end 3D macro photography of a cute, friendly white designer art toy figure. The character has a perfectly round, smooth white spherical head with two cute black dot eyes and a tiny smile. It has a small white body with thin, clearly visible arms and legs. The figure is standing on a dark reflective floor in a pitch-black cinematic studio. Highly detailed, kawaii aesthetic. Absolutely no text, no extra limbs, no weird mutations."
+    # 🚨 30년 차 프로그래머의 불쾌한 골짜기(Uncanny Valley) 원천 차단 프롬프트 설계
+    # 1. "exactly two distinct small black dot eyes": 눈 하나로 합쳐지는 사이클롭스 버그 차단
+    # 2. "perfectly spherical, glossy white head": 머리 모양이 뭉개지는 현상 방지
+    # 3. "actively holding": 소품을 확실히 들고 있도록 동작 고정
+    vp_base = "A masterpiece 3D render of a cute, minimalist art toy figure. The character has an oversized, perfectly spherical, glossy white head with exactly two distinct small black dot eyes and a tiny smile. It has a very small white body with thin, stick-like arms and legs. "
 
-    vp1 = vp_base + f" The cute character is acting like a smart teacher, using its thin arm to confidently point at a bright {colors_neon[0][0]} glowing upward arrow. The vibrant {colors_neon[0][1]} strongly reflects on its glossy white face."
-    vp2 = vp_base + f" The cute character is standing proudly, holding a bright {colors_neon[1][0]} glowing laser stick to teach the audience. The vibrant {colors_neon[1][1]} creates a beautiful rim light on the figure."
-    vp3 = vp_base + f" The cute character is curiously touching a bright {colors_neon[2][0]} glowing chart line floating in the air. The vibrant {colors_neon[2][1]} vividly illuminates its smooth white head."
-    vp4 = vp_base + f" The cute character is making a welcoming teaching gesture next to a stunning {colors_neon[3][0]} glowing light trail. The vibrant {colors_neon[3][1]} elegantly reflects on the glossy surface."
+    vp1 = vp_base + f"The figure is standing in a pitch-black studio, actively holding a brightly glowing {colors_neon[0]} neon upward arrow in its hand. The intense {colors_neon[0]} light brightly reflects off its glossy white face. Dramatic cinematic lighting, 8k resolution."
+
+    vp2 = vp_base + f"The figure is standing in a pitch-black studio, pointing forward with a brightly glowing {colors_neon[1]} neon laser pointer stick. The intense {colors_neon[1]} light creates a stunning reflection on its glossy white face. Dramatic cinematic lighting, 8k resolution."
+
+    vp3 = vp_base + f"The figure is standing in a pitch-black studio, using its thin arm to point at a bright {colors_neon[2]} neon chart line hovering in the air. The intense {colors_neon[2]} light brightly reflects off its glossy white face. Dramatic cinematic lighting, 8k resolution."
+
+    vp4 = vp_base + f"The figure is standing in a pitch-black studio, standing proudly next to a brightly glowing {colors_neon[3]} neon light trail. The intense {colors_neon[3]} light brightly reflects off its glossy white face. Dramatic cinematic lighting, 8k resolution."
 
     data_points = []
     for i in range(1, 6):
@@ -1569,7 +1578,7 @@ def generate_vip_carousel(raw_content, cat):
     for ln in shock_lines[:3]:
         d2.text((W//2, y_text), ln, fill=WHITE, font=font_mega, anchor="mm")
         y_text += 140 
-    d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font_sub, anchor="mm")
+    d2.text((W//2, 1800), "WAIT FOR IT...", fill=GRAY, font=font=font_sub, anchor="mm")
     text_frames.append(txt2)
 
     # Data Slides
@@ -1740,7 +1749,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1772,7 +1781,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1804,7 +1813,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1855,9 +1864,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
