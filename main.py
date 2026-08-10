@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.104_TYPO_FIXED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.105_PURE_GEOMETRY_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -38,7 +38,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 뉴스 크롤링 전용 스크래퍼 (워드프레스 접속에는 절대 사용하지 않음)
+# 뉴스 크롤링 전용 스크래퍼
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -618,7 +618,6 @@ def check_env_vars():
         return False
     return True
 
-# 워드프레스 통신 전용 (순정 requests 사용)
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
@@ -1029,6 +1028,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 형태의 오해를 완벽 차단! 순수 기하학 도형 묘사로 귀여운 "찹쌀떡 캐릭터" + "네온 소품" 강제
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1422,21 +1422,27 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
+    # 🚨 대표님 맞춤 쨍한 네온 컬러 배열 (레퍼런스 이미지 기반)
     colors_neon = [
-        ("neon red", "red glowing light"),
-        ("neon purple", "purple glowing light"),
-        ("neon gold amber", "golden yellow glowing light"),
-        ("neon emerald green", "bright green glowing light")
+        ("neon red", "red"),
+        ("neon yellow", "yellow"),
+        ("neon purple", "purple"),
+        ("neon green", "green"),
+        ("neon orange", "orange")
     ]
     random.shuffle(colors_neon)
     
-    vp1 = f"A brilliant, intensely bright {colors_neon[0][0]} glowing neon arrow graph stick held by a cute white 3D character with a large smooth round head and thin arms and legs. The vibrant {colors_neon[0][1]} strongly reflects off the glossy white head and floor in a pitch-black studio room. Sharp contrast, cinematic lighting, Pop Mart 3D figure style, adorable, high quality render, no text."
-    
-    vp2 = f"A cute white 3D figure with a large round head and thin arms, holding and pointing a bright {colors_neon[1][0]} glowing neon laser pointer wand like a teacher. The intense {colors_neon[1][1]} casts a vivid rim light reflection on the character's white face and shiny body in a dark studio. Pop Mart toy style, high contrast, no text."
-    
-    vp3 = f"A cute white 3D character with a big round head and thin limbs touching a bright {colors_neon[2][0]} glowing neon chart line on the dark ground. The striking {colors_neon[2][1]} brightly illuminates the figure's face and creates colorful reflections on the glossy dark floor. High quality 3D render, kawaii style, no text."
-    
-    vp4 = f"A cute white 3D figure standing next to a stunning {colors_neon[3][0]} glowing neon light beam, pointing forward with a thin arm to teach an insight. The bright {colors_neon[3][1]} creates strong colorful highlights on the white character's head against a dark moody background. 8k resolution, 3D art toy, no text."
+    # 🚨 30년 차 프로그래머의 불쾌한 골짜기 원천 차단 설계
+    # 모든 애매한 수식어(사람, 옷, 피규어 등)를 삭제하고 '순수한 3D 기하학 모형'으로만 형태를 강제 조립
+    vp_base = "A 3D render of a cute, simple, blank white mascot character. The head is an oversized, perfectly round, glossy white sphere. The face features exactly two small black dots for eyes and a tiny curved line for a smile. The body is a small white bean shape with thin, smooth, white noodle-like arms and legs. It wears no clothes and has no hair or human features. Standing on a dark floor in a pitch-black studio."
+
+    vp1 = f"{vp_base} The character is confidently holding a brightly glowing {colors_neon[0][0]} neon light stick shaped like an upward arrow. The vibrant {colors_neon[0][1]} light casts a beautiful, colorful reflection on the character's glossy white face and the dark floor. Cinematic lighting, adorable, highly detailed."
+
+    vp2 = f"{vp_base} The character is actively pointing forward with a brightly glowing {colors_neon[1][0]} neon laser wand. The vibrant {colors_neon[1][1]} light casts a beautiful, colorful reflection on the character's glossy white face and the dark floor. Cinematic lighting, adorable, highly detailed."
+
+    vp3 = f"{vp_base} The character is touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The vibrant {colors_neon[2][1]} light casts a beautiful, colorful reflection on the character's glossy white face and the dark floor. Cinematic lighting, adorable, highly detailed."
+
+    vp4 = f"{vp_base} The character is proudly standing next to a brightly glowing {colors_neon[3][0]} neon light beam. The vibrant {colors_neon[3][1]} light casts a beautiful, colorful reflection on the character's glossy white face and the dark floor. Cinematic lighting, adorable, highly detailed."
 
     data_points = []
     for i in range(1, 6):
@@ -1740,7 +1746,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.104_TYPO_FIXED SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.105_PURE_GEOMETRY_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1772,7 +1778,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.104_TYPO_FIXED Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.105_PURE_GEOMETRY_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1804,7 +1810,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.104_TYPO_FIXED Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.105_PURE_GEOMETRY_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1855,9 +1861,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.104_TYPO_FIXED Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.105_PURE_GEOMETRY_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.104_TYPO_FIXED Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.105_PURE_GEOMETRY_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
