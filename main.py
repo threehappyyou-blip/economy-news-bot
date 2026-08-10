@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.107_ULTIMATE_NEON_TOY)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.108_NEON_UI_PERFECTION)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1029,7 +1029,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 30년 차 프로그래머의 극단적 통제 렌더링: 오직 "귀여운 화이트 미니멀 피규어" + "네온 쥐어주기"만 허용
+# 🚨 형태의 오해를 완벽 차단! "순수한 미니멀 3D 캐릭터" + "네온 발광 강제 적용"
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1423,26 +1423,28 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 대표님 맞춤 쨍한 네온 컬러 배열
+    # 🚨 대표님 맞춤 쨍한 네온 컬러 배열 (레퍼런스 이미지 기반)
     colors_neon = [
-        ("neon gold", "golden glowing light"),
-        ("neon red", "red glowing light"),
-        ("neon purple", "purple glowing light"),
-        ("neon green", "bright green glowing light"),
-        ("neon yellow", "bright yellow glowing light")
+        ("neon red", "red"),
+        ("neon orange", "orange"),
+        ("neon purple", "purple"),
+        ("neon green", "green"),
+        ("neon yellow", "yellow")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 가장 자연스럽고 안정적인 "귀여운 미니멀 피규어" 프롬프트 (수학적 제어 삭제)
-    vp_base = "A highly detailed 3D render of a cute, minimalist white mascot character. The character has a large, perfectly round head with two simple black dot eyes, a small white body, and thin arms and legs. The entire character is made of smooth, glossy white material. It is standing in a dark cinematic studio."
+    # 🚨 30년 차 프로그래머의 불쾌한 골짜기 완벽 차단 & 3D 아이콘 스타일 픽스
+    # "3D white stickman figure"라는 업계 표준 단어로 찰흙/동물 변형을 막고, 
+    # "holding a brightly glowing [COLOR] neon light"를 메인으로 두어 조명 생성을 최우선화 했습니다.
+    vp_base = "A cute minimalist 3D white stick figure character with a big round head, black dot eyes, and thin stick-like arms and legs. It is standing in a pitch-black studio."
 
-    vp1 = f"{vp_base} The character is confidently holding a brightly glowing {colors_neon[0][0]} neon upward arrow in its hand. The intense {colors_neon[0][1]} perfectly illuminates and reflects off the character's glossy white face and the dark floor. 8k resolution, highly detailed."
+    vp1 = f"{vp_base} The figure is physically holding a bright glowing {colors_neon[0][0]} neon upward arrow. The vibrant {colors_neon[0][1]} light intensely illuminates its glossy white face. High contrast, 8k 3D render."
 
-    vp2 = f"{vp_base} The character is acting like a teacher, pointing forward with a brightly glowing {colors_neon[1][0]} neon laser wand in its hand. The intense {colors_neon[1][1]} perfectly illuminates and reflects off the character's glossy white face. 8k resolution, highly detailed."
+    vp2 = f"{vp_base} The figure is holding a bright glowing {colors_neon[1][0]} neon laser pointer like a teacher. The vibrant {colors_neon[1][1]} light intensely illuminates its glossy white face. High contrast, 8k 3D render."
 
-    vp3 = f"{vp_base} The character is reaching out to touch a brightly glowing {colors_neon[2][0]} neon chart line floating in the dark air. The intense {colors_neon[2][1]} perfectly illuminates and reflects off the character's glossy white face. 8k resolution, highly detailed."
+    vp3 = f"{vp_base} The figure is standing next to a bright glowing {colors_neon[2][0]} neon chart line hovering in the air. The vibrant {colors_neon[2][1]} light intensely illuminates its glossy white face. High contrast, 8k 3D render."
 
-    vp4 = f"{vp_base} The character is raising its arm in a welcoming gesture next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} perfectly illuminates and reflects off the character's glossy white face. 8k resolution, highly detailed."
+    vp4 = f"{vp_base} The figure is pointing its thin arm at a bright glowing {colors_neon[3][0]} neon light beam. The vibrant {colors_neon[3][1]} light intensely illuminates its glossy white face. High contrast, 8k 3D render."
 
     data_points = []
     for i in range(1, 6):
@@ -1746,7 +1748,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.107_ULTIMATE_NEON_TOY SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.108_NEON_UI_PERFECTION SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1778,7 +1780,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.107_ULTIMATE_NEON_TOY Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.108_NEON_UI_PERFECTION Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1810,7 +1812,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.107_ULTIMATE_NEON_TOY Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.108_NEON_UI_PERFECTION Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1861,9 +1863,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.107_ULTIMATE_NEON_TOY Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.108_NEON_UI_PERFECTION Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.107_ULTIMATE_NEON_TOY Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.108_NEON_UI_PERFECTION Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
