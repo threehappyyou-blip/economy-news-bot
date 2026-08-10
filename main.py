@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.99_ULTIMATE_PERFECTION)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.100_ULTIMATE_ART_TOY)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -618,7 +618,6 @@ def check_env_vars():
         return False
     return True
 
-# 워드프레스 통신 전용 (순정 requests 유지)
 def verify_wp_credentials():
     print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
     try:
@@ -795,7 +794,6 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# 뉴스 크롤링은 외부 접속이므로 scraper 유지
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1021,7 +1019,7 @@ def get_font(url, filename):
         try:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             print(f"    📥 Downloading font from {url}...")
-            resp = scraper.get(url, timeout=15)
+            resp = requests.get(url, timeout=15)
             resp.raise_for_status()
             with open(filename, 'wb') as f: f.write(resp.content)
             print("    ✅ Font downloaded successfully.")
@@ -1029,7 +1027,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 외계인 덩어리 현상을 완벽히 차단하고, 쨍한 네온 불빛과 이목구비를 절대적으로 강제 고정한 최종 렌더링 함수
+# 🚨 해부학적 제어(결정론적 픽스) 적용! 오직 "팝마트 피규어 미학"에 맞춰 생성
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1423,29 +1421,26 @@ def generate_vip_carousel(raw_content, cat):
     ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
     smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
-    # 🚨 대표님 맞춤 컬러 세트 (외계인 방지를 위한 물리적 강제 프롬프트 적용)
     colors_neon = [
-        "vibrant neon red",
-        "vibrant neon purple",
-        "vibrant neon golden-orange",
-        "vibrant neon green",
-        "vibrant neon yellow"
+        ("neon red", "red glowing light"),
+        ("neon purple", "purple glowing light"),
+        ("neon gold", "golden glowing light"),
+        ("neon emerald green", "green glowing light"),
+        ("neon blue", "blue glowing light")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 30년 차 프로그래머의 불쾌한 골짜기(Uncanny Valley) 원천 차단 프롬프트 설계
-    # 1. "exactly two distinct small black dot eyes": 눈 하나로 합쳐지는 사이클롭스 버그 차단
-    # 2. "perfectly spherical, glossy white head": 머리 모양이 뭉개지는 현상 방지
-    # 3. "actively holding": 소품을 확실히 들고 있도록 동작 고정
-    vp_base = "A masterpiece 3D render of a cute, minimalist art toy figure. The character has an oversized, perfectly spherical, glossy white head with exactly two distinct small black dot eyes and a tiny smile. It has a very small white body with thin, stick-like arms and legs. "
+    # 🚨 30년 차 프로그래머의 불쾌한 골짜기 원천 차단 설계
+    # 해부학적 묘사 대신 "vinyl art toy(비닐 아트 토이)"와 "Pop Mart collectible(팝마트 콜렉터블)"이라는 스타일 키워드로 AI의 구조적 혼란을 제거했습니다.
+    vp_base = "A masterpiece 3D render of a cute, minimalist white vinyl art toy figure. The figure has a simple, smooth, glossy white humanoid design with a round head and small limbs, resembling a premium Pop Mart collectible. Standing in a pitch-black cinematic studio."
 
-    vp1 = vp_base + f"The figure is standing in a pitch-black studio, actively holding a brightly glowing {colors_neon[0]} neon upward arrow in its hand. The intense {colors_neon[0]} light brightly reflects off its glossy white face. Dramatic cinematic lighting, 8k resolution."
-
-    vp2 = vp_base + f"The figure is standing in a pitch-black studio, pointing forward with a brightly glowing {colors_neon[1]} neon laser pointer stick. The intense {colors_neon[1]} light creates a stunning reflection on its glossy white face. Dramatic cinematic lighting, 8k resolution."
-
-    vp3 = vp_base + f"The figure is standing in a pitch-black studio, using its thin arm to point at a bright {colors_neon[2]} neon chart line hovering in the air. The intense {colors_neon[2]} light brightly reflects off its glossy white face. Dramatic cinematic lighting, 8k resolution."
-
-    vp4 = vp_base + f"The figure is standing in a pitch-black studio, standing proudly next to a brightly glowing {colors_neon[3]} neon light trail. The intense {colors_neon[3]} light brightly reflects off its glossy white face. Dramatic cinematic lighting, 8k resolution."
+    vp1 = f"{vp_base} The cute figure is holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The intense {colors_neon[0][1]} beautifully illuminates and reflects off the glossy white figure. High contrast, adorable, perfectly proportioned."
+    
+    vp2 = f"{vp_base} The cute figure is acting like a teacher, pointing forward with a brightly glowing {colors_neon[1][0]} neon laser wand. The intense {colors_neon[1][1]} creates a stunning rim light on the white figure. High contrast, adorable, perfectly proportioned."
+    
+    vp3 = f"{vp_base} The cute figure is interacting with a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} vividly reflects off its smooth white face. High contrast, adorable, perfectly proportioned."
+    
+    vp4 = f"{vp_base} The cute figure is standing confidently next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} elegantly reflects on the glossy white surface. High contrast, adorable, perfectly proportioned."
 
     data_points = []
     for i in range(1, 6):
@@ -1735,7 +1730,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.99_ULTIMATE_PERFECTION SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1767,7 +1762,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.99_ULTIMATE_PERFECTION Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1799,7 +1794,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.99_ULTIMATE_PERFECTION Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1850,9 +1845,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.99_ULTIMATE_PERFECTION Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.99_ULTIMATE_PERFECTION Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.100_ULTIMATE_ART_TOY Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
