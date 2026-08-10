@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.101_ABSOLUTE_CONTROL)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.102_SYNTAX_PERFECTION)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -1029,7 +1029,6 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 30년 차 프로그래머의 극단적 통제 렌더링: 사람/동물 변형 완벽 차단!
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1427,21 +1426,17 @@ def generate_vip_carousel(raw_content, cat):
         ("neon gold", "golden glowing light"),
         ("neon red", "red glowing light"),
         ("neon purple", "purple glowing light"),
-        ("neon green", "bright green glowing light"),
-        ("neon yellow", "bright yellow glowing light")
+        ("neon yellow", "yellow glowing light"),
+        ("neon emerald green", "bright green glowing light")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 30년차 프로그래머의 극단적 통제 프롬프트 (기괴함, 사람, 동물 완벽 차단 및 가장 단순한 스틱맨 픽스)
-    vp_base = "A minimalist 3D icon style render of a cute abstract stickman character. The head is a perfectly smooth, giant glossy WHITE sphere. The face has ONLY two simple black dot eyes and a tiny smile. STRICTLY NO hair, NO ears, NO nose, NO clothes, NO animal features, NO human anatomy. The body is a tiny white oval with extremely thin, simple wire-like arms and legs. It is standing in a pitch-black studio."
+    vp_base = "A high-end 3D macro photography of a cute, friendly white designer art toy figure. The character has a perfectly round, smooth white spherical head with two cute black dot eyes and a tiny smile. It has a small white body with thin, clearly visible arms and legs. The figure is standing on a dark reflective floor in a pitch-black cinematic studio. Highly detailed, kawaii aesthetic. Absolutely no text, no extra limbs, no weird mutations."
 
-    vp1 = f"{vp_base} The cute character is proudly holding a brightly glowing {colors_neon[0][0]} neon upward arrow stick in its thin hand. The intense {colors_neon[0][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
-
-    vp2 = f"{vp_base} The cute character is pointing forward with a brightly glowing {colors_neon[1][0]} neon laser wand. The intense {colors_neon[1][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
-
-    vp3 = f"{vp_base} The cute character is curiously touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
-
-    vp4 = f"{vp_base} The cute character is raising its thin arm next to a stunning {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} is the only light source, vividly reflecting off the character's smooth white face and dark floor. 8k, highly detailed."
+    vp1 = vp_base + f" The cute character is acting like a smart teacher, using its thin arm to confidently point at a bright {colors_neon[0][0]} glowing upward arrow. The vibrant {colors_neon[0][1]} strongly reflects on its glossy white face."
+    vp2 = vp_base + f" The cute character is standing proudly, holding a bright {colors_neon[1][0]} glowing laser stick to teach the audience. The vibrant {colors_neon[1][1]} creates a beautiful rim light on the figure."
+    vp3 = vp_base + f" The cute character is curiously touching a bright {colors_neon[2][0]} glowing chart line floating in the air. The vibrant {colors_neon[2][1]} vividly illuminates its smooth white head."
+    vp4 = vp_base + f" The cute character is making a welcoming teaching gesture next to a stunning {colors_neon[3][0]} glowing light trail. The vibrant {colors_neon[3][1]} elegantly reflects on the glossy surface."
 
     data_points = []
     for i in range(1, 6):
@@ -1624,7 +1619,7 @@ def generate_vip_carousel(raw_content, cat):
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
         y_text += 105
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
-    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font_sub, anchor="mm")
+    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
     image_bytes_list = []
@@ -1727,11 +1722,25 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         print(f"   ❌ Network error: {e}")
     return False
 
+def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
+    if raw_for_cards:
+        if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
+            if tier == "Premium" or tier == "unified":
+                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
+                if video_mp4_bytes:
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
+            
+            yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
+            if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
+
+        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
+        send_community_viral_email(display_title, link, raw_for_cards, cat)
+
 def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1763,7 +1772,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1795,7 +1804,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1846,9 +1855,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.101_ABSOLUTE_CONTROL Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.102_SYNTAX_PERFECTION Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
