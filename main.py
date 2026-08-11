@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.123_MARSHMALLOW_MASCOT_ENGINE)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.124_PERFECT_SYNTAX_AND_CUTE_MASCOT)
 # ═══════════════════════════════════════════════════════════════
 
-import os, sys, traceback, time, random, re, datetime, io, math, base64
-import urllib.request, urllib.parse
+import os
+import sys
+import traceback
+import time
+import random
+import re
+import datetime
+import io
+import math
+import base64
+import urllib.request
+import urllib.parse
 import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
@@ -38,7 +48,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 🚨 Imunify360 방화벽 우회 전용 스크래퍼 (모든 WP 통신에 적용)
+# 🚨 Imunify360 방화벽 우회 전용 글로벌 스크래퍼 세션
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -64,7 +74,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 🚨 엔터프라이즈급 API 랩퍼 (500 Error, 403 Error 자동 복구 로직)
+# 🚨 엔터프라이즈급 API 랩퍼 (에러 발생 시 정석대로 줄을 나눠 처리)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     url = f"{WP_URL}{endpoint}" if endpoint.startswith("/") else f"{WP_URL}/wp-json/wp/v2/{endpoint}"
     headers = _get_wp_headers()
@@ -76,6 +86,7 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
     for attempt in range(1, 4):
         try:
             scraper.cookies.clear() 
+            
             if method == 'GET':
                 resp = scraper.get(url, headers=headers, timeout=30)
             elif method == 'POST' and json_data is not None:
@@ -95,9 +106,11 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
                 time.sleep(3)
             else:
                 return resp 
+                
         except Exception as e:
             print(f"      ⚠️ Network Error ({e}) on attempt {attempt}. Retrying...")
             time.sleep(5)
+            
     return None
 
 MODEL_PRI = {
@@ -149,9 +162,12 @@ RSS_FEEDS = {
 }
 
 CAT_ALLOC = {
-    "Economy": {"s": 55, "b": 35, "c": 10}, "Politics": {"s": 50, "b": 35, "c": 15},
-    "Tech": {"s": 70, "b": 20, "c": 10}, "Health": {"s": 60, "b": 30, "c": 10},
-    "Energy": {"s": 65, "b": 25, "c": 10}, "On-Chain": {"s": 25, "b": 15, "c": 60}
+    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
+    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
+    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
+    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
+    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
+    "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
 
 # ═══════════════════════════════════════════════
@@ -221,15 +237,54 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
 
+FOUNDATION_TOPICS = ["ETF vs Mutual Funds: Which is actually safer for absolute beginners?", "How to start investing in S&P 500 ETFs with exactly $100", "The hidden risks of Dollar Cost Averaging (DCA) you must know"]
+FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are the "smart friend" who explains money to absolute beginners. Use counterintuitive angles. Wrap your content EXACTLY in the XML tags requested."""
+FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic in English: TOPIC: {theme}
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets, odd numbers, or 'How to' formats.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy.)</DEFINITION>
+<WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages.)</WHY_MATTERS>
+<HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
+
+PHILOSOPHY_TOPICS = ["Love money through action, not just unrequited longing", "The psychological vessel of wealth and the weight of responsibility", "Voluntary fatigue: The pleasurable pain of chosen growth"]
+PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite philosophical life strategist. Be harsh, direct, and unapologetic. Wrap your content EXACTLY in the XML tags requested."""
+PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the following theme in English: THEME: {theme}
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<ANCHOR>(A one-sentence philosophical principle based on the theme.)</ANCHOR>
+<REFLECTION>(3-4 paragraphs explaining how this principle connects to modern reality. Criticize passive excuses heavily.)</REFLECTION>
+<CATALYST>(A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
+
+MH_NICHES = ["Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", "Micro-SaaS & Software", "Affiliate Marketing"]
+MH_PLATFORMS = ["Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", "Substack"]
+MH_AI_TOOLS = ["ChatGPT", "Midjourney", "Claude", "ElevenLabs", "Zapier/Make", "CapCut AI", "HeyGen"]
+
+MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite side-hustle expert and digital business coach. Wrap your content EXACTLY in the XML tags requested."""
+MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide based on this framework: FRAMEWORK: {theme}
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait.)</TITLE>
+<SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
+<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
+<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
+<PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
+<COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
+
 # ═══════════════════════════════════════════════
 # 🎬 1. YOUTUBE CHAPTERING ENGINE
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
+
 [NEWSLETTER]
 {raw_content}
 
-OUTPUT REQUIREMENT: Wrap your response EXACTLY in <METADATA> and </METADATA> tags.
+OUTPUT REQUIREMENT:
+Wrap your response EXACTLY in <METADATA> and </METADATA> tags.
+
 <METADATA>
 [VIRAL TITLES]
 - Option A: 
@@ -239,51 +294,88 @@ OUTPUT REQUIREMENT: Wrap your response EXACTLY in <METADATA> and </METADATA> tag
 1. Visual Prompt: (Generate a HYPER-DETAILED, professional AI image generation prompt for Midjourney/Vrew. NO TEXT IN PROMPT.)
 2. Text/Copy: (Write 2-4 words of MASSIVE IMPACT, click-inducing text to place directly ON the thumbnail.)
 [SEO HASHTAGS]
-(10 highly searched global tags)
+(10 highly searched global tags, e.g. #investing #economy)
 </METADATA>"""
 
 YT_SCRIPT_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are a top-tier YouTube Scriptwriter for "Warm Insight". Write PART 1 (Introduction & The Hook) of a MASSIVE documentary script based on the newsletter in ENGLISH.
 [NEWSLETTER]
 {raw_content}
-Rules: NO structural tags inside the text. Wrap everything in <PART1> tags. Minimum 1500 words."""
+
+═══ 🔥 CRITICAL VREW TTS RULES (DO NOT FAIL) ═══
+1. ABSOLUTELY NO STAGE DIRECTIONS, NO MUSIC CUES, NO SOUND EFFECTS.
+2. DO NOT USE parentheses () or brackets [].
+3. ONLY output the exact narrative monologue to be spoken by the voiceover.
+
+═══ 📈 LENGTH REQUIREMENT (CRITICAL) ═══
+EXPAND VASTLY. Target length: MINIMUM 1,500 words for this part alone. Do NOT just summarize the newsletter. You must dramatically expand the concepts. Create a cinematic, suspenseful opening, explain the core concepts as if speaking to a beginner, use highly detailed analogies, and build massive curiosity. 
+Rules: NO structural tags inside the text. Wrap everything in <PART1> tags."""
 
 YT_SCRIPT_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are a top-tier YouTube Scriptwriter. Write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive).
+You are a top-tier YouTube Scriptwriter. Based on the newsletter, write PART 2: Chapter 2 & 3 (Historical Context & Deep Dive) of the documentary script.
 [NEWSLETTER]
 {raw_content}
+
 [PREVIOUS SCRIPT (PART 1)]
 {p1}
-Rules: NO structural tags inside the text. Wrap everything in <PART2> tags. Minimum 1500 words."""
+
+Continue the script seamlessly.
+═══ 🔥 CRITICAL VREW TTS RULES (DO NOT FAIL) ═══
+1. ABSOLUTELY NO STAGE DIRECTIONS, NO MUSIC CUES, NO SOUND EFFECTS.
+2. DO NOT USE parentheses () or brackets [].
+3. ONLY output the exact narrative monologue to be spoken by the voiceover.
+
+═══ 📈 LENGTH REQUIREMENT (CRITICAL) ═══
+EXPAND VASTLY. Target length: MINIMUM 1,500 words for this part alone. Go extremely deep into the data. Compare the current situation to historical parallels in extreme detail (e.g., 2008 crash, Dot-com bubble, 1970s inflation). Explain the exact 'why' behind the numbers, and relentlessly analyze the psychological behavior of retail investors vs smart money institutions.
+Rules: NO structural tags inside the text. Wrap everything in <PART2> tags."""
 
 YT_SCRIPT_P3 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are a top-tier YouTube Scriptwriter. Write PART 3: Chapter 4 & Outro.
+You are a top-tier YouTube Scriptwriter. Based on the newsletter, write PART 3: Chapter 4 & Outro (Future Prediction & Action Plan) of the documentary script.
 [NEWSLETTER]
 {raw_content}
+
 [PREVIOUS SCRIPT (PART 2)]
 {p2}
-Rules: NO structural tags inside the text. Wrap everything in <PART3> tags. Minimum 1500 words."""
+
+Complete the script seamlessly.
+═══ 🔥 CRITICAL VREW TTS RULES (DO NOT FAIL) ═══
+1. ABSOLUTELY NO STAGE DIRECTIONS, NO MUSIC CUES, NO SOUND EFFECTS.
+2. DO NOT USE parentheses () or brackets [].
+3. ONLY output the exact narrative monologue to be spoken by the voiceover.
+
+═══ 📈 LENGTH REQUIREMENT (CRITICAL) ═══
+EXPAND VASTLY. Target length: MINIMUM 1,500 words for this part alone. Provide hyper-detailed bull and bear case scenarios. Give a relentless, step-by-step actionable guide for viewers on what to do with their portfolio today. End with a powerful, thought-provoking philosophical outro.
+Rules: NO structural tags inside the text. Wrap everything in <PART3> tags."""
 
 def generate_youtube_masterpiece(raw_content, title):
     print(f"   🎬 [YouTube Engine] Starting 3-Phase Chaptering for '{title[:30]}...'")
     client = _get_gemini_client()
-    meta = xtag(gem_fb("Premium", YT_META_PROMPT.replace("{raw_content}", raw_content)), "METADATA")
+    
+    meta_raw = gem_fb("Premium", YT_META_PROMPT.replace("{raw_content}", raw_content))
+    meta = xtag(meta_raw, "METADATA")
     
     print("      - Generating Part 1...")
-    p1 = xtag(gem_fb("Premium", YT_SCRIPT_P1.replace("{raw_content}", raw_content)), "PART1")
+    p1_raw = gem_fb("Premium", YT_SCRIPT_P1.replace("{raw_content}", raw_content))
+    p1 = xtag(p1_raw, "PART1")
     
     print("      - Generating Part 2...")
-    p2 = xtag(gem_fb("Premium", YT_SCRIPT_P2.replace("{raw_content}", raw_content).replace("{p1}", p1)), "PART2")
+    p2_prompt = YT_SCRIPT_P2.replace("{raw_content}", raw_content).replace("{p1}", p1)
+    p2_raw = gem_fb("Premium", p2_prompt)
+    p2 = xtag(p2_raw, "PART2")
     
     print("      - Generating Part 3...")
-    p3 = xtag(gem_fb("Premium", YT_SCRIPT_P3.replace("{raw_content}", raw_content).replace("{p2}", p2)), "PART3")
+    p3_prompt = YT_SCRIPT_P3.replace("{raw_content}", raw_content).replace("{p2}", p2)
+    p3_raw = gem_fb("Premium", p3_prompt)
+    p3 = xtag(p3_raw, "PART3")
     
     full_script = f"{p1}\n\n{p2}\n\n{p3}"
     print(f"      🎯 Masterpiece Complete: {len(full_script):,} characters!")
     return meta, full_script
 
 def send_youtube_script_email(post_title, meta, script):
-    if not EMAIL_SENDER or not EMAIL_PASS: return
+    if not EMAIL_SENDER or not EMAIL_PASS: 
+        return
+        
     print(f"   📧 Sending YouTube Script to {YOUTUBE_EMAIL_RECEIVER}...")
     try:
         msg = MIMEMultipart()
@@ -300,7 +392,11 @@ def send_youtube_script_email(post_title, meta, script):
                 <div style="padding: 30px;">
                     <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">📋 YouTube Metadata & Thumbnail Copy</h3>
                     <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; white-space: pre-wrap; font-size: 15px; color: #334155; line-height: 1.6;">{meta}</div>
-                    <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 35px;">🎙️ Vrew Script (Copy & Paste)</h3>
+                    <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 35px;">🔗 Cross-Pollination (For Description/Pinned Comment)</h3>
+                    <div style="background: #e0f2fe; border-left: 5px solid #0284c7; padding: 15px; border-radius: 4px; font-weight: bold; font-size: 16px; color: #0369a1; line-height: 1.5;">
+                        👇 Check out the Warm Insight newsletter for a deeper dive and the full text summary: www.warminsight.com
+                    </div>
+                    <h3 style="color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 40px;">🎙️ Vrew Script (Copy & Paste)</h3>
                     <div style="background: #fefce8; padding: 20px; border: 1px solid #fde047; border-radius: 8px; white-space: pre-wrap; font-size: 16px; color: #1c1917; line-height: 1.8;">{script}</div>
                 </div>
             </div>
@@ -315,28 +411,144 @@ def send_youtube_script_email(post_title, meta, script):
         print(f"   ❌ YouTube Script Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 엔진 
+# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진
+# ═══════════════════════════════════════════════
+def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_bytes=None):
+    if not EMAIL_SENDER or not EMAIL_PASS: 
+        return
+        
+    print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
+    
+    if cat == "Foundation":
+        sec1_title, sec1_body = "📖 What is it?", xtag(raw_content, "DEFINITION").replace('\n', '<br>')
+        sec2_title, sec2_body = "💡 Why It Matters", xtag(raw_content, "WHY_MATTERS").replace('\n', '<br>')
+        sec3_title, sec3_body = "🚀 How to Start Today", xtag(raw_content, "HOW_TO_START").replace('\n', '<br>')
+    elif cat == "The Daily Catalyst":
+        sec1_title, sec1_body = "❝ The Anchor ❞", xtag(raw_content, "ANCHOR").replace('\n', '<br>')
+        sec2_title, sec2_body = "The Reflection", xtag(raw_content, "REFLECTION").replace('\n', '<br>')
+        sec3_title, sec3_body = "⚡ The Daily Catalyst", xtag(raw_content, "CATALYST").replace('\n', '<br>')
+    elif cat == "Money Hack":
+        sec1_title, sec1_body = "💡 The Concept", xtag(raw_content, "CONCEPT").replace('\n', '<br>')
+        sec2_title, sec2_body = "🛠️ Step-by-Step Execution", xtag(raw_content, "STEP_BY_STEP_TOOL").replace('\n', '<br>')
+        sec3_title, sec3_body = "🔥 Pro Tip", xtag(raw_content, "PRO_TIP").replace('\n', '<br>')
+    else:
+        sec1_title, sec1_body = "Executive Summary", xtag(raw_content, "EXECUTIVE_SUMMARY").replace('\n', '<br>')
+        sec2_title, sec2_body = "💡 Plain English", xtag(raw_content, "PLAIN_ENGLISH").replace('\n', '<br>')
+        sec3_title, sec3_body = xtag(raw_content, "HEADLINE"), xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "").strip().replace('\n', '<br><br>')
+    
+    kw_tag = kw.title() if kw else "Market Trends"
+    if len(kw_tag) > 25: 
+        kw_tag = kw_tag[:25].strip() 
+        
+    cat_tag = cat.replace("-", " ")
+    
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = MEDIUM_EMAIL_RECEIVER
+        msg['Subject'] = f"✍️ [Medium Draft] {title[:40]}..."
+        body = f"""
+        <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
+            <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                <div style="background: #10b981; padding: 25px; color: #ffffff;">
+                    <h2 style="margin: 0; font-size: 22px;">✍️ Medium Teaser Post Ready</h2>
+                    <p style="margin: 10px 0 0; opacity: 0.9; font-size: 14px;">Copy the content below to drive traffic back to Warm Insight.</p>
+                </div>
+                <div style="background: #ecfdf5; padding: 20px 25px; border-bottom: 1px solid #e2e8f0;">
+                    <h3 style="color: #065f46; margin-top: 0; font-size: 16px;">🚨 CRITICAL SEO STEP (Canonical URL)</h3>
+                    <ol style="color: #064e3b; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.6;">
+                        <li>Go to Medium and paste the Title & Body below.</li>
+                        <li>Click the <strong>3 dots (...)</strong> at the top right -> <strong>More Settings</strong> -> <strong>Advanced Settings</strong>.</li>
+                        <li>Check <em>"This story was originally published elsewhere"</em>.</li>
+                        <li>Paste this Exact URL: <strong><a href="{original_link}" style="color: #059669;">{original_link}</a></strong></li>
+                    </ol>
+                    <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🖼️ Don't forget the Thumbnail!</h3>
+                    <p style="color: #064e3b; font-size: 14px; margin: 0;">
+                        Download the attached image (<strong>thumbnail.jpg</strong>) and drag-and-drop it right under your Title in the Medium editor. Medium will automatically use it as the cover image!
+                    </p>
+                    <h3 style="color: #065f46; margin-top: 25px; font-size: 16px;">🏷️ Recommended Medium Tags (Topics)</h3>
+                    <p style="color: #064e3b; font-size: 14px; margin: 0; background: #d1fae5; padding: 10px; border-radius: 4px; font-weight: bold;">
+                        Investing, Finance, {cat_tag}, Market Analysis, {kw_tag}
+                    </p>
+                </div>
+                <div style="padding: 30px;">
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Copy From Here 👇</h3>
+                    <div style="padding: 20px; background: #ffffff; color: #222222; font-family: Georgia, serif; border: 1px dashed #cbd5e1;">
+                        <h1>{title}</h1><br>
+                        <h2>{sec1_title}</h2><p>{sec1_body}</p><br>
+                        <h2>{sec2_title}</h2><p>{sec2_body}</p><br>
+                        <h2>{sec3_title}</h2><p>{sec3_body}</p><br>
+                        <hr><br>
+                        <h2>🚀 Read the Full Deep Dive</h2>
+                        <p>This is just the tip of the iceberg. To see the full deep dive, dashboard, and strategies, read the complete analysis on Warm Insight.</p>
+                        <p><a href="{original_link}">👉 Click here to read the full report</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        msg.attach(MIMEText(body, 'html'))
+        if img_bytes:
+            image_part = MIMEImage(img_bytes, name="thumbnail.jpg")
+            image_part.add_header('Content-Disposition', 'attachment', filename="thumbnail.jpg")
+            msg.attach(image_part)
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_SENDER, EMAIL_PASS)
+            server.send_message(msg)
+        print("   ✅ Medium Teaser Draft Email Sent (with Medium Exclusive Thumbnail)!")
+    except Exception as e:
+        print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
+# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 
 # ═══════════════════════════════════════════════
 def generate_reddit_post(raw_content, cat, original_link):
     print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
+    client = _get_gemini_client()
     sys_inst = """CRITICAL RULE: Write entirely in ENGLISH. You are a 20-something retail investor posting on Reddit. You are NOT an AI.
     TONE: Casual, cynical, conversational "bro" tone. Use slang (tbh, ngl, crazy, wild, fwiw, bros).
-    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1).
-    CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS."""
-    prompt = f"Rewrite this core insight into a viral Reddit post for {cat} subreddits.\n[ANALYSIS]\n{raw_content}\n[OUTPUT FORMAT]\n<REDDIT_TITLE>(Max 12 words)</REDDIT_TITLE>\n<REDDIT_BODY>(2-3 paragraphs. Drop this link at the end: {original_link})</REDDIT_BODY>"
+    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1). Do NOT sound like an article. Make it look like you typed it on your phone on the toilet.
+    CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS. NO EXCEPTIONS."""
+    
+    prompt = f"""Read this formal analysis and rewrite the core insight into a viral Reddit post for {cat} subreddits.
+    [ANALYSIS]
+    {raw_content}
+    
+    [OUTPUT FORMAT REQUIREMENT]
+    <REDDIT_TITLE>(Max 12 words. Clickbaity but casual, e.g., tbh I think everyone is wrong about...)</REDDIT_TITLE>
+    <REDDIT_BODY>(2-3 short paragraphs. No formatting. Sound like a real dude sharing a thought. At the very end, casually drop this exact link: {original_link} like "btw found this breakdown here: [link] if u care")</REDDIT_BODY>
+    """
     raw = gem_fb("Premium", prompt, sys_inst)
     return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
 
 def send_community_viral_email(title, original_link, raw_content, cat):
-    if not EMAIL_SENDER or not EMAIL_RECEIVER: return
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: 
+        return
+        
     print(f"   📧 Generating and Sending Human-like Community Viral Draft to {EMAIL_RECEIVER}...")
 
-    target_subreddits = "r/povertyfinance, r/sidehustle, r/stocks, r/CryptoCurrency"
+    target_subreddits = "r/povertyfinance, r/sidehustle"
+    if cat == "On-Chain":
+        target_subreddits = "r/CryptoCurrency"
+    elif cat == "Tech":
+        target_subreddits = "r/technology, r/stocks"
+    elif cat in ["Economy", "Energy", "Politics"]:
+        target_subreddits = "r/stocks, r/UKPersonalFinance"
+    elif cat == "Money Hack":
+        target_subreddits = "r/sidehustle"
+    elif cat == "Foundation":
+        target_subreddits = "r/povertyfinance, r/UKPersonalFinance"
+    elif cat == "The Daily Catalyst":
+        target_subreddits = "r/povertyfinance (또는 마인드셋 관련 서브레딧)"
+
     r_title, r_body = generate_reddit_post(raw_content, cat, original_link)
     
     if not r_title or not r_body:
+        print("   ⚠️ AI missed Reddit tags. Using Smart Fallback...")
+        clean_title = _clean_seo_title(title)
         r_title = f"tbh people are sleeping on {cat} right now"
-        r_body = f"Honestly makes a lot of sense when u look at the bigger picture. btw found this deep dive here: <a href='{original_link}'>{original_link}</a> if u care."
+        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "This market is moving crazy fast right now."
+        r_body = f"Hey guys, been tracking the market and wanted to share this thought.\n\n{fallback_insight}\n\nHonestly makes a lot of sense when u look at the bigger picture. btw found this deep dive here: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>{original_link}</a> if u care."
     else:
         r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
         r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
@@ -349,6 +561,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         msg['From'] = EMAIL_SENDER
         msg['To'] = EMAIL_RECEIVER
         msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
+
         body = f"""
         <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
             <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -358,12 +571,17 @@ def send_community_viral_email(title, original_link, raw_content, cat):
                         <span style="font-size: 14px; opacity: 0.9; display: block; margin-bottom: 4px;">🎯 AI 추천 타겟 커뮤니티:</span>
                         <strong style="font-size: 18px;">{target_subreddits}</strong>
                     </div>
+                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">해당 커뮤니티에 아래 내용을 복사해서 붙여넣으세요! (휴먼 톤 적용 완료)</p>
                 </div>
                 <div style="padding: 30px;">
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase;">Title 👇</h3>
-                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">{clean_title}</div>
-                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase;">Body 👇</h3>
-                    <div style="padding: 20px; background: #ffffff; color: #334155; border: 1px dashed #cbd5e1; line-height: 1.6;">{r_body}</div>
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
+                    <div style="padding: 15px; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 16px; border-left: 4px solid #ef4444; margin-bottom: 25px;">
+                        {clean_title}
+                    </div>
+                    <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Body 👇</h3>
+                    <div style="padding: 20px; background: #ffffff; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px dashed #cbd5e1; line-height: 1.6;">
+                        {r_body}
+                    </div>
                 </div>
             </div>
         </div>
@@ -373,13 +591,17 @@ def send_community_viral_email(title, original_link, raw_content, cat):
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
         print("   ✅ Community Viral Draft Email Sent!")
-    except Exception as e: print(f"   ❌ Community Viral Draft Email Failed: {e}")
+    except Exception as e:
+        print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
 # ✉️ 슬림 이메일 (인스타/숏폼용)
 # ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
-    if not EMAIL_SENDER or not EMAIL_RECEIVER: return
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
+        print("   ⚠️ Missing email credentials. Skipping email dispatch.")
+        return
+
     print(f"   📧 Sending Social Slim Package to {EMAIL_RECEIVER}...")
     try:
         msg = MIMEMultipart()
@@ -411,25 +633,32 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
                 <h3 style="margin-top: 0; color: #059669; font-size: 18px;">📱 Instagram Feed Caption</h3>
                 <div style="background: #ecfdf5; padding: 15px; border-radius: 8px; font-size: 15px; line-height: 1.6; white-space: pre-wrap;">{ig_caption}</div>
             </div>
+            <hr style="border:0; height:2px; background:#d4d4d8; margin: 30px 0;">
             <div style="text-align:center; margin-bottom: 20px;">
-                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">Read Full Post on Website →</a>
+                <a href="{link}" style="display: inline-block; background-color: #0f1419; color: #ffffff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; font-size: 15px;">
+                    Read Full Post on Website →
+                </a>
             </div>
         </div>
         """
         msg.attach(MIMEText(body, 'html'))
 
         if video_mp4_bytes:
-            part = MIMEBase('video', 'mp4')
-            part.set_payload(video_mp4_bytes)
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Video.mp4')
-            msg.attach(part)
+            try:
+                part = MIMEBase('video', 'mp4')
+                part.set_payload(video_mp4_bytes)
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', 'attachment', filename=f'WarmInsight_{cat}_Video.mp4')
+                msg.attach(part)
+            except Exception as e:
+                print(f"   ⚠️ MP4 Attachment Error: {e}")
 
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(EMAIL_SENDER, EMAIL_PASS)
             server.send_message(msg)
         print("   ✅ Social Email Sent Successfully!")
-    except Exception as e: print(f"   ❌ Social Email Failed: {e}")
+    except Exception as e:
+        print(f"   ❌ Social Email Failed: {e}")
 
 # ═══════════════════════════════════════════════
 # 🛡️ SYSTEM UTILS & API ENGINE 
@@ -437,7 +666,8 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
 _gemini_client = None
 def _get_gemini_client():
     global _gemini_client
-    if _gemini_client is None: _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    if _gemini_client is None: 
+        _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     return _gemini_client
 
 def check_env_vars():
@@ -449,16 +679,18 @@ def check_env_vars():
 
 def verify_wp_credentials():
     print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
-    try:
-        scraper.get(WP_URL, timeout=30)
-        time.sleep(2) 
-    except Exception as e: pass
-    
     resp = wp_api_call('GET', 'users/me')
     if resp and resp.status_code == 200:
-        print("   ✅ WP Auth Successful! (Network Stable)")
-        return True
-    print(f"   ❌ WP Connection Failed.")
+        try:
+            if isinstance(resp.json(), dict) and "id" in resp.json():
+                print("   ✅ WP Auth Successful! (Network Stable)")
+                return True
+        except Exception:
+            pass
+            
+    print(f"   ❌ WP Connection Failed after retries.")
+    if resp: 
+        print(f"   💬 Last Response: {resp.text[:250]}")
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -473,19 +705,25 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
     for i in range(1, retries + 1):
         try:
             r = client.models.generate_content(model=model, contents=prompt, config=config)
-            if r.text: return str(r.text)
+            if r.text: 
+                return str(r.text)
         except Exception as e:
             err = str(e)
             print(f"    ⚠️ [Gemini API Error] {err}")
             if "credits are depleted" in err or "billing" in err.lower():
                 print("    🚨 Credits depleted!")
                 return None
-            if "404" in err or "not found" in err.lower(): return None
+            if "404" in err or "not found" in err.lower(): 
+                return None
             if "503" in err or "UNAVAILABLE" in err:
-                time.sleep((15 * i) + random.uniform(-2, 5))
+                wait = (15 * i) + random.uniform(-2, 5)
+                print(f"    ⏳ 503 Overload. Jitter Wait {wait:.1f}s...")
+                time.sleep(wait)
             elif "429" in err:
+                print(f"    ⏳ 429 Quota Exceeded. Waiting...")
                 time.sleep(30 + random.uniform(0, 10))
-            elif i < retries: time.sleep(5 * i)
+            elif i < retries: 
+                time.sleep(5 * i)
     return None
 
 def gem_fb(tier, prompt, sys_inst=None):
@@ -493,7 +731,8 @@ def gem_fb(tier, prompt, sys_inst=None):
     for m in MODEL_PRI.get(tier, FAST_MODELS):
         print(f"    [AI] Trying {m}...")
         r = call_gemini(client, m, prompt, sys_inst)
-        if r: return r
+        if r: 
+            return r
     return ""
 
 def xtag(raw, tag):
@@ -523,17 +762,21 @@ def _clean_seo_title(title):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     r = wp_api_call('GET', f'categories?slug={slug}')
-    if r and r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+    if r and r.status_code == 200 and len(r.json()) > 0: 
+        return r.json()[0]["id"]
     r2 = wp_api_call('POST', 'categories', json_data={"name": cat_name, "slug": slug})
-    if r2 and r2.status_code in (200, 201): return r2.json()["id"]
+    if r2 and r2.status_code in (200, 201): 
+        return r2.json()["id"]
     return None
 
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     r = wp_api_call('GET', f'tags?slug={slug}')
-    if r and r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+    if r and r.status_code == 200 and len(r.json()) > 0: 
+        return r.json()[0]["id"]
     r2 = wp_api_call('POST', 'tags', json_data={"name": tag_name, "slug": slug})
-    if r2 and r2.status_code in (200, 201): return r2.json()["id"]
+    if r2 and r2.status_code in (200, 201): 
+        return r2.json()["id"]
     return None
 
 def get_wp_author_id(author_full_string):
@@ -541,23 +784,29 @@ def get_wp_author_id(author_full_string):
     r = wp_api_call('GET', f'users?search={search_name}')
     if r and r.status_code == 200:
         users = r.json()
-        if len(users) > 0: return users[0]["id"]
+        if len(users) > 0: 
+            return users[0]["id"]
     return None
 
 def _get_latest_post_category_name():
     r = wp_api_call('GET', 'posts?per_page=1&status=publish')
     if r and r.status_code == 200:
-        try: r_json = r.json()
-        except: return None
+        try: 
+            r_json = r.json()
+        except Exception: 
+            return None
         
         if isinstance(r_json, list) and len(r_json) > 0:
             cat_ids = r_json[0].get('categories', [])
-            if not cat_ids: return None
+            if not cat_ids: 
+                return None
             
             r_cats = wp_api_call('GET', 'categories?per_page=100')
             if r_cats and r_cats.status_code == 200:
-                try: r_cats_json = r_cats.json()
-                except: return None
+                try: 
+                    r_cats_json = r_cats.json()
+                except Exception: 
+                    return None
                 
                 if isinstance(r_cats_json, list):
                     cat_map = {c['id']: c['name'] for c in r_cats_json}
@@ -565,19 +814,21 @@ def _get_latest_post_category_name():
                         name = cat_map.get(cid)
                         if name in CATEGORIES:
                             return name
-    except Exception as e: pass
     return None
 
 def already_published_today(cat):
     cat_slug = cat.lower().replace(" ", "-")
     r = wp_api_call('GET', f'categories?slug={cat_slug}')
-    if not r or r.status_code != 200: return False
+    if not r or r.status_code != 200: 
+        return False
     
     try:
         r_json = r.json()
-        if not isinstance(r_json, list) or not r_json: return False
+        if not isinstance(r_json, list) or not r_json: 
+            return False
         cat_id = r_json[0]["id"]
-    except: return False
+    except Exception: 
+        return False
 
     r2 = wp_api_call('GET', f'posts?categories={cat_id}&per_page=1&status=publish')
     if r2 and r2.status_code == 200:
@@ -588,9 +839,10 @@ def already_published_today(cat):
                 post_date_gmt = latest_post.get("date_gmt", "")[:10] 
                 today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
                 if post_date_gmt == today_utc:
-                    print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today.")
+                    print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
                     return True
-        except: pass
+        except Exception: 
+            pass
     return False
 
 def fetch_news_pool(cat, max_items=15):
@@ -604,8 +856,14 @@ def fetch_news_pool(cat, max_items=15):
                 for e in d.entries[:40]:
                     title = getattr(e, 'title', '').strip()
                     summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
-                    if title and len(title) > 10: items.add(f"• {title}: {summary}")
-        except Exception: pass
+                    if title and len(title) > 10: 
+                        items.add(f"• {title}: {summary}")
+            else:
+                print(f"   ⚠️ RSS feed blocked by WAF or returned {resp.status_code}: {url}")
+        except Exception as ex:
+            print(f"   ⚠️ RSS feed error on {url}: {ex}")
+            pass
+            
     items_list = list(items)
     random.shuffle(items_list)
     return items_list[:max_items]
@@ -614,12 +872,19 @@ def _build_warm_index(raw_data):
     score_str = xtag(raw_data, "WARM_INDEX_SCORE")
     reason = xtag(raw_data, "WARM_INDEX_REASON")
     if not score_str: return ""
-    try: score = int(re.sub(r'[^0-9]', '', score_str))
-    except: return ""
+    try: 
+        score = int(re.sub(r'[^0-9]', '', score_str))
+    except Exception: 
+        return ""
+        
     score = max(0, min(100, score))
-    if score < 30: c_main, label, icon, grad = "#3b82f6", "Fear Zone", "❄️", "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
-    elif score > 70: c_main, label, icon, grad = "#ef4444", "Greed Zone", "🔥", "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
-    else: c_main, label, icon, grad = "#f59e0b", "Neutral", "⚖️", "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
+    if score < 30: 
+        c_main, label, icon, grad = "#3b82f6", "Fear Zone", "❄️", "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
+    elif score > 70: 
+        c_main, label, icon, grad = "#ef4444", "Greed Zone", "🔥", "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
+    else: 
+        c_main, label, icon, grad = "#f59e0b", "Neutral", "⚖️", "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
+        
     return f"""
     <div style="background:#ffffff; border:2px solid {BORDER}; border-radius:12px; padding:25px; margin:0 0 35px 0; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
@@ -651,9 +916,13 @@ def _build_comment_cta(raw_data, cat="Market"):
     """
 
 def _build_data_table(raw_data, title="Market Dashboard"):
-    if not raw_data: raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
+    if not raw_data: 
+        raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
+        
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l and '---' not in l and 'Asset Name' not in l and 'Asset/Metric' not in l]
-    if len(lines) < 2: lines = lines + ["S&P 500 | 5,234 | UP | Tech earnings boost", "Nasdaq 100 | 18,200 | UP | AI infrastructure growth"][:max(0, 2 - len(lines))]
+    if len(lines) < 2: 
+        lines = lines + ["S&P 500 | 5,234 | UP | Tech earnings boost", "Nasdaq 100 | 18,200 | UP | AI infrastructure growth"][:max(0, 2 - len(lines))]
+        
     html = f"""
     <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px; display:inline-block;">📊 {title}</h3>
@@ -671,40 +940,57 @@ def _build_data_table(raw_data, title="Market Dashboard"):
         if len(parts) >= 4:
             asset, value, trend, insight = parts[:4]
             t_upper = trend.upper()
-            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢"
-            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴"
-            else: t_color, t_icon = "#f59e0b", "🟡"
+            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: 
+                t_color, t_icon = "#10b981", "🟢"
+            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: 
+                t_color, t_icon = "#ef4444", "🔴"
+            else: 
+                t_color, t_icon = "#f59e0b", "🟡"
             html += f"""<tr style="border-bottom:1px solid {BORDER};"><td style="padding:14px; font-weight:600; color:{DARK};">{asset}</td><td style="padding:14px; color:{SLATE}; font-family:monospace; font-size:15px; font-weight:bold;">{value}</td><td style="padding:14px; font-weight:bold; color:{t_color};">{t_icon} {trend.upper()}</td><td style="padding:14px; color:{MUTED}; font-size:15px; line-height:1.6;">{insight}</td></tr>"""
+            
     html += "</tbody></table></div></div>"
     return html
 
 def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
-    if not raw_data: return ""
+    if not raw_data: 
+        return ""
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
-    if not lines: return ""
+    if not lines: 
+        return ""
+        
     html = f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px;">🌡️ {title}</h3>"""
     colors = ["#dc2626", "#ea580c", "#ca8a04", "#059669", "#3b82f6"]
+    
     for i, line in enumerate(lines[:5]):
         parts = [p.strip() for p in line.split('|')]
         if len(parts) >= 2:
             name = parts[0]
-            try: pct = int(re.sub(r'[^0-9]', '', parts[1]))
-            except: pct = 50
+            try: 
+                pct = int(re.sub(r'[^0-9]', '', parts[1]))
+            except Exception: 
+                pct = 50
+                
             pct = max(0, min(100, pct))
             c = colors[0] if pct > 75 else (colors[1] if pct > 50 else (colors[3] if pct < 30 else colors[2]))
             html += f"""<div style="margin-top:18px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span style="font-weight:600; font-size:15px; color:{DARK};">{name}</span><span style="font-weight:900; font-size:15px; color:{c};">{pct}%</span></div><div style="background:#e2e8f0; height:12px; border-radius:6px; overflow:hidden;"><div style="background:{c}; height:100%; width:{pct}%; border-radius:6px;"></div></div></div>"""
+            
     html += "</div>"
     return html
 
 def _build_quick_hits(raw_data):
-    if not raw_data: return ""
+    if not raw_data: 
+        return ""
     lines = [l.strip() for l in raw_data.split('\n') if l.strip()]
-    if not lines: return ""
+    if not lines: 
+        return ""
+        
     items_html = ""
     for i, line in enumerate(lines[:3]):
         clean = line.replace("-", "").replace("*", "").strip()
-        if clean and clean[0] not in "🚨👀🤔💸📈📉🔥💡🤯": clean = f"{['🚨', '👀', '💸'][i % 3]} {clean}"
+        if clean and clean[0] not in "🚨👀🤔💸📈📉🔥💡🤯": 
+            clean = f"{['🚨', '👀', '💸'][i % 3]} {clean}"
         items_html += f"""<li style="margin-bottom:12px; color:{SLATE};">{clean}</li>"""
+        
     return f"""<div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; text-transform:uppercase; letter-spacing:1px;">⚡ Quick Hits</h3><ul style="{F} margin:0; padding-left:20px;">{items_html}</ul></div>"""
 
 def _build_pie_chart(s, b, c, cat):
@@ -713,6 +999,42 @@ def _build_pie_chart(s, b, c, cat):
     sd, bd, cd = circ*s/100, circ*b/100, circ*c/100
     pie = f"""<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;"><circle cx="100" cy="100" r="90" fill="none" stroke="{c_s}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_b}" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_c}" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/><text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text><text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg><div style="display:flex;justify-content:center;gap:20px;"><span style="color:{c_s};font-weight:bold;">● Stocks/Assets {s}%</span><span style="color:{c_b};font-weight:bold;">● Safe {b}%</span><span style="color:{c_c};font-weight:bold;">● Cash {c}%</span></div>"""
     return pie
+
+def _build_pillar_link(target_cat):
+    pillar = PILLAR_PAGES.get(target_cat)
+    if not pillar: 
+        return ""
+    return f"""<div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);"><p style="margin:0; font-size:16px; color:#1e293b;"><strong style="color:#2563eb;">📚 Deep Dive:</strong> Want to master this topic? Check out our complete guide to <a href="{pillar['url']}" style="color:#2563eb; text-decoration:underline; font-weight:700;">{pillar['anchor']}</a>.</p></div>"""
+
+def build_foundation_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it?</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{xtag(raw, "DEFINITION").replace(chr(10), '<br><br>')}</div></div>"""
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
+    html += _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
+
+def build_philosophy_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<div style="text-align:center; margin:50px 0;"><span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span><h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin:10px 0; font-weight:600; line-height:1.4;">{xtag(raw, "ANCHOR")}</h2><span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span></div>"""
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "REFLECTION").replace(chr(10), '<br><br>')}</div></div>"""
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center;"><p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p><p style="font-size:24px; font-weight:900; color:#92400e; margin:0 0 20px; line-height:1.5;">{re.sub(r'<[^>]+>', '', xtag(raw, "CATALYST"))}</p><p style="font-size:15px; color:#b45309; margin:0; font-style:italic;">Don't just read. Take out a pen and write your answer now.</p></div>"""
+    html += _build_pillar_link("The Daily Catalyst") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
+
+def build_money_hack_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3><p>{xtag(raw, "CONCEPT").replace(chr(10), '<br><br>')}</p></div>"""
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
+    html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
+    html += _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    return sanitize(html)
 
 def build_html(tier, cat, raw, author, tf, title):
     html = f"""<div style="{F}">\n{_build_warm_index(raw)}"""
@@ -770,20 +1092,25 @@ def build_html(tier, cat, raw, author, tf, title):
     <div style="background:{DARK}; padding:30px; border-radius:10px; border-left:5px solid {GOLD}; margin-top:35px;">
         <p style="color:#e2e8f0; font-size:18px; margin:0;"><strong style="color:{GOLD};">P.S.</strong> {xtag(raw, "PS")}</p>
     </div>"""
+    html += _build_pillar_link("Insight") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
+# 🚨 에러 없이 완벽하게 복구된 폰트 다운로드 로직
 def get_font(url, filename):
     if not os.path.exists(filename) or os.path.getsize(filename) < 1000:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         try:
             resp = scraper.get(url, timeout=15)
             resp.raise_for_status()
-            with open(filename, 'wb') as f: f.write(resp.content)
-        except Exception: pass
+            with open(filename, 'wb') as f:
+                f.write(resp.content)
+            print("    ✅ Font downloaded successfully.")
+        except Exception as e:
+            print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 괴물 생성 원천 차단: 마시멜로/유령 캐릭터(해부학적 구조가 없는 둥근 형태) 적용 🚨
+# 🚨 30년 차 프로그래머의 "모든 기괴함을 0%로 만든 귀여운 아트토이 강제 렌더링"
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -807,11 +1134,13 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
+    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
     for attempt in range(3):
         try:
+            print(f"    🔄 Pollinations Attempt {attempt+1}/3...")
             resp = scraper.get(url, timeout=45)
             if resp.status_code == 200:
                 ai_img_raw = Image.open(io.BytesIO(resp.content)).convert("RGBA")
@@ -822,8 +1151,13 @@ def generate_carousel_image(prompt_text):
                     alpha = int(255 - (y - 780) * (255 / 300))
                     mask_draw.line([(0, y), (1080, y)], fill=alpha)
                 ai_img_raw.putalpha(mask)
+                print("    ✅ Pollinations Success!")
                 return ai_img_raw
-        except Exception: time.sleep(3)
+        except Exception as e:
+            print(f"    ⚠️ Pollinations Attempt {attempt+1} failed: {e}")
+            time.sleep(3)
+    
+    print("    ❌ All Image Gen APIs Failed.")
     return None
 
 def make_thumbnail(title_text, cat, tier):
@@ -844,29 +1178,99 @@ def make_thumbnail(title_text, cat, tier):
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
     AI_PROMPTS = {
-        "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words, no letters.",
-        "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words, no letters."
+        "Economy": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a floating stock market chart, acting as a friendly guide. Vibrant colors, clean gradient background. No text.",
+        "Politics": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a glowing globe, acting as a friendly guide. Vibrant colors, clean gradient background. No text.",
+        "Tech": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a glowing microchip, acting as a friendly guide. Vibrant colors, clean gradient background. No text.",
+        "Health": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a glowing DNA helix, acting as a friendly guide. Vibrant colors, clean gradient background. No text.",
+        "Energy": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a bright lightning bolt, acting as a friendly guide. Vibrant colors, clean gradient background. No text.",
+        "On-Chain": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot standing enthusiastically and pointing at a glowing Bitcoin and blockchain network nodes, acting as a friendly guide. Vibrant purple colors, clean gradient background. No text, no words.",
+        "The Daily Catalyst": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically presenting a classic book. Dark premium colors. No text.",
+        "Foundation": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically pointing at a gold coin and a guide book. Vibrant colors. No text.",
+        "Money Hack": "A minimalist flat vector illustration in corporate memphis style featuring a prominent, very large sleek white robot mascot enthusiastically holding a glowing laptop and money. Vibrant yellow and green colors. No text."
     }
-    prompt = AI_PROMPTS.get(cat, AI_PROMPTS["Economy"])
 
     img = None
     use_ai_bg = False
     try:
+        print(f"    [AI] Requesting Mascot Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-002',
-            prompt=prompt,
-            config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg")
+            prompt=AI_PROMPTS.get(cat, AI_PROMPTS["Economy"]),
+            config=types.GenerateImagesConfig(
+                number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
+            )
         )
         bg_bytes = result.generated_images[0].image.image_bytes
-        img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA").resize((w, h), Image.LANCZOS)
+        img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
+        img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
+        print("    ✅ AI Mascot Generated!")
     except Exception as e:
+        print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
         draw = ImageDraw.Draw(img)
         draw.ellipse([w*0.35, -h*0.5, w*1.5, h*1.5], fill=style["bg2"])
 
-    draw = ImageDraw.Draw(img)
+        cx = w * 0.88
+        cy = h * 0.65
+        S = SCALE
+        cx_p = cx - 180 * S
+        cy_p = cy
+
+        if cat == "Economy":
+            draw.rectangle([cx_p-60*S, cy_p+20*S, cx_p-20*S, cy_p+80*S], fill="#38bdf8")
+            draw.rectangle([cx_p-10*S, cy_p-20*S, cx_p+30*S, cy_p+80*S], fill="#38bdf8")
+            draw.rectangle([cx_p+40*S, cy_p-60*S, cx_p+80*S, cy_p+80*S], fill="#fde047")
+            draw.line([cx_p-80*S, cy_p+40*S, cx_p*S, cy_p-20*S, cx_p+90*S, cy_p-90*S], fill="#ffffff", width=8*S)
+        elif cat == "Politics":
+            draw.polygon([(cx_p, cy_p-80*S), (cx_p-80*S, cy_p-20*S), (cx_p+80*S, cy_p-20*S)], fill="#fca5a5")
+            draw.rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p], fill="#ef4444")
+            draw.rectangle([cx_p-60*S, cy_p, cx_p-40*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p-10*S, cy_p, cx_p+10*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p+40*S, cy_p, cx_p+60*S, cy_p+80*S], fill="#fca5a5")
+            draw.rectangle([cx_p-80*S, cy_p+80*S, cx_p+80*S, cy_p+100*S], fill="#ef4444")
+        elif cat == "Tech":
+            draw.rounded_rectangle([cx_p-60*S, cy_p-60*S, cx_p+60*S, cy_p+60*S], radius=15*S, fill="#818cf8")
+            draw.rectangle([cx_p-30*S, cy_p-30*S, cx_p+30*S, cy_p+30*S], fill="#312e81")
+            for offset in [-40, 0, 40]:
+                draw.line([(cx_p+offset*S, cy_p-60*S), (cx_p+offset*S, cy_p-90*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p+offset*S, cy_p+60*S), (cx_p+offset*S, cy_p+90*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p-60*S, cy_p+offset*S), (cx_p-90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
+                draw.line([(cx_p+60*S, cy_p+offset*S), (cx_p+90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
+        elif cat == "Health":
+            draw.rounded_rectangle([cx_p-20*S, cy_p-70*S, cx_p+20*S, cy_p+70*S], radius=10*S, fill="#a7f3d0")
+            draw.rounded_rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p+20*S], radius=10*S, fill="#a7f3d0")
+        elif cat == "Energy":
+            draw.polygon([(cx_p+30*S, cy_p-90*S), (cx_p-50*S, cy_p+10*S), (cx_p+10*S, cy_p+10*S), (cx_p-30*S, cy_p+90*S), (cx_p+50*S, cy_p-10*S), (cx_p-10*S, cy_p-10*S)], fill="#fde047")
+        elif cat == "On-Chain":
+            draw.ellipse([cx_p-50*S, cy_p-50*S, cx_p+50*S, cy_p+50*S], fill="#a78bfa")
+            draw.polygon([(cx_p, cy_p-30*S), (cx_p-20*S, cy_p+15*S), (cx_p+20*S, cy_p+15*S)], fill="#fde047")
+            draw.polygon([(cx_p, cy_p+30*S), (cx_p-20*S, cy_p+20*S), (cx_p+20*S, cy_p+20*S)], fill="#fde047")
+        elif cat == "The Daily Catalyst":
+            draw.ellipse([cx_p-50*S, cy_p-70*S, cx_p+50*S, cy_p+30*S], fill="#cbd5e1")
+            draw.polygon([(cx_p-25*S, cy_p+20*S), (cx_p+25*S, cy_p+20*S), (cx_p+15*S, cy_p+70*S), (cx_p-15*S, cy_p+70*S)], fill="#94a3b8")
+        elif cat == "Foundation" or cat == "Money Hack":
+            draw.rectangle([cx_p-70*S, cy_p-60*S, cx_p+70*S, cy_p+80*S], fill="#1e3a5f", outline="#f59e0b", width=6*S)
+            draw.rectangle([cx_p-55*S, cy_p-40*S, cx_p+55*S, cy_p-20*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p-10*S, cx_p+55*S, cy_p+10*S], fill="#f59e0b")
+            draw.rectangle([cx_p-55*S, cy_p+20*S, cx_p+20*S, cy_p+40*S], fill="#f59e0b")
+
+        R = S * 1.4
+        draw.ellipse([cx - 40*R, cy + 65*R, cx + 40*R, cy + 85*R], fill="#00000030")
+        draw.line([(cx - 30*R, cy + 10*R), (cx - 70*R, cy - 35*R)], fill="#f8fafc", width=int(12*R))
+        draw.line([(cx - 70*R, cy - 35*R), (cx - 85*R, cy - 35*R)], fill="#cbd5e1", width=int(12*R))
+        draw.line([(cx + 30*R, cy + 10*R), (cx + 45*R, cy + 40*R)], fill="#f8fafc", width=int(12*R))
+        draw.rounded_rectangle([cx - 40*R, cy - 30*R, cx + 40*R, cy + 70*R], radius=int(15*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
+        draw.rounded_rectangle([cx - 50*R, cy - 100*R, cx + 50*R, cy - 35*R], radius=int(20*R), fill="#f8fafc", outline="#cbd5e1", width=int(4*R))
+        draw.rounded_rectangle([cx - 40*R, cy - 85*R, cx + 40*R, cy - 45*R], radius=int(10*R), fill="#0f172a")
+        draw.line([(cx - 25*R, cy - 65*R), (cx - 10*R, cy - 65*R)], fill="#38bdf8", width=int(6*R))
+        draw.line([(cx + 10*R, cy - 65*R), (cx + 25*R, cy - 65*R)], fill="#38bdf8", width=int(6*R))
+        draw.line([(cx, cy - 100*R), (cx, cy - 120*R)], fill="#cbd5e1", width=int(4*R))
+        draw.ellipse([cx - 8*R, cy - 130*R, cx + 8*R, cy - 114*R], fill="#f59e0b")
+        draw.ellipse([cx - 30*R, cy - 50*R, cx - 20*R, cy - 40*R], fill="#fca5a5")
+        draw.ellipse([cx + 20*R, cy - 50*R, cx + 30*R, cy - 40*R], fill="#fca5a5")
+
     draw.rectangle([(0, h - 80 * SCALE), (w, h)], fill="#00000060")
 
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
@@ -875,7 +1279,10 @@ def make_thumbnail(title_text, cat, tier):
         try: return ImageFont.truetype(p, s * SCALE)
         except: return ImageFont.load_default()
 
-    ft, fs, fb = lf(ft_path, 85), lf(ft_path, 34), lf(ft_path, 28)
+    ft = lf(ft_path, 85)
+    fs = lf(ft_path, 34)
+    fb = lf(ft_path, 28)
+
     S = SCALE
     date_badge = datetime.datetime.utcnow().strftime("%Y.%m.%d")
     draw.text((40 * S, 44 * S), date_badge, font=fb, fill="#ffffff")
@@ -912,7 +1319,9 @@ def make_thumbnail(title_text, cat, tier):
         draw.text((40 * S + 4 * S, y + 4 * S), ln, font=ft, fill="#00000060")
         color = "#ffffff" if use_ai_bg else (style.get("acc", "#ffffff") if i == 1 else "#ffffff")
         draw.text((40 * S, y), ln, font=ft, fill=color)
-        try: bb = draw.textbbox((0, 0), ln, font=ft); y += (bb[3] - bb[1]) + 15 * S
+        try:
+            bb = draw.textbbox((0, 0), ln, font=ft)
+            y += (bb[3] - bb[1]) + 15 * S
         except: y += 100 * S
 
     date_bottom = datetime.datetime.utcnow().strftime("%B %d, %Y")
@@ -923,7 +1332,8 @@ def make_thumbnail(title_text, cat, tier):
     except: tw_t = len(tagline) * 15 * S
     draw.text((w - 40 * S - tw_t, h - 70 * S), tagline, font=fs, fill="#ffffff80")
 
-    img = img.convert("RGB").resize((W, H), Image.LANCZOS)
+    img = img.convert("RGB")
+    img = img.resize((W, H), Image.LANCZOS)
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=90)
     return buf.getvalue()
@@ -931,19 +1341,67 @@ def make_thumbnail(title_text, cat, tier):
 def make_medium_thumbnail(cat):
     print(f"    [AI] Generating Premium Editorial Thumbnail for Medium...")
     client = _get_gemini_client()
-    prompt = "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words, no letters."
+    
+    prompts = {
+        "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words, no letters.",
+        "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words, no letters.",
+        "Tech": "A highly aesthetic, conceptual 3D illustration about artificial intelligence and future technology. Cinematic lighting, minimalist composition, glowing neon purple and cyan colors. High-end tech magazine cover style. No text, no words, no letters.",
+        "Health": "A highly aesthetic, conceptual 3D illustration about biotechnology and healthcare innovation. Cinematic lighting, minimalist composition, clean emerald green and white colors. High-end medical magazine cover style. No text, no words, no letters.",
+        "Energy": "A highly aesthetic, conceptual 3D illustration about global energy transition and power resources. Cinematic lighting, minimalist composition, vibrant orange and amber colors. High-end energy magazine cover style. No text, no words, no letters.",
+        "On-Chain": "A highly aesthetic, conceptual 3D illustration about blockchain, crypto, and decentralized finance. Cinematic lighting, minimalist composition, glowing purple and gold accents. High-end crypto magazine cover style. No text, no words, no letters.",
+        "The Daily Catalyst": "A highly aesthetic, conceptual 3D illustration about wealth building and mental growth. Cinematic lighting, minimalist composition, deep rich colors with warm glowing accents. High-end magazine cover style. No text, no words, no letters.",
+        "Foundation": "A highly aesthetic, conceptual 3D illustration about financial foundation and investment basics. Cinematic lighting, minimalist composition, deep rich colors with glowing gold accents. High-end magazine cover style. No text, no words, no letters.",
+        "Money Hack": "A highly aesthetic, conceptual 3D illustration about digital wealth and side hustles. Cinematic lighting, minimalist composition, deep rich colors with vibrant glowing accents. High-end magazine cover style. No text, no words, no letters."
+    }
+    prompt = prompts.get(cat, prompts["Economy"])
+    
     try:
         result = client.models.generate_images(
-            model='imagen-3.0-generate-002', prompt=prompt,
-            config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg")
+            model='imagen-3.0-generate-002',
+            prompt=prompt,
+            config=types.GenerateImagesConfig(
+                number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg"
+            )
         )
+        print("    ✅ Medium Editorial Thumbnail Generated Successfully!")
         return result.generated_images[0].image.image_bytes
     except Exception as e:
-        print(f"    ⚠️ Medium AI Image Gen failed. Generating fallback. ({e})")
+        print(f"    ⚠️ Medium AI Image Gen failed. Trying Pollinations AI... ({e})")
+        prompt_encoded = urllib.parse.quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1200&height=630&nologo=true"
+        for attempt in range(3):
+            try:
+                resp = scraper.get(url, timeout=45)
+                if resp.status_code == 200:
+                    print("    ✅ Medium Pollinations Thumbnail Generated Successfully!")
+                    return resp.content
+            except Exception as e2:
+                print(f"    ⚠️ Pollinations Medium Attempt {attempt+1} failed: {e2}")
+                time.sleep(3)
+
         W, H = 1200, 630
-        img = Image.new("RGBA", (W, H), "#0284c7")
+        CAT_STYLES = {
+            "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
+            "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
+            "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
+            "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
+            "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
+            "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
+            "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
+            "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"},
+            "Money Hack": {"bg1": "#f59e0b", "bg2": "#b45309", "acc": "#fef3c7"}
+        }
+        style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
+        img = Image.new("RGBA", (W, H), style["bg1"])
         draw = ImageDraw.Draw(img)
-        draw.ellipse([W*0.5, -H*0.2, W*1.3, H*1.2], fill="#0369a1")
+
+        draw.ellipse([W*0.5, -H*0.2, W*1.3, H*1.2], fill=style["bg2"])
+        draw.ellipse([-W*0.1, H*0.4, W*0.4, H*1.5], fill="#00000030")
+        
+        draw.line([(W*0.15, H*0.2), (W*0.25, H*0.2)], fill=style.get("acc", "#ffffff"), width=8)
+        draw.ellipse([W*0.8, H*0.75, W*0.82, H*0.75+W*0.02], fill=style.get("acc", "#ffffff"))
+        draw.rectangle([W*0.15, H*0.8, W*0.4, H*0.82], fill=style.get("acc", "#ffffff"))
+
         img = img.convert("RGB")
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=90)
@@ -958,20 +1416,26 @@ def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
         print(f"   ❌ MoviePy import failed: {e}")
         return None
     try:
-        SLIDE_DURATION, CROSSFADE_DURATION = 2.6, 0.3
-        ZOOM_START, ZOOM_END = 1.0, 1.06 
+        SLIDE_DURATION = 2.6
+        CROSSFADE_DURATION = 0.3
+        ZOOM_START = 1.0
+        ZOOM_END = 1.06 
+
         clips = []
         for i in range(len(bg_frames)):
             bg_np = np.array(bg_frames[i].convert('RGB'))
             bg_clip = ImageClip(bg_np).set_duration(SLIDE_DURATION)
-            if i % 2 == 0: bg_clip = bg_clip.resize(lambda t: ZOOM_START + (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
-            else: bg_clip = bg_clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+            if i % 2 == 0: 
+                bg_clip = bg_clip.resize(lambda t: ZOOM_START + (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
+            else: 
+                bg_clip = bg_clip.resize(lambda t: ZOOM_END - (ZOOM_END - ZOOM_START) * (t / SLIDE_DURATION))
             bg_clip = bg_clip.set_position(('center', 'center'))
 
             txt_np = np.array(text_frames[i].convert('RGBA'))
             txt_clip = ImageClip(txt_np).set_duration(SLIDE_DURATION).set_position(('center', 'center'))
             
             comp_clip = CompositeVideoClip([bg_clip, txt_clip], size=(1080, 1920)).set_duration(SLIDE_DURATION)
+
             if i > 0: comp_clip = comp_clip.crossfadein(CROSSFADE_DURATION)
             clips.append(comp_clip)
 
@@ -999,9 +1463,12 @@ def generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames):
 
 def generate_vip_carousel(raw_content, cat):
     print("   🎨 Generating DYNAMIC 4-IMAGE Dark Psychology Carousel...")
-    
+    client = _get_gemini_client()
+
     sys_inst = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-    You are a TOP-TIER viral content creator for finance Instagram/TikTok. 
+    You are a TOP-TIER viral content creator for finance Instagram/TikTok. Write entirely in ENGLISH.
+    Your job: Extract data + write COPY THAT STOPS THE SCROLL.
+
     OUTPUT RULES (CRITICAL):
     - HOOK: Pattern interrupt opener. Use shocking number, contrarian take, or curiosity gap. Max 7 words.
     - SHOCK_STAT: One jaw-dropping statistic that proves the hook. Max 6 words. Include numbers.
@@ -1027,33 +1494,36 @@ def generate_vip_carousel(raw_content, cat):
     """
     raw_data = gem_fb("Premium", raw_content, sys_inst)
 
+    main_title = xtag(raw_data, "MAIN_TITLE") or f"{cat.upper()} ALERT"
+    badge_text = xtag(raw_data, "BADGE") or "IMPACT: HIGH"
     hook_text = xtag(raw_data, "HOOK") or "Wall Street Just Did THIS 🚨"
     shock_stat = xtag(raw_data, "SHOCK_STAT") or "$2.3T MOVED OVERNIGHT"
     question_text = xtag(raw_data, "QUESTION") or "Where's YOUR money going? 👇"
     insight_line = xtag(raw_data, "INSIGHT_LINE") or "SMART MONEY IS MOVING NOW"
     cta_hook = xtag(raw_data, "CTA_HOOK") or "DONT MISS THE NEXT MOVE"
     reels_script = xtag(raw_data, "REELS_SCRIPT") or "Script generation failed."
-    ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown."
-    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift."
+    ig_caption = xtag(raw_data, "IG_CAPTION") or f"{hook_text}\n\nLink in bio for the full breakdown. #investing #finance #stocks"
+    smart_comment = xtag(raw_data, "SMART_COMMENT") or "Interesting market shift. Just published a full breakdown on this."
     
     colors_neon = [
-        ("neon red", "red"), ("neon orange", "orange"),
-        ("neon purple", "purple"), ("neon green", "green"),
+        ("neon red", "red"),
+        ("neon orange", "orange"),
+        ("neon purple", "purple"),
+        ("neon green", "green"),
         ("neon yellow", "yellow")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 가장 확실한 해결책: 인간형 '졸라맨'을 버리고 '마시멜로 캐릭터'로 종(Species)을 완전히 교체
-    # 관절, 손가락, 얼굴 이목구비의 디테일을 요구하지 않는 부드러운 덩어리 형태(마시멜로)로 지정하여 기괴한 환각을 0%로 만듭니다.
-    vp_base = "A masterpiece 3D render of an incredibly cute, friendly little white marshmallow mascot character. It has a smooth, perfectly round body, two big adorable black eyes, and tiny stubby arms. It looks like a high-end designer art toy. Pitch-black studio background."
+    # 🚨 가장 확실하고 안전한 3D 아트토이 + 친절한 선생님 컨셉 프롬프트
+    vp_base = "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart blind box style). The figure has a perfectly round, glossy white head with two simple black dot eyes and a tiny cute smile. It has a small simple white body. It is standing naturally with exactly two arms and exactly two legs. It is acting like a friendly teacher in a pitch-black cinematic studio."
 
-    vp1 = f"{vp_base} The cute marshmallow mascot is enthusiastically holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The vibrant {colors_neon[0][1]} light reflects beautifully on its glossy white face. Ultra-cute, pop-mart blind box style."
+    vp1 = f"{vp_base} The figure is pointing and presenting with a brightly glowing {colors_neon[0][0]} neon light wand in its hand. The intense {colors_neon[0][1]} neon light beautifully reflects off the figure's glossy white surface. 8k resolution, adorable."
 
-    vp2 = f"{vp_base} The cute marshmallow mascot is holding a brightly glowing {colors_neon[1][0]} neon laser wand, pointing it forward like a friendly guide. The vibrant {colors_neon[1][1]} light reflects beautifully on its glossy white face. Ultra-cute, pop-mart blind box style."
+    vp2 = f"{vp_base} The figure is pointing and presenting with a brightly glowing {colors_neon[1][0]} neon light wand in its hand. The intense {colors_neon[1][1]} neon light beautifully reflects off the figure's glossy white surface. 8k resolution, adorable."
 
-    vp3 = f"{vp_base} The cute marshmallow mascot is looking at a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The vibrant {colors_neon[2][1]} light reflects beautifully on its glossy white face. Ultra-cute, pop-mart blind box style."
+    vp3 = f"{vp_base} The figure is pointing and presenting with a brightly glowing {colors_neon[2][0]} neon light wand in its hand. The intense {colors_neon[2][1]} neon light beautifully reflects off the figure's glossy white surface. 8k resolution, adorable."
 
-    vp4 = f"{vp_base} The cute marshmallow mascot is standing happily next to a brightly glowing {colors_neon[3][0]} neon light beam. The vibrant {colors_neon[3][1]} light reflects beautifully on its glossy white face. Ultra-cute, pop-mart blind box style."
+    vp4 = f"{vp_base} The figure is pointing and presenting with a brightly glowing {colors_neon[3][0]} neon light wand in its hand. The intense {colors_neon[3][1]} neon light beautifully reflects off the figure's glossy white surface. 8k resolution, adorable."
 
     data_points = []
     for i in range(1, 6):
@@ -1072,25 +1542,40 @@ def generate_vip_carousel(raw_content, cat):
         ]
 
     W, H = 1080, 1920
-    BG, WHITE, RED, GRAY = "#000000", "#ffffff", "#ef4444", "#94a3b8"
+    BG = "#000000"
+    WHITE = "#ffffff"
+    RED = "#ef4444"
+    GRAY = "#94a3b8"
 
+    import urllib.request, urllib.parse
     ft_path = get_font("https://raw.githubusercontent.com/google/fonts/main/ofl/bebasneue/BebasNeue-Regular.ttf", "fonts/BebasNeue-Regular.ttf")
 
     def lf(p, s):
         try: return ImageFont.truetype(p, s)
         except: return ImageFont.load_default()
 
-    font_title, font_mega, font_sub, font_data, font_alert = lf(ft_path, 95), lf(ft_path, 200), lf(ft_path, 55), lf(ft_path, 50), lf(ft_path, 75)
+    font_title = lf(ft_path, 95)    
+    font_huge = lf(ft_path, 200)    
+    font_mega = lf(ft_path, 135)    
+    font_sub = lf(ft_path, 55)
+    font_data = lf(ft_path, 50)
+    font_alert = lf(ft_path, 75)
 
     print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
     img_hook_ai = generate_carousel_image(vp1)
+    time.sleep(3)
     img_stat_ai = generate_carousel_image(vp2)
+    time.sleep(3)
     img_data_ai = generate_carousel_image(vp3)
+    time.sleep(3)
     img_out_ai  = generate_carousel_image(vp4)
 
     last_good_img = None
     for img in [img_hook_ai, img_stat_ai, img_data_ai, img_out_ai]:
-        if img: last_good_img = img; break
+        if img:
+            last_good_img = img
+            break
+
     if not img_hook_ai: img_hook_ai = last_good_img
     if not img_stat_ai: img_stat_ai = last_good_img
     if not img_data_ai: img_data_ai = last_good_img
@@ -1100,11 +1585,17 @@ def generate_vip_carousel(raw_content, cat):
         if target_ai_img:
             d_img.paste(target_ai_img, (0, 100), target_ai_img)
         else:
+            cat_colors = {
+                "Economy": (2, 132, 199), "Politics": (220, 38, 38),
+                "Tech": (99, 102, 241), "Health": (5, 150, 105),
+                "Energy": (234, 88, 12), "On-Chain": (139, 92, 246)
+            }
+            c_rgb = cat_colors.get(cat, (245, 158, 11))
             fallback_img = Image.new("RGBA", (1080, 1080), "#09090b")
             d = ImageDraw.Draw(fallback_img)
             for r in range(400, 0, -10):
                 alpha = int(255 * (1 - r/400))
-                d.ellipse([540-r, 500-r, 540+r, 500+r], fill=(245, 158, 11, alpha))
+                d.ellipse([540-r, 500-r, 540+r, 500+r], fill=(c_rgb[0], c_rgb[1], c_rgb[2], alpha))
             mask = Image.new("L", (1080, 1080), 255)
             mask_draw = ImageDraw.Draw(mask)
             for y in range(780, 1080):
@@ -1118,7 +1609,8 @@ def generate_vip_carousel(raw_content, cat):
 
     def wrap_lines(text, font, max_width):
         words = text.split()
-        lines, line, d = [], [], ImageDraw.Draw(Image.new("RGB", (1,1)))
+        lines, line = [], []
+        d = ImageDraw.Draw(Image.new("RGB", (1,1)))
         for ww in words:
             test_str = " ".join(line + [ww])
             try: tw = d.textlength(test_str, font=font)
@@ -1130,7 +1622,8 @@ def generate_vip_carousel(raw_content, cat):
         if line: lines.append(" ".join(line))
         return lines
 
-    bg_frames, text_frames = [], []
+    bg_frames = []
+    text_frames = []
 
     # Slide 1
     bg1 = Image.new("RGB", (W, H), BG)
@@ -1144,7 +1637,8 @@ def generate_vip_carousel(raw_content, cat):
     hook_lines = wrap_lines(hook_text.upper(), font_title, 950) 
     y_text = 1350
     for i, ln in enumerate(hook_lines[:4]):
-        d1.text((W//2, y_text), ln, fill=(RED if i == len(hook_lines)-1 else WHITE), font=font_title, anchor="mm")
+        color = RED if i == len(hook_lines)-1 else WHITE
+        d1.text((W//2, y_text), ln, fill=color, font=font_title, anchor="mm")
         y_text += 105 
     d1.text((W//2, 1800), "↓ SWIPE TO SEE WHY ↓", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt1)
@@ -1166,6 +1660,7 @@ def generate_vip_carousel(raw_content, cat):
     text_frames.append(txt2)
 
     # Data Slides
+    data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
         item = data_points[idx]
@@ -1179,15 +1674,22 @@ def generate_vip_carousel(raw_content, cat):
         d.text((W//2, 1150), cat.upper(), fill=RED, font=font_sub, anchor="mm")
         d.text((W//2, 1250), f"WATCH THIS → {idx+1}/3", fill=GRAY, font=font_data, anchor="mm")
         
-        t_size = min(95, int(95 * (12 / max(len(item['ticker']), 1))))
-        d.text((W//2, 1400), item['ticker'], fill=WHITE, font=lf(ft_path, max(45, t_size)), anchor="mm")
+        ticker_str = item['ticker']
+        t_size = 95
+        if len(ticker_str) > 12: t_size = int(95 * (12 / len(ticker_str)))
+        d.text((W//2, 1400), ticker_str, fill=WHITE, font=lf(ft_path, max(45, t_size)), anchor="mm")
         
-        v_size = min(200, int(200 * (6 / max(len(item['val']), 1))))
-        d.text((W//2, 1550), item['val'], fill=(RED if '-' in item['val'] else WHITE), font=lf(ft_path, max(70, v_size)), anchor="mm")
+        val_str = item['val']
+        val_color = RED if '-' in val_str else WHITE
+        v_size = 200
+        if len(val_str) > 6: v_size = int(200 * (6 / len(val_str)))
+        d.text((W//2, 1550), val_str, fill=val_color, font=lf(ft_path, max(70, v_size)), anchor="mm")
         
+        dot_y = 1800
         for di in range(3):
             dx = W//2 + (di - 1) * 60
-            d.ellipse([dx-15, 1800-15, dx+15, 1800+15], fill=(RED if di == idx else "#3f3f46"))
+            color = RED if di == idx else "#3f3f46"
+            d.ellipse([dx-15, dot_y-15, dx+15, dot_y+15], fill=color)
         text_frames.append(txt_d)
 
     # Slide 6
@@ -1207,8 +1709,10 @@ def generate_vip_carousel(raw_content, cat):
     d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
+    image_bytes_list = []
     video_mp4_bytes = generate_video_mp4(cat, hook_text, data_points, bg_frames, text_frames)
-    return [], data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
+
+    return image_bytes_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes
 
 def _upload_image(img_bytes, filename):
     try:
@@ -1231,12 +1735,18 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
         insight_cat_id = get_or_create_wp_category("Insight")
 
-    tag_id = get_or_create_wp_tag("Insight") if tier == "unified" else get_or_create_wp_tag("Pro")
+    if tier == "unified": tag_id = get_or_create_wp_tag("Insight")
+    elif tier == "Premium": tag_id = get_or_create_wp_tag("Pro")
+    else: tag_id = get_or_create_wp_tag("Pro")
+
     author_id = get_wp_author_id(author_name)
     display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack"] or tier == "unified" else f"[Pro] {title}"
 
     post_data = {
-        "title": display_title, "content": html, "status": "publish", "slug": slug,
+        "title": display_title,
+        "content": html,
+        "status": "publish",
+        "slug": slug,
     }
 
     if author_id: post_data["author"] = author_id
@@ -1262,77 +1772,259 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     }
 
     try:
-        r = scraper.post(f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(), json=post_data, timeout=30)
+        r = scraper.post(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            headers=_get_wp_headers(),
+            json=post_data, timeout=30
+        )
         if r.status_code in (200, 201):
-            try: link = r.json().get('link')
+            try:
+                resp_json = r.json()
+                link = resp_json.get('link') if isinstance(resp_json, dict) else None
             except: link = None
+            
             if link:
                 print(f"   ✅ Published: {link}")
+                
                 if raw_for_cards:
                     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-                        if tier in ["Premium", "unified"]:
+                        if tier == "Premium" or tier == "unified":
                             img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
                             if video_mp4_bytes:
                                 send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
+                        
                         yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
                         if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
+
                     send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
                     send_community_viral_email(display_title, link, raw_for_cards, cat)
+                
                 return True
-        else: print(f"   ❌ Publish failed. HTTP Status: {r.status_code}")
-    except Exception as e: print(f"   ❌ Network error: {e}")
+            else:
+                print(f"   ❌ [WAF Block Detected] Server returned 200 but no link was created.")
+                return False
+        else:
+            print(f"   ❌ Publish failed. HTTP Status: {r.status_code}")
+    except Exception as e:
+        print(f"   ❌ Network error: {e}")
     return False
+
+def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
+    if raw_for_cards:
+        if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
+            if tier == "Premium" or tier == "unified":
+                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
+                if video_mp4_bytes:
+                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
+            
+            yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
+            if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
+
+        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
+        send_community_viral_email(display_title, link, raw_for_cards, cat)
+
+def run_foundation_pipeline():
+    cat = "Foundation"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.9.124_PERFECT_SYNTAX_AND_CUTE_MASCOT SEO Foundation Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    theme = random.choice(FOUNDATION_TOPICS)
+    tier = "Premium"
+    raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_foundation_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+            
+        med_img_bytes = make_medium_thumbnail(cat)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+
+def run_philosophy_pipeline():
+    cat = "The Daily Catalyst"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.9.124_PERFECT_SYNTAX_AND_CUTE_MASCOT Catalyst Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    theme = random.choice(PHILOSOPHY_TOPICS)
+    tier = "Premium"
+    raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_philosophy_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        med_img_bytes = make_medium_thumbnail(cat)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+
+def run_moneyhack_pipeline():
+    cat = "Money Hack"
+    force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
+    
+    print(f"🚀 Starting v46.9.124_PERFECT_SYNTAX_AND_CUTE_MASCOT Money Hack Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
+    elif already_published_today(cat):
+        print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+        return
+
+    niche = random.choice(MH_NICHES)
+    platform = random.choice(MH_PLATFORMS)
+    ai_tool = random.choice(MH_AI_TOOLS)
+    theme = f"Niche: {niche} | Core Platform: {platform} | AI Automation Tool: {ai_tool}"
+    print(f"   🎲 Random Framework Selected: {theme}")
+
+    tier = "Premium"
+    raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = VIP_AUTHORS.get(cat, "Warm Insight Growth Team")
+        tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
+        
+        html = build_money_hack_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        med_img_bytes = make_medium_thumbnail(cat)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
 
 def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
     day_of_week = current_time.weekday()
     day_of_year = current_time.timetuple().tm_yday
+    
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
 
-    if forced_cat: cat = forced_cat
-    elif day_of_week in (1, 3): cat = "On-Chain"
+    if forced_cat:
+        cat = forced_cat
+        print(f"🎯 [Command Override] Forcing category to: {cat}")
+    elif day_of_week in (1, 3):
+        cat = "On-Chain"
+        print(f"📅 [Smart Schedule] Today is Tue/Thu. Locking category to: {cat}")
     else:
         base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
         cat = base_cats[day_of_year % len(base_cats)]
 
-    print(f"🚀 Starting v46.9.123_MARSHMALLOW_MASCOT_ENGINE Pipeline | Category: {cat}")
+    if force:
+        print(f"🚀 Starting v46.9.124_PERFECT_SYNTAX_AND_CUTE_MASCOT Unified News Pipeline | TEST MODE (Force Publish)")
+    else:
+        print(f"🚀 Starting v46.9.124_PERFECT_SYNTAX_AND_CUTE_MASCOT Unified News Pipeline | Category: {cat}")
+
     if not check_env_vars() or not verify_wp_credentials(): return
 
-    if not force and already_published_today(cat): return
+    if force:
+        if forced_cat:
+            pass
+        else:
+            latest_cat = _get_latest_post_category_name()
+            available_cats = [c for c in CATEGORIES if c not in [latest_cat, "Money Hack"]]
+            if not available_cats: available_cats = [c for c in CATEGORIES if c != "Money Hack"]
+            
+            random.shuffle(available_cats)
+            cat = available_cats[0]
+            for fallback_cat in available_cats:
+                if not already_published_today(fallback_cat):
+                    cat = fallback_cat
+                    break
+            print(f"   ⚡ [TEST MODE] Forcing random category '{cat}' avoiding '{latest_cat}'.")
+    else:
+        if already_published_today(cat):
+            print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
+            return
 
     all_news = fetch_news_pool(cat)
-    if len(all_news) < 2: return
+    total_news = len(all_news)
+    if total_news < 2:
+        print(f"   ❌ Not enough news for {cat} ({total_news}). Aborting.")
+        return
 
     news_str = "\n".join(all_news)
     tier = "unified"
 
     raw1 = gem_fb(tier, PROMPT_UNIFIED_P1.replace("{cat}", cat).replace("{news}", news_str))
-    if not raw1: return
+    if not raw1:
+        print("   ❌ Part 1 generation failed.")
+        return
 
     ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
     raw2 = gem_fb(tier, PROMPT_UNIFIED_P2.replace("{cat}", cat).replace("{ctx}", ctx))
-    raw = raw1 + "\n" + raw2 if raw2 else raw1
+    if not raw2:
+        print("   ⚠️ Part 2 failed. Using Part 1 only.")
+        raw = raw1
+    else:
+        raw = raw1 + "\n" + raw2
 
-    title, kw, exc = xtag(raw, "TITLE"), xtag(raw, "SEO_KEYWORD"), xtag(raw, "EXCERPT") or xtag(raw, "EXECUTIVE_SUMMARY")
+    title = xtag(raw, "TITLE")
+    kw = xtag(raw, "SEO_KEYWORD")
+    exc = xtag(raw, "EXCERPT") or xtag(raw, "EXECUTIVE_SUMMARY")
     slug = make_slug(kw, title, cat)
     author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
     
     html = build_html(tier, cat, raw, author, tf, title)
+
     img_bytes = make_thumbnail(title, cat, tier)
-    if not img_bytes or len(img_bytes) < 1000: return
+    if not img_bytes or len(img_bytes) < 1000:
+        print(f"   ❌ Thumbnail error. Aborting.")
+        return
         
     med_img_bytes = make_medium_thumbnail(cat)
+
     publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
     time.sleep(TIER_SLEEP[tier])
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         arg = sys.argv[1].lower()
-        if arg == "philosophy": pass
-        elif arg == "foundation": pass
-        elif arg == "moneyhack": pass
-        elif arg == "onchain": run_news_pipeline("On-Chain")
-        elif arg == "insight": run_news_pipeline()
+        if arg == "philosophy": 
+            run_philosophy_pipeline()
+        elif arg == "foundation": 
+            run_foundation_pipeline()
+        elif arg == "moneyhack":
+            run_moneyhack_pipeline()
+        elif arg == "onchain": 
+            run_news_pipeline("On-Chain")
+        elif arg == "insight":
+            current_time = datetime.datetime.utcnow()
+            day_of_year = current_time.timetuple().tm_yday
+            base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
+            cat = base_cats[day_of_year % len(base_cats)]
+            run_news_pipeline(cat)
     else:
         run_news_pipeline()
