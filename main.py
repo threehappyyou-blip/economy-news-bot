@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.113_WAF_BYPASS_RESTORED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.114_WAF_HANDSHAKE_FIXED)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -38,26 +38,27 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 🚨 Imunify360 방화벽 우회 전용 스크래퍼 (모든 WP 통신에 적용)
+# 🚨 Imunify360 방화벽 우회 전용 글로벌 스크래퍼 세션
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
         browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True}
     )
+    # 기본 브라우저처럼 보이도록 헤더 업데이트 (JSON 요구 안 함)
     scraper.headers.update({
         'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'no-cache'
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Upgrade-Insecure-Requests': '1'
     })
 except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
-# 워드프레스 통신용 헤더
+# 워드프레스 통신 전용 인증 헤더 (API 전용)
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
     return {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
         'Cache-Control': 'no-cache'
@@ -618,11 +619,22 @@ def check_env_vars():
         return False
     return True
 
-# 워드프레스 통신 전용 (스텔스 스크래퍼 적용)
+# 🚨 워드프레스 통신 전용: "대문 접속(Handshake)"으로 방화벽 쿠키 선발급! 🚨
 def verify_wp_credentials():
-    print(f"   🔍 [System] Checking WP Connection to: {WP_URL}")
+    print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
     try:
+        # 1단계: API 진입 전, 일반 브라우저처럼 홈페이지 대문에 먼저 접속하여 방화벽 캡차 패스 & 쿠키(통행증) 확보
+        print("      - [WAF Bypass] Handshaking with main page to acquire clearance cookie...")
+        try:
+            scraper.get(WP_URL, timeout=30)
+            time.sleep(2) # 통행증 세팅 대기
+        except Exception as e:
+            print(f"      ⚠️ WAF Handshake warning (non-fatal): {e}")
+
+        # 2단계: 확보한 통행증(Cookie가 담긴 scraper 세션)을 들고 안전하게 API망 진입
+        print("      - [API] Verifying credentials...")
         resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
+        
         try:
             resp_json = resp.json()
             is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
@@ -630,7 +642,7 @@ def verify_wp_credentials():
             is_valid_json = False
 
         if resp.status_code == 200 and is_valid_json: 
-            print("   ✅ WP Auth Successful!")
+            print("   ✅ WP Auth Successful! (WAF Bypassed)")
             return True
         else:
             print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
@@ -795,7 +807,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# 뉴스 크롤링은 외부 접속
+# 뉴스 크롤링
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1029,6 +1041,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 완벽한 아트토이 픽스 렌더링 유지
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1743,7 +1756,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.113_WAF_BYPASS_RESTORED SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1775,7 +1788,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.113_WAF_BYPASS_RESTORED Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1807,7 +1820,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.113_WAF_BYPASS_RESTORED Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1858,9 +1871,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.113_WAF_BYPASS_RESTORED Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.113_WAF_BYPASS_RESTORED Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
