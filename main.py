@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.119_PIXAR_CUTE_MASCOT)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.120_ANATOMY_LOCKED_MASCOT)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -46,6 +46,8 @@ try:
     )
     scraper.headers.update({
         'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Upgrade-Insecure-Requests': '1'
     })
 except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
@@ -654,33 +656,18 @@ def check_env_vars():
         return False
     return True
 
+# 🚨 워드프레스 연결 상태 확인 (API 호출 재사용)
 def verify_wp_credentials():
     print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
-    try:
-        print("      - [WAF Bypass] Handshaking with main page to acquire clearance cookie...")
+    resp = wp_api_call('GET', 'users/me')
+    if resp and resp.status_code == 200:
         try:
-            scraper.get(WP_URL, timeout=30)
-            time.sleep(2) 
-        except Exception as e:
-            print(f"      ⚠️ WAF Handshake warning (non-fatal): {e}")
-
-        print("      - [API] Verifying credentials...")
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
-        
-        try:
-            resp_json = resp.json()
-            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
-        except:
-            is_valid_json = False
-
-        if resp.status_code == 200 and is_valid_json: 
-            print("   ✅ WP Auth Successful! (WAF Bypassed)")
-            return True
-        else:
-            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
-            print(f"   💬 Server Response: {resp.text[:250]}")
-    except Exception as e: 
-        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
+            if isinstance(resp.json(), dict) and "id" in resp.json():
+                print("   ✅ WP Auth Successful! (Network Stable)")
+                return True
+        except: pass
+    print(f"   ❌ WP Connection Failed after retries.")
+    if resp: print(f"   💬 Last Response: {resp.text[:250]}")
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -1452,16 +1439,18 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 30년 차 프로그래머의 "픽사 스타일 귀여운 3D 마스코트" 전면 교체 로직 
-    vp_base = "A masterpiece 3D render of a highly adorable, cute Pixar-style little white mascot character acting as a friendly guide. The character has a smooth glossy white body, large expressive cute eyes, and chubby cute proportions. It is standing in a dark, cinematic moody studio."
+    # 🚨 30년 차 프로그래머의 "해부학적 환각(Mutations) 및 이목구비 소실 완벽 차단" 로직
+    # "EXACTLY two arms and EXACTLY two legs" 로 팔다리 증식 차단
+    # "clearly visible two big eyes and a cute little nose" 로 달걀귀신 차단
+    vp_base = "A masterpiece 3D render of a highly adorable, cute Pixar-style white mascot character. IMPORTANT: The character MUST have EXACTLY two arms and EXACTLY two legs. The face MUST have clearly visible two large expressive eyes, a cute little nose, and a smiling mouth. It has a smooth white chubby body. Standing completely still in a dark, cinematic moody studio."
 
-    vp1 = f"{vp_base} The cute mascot is enthusiastically holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The vibrant {colors_neon[0][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
+    vp1 = f"{vp_base} The character is holding one brightly glowing {colors_neon[0][0]} neon upward arrow in its right hand. The {colors_neon[0][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
 
-    vp2 = f"{vp_base} The cute mascot is pointing forward like a helpful teacher with a brightly glowing {colors_neon[1][0]} neon pointer wand. The vibrant {colors_neon[1][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
+    vp2 = f"{vp_base} The character is holding one brightly glowing {colors_neon[1][0]} neon laser pointer in its right hand. The {colors_neon[1][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
 
-    vp3 = f"{vp_base} The cute mascot is looking amazed at a brightly glowing {colors_neon[2][0]} neon chart floating in the air. The vibrant {colors_neon[2][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
+    vp3 = f"{vp_base} The character is looking at a brightly glowing {colors_neon[2][0]} neon chart line in front of it. The {colors_neon[2][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
 
-    vp4 = f"{vp_base} The cute mascot is happily presenting a stunning, brightly glowing {colors_neon[3][0]} neon light symbol. The vibrant {colors_neon[3][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
+    vp4 = f"{vp_base} The character is standing beside a brightly glowing {colors_neon[3][0]} neon light beam. The {colors_neon[3][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
 
     data_points = []
     for i in range(1, 6):
@@ -1765,7 +1754,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1797,7 +1786,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1829,7 +1818,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1880,9 +1869,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
