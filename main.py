@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.115_API_ENHANCE_BUG_FIXED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.116_ULTIMATE_PURE_STICKMAN)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -807,7 +807,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# 뉴스 크롤링은 외부 접속
+# 뉴스 크롤링
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1041,7 +1041,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 enhance=true 삭제로 인한 "괴물" 및 "환각" 원천 차단 적용 완료
+# 🚨 완벽한 "순수 3D 미니멀 화이트 졸라맨" 및 "단 1개의 네온 픽스"
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1065,7 +1065,6 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-    # 🚨 가장 치명적인 버그 원흉이었던 &enhance=true 파라미터를 영구 삭제
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1438,23 +1437,25 @@ def generate_vip_carousel(raw_content, cat):
     
     colors_neon = [
         ("neon red", "red"),
-        ("neon orange", "orange"),
+        ("neon golden-yellow", "golden-yellow"),
         ("neon purple", "purple"),
-        ("neon green", "green"),
-        ("neon yellow", "yellow")
+        ("neon bright green", "bright green"),
+        ("neon vibrant blue", "vibrant blue")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 가장 직관적이고 순수한 3D 졸라맨 픽스 (모든 기괴함 차단)
-    vp_base = "A cute, simple 3D minimalist white stickman character. The character has a perfectly round white head, two tiny black dot eyes, and thin white limbs. It is made of smooth glossy white plastic. Standing in a pitch-black cinematic studio."
+    # 🚨 30년 차 프로그래머의 "모든 오염 요소를 물리적으로 차단한 가장 순수한 프롬프트"
+    # "holding EXACTLY ONE"을 통해 양손에 쌍검을 들거나 몸을 관통하는 레이저 생성 100% 차단
+    # 치마나 신발 같은 "옷(Clothes)" 생성을 막기 위해 "white stickman figure"라는 근본적인 키워드로만 뼈대 구축
+    vp_base = "A masterpiece 3D render of a cute, minimalist white stickman figure. It has a large perfectly spherical smooth white head, two simple black dot eyes, a tiny white pill-shaped body, and extremely thin wire-like white arms and legs. Standing on a dark reflective floor in a pitch-black studio."
 
-    vp1 = f"{vp_base} The character is holding a brightly glowing {colors_neon[0][0]} neon upward arrow in its hands. The intense {colors_neon[0][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
+    vp1 = f"{vp_base} The cute stickman is holding EXACTLY ONE brightly glowing {colors_neon[0][0]} neon upward arrow in its right hand. The intense {colors_neon[0][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
 
-    vp2 = f"{vp_base} The character is pointing forward with a brightly glowing {colors_neon[1][0]} neon laser stick in its hands. The intense {colors_neon[1][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
+    vp2 = f"{vp_base} The cute stickman is pointing EXACTLY ONE brightly glowing {colors_neon[1][0]} neon laser wand in its right hand like a teacher. The intense {colors_neon[1][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
 
-    vp3 = f"{vp_base} The character is touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
+    vp3 = f"{vp_base} The cute stickman is touching a single brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
 
-    vp4 = f"{vp_base} The character is standing proudly next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
+    vp4 = f"{vp_base} The cute stickman is standing confidently next to a single brightly glowing {colors_neon[3][0]} neon light trail. The intense {colors_neon[3][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
 
     data_points = []
     for i in range(1, 6):
@@ -1758,7 +1759,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1790,7 +1791,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1822,7 +1823,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1873,9 +1874,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
