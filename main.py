@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.114_WAF_HANDSHAKE_FIXED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.115_API_ENHANCE_BUG_FIXED)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -807,7 +807,7 @@ def already_published_today(cat):
         print(f"   ⚠️ already_published_today check failed: {e}")
     return False
 
-# 뉴스 크롤링
+# 뉴스 크롤링은 외부 접속
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1041,7 +1041,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 아트토이 픽스 렌더링 유지
+# 🚨 enhance=true 삭제로 인한 "괴물" 및 "환각" 원천 차단 적용 완료
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1065,8 +1065,9 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
+    # 🚨 가장 치명적인 버그 원흉이었던 &enhance=true 파라미터를 영구 삭제
     prompt_encoded = urllib.parse.quote(prompt_text)
-    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}&enhance=true"
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
     for attempt in range(3):
         try:
@@ -1444,15 +1445,16 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    vp_base = "Wide-angle full-body shot, centered composition, keeping the character entirely within the frame. A cute, blank white 3D vinyl art toy figure standing in the center of a pitch-black studio. The figure has a perfectly smooth, large round head with two simple black dot eyes, and a small distinct white body with short arms and legs. It is fully white with no clothing or hair."
+    # 🚨 가장 직관적이고 순수한 3D 졸라맨 픽스 (모든 기괴함 차단)
+    vp_base = "A cute, simple 3D minimalist white stickman character. The character has a perfectly round white head, two tiny black dot eyes, and thin white limbs. It is made of smooth glossy white plastic. Standing in a pitch-black cinematic studio."
 
-    vp1 = f"{vp_base} The figure is firmly holding a brightly glowing {colors_neon[0][0]} neon upward arrow sign in its hand. The intense {colors_neon[0][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp1 = f"{vp_base} The character is holding a brightly glowing {colors_neon[0][0]} neon upward arrow in its hands. The intense {colors_neon[0][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
 
-    vp2 = f"{vp_base} The figure is firmly pointing forward with a brightly glowing {colors_neon[1][0]} neon laser pointer wand in its hand. The intense {colors_neon[1][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp2 = f"{vp_base} The character is pointing forward with a brightly glowing {colors_neon[1][0]} neon laser stick in its hands. The intense {colors_neon[1][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
 
-    vp3 = f"{vp_base} The figure is touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp3 = f"{vp_base} The character is touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
 
-    vp4 = f"{vp_base} The figure is standing next to a stunning, brightly glowing {colors_neon[3][0]} neon light trail. The intense {colors_neon[3][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp4 = f"{vp_base} The character is standing proudly next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} neon light vividly reflects off the character's white face. High quality, Pop Mart blind box toy style."
 
     data_points = []
     for i in range(1, 6):
@@ -1756,7 +1758,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1788,7 +1790,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1820,7 +1822,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1871,9 +1873,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.114_WAF_HANDSHAKE_FIXED Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.115_API_ENHANCE_BUG_FIXED Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
