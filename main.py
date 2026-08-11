@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.120_ANATOMY_LOCKED_MASCOT)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.121_MATTE_TOY_PERFECTION)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -656,7 +656,6 @@ def check_env_vars():
         return False
     return True
 
-# 🚨 워드프레스 연결 상태 확인 (API 호출 재사용)
 def verify_wp_credentials():
     print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
     resp = wp_api_call('GET', 'users/me')
@@ -1037,6 +1036,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 완벽한 "매트 질감(Matte) + 무결점 이목구비 + 팔다리 수량 고정" 엔진
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1432,25 +1432,26 @@ def generate_vip_carousel(raw_content, cat):
     
     colors_neon = [
         ("neon red", "red"),
-        ("neon golden-yellow", "golden-yellow"),
+        ("neon orange", "orange"),
         ("neon purple", "purple"),
-        ("neon bright green", "bright green"),
-        ("neon vibrant blue", "vibrant blue")
+        ("neon green", "green"),
+        ("neon blue", "blue")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 30년 차 프로그래머의 "해부학적 환각(Mutations) 및 이목구비 소실 완벽 차단" 로직
-    # "EXACTLY two arms and EXACTLY two legs" 로 팔다리 증식 차단
-    # "clearly visible two big eyes and a cute little nose" 로 달걀귀신 차단
-    vp_base = "A masterpiece 3D render of a highly adorable, cute Pixar-style white mascot character. IMPORTANT: The character MUST have EXACTLY two arms and EXACTLY two legs. The face MUST have clearly visible two large expressive eyes, a cute little nose, and a smiling mouth. It has a smooth white chubby body. Standing completely still in a dark, cinematic moody studio."
+    # 🚨 30년 차 프로그래머의 "매트 재질 & 해부학적 락업(Lock-up)" 프롬프트
+    # 1. soft matte white material: 네온에 얼굴이 날아가는 Washout 방지
+    # 2. exactly two arms and exactly two legs: 다중 팔다리 생성 원천 차단
+    # 3. standing completely still: 동작 묘사로 인한 모션블러/기형 발생 방지
+    vp_base = "A masterpiece 3D render of a cute, minimalist white vinyl art toy character. It has a large round head with two clearly visible black dot eyes and a tiny smile. It has a simple white pill-shaped body, exactly two thin arms, and exactly two thin legs. Made of soft matte white material to prevent light glare. Standing completely still in a dark studio."
 
-    vp1 = f"{vp_base} The character is holding one brightly glowing {colors_neon[0][0]} neon upward arrow in its right hand. The {colors_neon[0][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
+    vp1 = f"{vp_base} The character is holding a brightly glowing {colors_neon[0][0]} neon upward arrow in one hand. The {colors_neon[0][1]} light softly illuminates the character. Front view, clear facial features, 8k resolution, pop mart blind box style."
 
-    vp2 = f"{vp_base} The character is holding one brightly glowing {colors_neon[1][0]} neon laser pointer in its right hand. The {colors_neon[1][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
+    vp2 = f"{vp_base} The character is holding a brightly glowing {colors_neon[1][0]} neon laser wand in one hand. The {colors_neon[1][1]} light softly illuminates the character. Front view, clear facial features, 8k resolution, pop mart blind box style."
 
-    vp3 = f"{vp_base} The character is looking at a brightly glowing {colors_neon[2][0]} neon chart line in front of it. The {colors_neon[2][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
+    vp3 = f"{vp_base} The character is looking at a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The {colors_neon[2][1]} light softly illuminates the character. Front view, clear facial features, 8k resolution, pop mart blind box style."
 
-    vp4 = f"{vp_base} The character is standing beside a brightly glowing {colors_neon[3][0]} neon light beam. The {colors_neon[3][1]} light beautifully illuminates its cute face. 8k, highly detailed, perfect anatomy."
+    vp4 = f"{vp_base} The character is standing next to a brightly glowing {colors_neon[3][0]} neon light beam. The {colors_neon[3][1]} light softly illuminates the character. Front view, clear facial features, 8k resolution, pop mart blind box style."
 
     data_points = []
     for i in range(1, 6):
@@ -1754,7 +1755,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.121_MATTE_TOY_PERFECTION SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1786,7 +1787,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.121_MATTE_TOY_PERFECTION Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1818,7 +1819,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.121_MATTE_TOY_PERFECTION Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1869,9 +1870,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.121_MATTE_TOY_PERFECTION Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.120_ANATOMY_LOCKED_MASCOT Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.121_MATTE_TOY_PERFECTION Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
