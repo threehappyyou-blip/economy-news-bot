@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.116_ULTIMATE_PURE_STICKMAN)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.117_ENTERPRISE_NETWORK_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -44,25 +44,61 @@ try:
     scraper = cloudscraper.create_scraper(
         browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True}
     )
-    # 기본 브라우저처럼 보이도록 헤더 업데이트 (JSON 요구 안 함)
     scraper.headers.update({
         'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Upgrade-Insecure-Requests': '1'
     })
 except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
-# 워드프레스 통신 전용 인증 헤더 (API 전용)
+# 워드프레스 통신 전용 인증 헤더
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
     return {
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'Connection': 'close' # Redis 세션 고갈 및 500 에러 원천 차단
     }
+
+# 🚨 엔터프라이즈급 API 랩퍼 (500 Error, 403 Error 자동 복구 로직)
+def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
+    url = f"{WP_URL}{endpoint}" if endpoint.startswith("/") else f"{WP_URL}/wp-json/wp/v2/{endpoint}"
+    headers = _get_wp_headers()
+    
+    if filename:
+        headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        headers['Content-Type'] = 'image/jpeg'
+        
+    for attempt in range(1, 4): # 최대 3회 재시도
+        try:
+            # 🚨 [핵심 픽스] API 호출 전 모든 쓰레기 쿠키 강제 삭제 (Redis 파서 에러 방지)
+            scraper.cookies.clear() 
+            
+            if method == 'GET':
+                resp = scraper.get(url, headers=headers, timeout=30)
+            elif method == 'POST' and json_data is not None:
+                resp = scraper.post(url, headers=headers, json=json_data, timeout=30)
+            elif method == 'POST' and data_bytes is not None:
+                resp = scraper.post(url, headers=headers, data=data_bytes, timeout=45)
+            else:
+                return None
+                
+            if resp.status_code in (200, 201):
+                return resp
+            elif resp.status_code >= 500:
+                print(f"      ⚠️ Server Overloaded ({resp.status_code}) on attempt {attempt}. Cooling down for 5s...")
+                time.sleep(5)
+            elif resp.status_code in (401, 403):
+                print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying...")
+                time.sleep(3)
+            else:
+                return resp # 400, 404 등 일반 에러는 즉시 반환
+        except Exception as e:
+            print(f"      ⚠️ Network Error ({e}) on attempt {attempt}. Retrying...")
+            time.sleep(5)
+    return None
 
 MODEL_PRI = {
     "Premium": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"], 
@@ -619,36 +655,18 @@ def check_env_vars():
         return False
     return True
 
-# 🚨 워드프레스 통신 전용: "대문 접속(Handshake)"으로 방화벽 쿠키 선발급! 🚨
+# 🚨 워드프레스 연결 상태 확인 (API 호출 재사용)
 def verify_wp_credentials():
     print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
-    try:
-        # 1단계: API 진입 전, 일반 브라우저처럼 홈페이지 대문에 먼저 접속하여 방화벽 캡차 패스 & 쿠키(통행증) 확보
-        print("      - [WAF Bypass] Handshaking with main page to acquire clearance cookie...")
+    resp = wp_api_call('GET', 'users/me')
+    if resp and resp.status_code == 200:
         try:
-            scraper.get(WP_URL, timeout=30)
-            time.sleep(2) # 통행증 세팅 대기
-        except Exception as e:
-            print(f"      ⚠️ WAF Handshake warning (non-fatal): {e}")
-
-        # 2단계: 확보한 통행증(Cookie가 담긴 scraper 세션)을 들고 안전하게 API망 진입
-        print("      - [API] Verifying credentials...")
-        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
-        
-        try:
-            resp_json = resp.json()
-            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
-        except:
-            is_valid_json = False
-
-        if resp.status_code == 200 and is_valid_json: 
-            print("   ✅ WP Auth Successful! (WAF Bypassed)")
-            return True
-        else:
-            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
-            print(f"   💬 Server Response: {resp.text[:250]}")
-    except Exception as e: 
-        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
+            if isinstance(resp.json(), dict) and "id" in resp.json():
+                print("   ✅ WP Auth Successful! (Network Stable)")
+                return True
+        except: pass
+    print(f"   ❌ WP Connection Failed after retries.")
+    if resp: print(f"   💬 Last Response: {resp.text[:250]}")
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -715,99 +733,77 @@ def _clean_seo_title(title):
 
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?slug={slug}", headers=_get_wp_headers(), timeout=15)
-        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/categories", headers=_get_wp_headers(), json={"name": cat_name, "slug": slug}, timeout=15)
-        if r2.status_code in (200, 201): return r2.json()["id"]
-    except: pass
+    r = wp_api_call('GET', f'categories?slug={slug}')
+    if r and r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+    r2 = wp_api_call('POST', 'categories', json_data={"name": cat_name, "slug": slug})
+    if r2 and r2.status_code in (200, 201): return r2.json()["id"]
     return None
 
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/tags?slug={slug}", headers=_get_wp_headers(), timeout=15)
-        if r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
-        r2 = scraper.post(f"{WP_URL}/wp-json/wp/v2/tags", headers=_get_wp_headers(), json={"name": tag_name, "slug": slug}, timeout=15)
-        if r2.status_code in (200, 201): return r2.json()["id"]
-    except: pass
+    r = wp_api_call('GET', f'tags?slug={slug}')
+    if r and r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
+    r2 = wp_api_call('POST', 'tags', json_data={"name": tag_name, "slug": slug})
+    if r2 and r2.status_code in (200, 201): return r2.json()["id"]
     return None
 
 def get_wp_author_id(author_full_string):
     search_name = author_full_string.split("&")[0].strip()
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/users", headers=_get_wp_headers(), params={"search": search_name}, timeout=15)
-        if r.status_code == 200:
-            users = r.json()
-            if len(users) > 0: return users[0]["id"]
-    except: pass
+    r = wp_api_call('GET', f'users?search={search_name}')
+    if r and r.status_code == 200:
+        users = r.json()
+        if len(users) > 0: return users[0]["id"]
     return None
 
 def _get_latest_post_category_name():
-    try:
-        r = scraper.get(f"{WP_URL}/wp-json/wp/v2/posts?per_page=1&status=publish", headers=_get_wp_headers(), timeout=15)
-        if r.status_code == 200:
-            try: r_json = r.json()
-            except: return None
+    r = wp_api_call('GET', 'posts?per_page=1&status=publish')
+    if r and r.status_code == 200:
+        try: r_json = r.json()
+        except: return None
+        
+        if isinstance(r_json, list) and len(r_json) > 0:
+            cat_ids = r_json[0].get('categories', [])
+            if not cat_ids: return None
             
-            if isinstance(r_json, list) and len(r_json) > 0:
-                cat_ids = r_json[0].get('categories', [])
-                if not cat_ids: return None
+            r_cats = wp_api_call('GET', 'categories?per_page=100')
+            if r_cats and r_cats.status_code == 200:
+                try: r_cats_json = r_cats.json()
+                except: return None
                 
-                r_cats = scraper.get(f"{WP_URL}/wp-json/wp/v2/categories?per_page=100", headers=_get_wp_headers(), timeout=15)
-                if r_cats.status_code == 200:
-                    try: r_cats_json = r_cats.json()
-                    except: return None
-                    
-                    if isinstance(r_cats_json, list):
-                        cat_map = {c['id']: c['name'] for c in r_cats_json}
-                        for cid in cat_ids:
-                            name = cat_map.get(cid)
-                            if name in CATEGORIES:
-                                return name
-    except Exception as e:
-        print(f"   ⚠️ Failed to get latest category: {e}")
+                if isinstance(r_cats_json, list):
+                    cat_map = {c['id']: c['name'] for c in r_cats_json}
+                    for cid in cat_ids:
+                        name = cat_map.get(cid)
+                        if name in CATEGORIES:
+                            return name
     return None
 
 def already_published_today(cat):
+    cat_slug = cat.lower().replace(" ", "-")
+    r = wp_api_call('GET', f'categories?slug={cat_slug}')
+    if not r or r.status_code != 200: return False
+    
     try:
-        cat_slug = cat.lower().replace(" ", "-")
-        r = scraper.get(
-            f"{WP_URL}/wp-json/wp/v2/categories?slug={cat_slug}", headers=_get_wp_headers(), timeout=15
-        )
-        if r.status_code != 200: return False
-        
-        try:
-            r_json = r.json()
-            if not isinstance(r_json, list) or not r_json: return False
-            cat_id = r_json[0]["id"]
-        except: return False
+        r_json = r.json()
+        if not isinstance(r_json, list) or not r_json: return False
+        cat_id = r_json[0]["id"]
+    except: return False
 
-        r2 = scraper.get(
-            f"{WP_URL}/wp-json/wp/v2/posts", headers=_get_wp_headers(),
-            params={
-                "categories": cat_id,
-                "per_page": 1,
-                "status": "publish"
-            },
-            timeout=15
-        )
-        if r2.status_code == 200:
-            try:
-                r2_json = r2.json()
-                if isinstance(r2_json, list) and len(r2_json) > 0:
-                    latest_post = r2_json[0]
-                    post_date_gmt = latest_post.get("date_gmt", "")[:10] 
-                    today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
-                    if post_date_gmt == today_utc:
-                        print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
-                        return True
-            except: pass
-    except Exception as e:
-        print(f"   ⚠️ already_published_today check failed: {e}")
+    r2 = wp_api_call('GET', f'posts?categories={cat_id}&per_page=1&status=publish')
+    if r2 and r2.status_code == 200:
+        try:
+            r2_json = r2.json()
+            if isinstance(r2_json, list) and len(r2_json) > 0:
+                latest_post = r2_json[0]
+                post_date_gmt = latest_post.get("date_gmt", "")[:10] 
+                today_utc = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+                if post_date_gmt == today_utc:
+                    print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
+                    return True
+        except: pass
     return False
 
-# 뉴스 크롤링
+# 뉴스 크롤링은 외부 접속
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1041,7 +1037,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 "순수 3D 미니멀 화이트 졸라맨" 및 "단 1개의 네온 픽스"
+# 🚨 완벽한 아트토이 픽스 렌더링 유지 (enhance=true 절대 사용 금지)
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1065,6 +1061,7 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
+    # enhance=true 옵션을 절대 사용하지 않습니다. (AI 환각 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1437,25 +1434,22 @@ def generate_vip_carousel(raw_content, cat):
     
     colors_neon = [
         ("neon red", "red"),
-        ("neon golden-yellow", "golden-yellow"),
+        ("neon orange", "orange"),
         ("neon purple", "purple"),
-        ("neon bright green", "bright green"),
-        ("neon vibrant blue", "vibrant blue")
+        ("neon green", "green"),
+        ("neon yellow", "yellow")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 30년 차 프로그래머의 "모든 오염 요소를 물리적으로 차단한 가장 순수한 프롬프트"
-    # "holding EXACTLY ONE"을 통해 양손에 쌍검을 들거나 몸을 관통하는 레이저 생성 100% 차단
-    # 치마나 신발 같은 "옷(Clothes)" 생성을 막기 위해 "white stickman figure"라는 근본적인 키워드로만 뼈대 구축
-    vp_base = "A masterpiece 3D render of a cute, minimalist white stickman figure. It has a large perfectly spherical smooth white head, two simple black dot eyes, a tiny white pill-shaped body, and extremely thin wire-like white arms and legs. Standing on a dark reflective floor in a pitch-black studio."
+    vp_base = "Wide-angle full-body shot, centered composition, keeping the character entirely within the frame. A cute, blank white 3D vinyl art toy figure standing in the center of a pitch-black studio. The figure has a perfectly smooth, large round head with two simple black dot eyes, and a small distinct white body with short arms and legs. It is fully white with no clothing or hair."
 
-    vp1 = f"{vp_base} The cute stickman is holding EXACTLY ONE brightly glowing {colors_neon[0][0]} neon upward arrow in its right hand. The intense {colors_neon[0][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
+    vp1 = f"{vp_base} The figure is firmly holding a brightly glowing {colors_neon[0][0]} neon upward arrow sign in its hand. The intense {colors_neon[0][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
 
-    vp2 = f"{vp_base} The cute stickman is pointing EXACTLY ONE brightly glowing {colors_neon[1][0]} neon laser wand in its right hand like a teacher. The intense {colors_neon[1][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
+    vp2 = f"{vp_base} The figure is firmly pointing forward with a brightly glowing {colors_neon[1][0]} neon laser pointer wand in its hand. The intense {colors_neon[1][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
 
-    vp3 = f"{vp_base} The cute stickman is touching a single brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
+    vp3 = f"{vp_base} The figure is touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
 
-    vp4 = f"{vp_base} The cute stickman is standing confidently next to a single brightly glowing {colors_neon[3][0]} neon light trail. The intense {colors_neon[3][1]} light beautifully reflects on its glossy white face. Pop Mart blind box toy style, Octane Render, 8k."
+    vp4 = f"{vp_base} The figure is standing next to a stunning, brightly glowing {colors_neon[3][0]} neon light trail. The intense {colors_neon[3][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
 
     data_points = []
     for i in range(1, 6):
@@ -1759,7 +1753,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1791,7 +1785,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1823,7 +1817,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1874,9 +1868,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.116_ULTIMATE_PURE_STICKMAN Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
