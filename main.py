@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.118_FINAL_ART_TOY_RENDER)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.119_PIXAR_CUTE_MASCOT)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -38,7 +38,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 🚨 Imunify360 방화벽 우회 전용 스크래퍼 (모든 WP 통신에 적용)
+# 🚨 Imunify360 방화벽 우회 전용 글로벌 스크래퍼 세션
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -654,7 +654,6 @@ def check_env_vars():
         return False
     return True
 
-# 워드프레스 통신 전용
 def verify_wp_credentials():
     print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
     try:
@@ -746,7 +745,6 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
-# 🚨 엔터프라이즈급 API 랩퍼 호출로 통일
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     r = wp_api_call('GET', f'categories?slug={slug}')
@@ -819,7 +817,6 @@ def already_published_today(cat):
         except: pass
     return False
 
-# 뉴스 크롤링은 외부 접속
 def fetch_news_pool(cat, max_items=15):
     feeds = RSS_FEEDS.get(cat, RSS_FEEDS["Economy"])
     items = set()
@@ -1053,7 +1050,6 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 30년 차 프로그래머의 "순수 명사 조합 렌더링" (모든 환각 파라미터 삭제)
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1077,7 +1073,6 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1450,23 +1445,23 @@ def generate_vip_carousel(raw_content, cat):
     
     colors_neon = [
         ("neon red", "red"),
-        ("neon orange", "orange"),
+        ("neon golden-yellow", "golden-yellow"),
         ("neon purple", "purple"),
-        ("neon green", "green"),
-        ("neon yellow", "yellow")
+        ("neon bright green", "bright green"),
+        ("neon vibrant blue", "vibrant blue")
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 가장 순수한 "화이트 비닐 아트 토이" 고정 픽스 적용! (환각/과적합 100% 방지)
-    vp_base = "A cute, simple 3D minimalist white stickman character. The character is made of perfectly smooth, glossy white plastic. It has a round white head with two simple black dot eyes and a tiny smile, and a small white body with thin arms and legs. It is standing in a pitch-black dark studio."
+    # 🚨 30년 차 프로그래머의 "픽사 스타일 귀여운 3D 마스코트" 전면 교체 로직 
+    vp_base = "A masterpiece 3D render of a highly adorable, cute Pixar-style little white mascot character acting as a friendly guide. The character has a smooth glossy white body, large expressive cute eyes, and chubby cute proportions. It is standing in a dark, cinematic moody studio."
 
-    vp1 = f"{vp_base} The cute character is proudly holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The intense {colors_neon[0][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
+    vp1 = f"{vp_base} The cute mascot is enthusiastically holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The vibrant {colors_neon[0][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
 
-    vp2 = f"{vp_base} The cute character is pointing forward like a teacher with a brightly glowing {colors_neon[1][0]} neon laser wand. The intense {colors_neon[1][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
+    vp2 = f"{vp_base} The cute mascot is pointing forward like a helpful teacher with a brightly glowing {colors_neon[1][0]} neon pointer wand. The vibrant {colors_neon[1][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
 
-    vp3 = f"{vp_base} The cute character is gently touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
+    vp3 = f"{vp_base} The cute mascot is looking amazed at a brightly glowing {colors_neon[2][0]} neon chart floating in the air. The vibrant {colors_neon[2][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
 
-    vp4 = f"{vp_base} The cute character is standing happily next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
+    vp4 = f"{vp_base} The cute mascot is happily presenting a stunning, brightly glowing {colors_neon[3][0]} neon light symbol. The vibrant {colors_neon[3][1]} light beautifully illuminates its adorable face. 8k, trending on ArtStation, ultra-cute."
 
     data_points = []
     for i in range(1, 6):
@@ -1770,7 +1765,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1802,7 +1797,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1834,7 +1829,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1885,9 +1880,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.119_PIXAR_CUTE_MASCOT Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
