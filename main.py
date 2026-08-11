@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.117_ENTERPRISE_NETWORK_FIX)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.118_FINAL_ART_TOY_RENDER)
 # ═══════════════════════════════════════════════════════════════
 
 import os, sys, traceback, time, random, re, datetime, io, math, base64
@@ -38,7 +38,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 🚨 Imunify360 방화벽 우회 전용 글로벌 스크래퍼 세션
+# 🚨 Imunify360 방화벽 우회 전용 스크래퍼 (모든 WP 통신에 적용)
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -59,7 +59,7 @@ def _get_wp_headers():
         'Accept': 'application/json',
         'Authorization': f'Basic {b64_auth}',
         'Cache-Control': 'no-cache',
-        'Connection': 'close' # Redis 세션 고갈 및 500 에러 원천 차단
+        'Connection': 'close' 
     }
 
 # 🚨 엔터프라이즈급 API 랩퍼 (500 Error, 403 Error 자동 복구 로직)
@@ -71,9 +71,8 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
         headers['Content-Disposition'] = f'attachment; filename="{filename}"'
         headers['Content-Type'] = 'image/jpeg'
         
-    for attempt in range(1, 4): # 최대 3회 재시도
+    for attempt in range(1, 4):
         try:
-            # 🚨 [핵심 픽스] API 호출 전 모든 쓰레기 쿠키 강제 삭제 (Redis 파서 에러 방지)
             scraper.cookies.clear() 
             
             if method == 'GET':
@@ -94,7 +93,7 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
                 print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying...")
                 time.sleep(3)
             else:
-                return resp # 400, 404 등 일반 에러는 즉시 반환
+                return resp 
         except Exception as e:
             print(f"      ⚠️ Network Error ({e}) on attempt {attempt}. Retrying...")
             time.sleep(5)
@@ -655,18 +654,34 @@ def check_env_vars():
         return False
     return True
 
-# 🚨 워드프레스 연결 상태 확인 (API 호출 재사용)
+# 워드프레스 통신 전용
 def verify_wp_credentials():
     print(f"   🔍 [System] Bypassing WAF & Checking WP Connection to: {WP_URL}")
-    resp = wp_api_call('GET', 'users/me')
-    if resp and resp.status_code == 200:
+    try:
+        print("      - [WAF Bypass] Handshaking with main page to acquire clearance cookie...")
         try:
-            if isinstance(resp.json(), dict) and "id" in resp.json():
-                print("   ✅ WP Auth Successful! (Network Stable)")
-                return True
-        except: pass
-    print(f"   ❌ WP Connection Failed after retries.")
-    if resp: print(f"   💬 Last Response: {resp.text[:250]}")
+            scraper.get(WP_URL, timeout=30)
+            time.sleep(2) 
+        except Exception as e:
+            print(f"      ⚠️ WAF Handshake warning (non-fatal): {e}")
+
+        print("      - [API] Verifying credentials...")
+        resp = scraper.get(f"{WP_URL}/wp-json/wp/v2/users/me", headers=_get_wp_headers(), timeout=25)
+        
+        try:
+            resp_json = resp.json()
+            is_valid_json = isinstance(resp_json, dict) and "id" in resp_json
+        except:
+            is_valid_json = False
+
+        if resp.status_code == 200 and is_valid_json: 
+            print("   ✅ WP Auth Successful! (WAF Bypassed)")
+            return True
+        else:
+            print(f"   ❌ WP Auth Failed or Blocked by WAF! (HTTP Status: {resp.status_code})")
+            print(f"   💬 Server Response: {resp.text[:250]}")
+    except Exception as e: 
+        print(f"   ❌ WP Connection Error (Timeout/Firewall): {e}")
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -731,6 +746,7 @@ def _clean_seo_title(title):
         title = title.replace(p, "")
     return title.strip()
 
+# 🚨 엔터프라이즈급 API 랩퍼 호출로 통일
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     r = wp_api_call('GET', f'categories?slug={slug}')
@@ -1037,7 +1053,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 아트토이 픽스 렌더링 유지 (enhance=true 절대 사용 금지)
+# 🚨 30년 차 프로그래머의 "순수 명사 조합 렌더링" (모든 환각 파라미터 삭제)
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1061,7 +1077,7 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-    # enhance=true 옵션을 절대 사용하지 않습니다. (AI 환각 방지)
+    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1441,15 +1457,16 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    vp_base = "Wide-angle full-body shot, centered composition, keeping the character entirely within the frame. A cute, blank white 3D vinyl art toy figure standing in the center of a pitch-black studio. The figure has a perfectly smooth, large round head with two simple black dot eyes, and a small distinct white body with short arms and legs. It is fully white with no clothing or hair."
+    # 🚨 가장 순수한 "화이트 비닐 아트 토이" 고정 픽스 적용! (환각/과적합 100% 방지)
+    vp_base = "A cute, simple 3D minimalist white stickman character. The character is made of perfectly smooth, glossy white plastic. It has a round white head with two simple black dot eyes and a tiny smile, and a small white body with thin arms and legs. It is standing in a pitch-black dark studio."
 
-    vp1 = f"{vp_base} The figure is firmly holding a brightly glowing {colors_neon[0][0]} neon upward arrow sign in its hand. The intense {colors_neon[0][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp1 = f"{vp_base} The cute character is proudly holding a brightly glowing {colors_neon[0][0]} neon upward arrow. The intense {colors_neon[0][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
 
-    vp2 = f"{vp_base} The figure is firmly pointing forward with a brightly glowing {colors_neon[1][0]} neon laser pointer wand in its hand. The intense {colors_neon[1][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp2 = f"{vp_base} The cute character is pointing forward like a teacher with a brightly glowing {colors_neon[1][0]} neon laser wand. The intense {colors_neon[1][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
 
-    vp3 = f"{vp_base} The figure is touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp3 = f"{vp_base} The cute character is gently touching a brightly glowing {colors_neon[2][0]} neon chart line hovering in the air. The intense {colors_neon[2][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
 
-    vp4 = f"{vp_base} The figure is standing next to a stunning, brightly glowing {colors_neon[3][0]} neon light trail. The intense {colors_neon[3][1]} neon light casts vibrant, colorful reflections on the figure's glossy white body and the dark background. 8k resolution, cinematic lighting."
+    vp4 = f"{vp_base} The cute character is standing happily next to a brightly glowing {colors_neon[3][0]} neon light beam. The intense {colors_neon[3][1]} neon light vividly illuminates and reflects off the character's white face and the dark floor. Cinematic, adorable, high quality."
 
     data_points = []
     for i in range(1, 6):
@@ -1753,7 +1770,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1785,7 +1802,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1817,7 +1834,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1868,9 +1885,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.117_ENTERPRISE_NETWORK_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.118_FINAL_ART_TOY_RENDER Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
