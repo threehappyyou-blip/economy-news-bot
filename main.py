@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Cute Chibi & Neon Graphs Edition (v46.9.139_FINAL)
+# Warm Insight Auto Poster — Cute Neon Graphs Edition (v46.9.139_SYNTAX_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -686,7 +686,6 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
 # ═══════════════════════════════════════════════
 # 🛡️ SYSTEM UTILS & API ENGINE 
 # ═══════════════════════════════════════════════
-# 🚨 전역 변수 _gemini_client 선언 및 초기화 (버그 수정 완료) 🚨
 _gemini_client = None
 
 def _get_gemini_client():
@@ -1135,7 +1134,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 아트토이 3D 캐릭터 + 네온 차트 강제 고정 🚨
+# 🚨 완벽한 직관적 3D 금융 차트/그래프 모형 렌더링 🚨
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1201,28 +1200,29 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일에도 캐릭터 + 네온 차트 로직 강제 🚨
+    # 🚨 썸네일에도 캐릭터 생성을 배제한 완벽한 프롬프트 설정 (선명함 강제) 🚨
     base_thumb_prompt = (
-        "A masterpiece 3D render of a cute, friendly Chibi art toy figure (Pop Mart blind box style) "
-        "wearing a trendy oversized hoodie and sneakers. The figure has big expressive cute eyes and a warm smile. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
+        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial chart. "
+        "Constructed from thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
+        "Pitch-black background. Extremely clear, distinct, and highly recognizable shape. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO GLASS BLOBS."
     )
     AI_PROMPTS = {
-        "Economy": f"{base_thumb_prompt} The figure is happily holding a brightly glowing blue and gold neon 3D PIE CHART. 8k resolution, no text.",
-        "Politics": f"{base_thumb_prompt} The figure is happily holding a brightly glowing red and dark slate neon 3D BAR GRAPH. 8k resolution, no text.",
-        "Tech": f"{base_thumb_prompt} The figure is happily holding a brightly glowing neon purple and cyan 3D PIE CHART. 8k resolution, no text.",
-        "Health": f"{base_thumb_prompt} The figure is happily holding brightly glowing emerald green neon 3D CANDLESTICK chart bars. 8k resolution, no text.",
-        "Energy": f"{base_thumb_prompt} The figure is happily holding a brightly glowing orange and amber neon 3D ASCENDING ARROW. 8k resolution, no text.",
-        "On-Chain": f"{base_thumb_prompt} The figure is happily holding a brightly glowing purple and gold neon 3D BAR GRAPH. 8k resolution, no text.",
-        "The Daily Catalyst": f"{base_thumb_prompt} The figure is happily holding a brightly glowing warm gold neon 3D PIE CHART. 8k resolution, no text.",
-        "Foundation": f"{base_thumb_prompt} The figure is happily holding a brightly glowing vibrant yellow neon 3D ASCENDING ARROW. 8k resolution, no text.",
-        "Money Hack": f"{base_thumb_prompt} The figure is happily holding brightly glowing green and yellow neon 3D CANDLESTICK chart bars. 8k resolution, no text."
+        "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D ASCENDING ARROW chart. 8k resolution.",
+        "Politics": f"{base_thumb_prompt} A brightly glowing red and dark slate neon 3D BAR GRAPH. 8k resolution.",
+        "Tech": f"{base_thumb_prompt} A brightly glowing neon purple and cyan 3D PIE CHART. 8k resolution.",
+        "Health": f"{base_thumb_prompt} Brightly glowing emerald green neon 3D CANDLESTICK chart bars. 8k resolution.",
+        "Energy": f"{base_thumb_prompt} A brightly glowing orange and amber neon 3D ASCENDING ARROW. 8k resolution.",
+        "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D BAR GRAPH. 8k resolution.",
+        "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D PIE CHART. 8k resolution.",
+        "Foundation": f"{base_thumb_prompt} A brightly glowing vibrant yellow neon 3D ASCENDING ARROW. 8k resolution.",
+        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D CANDLESTICK chart bars. 8k resolution."
     }
 
     img = None
     use_ai_bg = False
     try:
-        print(f"    [AI] Requesting Mascot Vector Background for {cat}...")
+        print(f"    [AI] Requesting Abstract Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-002',
@@ -1235,7 +1235,7 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Mascot Generated!")
+        print("    ✅ AI Abstract Background Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
@@ -1544,17 +1544,22 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 유령 현상 방지: 각 슬라이드마다 포즈와 들고 있는 차트를 다르게 하여 크로스페이드를 자연스러운 장면 전환으로 만듦 🚨
+    # 🚨 극도로 선명하고 직관적인 '3D 차트 모형' 강제 (추상/유리/기호 완전 삭제) 🚨
     vp_base = (
-        "A masterpiece 3D render of a cute, friendly Chibi art toy figure (Pop Mart blind box style) "
-        "wearing a trendy oversized hoodie and sneakers. The figure has big expressive cute anime eyes and a warm smile. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
+        "A highly aesthetic, cute 3D render of a specific financial chart object. "
+        "Made of solid, glossy white plastic with thick, brightly glowing neon light accents. "
+        "Pitch-black background with vivid floor reflections. "
+        "Extremely clear, distinct, and highly recognizable chart shape. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ABSTRACT BLOBS."
     )
 
-    vp1 = f"{vp_base} The figure is happily holding a brightly glowing {colors_neon[0][0]} neon 3D PIE CHART. 8k resolution, no text, adorable."
-    vp2 = f"{vp_base} The figure is pointing at a brightly glowing {colors_neon[1][0]} neon 3D BAR GRAPH with 3 stepping pillars. 8k resolution, no text, adorable."
-    vp3 = f"{vp_base} The figure is riding on a brightly glowing {colors_neon[2][0]} neon 3D ASCENDING ARROW. 8k resolution, no text, adorable."
-    vp4 = f"{vp_base} The figure is standing next to a brightly glowing {colors_neon[3][0]} neon 3D CANDLESTICK CHART. 8k resolution, no text, adorable."
+    vp1 = f"{vp_base} The object is a 3D PIE CHART with one slice slightly pulled out. Brightly glowing {colors_neon[0][0]} neon lights. 8k resolution, clean composition, no text."
+    
+    vp2 = f"{vp_base} The object is a 3D BAR GRAPH with 3 solid pillars stepping upwards. Brightly glowing {colors_neon[1][0]} neon lights. 8k resolution, clean composition, no text."
+    
+    vp3 = f"{vp_base} The object is a 3D LINE CHART with a thick arrow pointing diagonally upwards. Brightly glowing {colors_neon[2][0]} neon lights. 8k resolution, clean composition, no text."
+    
+    vp4 = f"{vp_base} The object is a 3D CANDLESTICK CHART symbol. Brightly glowing {colors_neon[3][0]} neon lights. 8k resolution, clean composition, no text."
 
     data_points = []
     for i in range(1, 6):
@@ -1737,7 +1742,7 @@ def generate_vip_carousel(raw_content, cat):
         d6.text((W//2, y_text), ln, fill=WHITE, font=font_title, anchor="mm")
         y_text += 105
     d6.text((W//2, 1650), cta_hook.upper(), fill=RED, font=font_alert, anchor="mm")
-    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font_sub, anchor="mm")
+    d6.text((W//2, 1780), "LINK IN BIO → @WARMINSIGHT", fill=GRAY, font=font_sub, anchor="mm")
     text_frames.append(txt6)
 
     image_bytes_list = []
@@ -1858,7 +1863,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.139_SYNTAX_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1890,7 +1895,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.139_SYNTAX_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1922,7 +1927,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.139_SYNTAX_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1973,9 +1978,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.139_SYNTAX_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.139_SYNTAX_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
