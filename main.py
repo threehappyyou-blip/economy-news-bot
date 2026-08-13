@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Exact 3D Neon Charts Edition (v46.9.137)
+# Warm Insight Auto Poster — Exact 3D Neon Charts Edition (v46.9.138_GLOBAL_VAR_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -178,6 +178,9 @@ CAT_ALLOC = {
     "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
 
+# ═══════════════════════════════════════════════
+# 🧠 프롬프트 설정 
+# ═══════════════════════════════════════════════
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
 
@@ -278,6 +281,9 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
+# ═══════════════════════════════════════════════
+# 🎬 1. YOUTUBE CHAPTERING ENGINE
+# ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
 
@@ -667,6 +673,11 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
         print("   ✅ Social Email Sent Successfully!")
     except Exception as e:
         print(f"   ❌ Social Email Failed: {e}")
+
+# ═══════════════════════════════════════════════
+# 🛡️ SYSTEM UTILS & API ENGINE 
+# ═══════════════════════════════════════════════
+_gemini_client = None
 
 def _get_gemini_client():
     global _gemini_client
@@ -1180,24 +1191,23 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일에도 캐릭터/추상/유리 배제 & 완벽한 3D 차트 모형 강제 🚨
+    # 🚨 썸네일에도 캐릭터 생성을 배제한 완벽한 프롬프트 설정 (선명함 강제) 🚨
     base_thumb_prompt = (
-        "A highly aesthetic, cute 3D render of a specific financial chart object. "
-        "Made of solid, glossy white plastic with thick, brightly glowing neon light accents. "
-        "Pitch-black background with vivid floor reflections. "
-        "Extremely clear, distinct, and highly recognizable chart shape. "
-        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ABSTRACT BLOBS."
+        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial chart. "
+        "Constructed from thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
+        "Pitch-black background. Extremely clear, distinct, and highly recognizable shape. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO GLASS BLOBS."
     )
     AI_PROMPTS = {
-        "Economy": f"{base_thumb_prompt} The object is a 3D ASCENDING LINE CHART with an arrow pointing up. Bright blue and gold neon lights. 8k resolution.",
-        "Politics": f"{base_thumb_prompt} The object is a 3D BAR GRAPH with 3 stepping pillars. Bright red and white neon lights. 8k resolution.",
-        "Tech": f"{base_thumb_prompt} The object is a 3D PIE CHART with one slice pulled out. Bright purple and cyan neon lights. 8k resolution.",
-        "Health": f"{base_thumb_prompt} The object is a 3D CANDLESTICK CHART symbol. Bright emerald green neon lights. 8k resolution.",
-        "Energy": f"{base_thumb_prompt} The object is a 3D ASCENDING LINE CHART. Bright orange and amber neon lights. 8k resolution.",
-        "On-Chain": f"{base_thumb_prompt} The object is a 3D BAR GRAPH. Bright purple and gold neon lights. 8k resolution.",
-        "The Daily Catalyst": f"{base_thumb_prompt} The object is a 3D PIE CHART. Bright warm gold neon lights. 8k resolution.",
-        "Foundation": f"{base_thumb_prompt} The object is a 3D ASCENDING LINE CHART. Bright yellow neon lights. 8k resolution.",
-        "Money Hack": f"{base_thumb_prompt} The object is a 3D CANDLESTICK CHART. Bright green and yellow neon lights. 8k resolution."
+        "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D ASCENDING ARROW chart. 8k resolution.",
+        "Politics": f"{base_thumb_prompt} A brightly glowing red and dark slate neon 3D BAR GRAPH. 8k resolution.",
+        "Tech": f"{base_thumb_prompt} A brightly glowing neon purple and cyan 3D PIE CHART. 8k resolution.",
+        "Health": f"{base_thumb_prompt} Brightly glowing emerald green neon 3D CANDLESTICK chart bars. 8k resolution.",
+        "Energy": f"{base_thumb_prompt} A brightly glowing orange and amber neon 3D ASCENDING ARROW. 8k resolution.",
+        "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D BAR GRAPH. 8k resolution.",
+        "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D PIE CHART. 8k resolution.",
+        "Foundation": f"{base_thumb_prompt} A brightly glowing vibrant yellow neon 3D ASCENDING ARROW. 8k resolution.",
+        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D CANDLESTICK chart bars. 8k resolution."
     }
 
     img = None
@@ -1525,22 +1535,18 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 극도로 선명하고 직관적인 '3D 차트 모형' 강제 (추상/유리/기호 완전 삭제) 🚨
+    # 🚨 극도로 선명한 수치/그래프 강제 (유리 재질 완전 삭제, 초점 및 형태 명확성 강제) 🚨
     vp_base = (
-        "A highly aesthetic, cute 3D render of a specific financial chart object. "
-        "Made of solid, glossy white plastic with thick, brightly glowing neon light accents. "
-        "Pitch-black background with vivid floor reflections. "
-        "Extremely clear, distinct, and highly recognizable chart shape. "
-        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ABSTRACT BLOBS."
+        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial symbol. "
+        "Constructed from thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
+        "Pitch-black background. Extremely clear, distinct, and highly recognizable shape. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS, NO GLASS BLOBS."
     )
 
-    vp1 = f"{vp_base} The object is a 3D PIE CHART with one slice slightly pulled out. Brightly glowing {colors_neon[0][0]} neon lights. 8k resolution, clean composition, no text."
-    
-    vp2 = f"{vp_base} The object is a 3D BAR GRAPH with 3 solid pillars stepping upwards. Brightly glowing {colors_neon[1][0]} neon lights. 8k resolution, clean composition, no text."
-    
-    vp3 = f"{vp_base} The object is a 3D LINE CHART with a thick arrow pointing diagonally upwards. Brightly glowing {colors_neon[2][0]} neon lights. 8k resolution, clean composition, no text."
-    
-    vp4 = f"{vp_base} The object is a 3D CANDLESTICK CHART symbol. Brightly glowing {colors_neon[3][0]} neon lights. 8k resolution, clean composition, no text."
+    vp1 = f"{vp_base} The symbol is a brightly glowing {colors_neon[0][0]} neon 3D PIE CHART with a clear PERCENTAGE (%) sign. 8k resolution, vivid colors."
+    vp2 = f"{vp_base} The symbol is a brightly glowing {colors_neon[1][0]} neon 3D BAR GRAPH with 3 distinct rising pillars. 8k resolution, vivid colors."
+    vp3 = f"{vp_base} The symbol is a brightly glowing {colors_neon[2][0]} neon 3D ASCENDING ARROW representing a rising stock chart line. 8k resolution, vivid colors."
+    vp4 = f"{vp_base} The symbol is a brightly glowing {colors_neon[3][0]} neon 3D EXCLAMATION MARK (!). 8k resolution, vivid colors."
 
     data_points = []
     for i in range(1, 6):
@@ -1844,7 +1850,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.137_EXACT_3D_CHARTS SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1876,7 +1882,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.137_EXACT_3D_CHARTS Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1908,7 +1914,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.137_EXACT_3D_CHARTS Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1959,9 +1965,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.137_EXACT_3D_CHARTS Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.137_EXACT_3D_CHARTS Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.138_GLOBAL_VAR_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
