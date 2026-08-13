@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.125_ULTIMATE_USER_SOLUTION)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.127_FULL_SYSTEM_RESTORED)
 # ═══════════════════════════════════════════════════════════════
 
-import os
-import sys
-import traceback
-import time
-import random
-import re
-import datetime
-import io
-import math
-import base64
-import urllib.request
-import urllib.parse
+import os, sys, traceback, time, random, re, datetime, io, math, base64
+import urllib.request, urllib.parse
 import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
@@ -74,7 +64,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 🚨 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화)
+# 🚨 엔터프라이즈급 API 랩퍼 (500 Error, 403 Error 자동 복구 로직)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     url = f"{WP_URL}{endpoint}" if endpoint.startswith("/") else f"{WP_URL}/wp-json/wp/v2/{endpoint}"
     headers = _get_wp_headers()
@@ -103,14 +93,16 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
                 time.sleep(5)
             elif resp.status_code in (401, 403):
                 print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying...")
+                try:
+                    scraper.get(WP_URL, timeout=15)
+                except Exception:
+                    pass
                 time.sleep(3)
             else:
                 return resp 
-                
         except Exception as e:
             print(f"      ⚠️ Network Error ({e}) on attempt {attempt}. Retrying...")
             time.sleep(5)
-            
     return None
 
 MODEL_PRI = {
@@ -162,12 +154,12 @@ RSS_FEEDS = {
 }
 
 CAT_ALLOC = {
-    "Economy": {"s": 55, "b": 35, "c": 10},
-    "Politics": {"s": 50, "b": 35, "c": 15},
-    "Tech": {"s": 70, "b": 20, "c": 10},
-    "Health": {"s": 60, "b": 30, "c": 10},
-    "Energy": {"s": 65, "b": 25, "c": 10},
-    "On-Chain": {"s": 25, "b": 15, "c": 60},
+    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
+    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
+    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
+    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
+    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
+    "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
 
 # ═══════════════════════════════════════════════
@@ -373,9 +365,7 @@ def generate_youtube_masterpiece(raw_content, title):
     return meta, full_script
 
 def send_youtube_script_email(post_title, meta, script):
-    if not EMAIL_SENDER or not EMAIL_PASS: 
-        return
-        
+    if not EMAIL_SENDER or not EMAIL_PASS: return
     print(f"   📧 Sending YouTube Script to {YOUTUBE_EMAIL_RECEIVER}...")
     try:
         msg = MIMEMultipart()
@@ -414,9 +404,7 @@ def send_youtube_script_email(post_title, meta, script):
 # ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진
 # ═══════════════════════════════════════════════
 def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_bytes=None):
-    if not EMAIL_SENDER or not EMAIL_PASS: 
-        return
-        
+    if not EMAIL_SENDER or not EMAIL_PASS: return
     print(f"   📧 Generating and Sending Medium Draft to {MEDIUM_EMAIL_RECEIVER}...")
     
     if cat == "Foundation":
@@ -437,9 +425,7 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
         sec3_title, sec3_body = xtag(raw_content, "HEADLINE"), xtag(raw_content, "MACRO").replace("PARAGRAPH 1:", "").replace("PARAGRAPH 2:", "").replace("PARAGRAPH 3:", "").strip().replace('\n', '<br><br>')
     
     kw_tag = kw.title() if kw else "Market Trends"
-    if len(kw_tag) > 25: 
-        kw_tag = kw_tag[:25].strip() 
-        
+    if len(kw_tag) > 25: kw_tag = kw_tag[:25].strip() 
     cat_tag = cat.replace("-", " ")
     
     try:
@@ -522,9 +508,7 @@ def generate_reddit_post(raw_content, cat, original_link):
     return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
 
 def send_community_viral_email(title, original_link, raw_content, cat):
-    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: 
-        return
-        
+    if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER: return
     print(f"   📧 Generating and Sending Human-like Community Viral Draft to {EMAIL_RECEIVER}...")
 
     target_subreddits = "r/povertyfinance, r/sidehustle"
@@ -666,8 +650,7 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
 _gemini_client = None
 def _get_gemini_client():
     global _gemini_client
-    if _gemini_client is None: 
-        _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    if _gemini_client is None: _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     return _gemini_client
 
 def check_env_vars():
@@ -685,12 +668,9 @@ def verify_wp_credentials():
             if isinstance(resp.json(), dict) and "id" in resp.json():
                 print("   ✅ WP Auth Successful! (Network Stable)")
                 return True
-        except Exception:
-            pass
-            
+        except: pass
     print(f"   ❌ WP Connection Failed after retries.")
-    if resp: 
-        print(f"   💬 Last Response: {resp.text[:250]}")
+    if resp: print(f"   💬 Last Response: {resp.text[:250]}")
     return False
 
 def call_gemini(client, model, prompt, sys_inst=None, retries=5):
@@ -705,16 +685,14 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
     for i in range(1, retries + 1):
         try:
             r = client.models.generate_content(model=model, contents=prompt, config=config)
-            if r.text: 
-                return str(r.text)
+            if r.text: return str(r.text)
         except Exception as e:
             err = str(e)
             print(f"    ⚠️ [Gemini API Error] {err}")
             if "credits are depleted" in err or "billing" in err.lower():
                 print("    🚨 Credits depleted!")
                 return None
-            if "404" in err or "not found" in err.lower(): 
-                return None
+            if "404" in err or "not found" in err.lower(): return None
             if "503" in err or "UNAVAILABLE" in err:
                 wait = (15 * i) + random.uniform(-2, 5)
                 print(f"    ⏳ 503 Overload. Jitter Wait {wait:.1f}s...")
@@ -722,8 +700,7 @@ def call_gemini(client, model, prompt, sys_inst=None, retries=5):
             elif "429" in err:
                 print(f"    ⏳ 429 Quota Exceeded. Waiting...")
                 time.sleep(30 + random.uniform(0, 10))
-            elif i < retries: 
-                time.sleep(5 * i)
+            elif i < retries: time.sleep(5 * i)
     return None
 
 def gem_fb(tier, prompt, sys_inst=None):
@@ -731,8 +708,7 @@ def gem_fb(tier, prompt, sys_inst=None):
     for m in MODEL_PRI.get(tier, FAST_MODELS):
         print(f"    [AI] Trying {m}...")
         r = call_gemini(client, m, prompt, sys_inst)
-        if r: 
-            return r
+        if r: return r
     return ""
 
 def xtag(raw, tag):
@@ -762,21 +738,17 @@ def _clean_seo_title(title):
 def get_or_create_wp_category(cat_name):
     slug = cat_name.lower().replace(" ", "-")
     r = wp_api_call('GET', f'categories?slug={slug}')
-    if r and r.status_code == 200 and len(r.json()) > 0: 
-        return r.json()[0]["id"]
+    if r and r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
     r2 = wp_api_call('POST', 'categories', json_data={"name": cat_name, "slug": slug})
-    if r2 and r2.status_code in (200, 201): 
-        return r2.json()["id"]
+    if r2 and r2.status_code in (200, 201): return r2.json()["id"]
     return None
 
 def get_or_create_wp_tag(tag_name):
     slug = tag_name.lower().replace(" ", "-")
     r = wp_api_call('GET', f'tags?slug={slug}')
-    if r and r.status_code == 200 and len(r.json()) > 0: 
-        return r.json()[0]["id"]
+    if r and r.status_code == 200 and len(r.json()) > 0: return r.json()[0]["id"]
     r2 = wp_api_call('POST', 'tags', json_data={"name": tag_name, "slug": slug})
-    if r2 and r2.status_code in (200, 201): 
-        return r2.json()["id"]
+    if r2 and r2.status_code in (200, 201): return r2.json()["id"]
     return None
 
 def get_wp_author_id(author_full_string):
@@ -784,29 +756,23 @@ def get_wp_author_id(author_full_string):
     r = wp_api_call('GET', f'users?search={search_name}')
     if r and r.status_code == 200:
         users = r.json()
-        if len(users) > 0: 
-            return users[0]["id"]
+        if len(users) > 0: return users[0]["id"]
     return None
 
 def _get_latest_post_category_name():
     r = wp_api_call('GET', 'posts?per_page=1&status=publish')
     if r and r.status_code == 200:
-        try: 
-            r_json = r.json()
-        except Exception: 
-            return None
+        try: r_json = r.json()
+        except: return None
         
         if isinstance(r_json, list) and len(r_json) > 0:
             cat_ids = r_json[0].get('categories', [])
-            if not cat_ids: 
-                return None
+            if not cat_ids: return None
             
             r_cats = wp_api_call('GET', 'categories?per_page=100')
             if r_cats and r_cats.status_code == 200:
-                try: 
-                    r_cats_json = r_cats.json()
-                except Exception: 
-                    return None
+                try: r_cats_json = r_cats.json()
+                except: return None
                 
                 if isinstance(r_cats_json, list):
                     cat_map = {c['id']: c['name'] for c in r_cats_json}
@@ -819,16 +785,13 @@ def _get_latest_post_category_name():
 def already_published_today(cat):
     cat_slug = cat.lower().replace(" ", "-")
     r = wp_api_call('GET', f'categories?slug={cat_slug}')
-    if not r or r.status_code != 200: 
-        return False
+    if not r or r.status_code != 200: return False
     
     try:
         r_json = r.json()
-        if not isinstance(r_json, list) or not r_json: 
-            return False
+        if not isinstance(r_json, list) or not r_json: return False
         cat_id = r_json[0]["id"]
-    except Exception: 
-        return False
+    except: return False
 
     r2 = wp_api_call('GET', f'posts?categories={cat_id}&per_page=1&status=publish')
     if r2 and r2.status_code == 200:
@@ -841,8 +804,7 @@ def already_published_today(cat):
                 if post_date_gmt == today_utc:
                     print(f"   ⏭️  [{cat}] Anti-spam logic: Already published today. ({latest_post.get('link')})")
                     return True
-        except Exception: 
-            pass
+        except: pass
     return False
 
 def fetch_news_pool(cat, max_items=15):
@@ -856,14 +818,12 @@ def fetch_news_pool(cat, max_items=15):
                 for e in d.entries[:40]:
                     title = getattr(e, 'title', '').strip()
                     summary = re.sub(r'<[^>]+>', '', getattr(e, 'summary', ''))[:200].strip()
-                    if title and len(title) > 10: 
-                        items.add(f"• {title}: {summary}")
+                    if title and len(title) > 10: items.add(f"• {title}: {summary}")
             else:
                 print(f"   ⚠️ RSS feed blocked by WAF or returned {resp.status_code}: {url}")
         except Exception as ex:
             print(f"   ⚠️ RSS feed error on {url}: {ex}")
             pass
-            
     items_list = list(items)
     random.shuffle(items_list)
     return items_list[:max_items]
@@ -872,19 +832,12 @@ def _build_warm_index(raw_data):
     score_str = xtag(raw_data, "WARM_INDEX_SCORE")
     reason = xtag(raw_data, "WARM_INDEX_REASON")
     if not score_str: return ""
-    try: 
-        score = int(re.sub(r'[^0-9]', '', score_str))
-    except Exception: 
-        return ""
-        
+    try: score = int(re.sub(r'[^0-9]', '', score_str))
+    except: return ""
     score = max(0, min(100, score))
-    if score < 30: 
-        c_main, label, icon, grad = "#3b82f6", "Fear Zone", "❄️", "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
-    elif score > 70: 
-        c_main, label, icon, grad = "#ef4444", "Greed Zone", "🔥", "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
-    else: 
-        c_main, label, icon, grad = "#f59e0b", "Neutral", "⚖️", "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
-        
+    if score < 30: c_main, label, icon, grad = "#3b82f6", "Fear Zone", "❄️", "linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%)"
+    elif score > 70: c_main, label, icon, grad = "#ef4444", "Greed Zone", "🔥", "linear-gradient(90deg, #b91c1c 0%, #ef4444 100%)"
+    else: c_main, label, icon, grad = "#f59e0b", "Neutral", "⚖️", "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)"
     return f"""
     <div style="background:#ffffff; border:2px solid {BORDER}; border-radius:12px; padding:25px; margin:0 0 35px 0; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
@@ -916,13 +869,9 @@ def _build_comment_cta(raw_data, cat="Market"):
     """
 
 def _build_data_table(raw_data, title="Market Dashboard"):
-    if not raw_data: 
-        raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
-        
+    if not raw_data: raw_data = "S&P 500 | 5,234 | UP | Index near recent highs"
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l and '---' not in l and 'Asset Name' not in l and 'Asset/Metric' not in l]
-    if len(lines) < 2: 
-        lines = lines + ["S&P 500 | 5,234 | UP | Tech earnings boost", "Nasdaq 100 | 18,200 | UP | AI infrastructure growth"][:max(0, 2 - len(lines))]
-        
+    if len(lines) < 2: lines = lines + ["S&P 500 | 5,234 | UP | Tech earnings boost", "Nasdaq 100 | 18,200 | UP | AI infrastructure growth"][:max(0, 2 - len(lines))]
     html = f"""
     <div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
         <h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px; display:inline-block;">📊 {title}</h3>
@@ -940,57 +889,40 @@ def _build_data_table(raw_data, title="Market Dashboard"):
         if len(parts) >= 4:
             asset, value, trend, insight = parts[:4]
             t_upper = trend.upper()
-            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: 
-                t_color, t_icon = "#10b981", "🟢"
-            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: 
-                t_color, t_icon = "#ef4444", "🔴"
-            else: 
-                t_color, t_icon = "#f59e0b", "🟡"
+            if "UP" in t_upper or "BULL" in t_upper or "HIGH" in t_upper: t_color, t_icon = "#10b981", "🟢"
+            elif "DOWN" in t_upper or "BEAR" in t_upper or "LOW" in t_upper: t_color, t_icon = "#ef4444", "🔴"
+            else: t_color, t_icon = "#f59e0b", "🟡"
             html += f"""<tr style="border-bottom:1px solid {BORDER};"><td style="padding:14px; font-weight:600; color:{DARK};">{asset}</td><td style="padding:14px; color:{SLATE}; font-family:monospace; font-size:15px; font-weight:bold;">{value}</td><td style="padding:14px; font-weight:bold; color:{t_color};">{t_icon} {trend.upper()}</td><td style="padding:14px; color:{MUTED}; font-size:15px; line-height:1.6;">{insight}</td></tr>"""
-            
     html += "</tbody></table></div></div>"
     return html
 
 def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
-    if not raw_data: 
-        return ""
+    if not raw_data: return ""
     lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
-    if not lines: 
-        return ""
-        
+    if not lines: return ""
     html = f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px;">🌡️ {title}</h3>"""
     colors = ["#dc2626", "#ea580c", "#ca8a04", "#059669", "#3b82f6"]
-    
     for i, line in enumerate(lines[:5]):
         parts = [p.strip() for p in line.split('|')]
         if len(parts) >= 2:
             name = parts[0]
-            try: 
-                pct = int(re.sub(r'[^0-9]', '', parts[1]))
-            except Exception: 
-                pct = 50
-                
+            try: pct = int(re.sub(r'[^0-9]', '', parts[1]))
+            except: pct = 50
             pct = max(0, min(100, pct))
             c = colors[0] if pct > 75 else (colors[1] if pct > 50 else (colors[3] if pct < 30 else colors[2]))
             html += f"""<div style="margin-top:18px;"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span style="font-weight:600; font-size:15px; color:{DARK};">{name}</span><span style="font-weight:900; font-size:15px; color:{c};">{pct}%</span></div><div style="background:#e2e8f0; height:12px; border-radius:6px; overflow:hidden;"><div style="background:{c}; height:100%; width:{pct}%; border-radius:6px;"></div></div></div>"""
-            
     html += "</div>"
     return html
 
 def _build_quick_hits(raw_data):
-    if not raw_data: 
-        return ""
+    if not raw_data: return ""
     lines = [l.strip() for l in raw_data.split('\n') if l.strip()]
-    if not lines: 
-        return ""
-        
+    if not lines: return ""
     items_html = ""
     for i, line in enumerate(lines[:3]):
         clean = line.replace("-", "").replace("*", "").strip()
-        if clean and clean[0] not in "🚨👀🤔💸📈📉🔥💡🤯": 
-            clean = f"{['🚨', '👀', '💸'][i % 3]} {clean}"
+        if clean and clean[0] not in "🚨👀🤔💸📈📉🔥💡🤯": clean = f"{['🚨', '👀', '💸'][i % 3]} {clean}"
         items_html += f"""<li style="margin-bottom:12px; color:{SLATE};">{clean}</li>"""
-        
     return f"""<div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; text-transform:uppercase; letter-spacing:1px;">⚡ Quick Hits</h3><ul style="{F} margin:0; padding-left:20px;">{items_html}</ul></div>"""
 
 def _build_pie_chart(s, b, c, cat):
@@ -1002,8 +934,7 @@ def _build_pie_chart(s, b, c, cat):
 
 def _build_pillar_link(target_cat):
     pillar = PILLAR_PAGES.get(target_cat)
-    if not pillar: 
-        return ""
+    if not pillar: return ""
     return f"""<div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);"><p style="margin:0; font-size:16px; color:#1e293b;"><strong style="color:#2563eb;">📚 Deep Dive:</strong> Want to master this topic? Check out our complete guide to <a href="{pillar['url']}" style="color:#2563eb; text-decoration:underline; font-weight:700;">{pillar['anchor']}</a>.</p></div>"""
 
 def build_foundation_html(raw, author, tf, title, cat):
@@ -1102,13 +1033,13 @@ def get_font(url, filename):
         try:
             resp = scraper.get(url, timeout=15)
             resp.raise_for_status()
-            with open(filename, 'wb') as f:
-                f.write(resp.content)
-        except Exception:
-            pass
+            with open(filename, 'wb') as f: f.write(resp.content)
+            print("    ✅ Font downloaded successfully.")
+        except Exception as e:
+            print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 대표님의 솔루션 적용 완료 (해부학적 완벽 통제)
+# 🚨 100% 형태 통제를 위해 클로드가 제시한 "의상 차단 + 대각선 상승 빔" 명세 전면 적용
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1132,6 +1063,7 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
+    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1147,8 +1079,9 @@ def generate_carousel_image(prompt_text):
                     alpha = int(255 - (y - 780) * (255 / 300))
                     mask_draw.line([(0, y), (1080, y)], fill=alpha)
                 ai_img_raw.putalpha(mask)
+                print("    ✅ Pollinations Success!")
                 return ai_img_raw
-        except Exception: 
+        except Exception as e:
             time.sleep(3)
     return None
 
@@ -1169,7 +1102,7 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일도 완벽한 유저 솔루션 프롬프트 연동 🚨
+    # 🚨 클로드 솔루션 썸네일에도 완벽 연동
     base_thumb_prompt = (
         "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
         "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
@@ -1515,7 +1448,7 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 대표님의 완벽한 유저 솔루션 프롬프트 1000% 연동 🚨
+    # 🚨 클로드가 제안한 유저 완벽 솔루션 프롬프트 강제 연동 🚨
     vp_base = (
         "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
         "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
@@ -1849,7 +1782,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.125_ULTIMATE_USER_SOLUTION SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1881,7 +1814,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.125_ULTIMATE_USER_SOLUTION Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1913,7 +1846,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.125_ULTIMATE_USER_SOLUTION Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1964,9 +1897,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.125_ULTIMATE_USER_SOLUTION Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.125_ULTIMATE_USER_SOLUTION Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
