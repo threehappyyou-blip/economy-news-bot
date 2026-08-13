@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultra-Clear Neon Graphs Edition (v46.9.135)
+# Warm Insight Auto Poster — Ultra-Clear Neon Graphs Edition (v46.9.136_GLOBAL_VAR_FIX)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -48,6 +48,7 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
+# 🚨 Imunify360 방화벽 우회 전용 글로벌 스크래퍼 세션
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -62,6 +63,7 @@ except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
+# 워드프레스 통신 전용 인증 헤더
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
@@ -72,6 +74,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
+# 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     if endpoint.startswith("/"):
         url = f"{WP_URL}{endpoint}"
@@ -178,6 +181,20 @@ CAT_ALLOC = {
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
 
+═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
+BANNED CONTENT (NEVER WRITE THESE):
+- "AI is still the boss" / "AI is here to stay" / "AI revolution"
+- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world"
+
+REQUIRED CONTENT (MUST INCLUDE):
+- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
+- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
+- AT LEAST 1 specific company decision/move.
+
+Write PART 1 of an Insight newsletter on {cat} in ENGLISH. Target length: 900-1100 words across both parts combined.
+News Context:
+{news}
+
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers.)</TITLE>
@@ -187,7 +204,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score.)</WARM_INDEX_REASON>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
-(REQUIRED — extract OR estimate 3-4 key market metrics. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
+(REQUIRED — extract OR estimate 3-4 key market metrics. NO MARKDOWN TABLES. NO '---' lines. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
 </DATA_TABLE>
 <HEATMAP>
 (Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
@@ -651,9 +668,14 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
     except Exception as e:
         print(f"   ❌ Social Email Failed: {e}")
 
+# ═══════════════════════════════════════════════
+# 🛡️ SYSTEM UTILS & API ENGINE 
+# ═══════════════════════════════════════════════
+_gemini_client = None
+
 def _get_gemini_client():
     global _gemini_client
-    if _gemini_client is None: 
+    if _gemini_client is None:
         _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     return _gemini_client
 
@@ -1097,6 +1119,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
+# 🚨 형태 강제 통제를 위한 추상적 네온 그래프 이미지 렌더링 (블러 제거, 초점 강제) 🚨
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1162,11 +1185,12 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일에도 가장 선명한 네온 튜브 강제 (블러 유리 100% 삭제) 🚨
+    # 🚨 썸네일에도 캐릭터 생성을 배제한 완벽한 프롬프트 설정 (선명함 강제) 🚨
     base_thumb_prompt = (
-        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial symbol. "
+        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial chart. "
         "Constructed from thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
-        "Pitch-black background. Extremely clear, distinct shape. NO CHARACTERS, NO HUMANS, NO FACES."
+        "Pitch-black background. Extremely clear, distinct, and highly recognizable shape. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO GLASS BLOBS."
     )
     AI_PROMPTS = {
         "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D ASCENDING ARROW chart. 8k resolution.",
@@ -1505,10 +1529,10 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 극도로 선명한 형태 강제 (유리 재질 삭제, 선명하고 두꺼운 네온 적용) 🚨
+    # 🚨 극도로 선명한 수치/그래프 강제 (유리 재질 완전 삭제, 초점 및 형태 명확성 강제) 🚨
     vp_base = (
         "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial symbol. "
-        "The symbol is constructed from solid, thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
+        "Constructed from thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
         "Pitch-black background. Extremely clear, distinct, and highly recognizable shape. "
         "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS, NO GLASS BLOBS."
     )
