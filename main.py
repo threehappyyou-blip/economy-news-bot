@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.127_FULL_SYSTEM_RESTORED)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.128_ONE_SHOT_RENDER_FIX)
 # ═══════════════════════════════════════════════════════════════
 
-import os, sys, traceback, time, random, re, datetime, io, math, base64
-import urllib.request, urllib.parse
+import os
+import sys
+import traceback
+import time
+import random
+import re
+import datetime
+import io
+import math
+import base64
+import urllib.request
+import urllib.parse
 import requests
 import feedparser
 from PIL import Image, ImageDraw, ImageFont
@@ -64,7 +74,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 🚨 엔터프라이즈급 API 랩퍼 (500 Error, 403 Error 자동 복구 로직)
+# 🚨 엔터프라이즈급 API 랩퍼
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     url = f"{WP_URL}{endpoint}" if endpoint.startswith("/") else f"{WP_URL}/wp-json/wp/v2/{endpoint}"
     headers = _get_wp_headers()
@@ -100,9 +110,11 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
                 time.sleep(3)
             else:
                 return resp 
+                
         except Exception as e:
             print(f"      ⚠️ Network Error ({e}) on attempt {attempt}. Retrying...")
             time.sleep(5)
+            
     return None
 
 MODEL_PRI = {
@@ -1033,13 +1045,12 @@ def get_font(url, filename):
         try:
             resp = scraper.get(url, timeout=15)
             resp.raise_for_status()
-            with open(filename, 'wb') as f: f.write(resp.content)
-            print("    ✅ Font downloaded successfully.")
-        except Exception as e:
-            print(f"    ❌ Font download error: {e}")
+            with open(filename, 'wb') as f:
+                f.write(resp.content)
+        except Exception: pass
     return filename
 
-# 🚨 100% 형태 통제를 위해 클로드가 제시한 "의상 차단 + 대각선 상승 빔" 명세 전면 적용
+# 🚨 완벽한 유저 솔루션 프롬프트 연동 🚨
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1063,7 +1074,6 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1079,10 +1089,8 @@ def generate_carousel_image(prompt_text):
                     alpha = int(255 - (y - 780) * (255 / 300))
                     mask_draw.line([(0, y), (1080, y)], fill=alpha)
                 ai_img_raw.putalpha(mask)
-                print("    ✅ Pollinations Success!")
                 return ai_img_raw
-        except Exception as e:
-            time.sleep(3)
+        except Exception: time.sleep(3)
     return None
 
 def make_thumbnail(title_text, cat, tier):
@@ -1448,7 +1456,7 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 클로드가 제안한 유저 완벽 솔루션 프롬프트 강제 연동 🚨
+    # 🚨 유저가 제안한 완벽한 프롬프트 및 "유령(고스트) 현상" 원천 차단을 위한 마스터 이미지(One-Shot Render) 로직 🚨
     vp_base = (
         "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
         "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
@@ -1456,27 +1464,9 @@ def generate_vip_carousel(raw_content, cat):
         "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections."
     )
 
-    vp1 = (
+    vp_master = (
         f"{vp_base} The figure is happily holding and presenting a brightly glowing {colors_neon[0][0]} neon light arrow rising diagonally "
         f"like an ascending stock market chart line. The vibrant {colors_neon[0][1]} neon glow beautifully reflects off the glossy white figure and dark floor. "
-        "8k resolution, adorable, clean composition, no text."
-    )
-
-    vp2 = (
-        f"{vp_base} The figure is happily holding and pointing at a brightly glowing {colors_neon[1][0]} neon light arrow rising diagonally "
-        f"like an ascending stock market chart line. The vibrant {colors_neon[1][1]} neon glow beautifully reflects off the glossy white figure and dark floor. "
-        "8k resolution, adorable, clean composition, no text."
-    )
-
-    vp3 = (
-        f"{vp_base} The figure is happily holding and presenting a brightly glowing {colors_neon[2][0]} neon light arrow rising diagonally "
-        f"like an ascending stock market chart line. The vibrant {colors_neon[2][1]} neon glow beautifully reflects off the glossy white figure and dark floor. "
-        "8k resolution, adorable, clean composition, no text."
-    )
-
-    vp4 = (
-        f"{vp_base} The figure is happily holding and pointing at a brightly glowing {colors_neon[3][0]} neon light arrow rising diagonally "
-        f"like an ascending stock market chart line. The vibrant {colors_neon[3][1]} neon glow beautifully reflects off the glossy white figure and dark floor. "
         "8k resolution, adorable, clean composition, no text."
     )
 
@@ -1516,25 +1506,13 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
-    img_hook_ai = generate_carousel_image(vp1)
-    time.sleep(3)
-    img_stat_ai = generate_carousel_image(vp2)
-    time.sleep(3)
-    img_data_ai = generate_carousel_image(vp3)
-    time.sleep(3)
-    img_out_ai  = generate_carousel_image(vp4)
-
-    last_good_img = None
-    for img in [img_hook_ai, img_stat_ai, img_data_ai, img_out_ai]:
-        if img:
-            last_good_img = img
-            break
-
-    if not img_hook_ai: img_hook_ai = last_good_img
-    if not img_stat_ai: img_stat_ai = last_good_img
-    if not img_data_ai: img_data_ai = last_good_img
-    if not img_out_ai: img_out_ai = last_good_img
+    print("    [AI] Requesting ONE Master Image to ensure 100% video consistency without ghosting...")
+    master_img = generate_carousel_image(vp_master)
+    
+    img_hook_ai = master_img
+    img_stat_ai = master_img
+    img_data_ai = master_img
+    img_out_ai  = master_img
 
     def paste_bg(d_img, target_ai_img):
         if target_ai_img:
@@ -1764,25 +1742,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         print(f"   ❌ Network error: {e}")
     return False
 
-def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
-    if raw_for_cards:
-        if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-            if tier == "Premium" or tier == "unified":
-                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                if video_mp4_bytes:
-                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
-            
-            yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
-            if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
-
-        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
-        send_community_viral_email(display_title, link, raw_for_cards, cat)
-
 def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.128_ONE_SHOT_RENDER_FIX SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1814,7 +1778,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.128_ONE_SHOT_RENDER_FIX Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1846,7 +1810,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.128_ONE_SHOT_RENDER_FIX Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1897,9 +1861,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.128_ONE_SHOT_RENDER_FIX Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.127_FULL_SYSTEM_RESTORED Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.128_ONE_SHOT_RENDER_FIX Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
