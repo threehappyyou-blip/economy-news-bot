@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Abstract Neon Graph Edition (v46.9.130)
+# Warm Insight Auto Poster — Abstract Neon Graph Edition (v46.9.131_WAF_COOKIE_FIX_FINAL)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -74,7 +74,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화)
+# 🚨 엔터프라이즈급 API 랩퍼 (방화벽 우회 쿠키 유지 및 자동 복구 로직)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     if endpoint.startswith("/"):
         url = f"{WP_URL}{endpoint}"
@@ -89,8 +89,7 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
         
     for attempt in range(1, 4):
         try:
-            scraper.cookies.clear() 
-            
+            # 🚨 BUG FIX: scraper.cookies.clear() 완전 삭제 (방화벽 인증 쿠키 유지)
             if method == 'GET':
                 resp = scraper.get(url, headers=headers, timeout=30)
             elif method == 'POST' and json_data is not None:
@@ -106,8 +105,9 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
                 print(f"      ⚠️ Server Overloaded ({resp.status_code}) on attempt {attempt}. Cooling down for 5s...")
                 time.sleep(5)
             elif resp.status_code in (401, 403):
-                print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying...")
+                print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying Handshake...")
                 try:
+                    # 쿠키가 만료되거나 거부당했을 때만 메인 페이지에 재접속하여 갱신
                     scraper.get(WP_URL, timeout=15)
                 except Exception:
                     pass
@@ -1119,7 +1119,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 형태 강제 통제를 위한 추상적 네온 그래프 이미지 렌더링 🚨
+# 🚨 완벽한 유저 솔루션 프롬프트 연동 🚨
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1185,13 +1185,14 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일에도 캐릭터 생성을 배제한 완벽한 프롬프트 설정 🚨
+    # 🚨 클로드 솔루션 썸네일에도 완벽 연동 🚨
     base_thumb_prompt = (
-        "A masterpiece 3D render of a highly aesthetic, abstract financial graph. "
-        "Sleek, minimalist, and modern design. "
-        "A brightly glowing neon light arrow rising diagonally. "
+        "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
+        "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
+        "Pure seamless white body WITHOUT ANY CLOTHES, NO PANTS, NO SHIRT. Exactly two arms and two legs, standing naturally on two feet. "
         "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
-        "NO characters, NO faces. Purely abstract. No text, no words."
+        "The figure is happily holding a brightly glowing neon light arrow rising diagonally like an ascending stock market chart line. "
+        "Vibrant neon glow beautifully reflects off the glossy white figure and dark floor. No text, no words."
     )
     AI_PROMPTS = {
         "Economy": base_thumb_prompt.replace("neon light", "blue and gold neon light"),
@@ -1530,21 +1531,19 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 AI 모델 특성상 완전 통제가 불가능한 캐릭터를 전면 폐기하고, "추상적 형태의 예쁜 네온 차트"로 강제 고정 🚨
+    # 🚨 유령 현상(Ghosting) 원천 차단을 위한 ONE-SHOT RENDER 아키텍처 및 클로드의 완벽 제어 프롬프트 🚨
     vp_base = (
-        "A masterpiece 3D render of a highly aesthetic, abstract financial graph or geometric shape. "
-        "Sleek, minimalist, and modern design. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
-        "NO characters, NO humans, NO animals, NO faces. Purely abstract and conceptual."
+        "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
+        "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
+        "Pure seamless white body WITHOUT ANY CLOTHES, NO PANTS, NO SHIRT. Exactly two arms and two legs, standing naturally on two feet. "
+        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections."
     )
 
-    vp1 = f"{vp_base} A beautifully glowing {colors_neon[0][0]} neon light arrow rising diagonally, symbolizing market growth. The vibrant {colors_neon[0][1]} light vividly reflects on the dark glossy floor. 8k resolution, clean composition."
-
-    vp2 = f"{vp_base} A beautifully glowing {colors_neon[1][0]} neon light arrow rising diagonally, symbolizing market growth. The vibrant {colors_neon[1][1]} light vividly reflects on the dark glossy floor. 8k resolution, clean composition."
-
-    vp3 = f"{vp_base} A beautifully glowing {colors_neon[2][0]} neon light arrow rising diagonally, symbolizing market growth. The vibrant {colors_neon[2][1]} light vividly reflects on the dark glossy floor. 8k resolution, clean composition."
-
-    vp4 = f"{vp_base} A beautifully glowing {colors_neon[3][0]} neon light arrow rising diagonally, symbolizing market growth. The vibrant {colors_neon[3][1]} light vividly reflects on the dark glossy floor. 8k resolution, clean composition."
+    vp_master = (
+        f"{vp_base} The figure is happily holding and presenting a brightly glowing {colors_neon[0][0]} neon light arrow rising diagonally "
+        f"like an ascending stock market chart line. The vibrant {colors_neon[0][1]} neon glow beautifully reflects off the glossy white figure and dark floor. "
+        "8k resolution, adorable, clean composition, no text."
+    )
 
     data_points = []
     for i in range(1, 6):
@@ -1582,25 +1581,14 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
-    img_hook_ai = generate_carousel_image(vp1)
-    time.sleep(3)
-    img_stat_ai = generate_carousel_image(vp2)
-    time.sleep(3)
-    img_data_ai = generate_carousel_image(vp3)
-    time.sleep(3)
-    img_out_ai  = generate_carousel_image(vp4)
-
-    last_good_img = None
-    for img in [img_hook_ai, img_stat_ai, img_data_ai, img_out_ai]:
-        if img:
-            last_good_img = img
-            break
-
-    if not img_hook_ai: img_hook_ai = last_good_img
-    if not img_stat_ai: img_stat_ai = last_good_img
-    if not img_data_ai: img_data_ai = last_good_img
-    if not img_out_ai: img_out_ai = last_good_img
+    print("    [AI] Requesting ONE Master Image to ensure 100% video consistency without ghosting...")
+    master_img = generate_carousel_image(vp_master)
+    
+    # 생성된 1장의 마스터 이미지를 모든 슬라이드에 동일하게 적용 (유령현상 0%)
+    img_hook_ai = master_img
+    img_stat_ai = master_img
+    img_data_ai = master_img
+    img_out_ai  = master_img
 
     def paste_bg(d_img, target_ai_img):
         if target_ai_img:
@@ -1848,7 +1836,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.130 SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1880,7 +1868,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.130 Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1912,7 +1900,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.130 Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1963,9 +1951,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.130 Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.130 Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
