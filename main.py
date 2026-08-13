@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Abstract Neon Graph Edition (v46.9.132_ABSTRACT_NEON_GRAPH_ONLY)
+# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.134_CUTE_NEON_GRAPHS)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -74,7 +74,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 🚨 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화 로직)
+# 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     if endpoint.startswith("/"):
         url = f"{WP_URL}{endpoint}"
@@ -1133,7 +1133,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 100% 추상적 네온 그래프 이미지 강제 렌더링 로직 (모든 캐릭터 배제)
+# 🚨 완벽한 수치/데이터/그래프 강제 렌더링 🚨
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1157,7 +1157,6 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
-    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1200,30 +1199,29 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일에도 캐릭터 생성을 철저히 배제한 완벽한 프롬프트 설정 🚨
+    # 🚨 썸네일도 완벽하게 귀여운 네온 그래프 컨셉 연동 🚨
     base_thumb_prompt = (
-        "A highly aesthetic, minimalist 3D abstract financial graph. "
-        "Purely conceptual and geometric. ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO FIGURES, NO ANIMALS. "
-        "A brightly glowing neon light line rising diagonally like a stock market chart. "
-        "Pitch-black dark studio background with dramatic lighting and vivid glossy floor reflections. "
-        "Clean, sleek, corporate design. No text, no words."
+        "A highly aesthetic, premium 3D render of a cute, minimalist financial graph. "
+        "The graph is made of sleek, glowing translucent glass with soft, rounded edges. "
+        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS. Purely geometric and data-driven. "
     )
     AI_PROMPTS = {
-        "Economy": base_thumb_prompt.replace("neon light", "blue and gold neon light"),
-        "Politics": base_thumb_prompt.replace("neon light", "red and dark slate neon light"),
-        "Tech": base_thumb_prompt.replace("neon light", "neon purple and cyan light"),
-        "Health": base_thumb_prompt.replace("neon light", "emerald green neon light"),
-        "Energy": base_thumb_prompt.replace("neon light", "orange and amber neon light"),
-        "On-Chain": base_thumb_prompt.replace("neon light", "purple and gold neon light"),
-        "The Daily Catalyst": base_thumb_prompt.replace("neon light", "warm gold neon light"),
-        "Foundation": base_thumb_prompt.replace("neon light", "vibrant yellow neon light"),
-        "Money Hack": base_thumb_prompt.replace("neon light", "green and yellow neon light")
+        "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D line chart rising diagonally. 8k resolution, no text.",
+        "Politics": f"{base_thumb_prompt} A brightly glowing red and dark slate neon 3D bar graph. 8k resolution, no text.",
+        "Tech": f"{base_thumb_prompt} A brightly glowing neon purple and cyan 3D pie chart. 8k resolution, no text.",
+        "Health": f"{base_thumb_prompt} Brightly glowing emerald green neon 3D candlestick chart bars. 8k resolution, no text.",
+        "Energy": f"{base_thumb_prompt} A brightly glowing orange and amber neon 3D line chart. 8k resolution, no text.",
+        "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D bar graph. 8k resolution, no text.",
+        "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D pie chart. 8k resolution, no text.",
+        "Foundation": f"{base_thumb_prompt} A brightly glowing vibrant yellow neon 3D line chart. 8k resolution, no text.",
+        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D candlestick chart bars. 8k resolution, no text."
     }
 
     img = None
     use_ai_bg = False
     try:
-        print(f"    [AI] Requesting Abstract Vector Background for {cat}...")
+        print(f"    [AI] Requesting Abstract Graph Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-002',
@@ -1236,7 +1234,7 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Abstract Background Generated!")
+        print("    ✅ AI Abstract Graph Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
@@ -1545,21 +1543,21 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 가장 확실하고 안전한 추상적 네온 차트 프롬프트 (캐릭터/인간/동물 생성 100% 금지)
+    # 🚨 완벽한 금융 차트/수치 시각화 프롬프트 도입 (캐릭터/인간/동물 절대 금지, 라운드 마감, 예쁜 네온 색상) 🚨
     vp_base = (
-        "A highly aesthetic, minimalist 3D abstract financial graph. "
-        "Purely conceptual and geometric. ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO FIGURES, NO ANIMALS. "
-        "Pitch-black dark studio background with dramatic lighting and vivid glossy floor reflections. "
-        "Clean, sleek, corporate design."
+        "A highly aesthetic, premium 3D render of a cute, minimalist financial graph. "
+        "The graph is made of sleek, glowing translucent glass with soft, rounded edges to look friendly and appealing. "
+        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS. Purely geometric and data-driven."
     )
 
-    vp1 = f"{vp_base} A brightly glowing {colors_neon[0][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[0][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    vp1 = f"{vp_base} A beautifully glowing {colors_neon[0][0]} neon 3D pie chart with a floating glowing percentage symbol. The vibrant {colors_neon[0][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
     
-    vp2 = f"{vp_base} A brightly glowing {colors_neon[1][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[1][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    vp2 = f"{vp_base} A beautifully glowing {colors_neon[1][0]} neon 3D bar graph with soft rounded edges, representing data statistics. The vibrant {colors_neon[1][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
     
-    vp3 = f"{vp_base} A brightly glowing {colors_neon[2][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[2][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    vp3 = f"{vp_base} A beautifully glowing {colors_neon[2][0]} neon 3D line chart rising diagonally with glowing data nodes. The vibrant {colors_neon[2][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
     
-    vp4 = f"{vp_base} A brightly glowing {colors_neon[3][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[3][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    vp4 = f"{vp_base} Beautifully glowing {colors_neon[3][0]} neon 3D candlestick chart bars showing a market trend. The vibrant {colors_neon[3][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
 
     data_points = []
     for i in range(1, 6):
@@ -1597,15 +1595,27 @@ def generate_vip_carousel(raw_content, cat):
     font_data = lf(ft_path, 50)
     font_alert = lf(ft_path, 75)
 
-    print("    [AI] Requesting ONE Master Image to ensure 100% video consistency without ghosting...")
-    # 🚨 유령 현상(Ghosting) 원천 차단을 위한 ONE-SHOT RENDER 아키텍처 🚨
-    # 추상 네온 차트 마스터 이미지를 1장 생성하여 모든 슬라이드의 배경으로 사용
-    master_img = generate_carousel_image(vp1)
+    print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
     
-    img_hook_ai = master_img
-    img_stat_ai = master_img
-    img_data_ai = master_img
-    img_out_ai  = master_img
+    # 각기 다른 예쁜 네온 3D 차트 이미지를 4장 생성하여 다이내믹한 릴스를 만듭니다.
+    img_hook_ai = generate_carousel_image(vp1)
+    time.sleep(3)
+    img_stat_ai = generate_carousel_image(vp2)
+    time.sleep(3)
+    img_data_ai = generate_carousel_image(vp3)
+    time.sleep(3)
+    img_out_ai  = generate_carousel_image(vp4)
+
+    last_good_img = None
+    for img in [img_hook_ai, img_stat_ai, img_data_ai, img_out_ai]:
+        if img:
+            last_good_img = img
+            break
+
+    if not img_hook_ai: img_hook_ai = last_good_img
+    if not img_stat_ai: img_stat_ai = last_good_img
+    if not img_data_ai: img_data_ai = last_good_img
+    if not img_out_ai: img_out_ai = last_good_img
 
     def paste_bg(d_img, target_ai_img):
         if target_ai_img:
@@ -1853,7 +1863,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1885,7 +1895,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1917,7 +1927,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1968,9 +1978,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
