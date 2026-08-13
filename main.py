@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Abstract Neon Graph Edition (v46.9.131_WAF_COOKIE_FIX_FINAL)
+# Warm Insight Auto Poster — Abstract Neon Graph Edition (v46.9.132_ABSTRACT_NEON_GRAPH_ONLY)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -74,7 +74,7 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 🚨 엔터프라이즈급 API 랩퍼 (방화벽 우회 쿠키 유지 및 자동 복구 로직)
+# 🚨 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화 로직)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     if endpoint.startswith("/"):
         url = f"{WP_URL}{endpoint}"
@@ -89,7 +89,8 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
         
     for attempt in range(1, 4):
         try:
-            # 🚨 BUG FIX: scraper.cookies.clear() 완전 삭제 (방화벽 인증 쿠키 유지)
+            scraper.cookies.clear() 
+            
             if method == 'GET':
                 resp = scraper.get(url, headers=headers, timeout=30)
             elif method == 'POST' and json_data is not None:
@@ -105,9 +106,8 @@ def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None
                 print(f"      ⚠️ Server Overloaded ({resp.status_code}) on attempt {attempt}. Cooling down for 5s...")
                 time.sleep(5)
             elif resp.status_code in (401, 403):
-                print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying Handshake...")
+                print(f"      ⚠️ WAF/Auth Blocked ({resp.status_code}) on attempt {attempt}. Retrying...")
                 try:
-                    # 쿠키가 만료되거나 거부당했을 때만 메인 페이지에 재접속하여 갱신
                     scraper.get(WP_URL, timeout=15)
                 except Exception:
                     pass
@@ -170,19 +170,33 @@ RSS_FEEDS = {
 }
 
 CAT_ALLOC = {
-    "Economy": {"s": 55, "b": 35, "c": 10},
-    "Politics": {"s": 50, "b": 35, "c": 15},
-    "Tech": {"s": 70, "b": 20, "c": 10},
-    "Health": {"s": 60, "b": 30, "c": 10},
-    "Energy": {"s": 65, "b": 25, "c": 10},
-    "On-Chain": {"s": 25, "b": 15, "c": 60},
+    "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
+    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
+    "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
+    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
+    "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
+    "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
 
 # ═══════════════════════════════════════════════
 # 🧠 프롬프트 설정 
 # ═══════════════════════════════════════════════
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
-You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people. Write entirely in ENGLISH.
+You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
+
+═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
+BANNED CONTENT (NEVER WRITE THESE):
+- "AI is still the boss" / "AI is here to stay" / "AI revolution"
+- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world"
+
+REQUIRED CONTENT (MUST INCLUDE):
+- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
+- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
+- AT LEAST 1 specific company decision/move.
+
+Write PART 1 of an Insight newsletter on {cat} in ENGLISH. Target length: 900-1100 words across both parts combined.
+News Context:
+{news}
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
@@ -193,7 +207,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score.)</WARM_INDEX_REASON>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
-(REQUIRED — extract OR estimate 3-4 key market metrics. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
+(REQUIRED — extract OR estimate 3-4 key market metrics. NO MARKDOWN TABLES. NO '---' lines. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
 </DATA_TABLE>
 <HEATMAP>
 (Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
@@ -1119,7 +1133,7 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 유저 솔루션 프롬프트 연동 🚨
+# 🚨 100% 추상적 네온 그래프 이미지 강제 렌더링 로직 (모든 캐릭터 배제)
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1143,6 +1157,7 @@ def generate_carousel_image(prompt_text):
     except Exception as e:
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
+    # enhance=true 파라미터 완전 영구 삭제 (AI의 소설 쓰기 100% 방지)
     prompt_encoded = urllib.parse.quote(prompt_text)
     url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
     
@@ -1185,14 +1200,13 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 클로드 솔루션 썸네일에도 완벽 연동 🚨
+    # 🚨 썸네일에도 캐릭터 생성을 철저히 배제한 완벽한 프롬프트 설정 🚨
     base_thumb_prompt = (
-        "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
-        "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
-        "Pure seamless white body WITHOUT ANY CLOTHES, NO PANTS, NO SHIRT. Exactly two arms and two legs, standing naturally on two feet. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
-        "The figure is happily holding a brightly glowing neon light arrow rising diagonally like an ascending stock market chart line. "
-        "Vibrant neon glow beautifully reflects off the glossy white figure and dark floor. No text, no words."
+        "A highly aesthetic, minimalist 3D abstract financial graph. "
+        "Purely conceptual and geometric. ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO FIGURES, NO ANIMALS. "
+        "A brightly glowing neon light line rising diagonally like a stock market chart. "
+        "Pitch-black dark studio background with dramatic lighting and vivid glossy floor reflections. "
+        "Clean, sleek, corporate design. No text, no words."
     )
     AI_PROMPTS = {
         "Economy": base_thumb_prompt.replace("neon light", "blue and gold neon light"),
@@ -1209,7 +1223,7 @@ def make_thumbnail(title_text, cat, tier):
     img = None
     use_ai_bg = False
     try:
-        print(f"    [AI] Requesting Mascot Vector Background for {cat}...")
+        print(f"    [AI] Requesting Abstract Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-002',
@@ -1222,7 +1236,7 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Mascot Generated!")
+        print("    ✅ AI Abstract Background Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
@@ -1531,19 +1545,21 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 유령 현상(Ghosting) 원천 차단을 위한 ONE-SHOT RENDER 아키텍처 및 클로드의 완벽 제어 프롬프트 🚨
+    # 🚨 가장 확실하고 안전한 추상적 네온 차트 프롬프트 (캐릭터/인간/동물 생성 100% 금지)
     vp_base = (
-        "A masterpiece 3D render of a cute, clean, friendly minimalist white designer art toy figure (Pop Mart style). "
-        "The figure has a perfectly round glossy white head with two big open round black dot eyes and a cute small smile. "
-        "Pure seamless white body WITHOUT ANY CLOTHES, NO PANTS, NO SHIRT. Exactly two arms and two legs, standing naturally on two feet. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections."
+        "A highly aesthetic, minimalist 3D abstract financial graph. "
+        "Purely conceptual and geometric. ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO FIGURES, NO ANIMALS. "
+        "Pitch-black dark studio background with dramatic lighting and vivid glossy floor reflections. "
+        "Clean, sleek, corporate design."
     )
 
-    vp_master = (
-        f"{vp_base} The figure is happily holding and presenting a brightly glowing {colors_neon[0][0]} neon light arrow rising diagonally "
-        f"like an ascending stock market chart line. The vibrant {colors_neon[0][1]} neon glow beautifully reflects off the glossy white figure and dark floor. "
-        "8k resolution, adorable, clean composition, no text."
-    )
+    vp1 = f"{vp_base} A brightly glowing {colors_neon[0][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[0][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    
+    vp2 = f"{vp_base} A brightly glowing {colors_neon[1][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[1][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    
+    vp3 = f"{vp_base} A brightly glowing {colors_neon[2][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[2][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
+    
+    vp4 = f"{vp_base} A brightly glowing {colors_neon[3][0]} neon light line rising diagonally like a stock market chart. The vibrant {colors_neon[3][1]} light beautifully reflects off the dark floor. 8k resolution, no text, no words."
 
     data_points = []
     for i in range(1, 6):
@@ -1582,9 +1598,10 @@ def generate_vip_carousel(raw_content, cat):
     font_alert = lf(ft_path, 75)
 
     print("    [AI] Requesting ONE Master Image to ensure 100% video consistency without ghosting...")
-    master_img = generate_carousel_image(vp_master)
+    # 🚨 유령 현상(Ghosting) 원천 차단을 위한 ONE-SHOT RENDER 아키텍처 🚨
+    # 추상 네온 차트 마스터 이미지를 1장 생성하여 모든 슬라이드의 배경으로 사용
+    master_img = generate_carousel_image(vp1)
     
-    # 생성된 1장의 마스터 이미지를 모든 슬라이드에 동일하게 적용 (유령현상 0%)
     img_hook_ai = master_img
     img_stat_ai = master_img
     img_data_ai = master_img
@@ -1836,7 +1853,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1868,7 +1885,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1900,7 +1917,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1951,9 +1968,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.131_WAF_COOKIE_FIX_FINAL Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.132_ABSTRACT_NEON_GRAPH_ONLY Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
