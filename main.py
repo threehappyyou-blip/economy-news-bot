@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ═══════════════════════════════════════════════════════════════
-# Warm Insight Auto Poster — Ultimate Masterpiece Edition (v46.9.134_CUTE_NEON_GRAPHS)
+# Warm Insight Auto Poster — Ultra-Clear Neon Graphs Edition (v46.9.135)
 # ═══════════════════════════════════════════════════════════════
 
 import os
@@ -48,7 +48,6 @@ EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 🚨 Imunify360 방화벽 우회 전용 글로벌 스크래퍼 세션
 try:
     import cloudscraper
     scraper = cloudscraper.create_scraper(
@@ -63,7 +62,6 @@ except ImportError:
     print("❌ [System Error] 'cloudscraper' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
-# 워드프레스 통신 전용 인증 헤더
 def _get_wp_headers():
     auth_str = f"{WP_USER}:{WP_APP_PASS}"
     b64_auth = base64.b64encode(auth_str.encode('utf-8')).decode('utf-8')
@@ -74,7 +72,6 @@ def _get_wp_headers():
         'Connection': 'close' 
     }
 
-# 엔터프라이즈급 API 랩퍼 (방화벽 우회 및 안정화)
 def wp_api_call(method, endpoint, json_data=None, data_bytes=None, filename=None):
     if endpoint.startswith("/"):
         url = f"{WP_URL}{endpoint}"
@@ -178,25 +175,8 @@ CAT_ALLOC = {
     "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
 
-# ═══════════════════════════════════════════════
-# 🧠 프롬프트 설정 
-# ═══════════════════════════════════════════════
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer. Your mission: turn daily market chaos into clarity for everyday people — BUT with insights they couldn't get from a Reuters headline. Write entirely in ENGLISH.
-
-═══ 🔥 EXTREME ANTI-CLICHÉ & ZERO-FLUFF RULES (CRITICAL) ═══
-BANNED CONTENT (NEVER WRITE THESE):
-- "AI is still the boss" / "AI is here to stay" / "AI revolution"
-- "Delve into", "Unleash", "Game-changer", "In today's fast-paced world"
-
-REQUIRED CONTENT (MUST INCLUDE):
-- ONE counterintuitive (반직관적) insight that 80% of readers don't know.
-- AT LEAST 3 specific numbers (percentages, dollar amounts, dates, exact ticker prices).
-- AT LEAST 1 specific company decision/move.
-
-Write PART 1 of an Insight newsletter on {cat} in ENGLISH. Target length: 900-1100 words across both parts combined.
-News Context:
-{news}
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
@@ -207,7 +187,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score.)</WARM_INDEX_REASON>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
-(REQUIRED — extract OR estimate 3-4 key market metrics. NO MARKDOWN TABLES. NO '---' lines. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
+(REQUIRED — extract OR estimate 3-4 key market metrics. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
 </DATA_TABLE>
 <HEATMAP>
 (Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
@@ -281,9 +261,6 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
-# ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE
-# ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
 
@@ -419,9 +396,6 @@ def send_youtube_script_email(post_title, meta, script):
     except Exception as e:
         print(f"   ❌ YouTube Script Email Failed: {e}")
 
-# ═══════════════════════════════════════════════
-# ✉️ Medium Teaser Draft 자동 생성 및 발송 엔진
-# ═══════════════════════════════════════════════
 def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS: 
         return
@@ -522,9 +496,6 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
     except Exception as e:
         print(f"   ❌ Medium Teaser Draft Email Failed: {e}")
 
-# ═══════════════════════════════════════════════
-# ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 
-# ═══════════════════════════════════════════════
 def generate_reddit_post(raw_content, cat, original_link):
     print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
     client = _get_gemini_client()
@@ -617,9 +588,6 @@ def send_community_viral_email(title, original_link, raw_content, cat):
     except Exception as e:
         print(f"   ❌ Community Viral Draft Email Failed: {e}")
 
-# ═══════════════════════════════════════════════
-# ✉️ 슬림 이메일 (인스타/숏폼용)
-# ═══════════════════════════════════════════════
 def send_social_style_email(title, link, image_bytes_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes=None):
     if not EMAIL_SENDER or not EMAIL_PASS or not EMAIL_RECEIVER:
         print("   ⚠️ Missing email credentials. Skipping email dispatch.")
@@ -683,10 +651,6 @@ def send_social_style_email(title, link, image_bytes_list, data_points, cat, hoo
     except Exception as e:
         print(f"   ❌ Social Email Failed: {e}")
 
-# ═══════════════════════════════════════════════
-# 🛡️ SYSTEM UTILS & API ENGINE 
-# ═══════════════════════════════════════════════
-_gemini_client = None
 def _get_gemini_client():
     global _gemini_client
     if _gemini_client is None: 
@@ -1133,7 +1097,6 @@ def get_font(url, filename):
             print(f"    ❌ Font download error: {e}")
     return filename
 
-# 🚨 완벽한 수치/데이터/그래프 강제 렌더링 🚨
 def generate_carousel_image(prompt_text):
     try:
         client = _get_gemini_client()
@@ -1199,29 +1162,28 @@ def make_thumbnail(title_text, cat, tier):
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
-    # 🚨 썸네일도 완벽하게 귀여운 네온 그래프 컨셉 연동 🚨
+    # 🚨 썸네일에도 가장 선명한 네온 튜브 강제 (블러 유리 100% 삭제) 🚨
     base_thumb_prompt = (
-        "A highly aesthetic, premium 3D render of a cute, minimalist financial graph. "
-        "The graph is made of sleek, glowing translucent glass with soft, rounded edges. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
-        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS. Purely geometric and data-driven. "
+        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial symbol. "
+        "Constructed from thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
+        "Pitch-black background. Extremely clear, distinct shape. NO CHARACTERS, NO HUMANS, NO FACES."
     )
     AI_PROMPTS = {
-        "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D line chart rising diagonally. 8k resolution, no text.",
-        "Politics": f"{base_thumb_prompt} A brightly glowing red and dark slate neon 3D bar graph. 8k resolution, no text.",
-        "Tech": f"{base_thumb_prompt} A brightly glowing neon purple and cyan 3D pie chart. 8k resolution, no text.",
-        "Health": f"{base_thumb_prompt} Brightly glowing emerald green neon 3D candlestick chart bars. 8k resolution, no text.",
-        "Energy": f"{base_thumb_prompt} A brightly glowing orange and amber neon 3D line chart. 8k resolution, no text.",
-        "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D bar graph. 8k resolution, no text.",
-        "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D pie chart. 8k resolution, no text.",
-        "Foundation": f"{base_thumb_prompt} A brightly glowing vibrant yellow neon 3D line chart. 8k resolution, no text.",
-        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D candlestick chart bars. 8k resolution, no text."
+        "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D ASCENDING ARROW chart. 8k resolution.",
+        "Politics": f"{base_thumb_prompt} A brightly glowing red and dark slate neon 3D BAR GRAPH. 8k resolution.",
+        "Tech": f"{base_thumb_prompt} A brightly glowing neon purple and cyan 3D PIE CHART. 8k resolution.",
+        "Health": f"{base_thumb_prompt} Brightly glowing emerald green neon 3D CANDLESTICK chart bars. 8k resolution.",
+        "Energy": f"{base_thumb_prompt} A brightly glowing orange and amber neon 3D ASCENDING ARROW. 8k resolution.",
+        "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D BAR GRAPH. 8k resolution.",
+        "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D PIE CHART. 8k resolution.",
+        "Foundation": f"{base_thumb_prompt} A brightly glowing vibrant yellow neon 3D ASCENDING ARROW. 8k resolution.",
+        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D CANDLESTICK chart bars. 8k resolution."
     }
 
     img = None
     use_ai_bg = False
     try:
-        print(f"    [AI] Requesting Abstract Graph Background for {cat}...")
+        print(f"    [AI] Requesting Abstract Vector Background for {cat}...")
         client = _get_gemini_client()
         result = client.models.generate_images(
             model='imagen-3.0-generate-002',
@@ -1234,7 +1196,7 @@ def make_thumbnail(title_text, cat, tier):
         img = Image.open(io.BytesIO(bg_bytes)).convert("RGBA")
         img = img.resize((w, h), Image.LANCZOS)
         use_ai_bg = True
-        print("    ✅ AI Abstract Graph Generated!")
+        print("    ✅ AI Abstract Background Generated!")
     except Exception as e:
         print(f"    ⚠️ AI Image Gen skipped/failed. Using custom Pillow fallback. ({e})")
         img = Image.new("RGBA", (w, h), style["bg1"])
@@ -1543,21 +1505,18 @@ def generate_vip_carousel(raw_content, cat):
     ]
     random.shuffle(colors_neon)
     
-    # 🚨 완벽한 금융 차트/수치 시각화 프롬프트 도입 (캐릭터/인간/동물 절대 금지, 라운드 마감, 예쁜 네온 색상) 🚨
+    # 🚨 극도로 선명한 형태 강제 (유리 재질 삭제, 선명하고 두꺼운 네온 적용) 🚨
     vp_base = (
-        "A highly aesthetic, premium 3D render of a cute, minimalist financial graph. "
-        "The graph is made of sleek, glowing translucent glass with soft, rounded edges to look friendly and appealing. "
-        "Pitch-black dark studio background with dramatic rim lighting and vivid floor reflections. "
-        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS. Purely geometric and data-driven."
+        "A highly aesthetic, ultra-clear, sharply in-focus 3D render of a minimalist financial symbol. "
+        "The symbol is constructed from solid, thick, brightly glowing neon light tubes standing upright on a dark glossy floor. "
+        "Pitch-black background. Extremely clear, distinct, and highly recognizable shape. "
+        "ABSOLUTELY NO CHARACTERS, NO HUMANS, NO FACES, NO ANIMALS, NO GLASS BLOBS."
     )
 
-    vp1 = f"{vp_base} A beautifully glowing {colors_neon[0][0]} neon 3D pie chart with a floating glowing percentage symbol. The vibrant {colors_neon[0][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
-    
-    vp2 = f"{vp_base} A beautifully glowing {colors_neon[1][0]} neon 3D bar graph with soft rounded edges, representing data statistics. The vibrant {colors_neon[1][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
-    
-    vp3 = f"{vp_base} A beautifully glowing {colors_neon[2][0]} neon 3D line chart rising diagonally with glowing data nodes. The vibrant {colors_neon[2][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
-    
-    vp4 = f"{vp_base} Beautifully glowing {colors_neon[3][0]} neon 3D candlestick chart bars showing a market trend. The vibrant {colors_neon[3][1]} light beautifully reflects off the dark glossy floor. 8k resolution, clean composition, no text."
+    vp1 = f"{vp_base} The symbol is a brightly glowing {colors_neon[0][0]} neon 3D PIE CHART with a clear PERCENTAGE (%) sign. 8k resolution, vivid colors."
+    vp2 = f"{vp_base} The symbol is a brightly glowing {colors_neon[1][0]} neon 3D BAR GRAPH with 3 distinct rising pillars. 8k resolution, vivid colors."
+    vp3 = f"{vp_base} The symbol is a brightly glowing {colors_neon[2][0]} neon 3D ASCENDING ARROW representing a rising stock chart line. 8k resolution, vivid colors."
+    vp4 = f"{vp_base} The symbol is a brightly glowing {colors_neon[3][0]} neon 3D EXCLAMATION MARK (!). 8k resolution, vivid colors."
 
     data_points = []
     for i in range(1, 6):
@@ -1597,7 +1556,6 @@ def generate_vip_carousel(raw_content, cat):
 
     print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
     
-    # 각기 다른 예쁜 네온 3D 차트 이미지를 4장 생성하여 다이내믹한 릴스를 만듭니다.
     img_hook_ai = generate_carousel_image(vp1)
     time.sleep(3)
     img_stat_ai = generate_carousel_image(vp2)
@@ -1696,7 +1654,6 @@ def generate_vip_carousel(raw_content, cat):
     text_frames.append(txt2)
 
     # Data Slides
-    data_imgs = []
     for idx in range(3):
         if idx >= len(data_points): break
         item = data_points[idx]
@@ -1863,7 +1820,7 @@ def run_foundation_pipeline():
     cat = "Foundation"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS SEO Foundation Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.135_SHARP_NEON_GRAPHS SEO Foundation Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1895,7 +1852,7 @@ def run_philosophy_pipeline():
     cat = "The Daily Catalyst"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Catalyst Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.135_SHARP_NEON_GRAPHS Catalyst Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1927,7 +1884,7 @@ def run_moneyhack_pipeline():
     cat = "Money Hack"
     force = os.environ.get("FORCE_PUBLISH", "false").lower() == "true"
     
-    print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Money Hack Pipeline | Category: {cat}")
+    print(f"🚀 Starting v46.9.135_SHARP_NEON_GRAPHS Money Hack Pipeline | Category: {cat}")
     if not check_env_vars() or not verify_wp_credentials(): return
 
     if force: print(f"   ⚡ [TEST MODE] FORCE_PUBLISH=true")
@@ -1978,9 +1935,9 @@ def run_news_pipeline(forced_cat=None):
         cat = base_cats[day_of_year % len(base_cats)]
 
     if force:
-        print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Unified News Pipeline | TEST MODE (Force Publish)")
+        print(f"🚀 Starting v46.9.135_SHARP_NEON_GRAPHS Unified News Pipeline | TEST MODE (Force Publish)")
     else:
-        print(f"🚀 Starting v46.9.134_CUTE_NEON_GRAPHS Unified News Pipeline | Category: {cat}")
+        print(f"🚀 Starting v46.9.135_SHARP_NEON_GRAPHS Unified News Pipeline | Category: {cat}")
 
     if not check_env_vars() or not verify_wp_credentials(): return
 
