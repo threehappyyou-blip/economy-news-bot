@@ -2,12 +2,13 @@ name: Warm Insight On-Chain Poster
 
 on:
   schedule:
-    # 매주 화요일(2), 목요일(4) UTC 13:10 (KST 22:10) 실행
-    # Insight 카테고리와 동시 발행되어 서버에 무리가 가지 않도록 10분 간격을 두었습니다.
-    - cron: '10 13 * * 2,4'  # 1차 시도
-    - cron: '30 13 * * 2,4'  # 2차 재시도 (실패 시 20분 후)
-    - cron: '50 13 * * 2,4'  # 3차 재시도 (실패 시 40분 후)
-    
+    # v47 - 주 2회(화,목) → 주 1회(목)로 축소.
+    # ETF·인덱스 투자 초보자로 주제를 좁히는 방향과는 다소 결이 달라서
+    # 우선 빈도만 줄임. 완전히 뺄지는 판단해서 나중에 조정해도 됨.
+    - cron: '10 13 * * 4'  # 1차 시도 (매주 목요일)
+    - cron: '30 13 * * 4'  # 2차 재시도 (실패 시 20분 후)
+    - cron: '50 13 * * 4'  # 3차 재시도 (실패 시 40분 후)
+
   workflow_dispatch:
     inputs:
       force_publish:
@@ -40,7 +41,7 @@ jobs:
 
       - name: Run On-Chain Bot
         env:
-          PYTHONUNBUFFERED: "1"          # 실시간 로그 출력
+          PYTHONUNBUFFERED: "1"  # 실시간 로그 출력
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           WP_URL: ${{ secrets.WP_URL }}
           WP_USERNAME: ${{ secrets.WP_USERNAME }}
