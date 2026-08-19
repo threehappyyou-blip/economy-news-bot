@@ -10,6 +10,7 @@ import traceback
 import time
 import random
 import re
+import json
 import datetime
 import io
 import math
@@ -179,6 +180,26 @@ CAT_ALLOC = {
 }
 
 # ═══════════════════════════════════════════════
+# 📊 검증된 실제 데이터 — AI가 숫자를 "지어내지" 않고 여기서만 가져다 쓰게 함
+# ═══════════════════════════════════════════════
+# 출처: 각 운용사 공식 자료(Vanguard/State Street/Invesco) 및 IRS 공식 발표,
+# 2026년 기준 확인. 운용보수·기여 한도는 자주 안 바뀌지만, 분기~반기에 한 번은
+# 공식 자료로 재확인해서 이 블록을 업데이트하는 걸 권장합니다.
+VERIFIED_FOUNDATION_DATA = """
+[ETF EXPENSE RATIOS — verified 2026]
+- VOO (Vanguard S&P 500 ETF): 0.03% expense ratio, issuer Vanguard, tracks S&P 500 (~500 large-cap US stocks)
+- VTI (Vanguard Total Stock Market ETF): 0.03% expense ratio, issuer Vanguard, tracks CRSP US Total Market Index (~3,500+ US stocks, all cap sizes)
+- SPY (SPDR S&P 500 ETF Trust): 0.0945% expense ratio, issuer State Street, tracks S&P 500
+- QQQ (Invesco QQQ Trust): 0.20% expense ratio, issuer Invesco, tracks Nasdaq-100
+- Average actively-managed mutual fund expense ratio: approximately 0.78% (per Vanguard's published fund-category comparison)
+
+[RETIREMENT ACCOUNT LIMITS — 2026, IRS-confirmed]
+- 401(k) employee contribution limit 2026: $24,500/year (under 50); $32,500/year (50+, incl. $8,000 catch-up); $35,750/year (ages 60-63, super catch-up)
+- IRA contribution limit 2026 (Traditional + Roth combined): $7,500/year (under 50); $8,600/year (50+, incl. $1,100 catch-up)
+- Roth IRA 2026 income phase-out: $153,000-$168,000 MAGI (single/head of household); $242,000-$252,000 MAGI (married filing jointly)
+"""
+
+# ═══════════════════════════════════════════════
 # 🧠 프롬프트 설정 
 # ═══════════════════════════════════════════════
 PROMPT_UNIFIED_P1 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
@@ -242,6 +263,10 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
 <PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
+<FAQ>
+(Write 3 real questions a reader would search related to today's {cat} news. Format EXACTLY, Q then A on separate lines: Q: [question]
+A: [answer in 1-2 sentences])
+</FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
 
@@ -265,12 +290,23 @@ FOUNDATION_TOPICS = [
 # 필요하면 이 리스트에 계속 추가해도 됨 (많을수록 반복 주기가 늘어남).
 FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are the "smart friend" who explains money to absolute beginners. Use counterintuitive angles. Wrap your content EXACTLY in the XML tags requested."""
 FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic in English: TOPIC: {theme}
+
+VERIFIED REFERENCE DATA (use ONLY these numbers for any specific stat/figure you cite. Do NOT invent, estimate, or guess any number not listed here — if a relevant number isn't provided below, describe it qualitatively instead of making one up):
+{verified_data}
+
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clear and specific, NOT clickbait — avoid bracketed superlatives like "[3 Reasons]", "[#1 Mistake]", or "[The Shocking Truth]". State plainly what the reader will learn, e.g. "How to Read an ETF's Expense Ratio Before You Buy".)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
 <DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy.)</DEFINITION>
-<WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use concrete dollar amounts or percentages.)</WHY_MATTERS>
+<WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use the VERIFIED REFERENCE DATA above for any dollar amounts or percentages — never invented numbers.)</WHY_MATTERS>
 <HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
+<COMPARISON_TABLE>
+(Create a comparison table directly relevant to this topic, 4-6 rows. Use VERIFIED REFERENCE DATA wherever the row involves a number. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B)
+</COMPARISON_TABLE>
+<FAQ>
+(Write 5-6 real questions a beginner would search for about this exact topic. Format EXACTLY, Q then A on separate lines: Q: [question]
+A: [answer in 1-2 sentences, using VERIFIED REFERENCE DATA if it involves a number])
+</FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 PHILOSOPHY_TOPICS = ["Love money through action, not just unrequited longing", "The psychological vessel of wealth and the weight of responsibility", "Voluntary fatigue: The pleasurable pain of chosen growth"]
@@ -296,6 +332,13 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
 <STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
+<COMPARISON_TABLE>
+(Compare 2-3 relevant platforms/tools/approaches from the framework, 4-6 rows. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B. Only state fee/pricing figures you are confident are accurate and stable; otherwise describe qualitatively instead of guessing a number.)
+</COMPARISON_TABLE>
+<FAQ>
+(Write 4-5 real questions a beginner would search about this exact side hustle. Format EXACTLY, Q then A on separate lines: Q: [question]
+A: [answer in 1-2 sentences])
+</FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 # ═══════════════════════════════════════════════
@@ -1041,6 +1084,58 @@ def _build_pie_chart(s, b, c, cat):
     pie = f"""<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;"><circle cx="100" cy="100" r="90" fill="none" stroke="{c_s}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_b}" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_c}" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/><text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text><text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg><div style="display:flex;justify-content:center;gap:20px;"><span style="color:{c_s};font-weight:bold;">● Stocks/Assets {s}%</span><span style="color:{c_b};font-weight:bold;">● Safe {b}%</span><span style="color:{c_c};font-weight:bold;">● Cash {c}%</span></div>"""
     return pie
 
+def _build_comparison_table(raw_data, title="Quick Comparison"):
+    if not raw_data:
+        return ""
+    lines = [l.strip() for l in raw_data.split('\n') if '|' in l and '---' not in l]
+    if not lines:
+        return ""
+
+    rows_html = ""
+    for line in lines[:6]:
+        parts = [p.strip() for p in line.split('|') if p.strip()]
+        if len(parts) >= 3:
+            label, val_a, val_b = parts[0], parts[1], parts[2]
+            rows_html += f"""<tr style="border-bottom:1px solid {BORDER};"><td style="padding:12px 14px; font-weight:600; color:{DARK};">{label}</td><td style="padding:12px 14px; color:{SLATE};">{val_a}</td><td style="padding:12px 14px; color:{SLATE};">{val_b}</td></tr>"""
+
+    if not rows_html:
+        return ""
+
+    return f"""<div style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:12px;">📋 {title}</h3><table style="width:100%; border-collapse:collapse; margin-top:15px;">{rows_html}</table></div>"""
+
+def _build_faq_section(raw_data):
+    raw_faq = xtag(raw_data, "FAQ")
+    if not raw_faq:
+        return ""
+
+    lines = [l.strip() for l in raw_faq.split('\n') if l.strip()]
+    pairs, current_q = [], None
+    for line in lines:
+        if line.upper().startswith("Q:"):
+            current_q = line[2:].strip()
+        elif line.upper().startswith("A:") and current_q:
+            pairs.append((current_q, line[2:].strip()))
+            current_q = None
+
+    if not pairs:
+        return ""
+
+    faq_html = ""
+    schema_items = []
+    for q, a in pairs[:8]:
+        faq_html += f"""<details style="background:#ffffff; border:1px solid {BORDER}; border-radius:8px; padding:16px 20px; margin-bottom:10px;"><summary style="font-weight:700; font-size:17px; color:{DARK}; cursor:pointer;">{q}</summary><p style="margin:12px 0 0; color:{SLATE}; font-size:16px; line-height:1.7;">{a}</p></details>"""
+        schema_items.append({"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}})
+
+    # 참고: 2026년 5월부터 구글이 FAQ 리치 리절트(검색결과 아코디언 노출)는 완전히
+    # 없앴지만, FAQPage 스키마 자체는 여전히 유효하고 구글이 페이지 이해에 계속
+    # 활용한다고 밝혔어요. sanitize()가 application/ld+json 스크립트는 안 지우니
+    # 그대로 살아남습니다. "검색결과에 아코디언이 뜬다"는 기대는 하지 마세요 —
+    # 그건 이제 없는 기능이고, 실제 이득은 페이지에 보이는 FAQ 텍스트 자체예요.
+    schema_json = json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": schema_items}, ensure_ascii=False)
+    schema_tag = f'<script type="application/ld+json">{schema_json}</script>'
+
+    return f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">🙋 Frequently Asked Questions</h3><div style="margin-top:20px;">{faq_html}</div></div>{schema_tag}"""
+
 def _build_pillar_link(target_cat):
     pillar = PILLAR_PAGES.get(target_cat)
     if not pillar: 
@@ -1053,6 +1148,8 @@ def build_foundation_html(raw, author, tf, title, cat):
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
+    html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Quick Comparison")
+    html += _build_faq_section(raw)
     html += _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
@@ -1073,6 +1170,8 @@ def build_money_hack_html(raw, author, tf, title, cat):
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
     html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
+    html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Platform Comparison")
+    html += _build_faq_section(raw)
     html += _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
@@ -1127,6 +1226,7 @@ def build_html(tier, cat, raw, author, tf, title):
         <h3 style="margin-top:0; font-size:22px; color:{DARK};">📊 Suggested Allocation</h3>{_build_pie_chart(al["s"], al["b"], al["c"], cat)}
         <p style="margin-top:15px; color:{MUTED}; font-size:14px; text-align:center; font-style:italic;">General guideline based on current {cat} outlook. Not personalized advice.</p>
     </div>"""
+    html += _build_faq_section(raw)
     html += f"""<hr style="border:0; height:1px; background:{BORDER}; margin:50px 0;">
     <h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin-bottom:20px;">Today's Warm Insight</h2>
     <p style="{F} font-size:19px; font-style:italic; border-left:3px solid #cbd5e1; padding-left:16px;">"{xtag(raw, "TAKEAWAY")}"</p>
@@ -1894,7 +1994,8 @@ def run_foundation_pipeline():
     theme = FOUNDATION_TOPICS[day_of_year % len(FOUNDATION_TOPICS)]
     print(f"   📝 [Topic Rotation] Day {day_of_year} → Topic #{day_of_year % len(FOUNDATION_TOPICS)}: {theme[:50]}...")
     tier = "Premium"
-    raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
+    prompt_filled = FOUNDATION_PROMPT.replace("{theme}", theme).replace("{verified_data}", VERIFIED_FOUNDATION_DATA)
+    raw = gem_fb(tier, prompt_filled, FOUNDATION_SYS_INST)
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
