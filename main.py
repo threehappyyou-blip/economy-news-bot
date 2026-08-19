@@ -200,7 +200,7 @@ News Context:
 
 OUTPUT FORMAT REQUIREMENT:
 You MUST wrap your content EXACTLY in the XML tags listed below.
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers.)</TITLE>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clear and specific, NOT clickbait — no bracketed superlatives.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the exact SEO_KEYWORD. Write a 'curiosity gap' summary.)</EXCERPT>
 <WARM_INDEX_SCORE>(A number from 0 to 100 representing market fear/greed based on this news. Output ONLY the integer.)</WARM_INDEX_SCORE>
@@ -245,10 +245,27 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
 
-FOUNDATION_TOPICS = ["ETF vs Mutual Funds: Which is actually safer for absolute beginners?", "How to start investing in S&P 500 ETFs with exactly $100", "The hidden risks of Dollar Cost Averaging (DCA) you must know"]
+FOUNDATION_TOPICS = [
+    "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
+    "How to start investing in S&P 500 ETFs with exactly $100",
+    "The hidden risks of Dollar Cost Averaging (DCA) you must know",
+    "What an expense ratio actually costs you over 30 years",
+    "Roth IRA vs 401k: which should you fund first in your 20s",
+    "How bond ETFs behave when interest rates rise or fall",
+    "Why owning 50 stocks isn't the same as being diversified",
+    "Growth ETFs vs value ETFs: what the labels really mean",
+    "How to actually read an ETF's holdings before buying it",
+    "What happens to your ETF shares if the fund provider closes it",
+    "Dividend ETFs explained: income now vs growth later",
+    "Index fund vs ETF: is there really a difference for beginners",
+]
+# v2: 3개 → 12개로 확장. 예전엔 random.choice()가 3개 중 하나를 매번 뽑아서
+# 같은 주제가 3일에 한 번꼴로 반복됐음. 아래 run_foundation_pipeline()에서
+# 순번 방식으로 바꿔서, 12개를 다 돌기 전엔 같은 주제가 안 나오게 함.
+# 필요하면 이 리스트에 계속 추가해도 됨 (많을수록 반복 주기가 늘어남).
 FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are the "smart friend" who explains money to absolute beginners. Use counterintuitive angles. Wrap your content EXACTLY in the XML tags requested."""
 FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic in English: TOPIC: {theme}
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait for Google searchers: use brackets, odd numbers, or 'How to' formats.)</TITLE>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clear and specific, NOT clickbait — avoid bracketed superlatives like "[3 Reasons]", "[#1 Mistake]", or "[The Shocking Truth]". State plainly what the reader will learn, e.g. "How to Read an ETF's Expense Ratio Before You Buy".)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
 <DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy.)</DEFINITION>
@@ -273,7 +290,7 @@ MH_AI_TOOLS = ["ChatGPT", "Midjourney", "Claude", "ElevenLabs", "Zapier/Make", "
 
 MONEY_HACK_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite side-hustle expert and digital business coach. Wrap your content EXACTLY in the XML tags requested."""
 MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide based on this framework: FRAMEWORK: {theme}
-<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clickbait.)</TITLE>
+<TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clear and specific, NOT clickbait.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
 <CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
@@ -1871,7 +1888,11 @@ def run_foundation_pipeline():
         print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
         return
 
-    theme = random.choice(FOUNDATION_TOPICS)
+    # v2: random.choice → 순환 방식. day_of_year % len(topics)로 고르면
+    # 리스트를 다 순회하기 전엔 같은 주제가 반복되지 않음 (기존 run_news_pipeline과 동일 패턴).
+    day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
+    theme = FOUNDATION_TOPICS[day_of_year % len(FOUNDATION_TOPICS)]
+    print(f"   📝 [Topic Rotation] Day {day_of_year} → Topic #{day_of_year % len(FOUNDATION_TOPICS)}: {theme[:50]}...")
     tier = "Premium"
     raw = gem_fb(tier, FOUNDATION_PROMPT.replace("{theme}", theme), FOUNDATION_SYS_INST)
     if raw:
@@ -1903,7 +1924,9 @@ def run_philosophy_pipeline():
         print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
         return
 
-    theme = random.choice(PHILOSOPHY_TOPICS)
+    # v2: random.choice → 순환 방식 (Foundation과 동일 이유)
+    day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
+    theme = PHILOSOPHY_TOPICS[day_of_year % len(PHILOSOPHY_TOPICS)]
     tier = "Premium"
     raw = gem_fb(tier, PHILOSOPHY_PROMPT.replace("{theme}", theme), PHILOSOPHY_SYS_INST)
     if raw:
