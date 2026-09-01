@@ -228,10 +228,10 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <WARM_INDEX_REASON>(A punchy 5-10 word explanation for this score.)</WARM_INDEX_REASON>
 <IMPACT>(Write HIGH, MEDIUM, or LOW here)</IMPACT>
 <DATA_TABLE>
-(REQUIRED — extract OR estimate 3-4 key market metrics. NO MARKDOWN TABLES. NO '---' lines. Format EXACTLY on separate lines: Asset Name | Value or Price | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
+(REQUIRED — extract 3-4 key market metrics ONLY from the News Context above. Do NOT fabricate a specific price or number that isn't in the News Context — if an exact figure isn't available, describe the direction in words instead, e.g. "modestly higher" rather than a made-up percentage. NO MARKDOWN TABLES. NO '---' lines. Format EXACTLY on separate lines: Asset Name | Value/Price/Trend Description | UP or DOWN or SIDEWAYS | 1 sentence insight under 12 words)
 </DATA_TABLE>
 <HEATMAP>
-(Invent 3-4 sector risk levels 0-100% based on news. Format exactly: Sector Name | Number)
+(Provide 3-4 sector risk levels 0-100% as your editorial judgment, reasoned directly from the News Context above — not an arbitrary guess. Format exactly: Sector Name | Number)
 </HEATMAP>
 <EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" Use 1 emoji.)</EXECUTIVE_SUMMARY>
 <PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid. 20+ words developed.)</PLAIN_ENGLISH>
@@ -309,7 +309,22 @@ A: [answer in 1-2 sentences, using VERIFIED REFERENCE DATA if it involves a numb
 </FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
-PHILOSOPHY_TOPICS = ["Love money through action, not just unrequited longing", "The psychological vessel of wealth and the weight of responsibility", "Voluntary fatigue: The pleasurable pain of chosen growth"]
+PHILOSOPHY_TOPICS = [
+    "Love money through action, not just unrequited longing",
+    "The psychological vessel of wealth and the weight of responsibility",
+    "Voluntary fatigue: The pleasurable pain of chosen growth",
+    "Comfort is compounding's enemy: the price of easy choices today",
+    "The myth of not enough yet: why waiting for more money is a trap",
+    "Your balance sheet is a mirror, not a verdict of bad luck",
+    "Scarcity thinking versus scarcity reality: fear disguised as fact",
+    "Comparison is a tax you volunteer to pay",
+    "Discomfort is information, not punishment: what budgeting actually teaches",
+    "Money doesn't fix character, it amplifies whatever is already there",
+    "Discipline over motivation: the boring repetition wealth actually requires",
+    "The true cost of someday: procrastination's silent compound interest",
+]
+# v2: 3개 → 12개로 확장 (2026-09 fix). Foundation과 동일한 이유 — 194개 넘는 글이
+# 근본 주제 3개만 계속 돌려쓰면 사실상 같은 얘기 반복이라 scaled content abuse 위험이 큼.
 PHILOSOPHY_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are an elite philosophical life strategist. Be harsh, direct, and unapologetic. Wrap your content EXACTLY in the XML tags requested."""
 PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the following theme in English: THEME: {theme}
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD.)</TITLE>
@@ -1151,7 +1166,7 @@ def build_foundation_html(raw, author, tf, title, cat):
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Quick Comparison")
     html += _build_faq_section(raw)
     html += _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
-    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_philosophy_html(raw, author, tf, title, cat):
@@ -1161,7 +1176,7 @@ def build_philosophy_html(raw, author, tf, title, cat):
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#fefce8; border:2px solid #fde047; padding:35px; border-radius:12px; margin:50px 0; text-align:center;"><p style="font-size:14px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:2px; margin:0 0 15px;">⚡ The Daily Catalyst</p><p style="font-size:24px; font-weight:900; color:#92400e; margin:0 0 20px; line-height:1.5;">{re.sub(r'<[^>]+>', '', xtag(raw, "CATALYST"))}</p><p style="font-size:15px; color:#b45309; margin:0; font-style:italic;">Don't just read. Take out a pen and write your answer now.</p></div>"""
     html += _build_pillar_link("The Daily Catalyst") + _build_comment_cta(raw, cat)
-    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_money_hack_html(raw, author, tf, title, cat):
@@ -1173,7 +1188,7 @@ def build_money_hack_html(raw, author, tf, title, cat):
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Platform Comparison")
     html += _build_faq_section(raw)
     html += _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
-    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_html(tier, cat, raw, author, tf, title):
@@ -1234,7 +1249,7 @@ def build_html(tier, cat, raw, author, tf, title):
         <p style="color:#e2e8f0; font-size:18px; margin:0;"><strong style="color:{GOLD};">P.S.</strong> {xtag(raw, "PS")}</p>
     </div>"""
     html += _build_pillar_link("Insight") + _build_comment_cta(raw, cat)
-    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated, human-edited educational content. Not financial advice. All decisions are your own.</p></div>"""
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def get_font(url, filename):
@@ -1919,8 +1934,8 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
         "rank_math_title": rm_title[:60],
         "rank_math_description": (exc or "")[:160],
         "rank_math_focus_keyword": kw.lower() if kw else "",
-        "is_premium": "no" if cat in ["Foundation", "Money Hack"] else "yes",
-        "pms_content_restrict": "0" if cat in ["Foundation", "Money Hack"] else "1",
+        "is_premium": "no",
+        "pms_content_restrict": "0",
         "post_tier": tier.upper(),
     }
 
@@ -2059,11 +2074,14 @@ def run_moneyhack_pipeline():
         print(f"   🛑 [Anti-Spam] {cat} already published today. Exiting.")
         return
 
-    niche = random.choice(MH_NICHES)
-    platform = random.choice(MH_PLATFORMS)
-    ai_tool = random.choice(MH_AI_TOOLS)
+    # v2: random.choice → day_of_year 순번 방식 (Foundation/Philosophy와 동일 패턴, 2026-09 fix).
+    # 순수 랜덤은 짧은 기간에 같은 조합이 몰릴 수 있어서 결정론적 순환으로 교체.
+    day_of_year = datetime.datetime.utcnow().timetuple().tm_yday
+    niche = MH_NICHES[day_of_year % len(MH_NICHES)]
+    platform = MH_PLATFORMS[day_of_year % len(MH_PLATFORMS)]
+    ai_tool = MH_AI_TOOLS[day_of_year % len(MH_AI_TOOLS)]
     theme = f"Niche: {niche} | Core Platform: {platform} | AI Automation Tool: {ai_tool}"
-    print(f"   🎲 Random Framework Selected: {theme}")
+    print(f"   📝 [Framework Rotation] Day {day_of_year} → {theme}")
 
     tier = "Premium"
     raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
