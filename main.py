@@ -601,20 +601,20 @@ def send_medium_draft_email(title, original_link, raw_content, cat, kw, img_byte
 # ✉️ 커뮤니티 바이럴 포스팅 (Reddit/Quora) 자동 발송 엔진 
 # ═══════════════════════════════════════════════
 def generate_reddit_post(raw_content, cat, original_link):
-    print(f"   🤖 [AI] Crafting 100% Human-tone Reddit Post...")
+    print(f"   🤖 [AI] Drafting Authentic First-Person Community Post...")
     client = _get_gemini_client()
-    sys_inst = """CRITICAL RULE: Write entirely in ENGLISH. You are a 20-something retail investor posting on Reddit. You are NOT an AI.
-    TONE: Casual, cynical, conversational "bro" tone. Use slang (tbh, ngl, crazy, wild, fwiw, bros).
-    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1). Do NOT sound like an article. Make it look like you typed it on your phone on the toilet.
+    sys_inst = """CRITICAL RULE: Write entirely in ENGLISH. You are drafting a first-person community post for Jiho, who personally writes Warm Insight, a small independent financial newsletter. This is Jiho genuinely sharing something they researched and wrote — NOT an anonymous stranger pretending to have no connection to the site.
+    TONE: Casual, direct, first-person, like someone who actually thinks about this stuff sharing a real take. Natural language is fine (tbh, ngl, honestly), but never write as if impersonating an uninvolved random redditor.
+    BANNED: Bullet points, bold text, "Executive Summary", "TL;DR", emojis (max 1), corporate tone.
     CRITICAL: YOU MUST WRAP YOUR ENTIRE OUTPUT IN <REDDIT_TITLE> and <REDDIT_BODY> XML TAGS. NO EXCEPTIONS."""
     
-    prompt = f"""Read this formal analysis and rewrite the core insight into a viral Reddit post for {cat} subreddits.
+    prompt = f"""Read this analysis and turn the core insight into a short, genuine first-person post Jiho could share in {cat} communities, written as themselves (someone who writes about this topic), not as an anonymous stranger.
     [ANALYSIS]
     {raw_content}
     
     [OUTPUT FORMAT REQUIREMENT]
-    <REDDIT_TITLE>(Max 12 words. Clickbaity but casual, e.g., tbh I think everyone is wrong about...)</REDDIT_TITLE>
-    <REDDIT_BODY>(2-3 short paragraphs. No formatting. Sound like a real dude sharing a thought. At the very end, casually drop this exact link: {original_link} like "btw found this breakdown here: [link] if u care")</REDDIT_BODY>
+    <REDDIT_TITLE>(Max 12 words. Direct and honest — describe the actual insight, not clickbait pretending to be organic.)</REDDIT_TITLE>
+    <REDDIT_BODY>(2-3 short paragraphs sharing the real insight in first person. Do NOT end with a casual "found this link" drop — this is a DRAFT Jiho will personalize before posting, so just end the thought naturally.)</REDDIT_BODY>
     """
     raw = gem_fb("Premium", prompt, sys_inst)
     return xtag(raw, "REDDIT_TITLE"), xtag(raw, "REDDIT_BODY")
@@ -644,9 +644,9 @@ def send_community_viral_email(title, original_link, raw_content, cat):
     if not r_title or not r_body:
         print("   ⚠️ AI missed Reddit tags. Using Smart Fallback...")
         clean_title = _clean_seo_title(title)
-        r_title = f"tbh people are sleeping on {cat} right now"
-        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "This market is moving crazy fast right now."
-        r_body = f"Hey guys, been tracking the market and wanted to share this thought.\n\n{fallback_insight}\n\nHonestly makes a lot of sense when u look at the bigger picture. btw found this deep dive here: <a href='{original_link}' style='color: #2563eb; text-decoration: underline;'>{original_link}</a> if u care."
+        r_title = f"My take on what's happening in {cat} right now"
+        fallback_insight = xtag(raw_content, "EXECUTIVE_SUMMARY") or "This market is moving fast right now."
+        r_body = f"Hey all, I write a small finance newsletter (Warm Insight) and wanted to share something I've been looking into.\n\n{fallback_insight}\n\nHappy to go deeper on this in the comments if anyone's curious — I wrote a longer breakdown at {original_link} too, for anyone who wants the full picture."
     else:
         r_body = r_body.replace(original_link, f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">{original_link}</a>')
         r_body = r_body.replace('[link]', f'<a href="{original_link}" style="color: #2563eb; text-decoration: underline;">here</a>')
@@ -658,18 +658,18 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = f"📢 [Reddit/Quora Draft] Viral Post Ready: {clean_title[:30]}..."
+        msg['Subject'] = f"📢 [Reddit/Quora Draft] Review Before Posting: {clean_title[:30]}..."
 
         body = f"""
         <div style="font-family: -apple-system, sans-serif; background: #f4f4f5; padding: 20px;">
             <div style="max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                 <div style="background: #ef4444; padding: 25px; color: #ffffff;">
-                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora Viral Post Ready</h2>
+                    <h2 style="margin: 0; font-size: 22px;">📢 Reddit/Quora 커뮤니티 초안 — 검토 필요</h2>
                     <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; margin-top: 15px;">
                         <span style="font-size: 14px; opacity: 0.9; display: block; margin-bottom: 4px;">🎯 AI 추천 타겟 커뮤니티:</span>
                         <strong style="font-size: 18px;">{target_subreddits}</strong>
                     </div>
-                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">해당 커뮤니티에 아래 내용을 복사해서 붙여넣으세요! (휴먼 톤 적용 완료)</p>
+                    <p style="margin: 15px 0 0; opacity: 0.9; font-size: 14px;">⚠️ 그대로 복사-붙여넣기 금지 — 아래는 초안입니다. ① 본인 말투로 직접 다듬고 ② 해당 서브레딧의 자기홍보·AI 공개 규정을 먼저 확인한 뒤 ③ 본인 계정으로 직접 올려주세요.</p>
                 </div>
                 <div style="padding: 30px;">
                     <h3 style="color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Title 👇</h3>
@@ -2112,9 +2112,9 @@ def run_news_pipeline(forced_cat=None):
     if forced_cat:
         cat = forced_cat
         print(f"🎯 [Command Override] Forcing category to: {cat}")
-    elif day_of_week in (1, 3):
+    elif day_of_week == 3:
         cat = "On-Chain"
-        print(f"📅 [Smart Schedule] Today is Tue/Thu. Locking category to: {cat}")
+        print(f"📅 [Smart Schedule] Today is Thu. Locking category to: {cat}")
     else:
         base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
         cat = base_cats[day_of_year % len(base_cats)]
