@@ -128,7 +128,7 @@ MODEL_PRI = {
 }
 FAST_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
 
-CATEGORIES  = ["Economy", "Politics", "Tech", "Health", "Energy", "On-Chain", "Money Hack"]
+CATEGORIES  = ["Economy", "Tech", "Energy", "On-Chain", "Money Hack"]
 TIERS       = ["unified"]
 TIER_LABELS = {"unified": "INSIGHT"}
 TIER_SLEEP  = {"unified": 60}
@@ -156,18 +156,14 @@ AUTHOR_NAME = "Jiho Won"
 
 RSS_FEEDS = {
     "Economy": ["https://feeds.reuters.com/reuters/businessNews", "https://finance.yahoo.com/news/rssindex", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"],
-    "Politics": ["https://feeds.reuters.com/Reuters/PoliticsNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000113", "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"],
     "Tech": ["https://feeds.reuters.com/reuters/technologyNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910", "https://techcrunch.com/feed/"],
-    "Health": ["https://feeds.reuters.com/reuters/healthNews", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000108", "https://rss.nytimes.com/services/xml/rss/nyt/Health.xml"],
     "Energy": ["https://oilprice.com/rss/main", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000810", "https://feeds.reuters.com/reuters/environment"],
     "On-Chain": ["https://cointelegraph.com/rss", "https://www.coindesk.com/arc/outboundfeeds/rss/", "https://cryptoslate.com/feed/"],
 }
 
 CAT_ALLOC = {
     "Economy": {"s": 55, "b": 35, "c": 10, "note": "Defensive: higher bonds during macro uncertainty"},
-    "Politics": {"s": 50, "b": 35, "c": 15, "note": "Elevated cash for geopolitical shock absorption"},
     "Tech": {"s": 70, "b": 20, "c": 10, "note": "Growth tilt: overweight innovation equities"},
-    "Health": {"s": 60, "b": 30, "c": 10, "note": "Balanced: pharma stability with biotech upside"},
     "Energy": {"s": 65, "b": 25, "c": 10, "note": "Commodity tilt: overweight real assets"},
     "On-Chain": {"s": 25, "b": 15, "c": 60, "note": "High Volatility: Keep strong cash reserves"},
 }
@@ -647,7 +643,7 @@ def send_community_viral_email(title, original_link, raw_content, cat):
         target_subreddits = "r/CryptoCurrency"
     elif cat == "Tech":
         target_subreddits = "r/technology, r/stocks"
-    elif cat in ["Economy", "Energy", "Politics"]:
+    elif cat in ["Economy", "Energy"]:
         target_subreddits = "r/stocks, r/UKPersonalFinance"
     elif cat == "Money Hack":
         target_subreddits = "r/sidehustle"
@@ -1110,7 +1106,7 @@ def _build_quick_hits(raw_data):
     return f"""<div style="background:#f1f5f9; border:1px solid {BORDER}; border-radius:8px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK}; text-transform:uppercase; letter-spacing:1px;">⚡ Quick Hits</h3><ul style="{F} margin:0; padding-left:20px;">{items_html}</ul></div>"""
 
 def _build_pie_chart(s, b, c, cat):
-    c_s, c_b, c_c = {"Economy": ("#2563eb", "#60a5fa", "#dbeafe"), "Politics": ("#dc2626", "#f87171", "#fee2e2"), "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"), "Health": ("#059669", "#34d399", "#d1fae5"), "Energy": ("#d97706", "#fbbf24", "#fef3c7"), "On-Chain": ("#8b5cf6", "#a78bfa", "#ede9fe")}.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
+    c_s, c_b, c_c = {"Economy": ("#2563eb", "#60a5fa", "#dbeafe"), "Tech": ("#7c3aed", "#a78bfa", "#ede9fe"), "Energy": ("#d97706", "#fbbf24", "#fef3c7"), "On-Chain": ("#8b5cf6", "#a78bfa", "#ede9fe")}.get(cat, ("#b8974d", "#cbd5e1", "#f1f5f9"))
     circ = 565.49
     sd, bd, cd = circ*s/100, circ*b/100, circ*c/100
     pie = f"""<svg viewBox="0 0 200 200" width="200" height="200" style="display:block;margin:15px auto;"><circle cx="100" cy="100" r="90" fill="none" stroke="{c_s}" stroke-width="30" stroke-dasharray="{sd} {circ}" stroke-dashoffset="0"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_b}" stroke-width="30" stroke-dasharray="{bd} {circ}" stroke-dashoffset="-{sd}"/><circle cx="100" cy="100" r="90" fill="none" stroke="{c_c}" stroke-width="30" stroke-dasharray="{cd} {circ}" stroke-dashoffset="-{sd+bd}"/><text x="100" y="95" text-anchor="middle" fill="#1a252c" font-size="16" font-weight="bold">{s}/{b}/{c}</text><text x="100" y="114" text-anchor="middle" fill="#6b7280" font-size="11">ALLOCATION</text></svg><div style="display:flex;justify-content:center;gap:20px;"><span style="color:{c_s};font-weight:bold;">● Stocks/Assets {s}%</span><span style="color:{c_b};font-weight:bold;">● Safe {b}%</span><span style="color:{c_c};font-weight:bold;">● Cash {c}%</span></div>"""
@@ -1373,9 +1369,7 @@ def make_thumbnail(title_text, cat, tier):
 
     CAT_STYLES = {
         "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
-        "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
         "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
-        "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
         "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
         "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
         "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
@@ -1393,9 +1387,7 @@ def make_thumbnail(title_text, cat, tier):
     )
     AI_PROMPTS = {
         "Economy": f"{base_thumb_prompt} A brightly glowing blue and gold neon 3D ASCENDING ARROW chart. 8k resolution.",
-        "Politics": f"{base_thumb_prompt} A brightly glowing red and dark slate neon 3D BAR GRAPH. 8k resolution.",
         "Tech": f"{base_thumb_prompt} A brightly glowing neon purple and cyan 3D PIE CHART. 8k resolution.",
-        "Health": f"{base_thumb_prompt} Brightly glowing emerald green neon 3D CANDLESTICK chart bars. 8k resolution.",
         "Energy": f"{base_thumb_prompt} A brightly glowing orange and amber neon 3D ASCENDING ARROW. 8k resolution.",
         "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D BAR GRAPH. 8k resolution.",
         "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D PIE CHART. 8k resolution.",
@@ -1437,13 +1429,6 @@ def make_thumbnail(title_text, cat, tier):
             draw.rectangle([cx_p-10*S, cy_p-20*S, cx_p+30*S, cy_p+80*S], fill="#38bdf8")
             draw.rectangle([cx_p+40*S, cy_p-60*S, cx_p+80*S, cy_p+80*S], fill="#fde047")
             draw.line([cx_p-80*S, cy_p+40*S, cx_p*S, cy_p-20*S, cx_p+90*S, cy_p-90*S], fill="#ffffff", width=8*S)
-        elif cat == "Politics":
-            draw.polygon([(cx_p, cy_p-80*S), (cx_p-80*S, cy_p-20*S), (cx_p+80*S, cy_p-20*S)], fill="#fca5a5")
-            draw.rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p], fill="#ef4444")
-            draw.rectangle([cx_p-60*S, cy_p, cx_p-40*S, cy_p+80*S], fill="#fca5a5")
-            draw.rectangle([cx_p-10*S, cy_p, cx_p+10*S, cy_p+80*S], fill="#fca5a5")
-            draw.rectangle([cx_p+40*S, cy_p, cx_p+60*S, cy_p+80*S], fill="#fca5a5")
-            draw.rectangle([cx_p-80*S, cy_p+80*S, cx_p+80*S, cy_p+100*S], fill="#ef4444")
         elif cat == "Tech":
             draw.rounded_rectangle([cx_p-60*S, cy_p-60*S, cx_p+60*S, cy_p+60*S], radius=15*S, fill="#818cf8")
             draw.rectangle([cx_p-30*S, cy_p-30*S, cx_p+30*S, cy_p+30*S], fill="#312e81")
@@ -1452,9 +1437,6 @@ def make_thumbnail(title_text, cat, tier):
                 draw.line([(cx_p+offset*S, cy_p+60*S), (cx_p+offset*S, cy_p+90*S)], fill="#c7d2fe", width=8*S)
                 draw.line([(cx_p-60*S, cy_p+offset*S), (cx_p-90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
                 draw.line([(cx_p+60*S, cy_p+offset*S), (cx_p+90*S, cy_p+offset*S)], fill="#c7d2fe", width=8*S)
-        elif cat == "Health":
-            draw.rounded_rectangle([cx_p-20*S, cy_p-70*S, cx_p+20*S, cy_p+70*S], radius=10*S, fill="#a7f3d0")
-            draw.rounded_rectangle([cx_p-70*S, cy_p-20*S, cx_p+70*S, cy_p+20*S], radius=10*S, fill="#a7f3d0")
         elif cat == "Energy":
             draw.polygon([(cx_p+30*S, cy_p-90*S), (cx_p-50*S, cy_p+10*S), (cx_p+10*S, cy_p+10*S), (cx_p-30*S, cy_p+90*S), (cx_p+50*S, cy_p-10*S), (cx_p-10*S, cy_p-10*S)], fill="#fde047")
         elif cat == "On-Chain":
@@ -1558,9 +1540,7 @@ def make_medium_thumbnail(cat):
     
     prompts = {
         "Economy": "A highly aesthetic, conceptual 3D illustration about global economy and stock markets. Cinematic lighting, minimalist composition, deep rich blue and gold colors. High-end financial magazine cover style. No text, no words, no letters.",
-        "Politics": "A highly aesthetic, conceptual 3D illustration about geopolitics and global policy. Cinematic lighting, minimalist composition, deep red and dark slate colors. High-end political magazine cover style. No text, no words, no letters.",
         "Tech": "A highly aesthetic, conceptual 3D illustration about artificial intelligence and future technology. Cinematic lighting, minimalist composition, glowing neon purple and cyan colors. High-end tech magazine cover style. No text, no words, no letters.",
-        "Health": "A highly aesthetic, conceptual 3D illustration about biotechnology and healthcare innovation. Cinematic lighting, minimalist composition, clean emerald green and white colors. High-end medical magazine cover style. No text, no words, no letters.",
         "Energy": "A highly aesthetic, conceptual 3D illustration about global energy transition and power resources. Cinematic lighting, minimalist composition, vibrant orange and amber colors. High-end energy magazine cover style. No text, no words, no letters.",
         "On-Chain": "A highly aesthetic, conceptual 3D illustration about blockchain, crypto, and decentralized finance. Cinematic lighting, minimalist composition, glowing purple and gold accents. High-end crypto magazine cover style. No text, no words, no letters.",
         "The Daily Catalyst": "A highly aesthetic, conceptual 3D illustration about wealth building and mental growth. Cinematic lighting, minimalist composition, deep rich colors with warm glowing accents. High-end magazine cover style. No text, no words, no letters.",
@@ -1596,9 +1576,7 @@ def make_medium_thumbnail(cat):
         W, H = 1200, 630
         CAT_STYLES = {
             "Economy":  {"bg1": "#0284c7", "bg2": "#0369a1", "acc": "#fde047"},
-            "Politics": {"bg1": "#dc2626", "bg2": "#991b1b", "acc": "#fde047"},
             "Tech":     {"bg1": "#6366f1", "bg2": "#4338ca", "acc": "#a78bfa"},
-            "Health":   {"bg1": "#059669", "bg2": "#047857", "acc": "#fef08a"},
             "Energy":   {"bg1": "#ea580c", "bg2": "#c2410c", "acc": "#fef3c7"},
             "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
             "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
@@ -1807,8 +1785,8 @@ def generate_vip_carousel(raw_content, cat):
             d_img.paste(target_ai_img, (0, 100), target_ai_img)
         else:
             cat_colors = {
-                "Economy": (2, 132, 199), "Politics": (220, 38, 38),
-                "Tech": (99, 102, 241), "Health": (5, 150, 105),
+                "Economy": (2, 132, 199),
+                "Tech": (99, 102, 241),
                 "Energy": (234, 88, 12), "On-Chain": (139, 92, 246)
             }
             c_rgb = cat_colors.get(cat, (245, 158, 11))
