@@ -149,17 +149,10 @@ PILLAR_PAGES = {
     "Money Hack":         {"url": SITE_URL + "/category/money-hack/",         "anchor": "Money Hack & Side Hustles"},
 }
 
-VIP_AUTHORS = {
-    "Economy":  "Warm Insight Editorial Team",
-    "Politics": "Warm Insight Editorial Team",
-    "Tech":     "Warm Insight Editorial Team",
-    "Health":   "Warm Insight Editorial Team",
-    "Energy":   "Warm Insight Editorial Team",
-    "On-Chain": "Warm Insight Editorial Team",
-    "The Daily Catalyst": "Warm Insight Editorial Team",
-    "Foundation": "Warm Insight Editorial Team",
-    "Money Hack": "Warm Insight Growth Team"
-}
+AUTHOR_NAME = "Jiho Won"
+# v3 (2026-09): 카테고리별 가짜 팀 이름("Warm Insight Editorial Team" 등) 대신
+# 실제 필명 하나로 통일. 워드프레스에 이 이름으로 유저를 만들어야 get_wp_author_id()가
+# 정상적으로 찾아서 붙여줌 — 안 만들면 조용히 기본 작성자로 폴백되니 반드시 먼저 생성할 것.
 
 RSS_FEEDS = {
     "Economy": ["https://feeds.reuters.com/reuters/businessNews", "https://finance.yahoo.com/news/rssindex", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"],
@@ -262,6 +255,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <DO_ACTION>(Provide exactly ONE highly specific, actionable strategy for absolute beginners with precise numbers e.g., 'If BTC drops below $X, accumulate 5%' or a 3-step checklist based on today's news.)</DO_ACTION>
 <DONT_ACTION>(1 critical mistake to avoid. Be blunt. Start with "Don't" or "Stop". Name the SPECIFIC behavior.)</DONT_ACTION>
 <TAKEAWAY>(The bottom line insight. Under 20 words. Quotable. Counterintuitive if possible.)</TAKEAWAY>
+<ASIA_LENS>(OPTIONAL — ONLY fill this in if today's specific news has a genuine, SPECIFIC Asia/Korea market angle worth noting — e.g. a named Korean/Asian company, regulator, or a concrete market reaction tied to today's topic. Write it as Jiho Won's own first-person observation (someone who follows both Western and Asian markets), 2-3 sentences, SPECIFIC not generic. If there is no natural, specific angle for today's topic, output exactly: NONE — do not force a filler "Asia is watching too" sentence.)</ASIA_LENS>
 <PS>(One-line veteran advice with historical context. "P.S. — Real talk: ..." style.)</PS>
 <FAQ>
 (Write 3 real questions a reader would search related to today's {cat} news. Format EXACTLY, Q then A on separate lines: Q: [question]
@@ -357,7 +351,30 @@ A: [answer in 1-2 sentences])
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 
 # ═══════════════════════════════════════════════
-# 🎬 1. YOUTUBE CHAPTERING ENGINE
+# 📓 My Numbers — 월간 실제 숫자 공개 (뉴스 파이프라인과 별개 트랙)
+# ═══════════════════════════════════════════════
+# 다른 파이프라인과 달리 RSS 뉴스가 아니라 Jiho Won 본인이 매달 직접 적어주는
+# raw_notes를 재료로 씀. AI는 다듬고 영어로 풀어쓰기만 하고, notes에 없는
+# 숫자는 절대 지어내지 않음 — VERIFIED_FOUNDATION_DATA와 같은 원칙.
+MY_NUMBERS_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
+You are ghostwriting a deeply personal monthly financial disclosure post for Jiho Won, the real person who writes Warm Insight. This is Jiho's own actual numbers and decisions this month — NOT a generic educational article.
+CRITICAL: Use ONLY the facts, numbers, and decisions given to you in the RAW NOTES below. Do NOT invent any number, percentage, or detail not present in the notes — if something isn't specified, write around it honestly rather than filling in a plausible-sounding number.
+TONE: Honest, first-person, reflective — the way a real person writes about their own money, including uncertainty or mistakes. Not a lecture."""
+
+MY_NUMBERS_PROMPT = """Turn these raw monthly notes from Jiho Won into a polished first-person monthly disclosure post in English.
+
+RAW NOTES (Jiho's own words — may be in Korean or English, may be rough/informal):
+{raw_notes}
+
+<TITLE>(Max 60 chars. Something like "My Real Numbers — [Month Year]". Honest, not clickbait.)</TITLE>
+<SEO_KEYWORD>(A natural long-tail keyword this post could rank for, 4-6 words.)</SEO_KEYWORD>
+<EXCERPT>(Max 150 chars, honest one-line summary of this month.)</EXCERPT>
+<OPENING>(2-3 sentences setting the scene for this month — first person, honest.)</OPENING>
+<THE_NUMBERS>(Present the actual numbers/facts from the raw notes clearly. Format EXACTLY on separate lines: Label | Value. ONLY use numbers actually given in the raw notes.)</THE_NUMBERS>
+<WHAT_HAPPENED>(2-3 paragraphs expanding on the raw notes — the reasoning, the context, what led to these numbers/decisions this month. Stay strictly grounded in what was actually said in the raw notes; do not invent backstory.)</WHAT_HAPPENED>
+<WHAT_I_CHANGED>(1 paragraph: what Jiho did differently this month based on the raw notes, if anything is mentioned. Leave empty if not mentioned.)</WHAT_I_CHANGED>
+<NEXT_MONTH>(1-2 sentences: what's planned or being watched next month, if mentioned in the raw notes. If nothing specific is mentioned, write a brief honest closing instead of inventing a plan.)</NEXT_MONTH>
+<COMMENT_QUESTION>(A genuine question inviting readers to share their own numbers or experience this month. Max 15 words.)</COMMENT_QUESTION>"""
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
@@ -1191,6 +1208,35 @@ def build_money_hack_html(raw, author, tf, title, cat):
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
+def build_my_numbers_html(raw, author, tf, title, cat):
+    html = f"""<div style="{F}">\n"""
+    html += f"""<p style="font-size:19px; font-style:italic; color:{SLATE};">{xtag(raw, "OPENING")}</p>"""
+
+    numbers_raw = xtag(raw, "THE_NUMBERS")
+    if numbers_raw:
+        rows = ""
+        for line in numbers_raw.split("\n"):
+            if "|" in line:
+                parts = [p.strip() for p in line.split("|") if p.strip()]
+                if len(parts) >= 2:
+                    rows += f"""<tr style="border-bottom:1px solid {BORDER};"><td style="padding:12px; font-weight:600; color:{DARK};">{parts[0]}</td><td style="padding:12px; color:{GOLD}; font-weight:800; font-family:monospace;">{parts[1]}</td></tr>"""
+        if rows:
+            html += f"""<div style="background:#fffbeb; border:2px solid {GOLD}; border-radius:12px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; color:#92400e; font-size:20px;">📊 The Real Numbers — {tf}</h3><table style="width:100%; border-collapse:collapse; margin-top:10px;">{rows}</table></div>"""
+
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">What Happened</h3><p>{xtag(raw, "WHAT_HAPPENED").replace(chr(10), '<br><br>')}</p></div>"""
+
+    changed = xtag(raw, "WHAT_I_CHANGED")
+    if changed:
+        html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; color:#065f46; font-size:20px;">🔄 What I Changed</h3><p style="margin:0; color:#064e3b;">{changed}</p></div>"""
+
+    next_month = xtag(raw, "NEXT_MONTH")
+    if next_month:
+        html += f"""<p style="font-size:17px; font-style:italic; border-left:3px solid #cbd5e1; padding-left:16px; margin:35px 0;">{next_month}</p>"""
+
+    html += _build_comment_cta(raw, cat)
+    html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Written by {author}. This is my own personal experience, not financial advice — everyone's situation is different.</p></div>"""
+    return sanitize(html)
+
 def build_html(tier, cat, raw, author, tf, title):
     html = f"""<div style="{F}">\n{_build_warm_index(raw)}"""
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px;">Executive Summary</h2>"""
@@ -1235,6 +1281,12 @@ def build_html(tier, cat, raw, author, tf, title):
     if xtag(raw, "HISTORICAL_PARALLEL"):
         html += f"""<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding:35px; border-radius:12px; margin:45px 0; border-left:5px solid {GOLD};">
             <h3 style="color:{GOLD}; margin-top:0; font-size:24px;">📜 Historical Parallel</h3><p style="color:#cbd5e1; font-size:17px; margin:15px 0 0;">{xtag(raw, "HISTORICAL_PARALLEL")}</p>
+        </div>"""
+    asia_lens = xtag(raw, "ASIA_LENS")
+    if asia_lens and asia_lens.strip().upper() != "NONE":
+        html += f"""<div style="background:#fdf4ff; border:2px solid #a855f7; padding:25px; margin:40px 0; border-radius:8px;">
+            <p style="font-size:14px; font-weight:800; color:#7e22ce; text-transform:uppercase; letter-spacing:1px; margin:0 0 10px;">🌏 Asia Market Lens — Jiho Won</p>
+            <p style="margin:0; color:#3b0764; font-size:16px; line-height:1.7;">{asia_lens}</p>
         </div>"""
     al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
     html += f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; padding:30px; border-radius:8px; margin-bottom:40px;">
@@ -1900,7 +1952,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     cat_id = get_or_create_wp_category(cat)
 
     insight_cat_id = None
-    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
+    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack", "My Numbers"]:
         insight_cat_id = get_or_create_wp_category("Insight")
 
     if tier == "unified": tag_id = get_or_create_wp_tag("Insight")
@@ -1908,7 +1960,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     else: tag_id = get_or_create_wp_tag("Pro")
 
     author_id = get_wp_author_id(author_name)
-    display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack"] or tier == "unified" else f"[Pro] {title}"
+    display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack", "My Numbers"] or tier == "unified" else f"[Pro] {title}"
 
     post_data = {
         "title": display_title,
@@ -2016,7 +2068,7 @@ def run_foundation_pipeline():
         kw = xtag(raw, "SEO_KEYWORD")
         exc = xtag(raw, "EXCERPT")
         slug = make_slug(kw, title, cat)
-        author = VIP_AUTHORS.get(cat, "Warm Insight Education Team")
+        author = AUTHOR_NAME
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         
         html = build_foundation_html(raw, author, tf, title, cat)
@@ -2050,7 +2102,7 @@ def run_philosophy_pipeline():
         kw = xtag(raw, "SEO_KEYWORD")
         exc = xtag(raw, "EXCERPT")
         slug = make_slug(kw, title, cat)
-        author = VIP_AUTHORS.get(cat, "Warm Insight Philosophical Desk")
+        author = AUTHOR_NAME
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         
         html = build_philosophy_html(raw, author, tf, title, cat)
@@ -2090,7 +2142,7 @@ def run_moneyhack_pipeline():
         kw = xtag(raw, "SEO_KEYWORD")
         exc = xtag(raw, "EXCERPT")
         slug = make_slug(kw, title, cat)
-        author = VIP_AUTHORS.get(cat, "Warm Insight Growth Team")
+        author = AUTHOR_NAME
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
         
         html = build_money_hack_html(raw, author, tf, title, cat)
@@ -2101,6 +2153,34 @@ def run_moneyhack_pipeline():
 
         med_img_bytes = make_medium_thumbnail(cat)
         publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=raw, med_img_bytes=med_img_bytes)
+
+def run_my_numbers_pipeline(raw_notes):
+    cat = "My Numbers"
+    print(f"🚀 Starting My Numbers Pipeline | Category: {cat}")
+    if not check_env_vars() or not verify_wp_credentials(): return
+
+    if not raw_notes or len(raw_notes.strip()) < 10:
+        print("   ❌ raw_notes가 비어있거나 너무 짧습니다 (MY_NUMBERS_RAW 환경변수 확인). 중단합니다.")
+        return
+
+    tier = "Premium"
+    raw = gem_fb(tier, MY_NUMBERS_PROMPT.replace("{raw_notes}", raw_notes), MY_NUMBERS_SYS_INST)
+    if raw:
+        title = xtag(raw, "TITLE")
+        kw = xtag(raw, "SEO_KEYWORD")
+        exc = xtag(raw, "EXCERPT")
+        slug = make_slug(kw, title, cat)
+        author = AUTHOR_NAME
+        tf = datetime.datetime.utcnow().strftime("%B %Y")
+
+        html = build_my_numbers_html(raw, author, tf, title, cat)
+        img_bytes = make_thumbnail(title, cat, tier)
+        if not img_bytes or len(img_bytes) < 1000:
+            print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        # raw_for_cards=None → Reddit/Medium 자동 홍보 초안 생성 안 함 (개인 공개 글이라 별도 판단 필요)
+        publish(title, html, exc, kw, cat, slug, tier, img_bytes, author, raw_for_cards=None, med_img_bytes=None)
 
 def run_news_pipeline(forced_cat=None):
     current_time = datetime.datetime.utcnow()
@@ -2172,7 +2252,7 @@ def run_news_pipeline(forced_cat=None):
     kw = xtag(raw, "SEO_KEYWORD")
     exc = xtag(raw, "EXCERPT") or xtag(raw, "EXECUTIVE_SUMMARY")
     slug = make_slug(kw, title, cat)
-    author = VIP_AUTHORS.get(cat, "Warm Insight Editorial Team")
+    author = AUTHOR_NAME
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
     
     html = build_html(tier, cat, raw, author, tf, title)
@@ -2196,6 +2276,9 @@ if __name__ == "__main__":
             run_foundation_pipeline()
         elif arg == "moneyhack":
             run_moneyhack_pipeline()
+        elif arg == "mynumbers":
+            raw_notes = os.environ.get("MY_NUMBERS_RAW", "")
+            run_my_numbers_pipeline(raw_notes)
         elif arg == "onchain": 
             run_news_pipeline("On-Chain")
         elif arg == "insight":
