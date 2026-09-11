@@ -1,0 +1,37 @@
+name: Warm Insight My Numbers Poster
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_notes:
+        description: '이번 달 실제 숫자·결정을 자유롭게 적어주세요 (한국어 가능, 여러 줄 붙여넣기 가능)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install cloudscraper
+
+      - name: Run My Numbers Bot
+        env:
+          PYTHONUNBUFFERED: "1"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USERNAME: ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          MY_NUMBERS_RAW: ${{ github.event.inputs.raw_notes }}
+        run: python main.py mynumbers
