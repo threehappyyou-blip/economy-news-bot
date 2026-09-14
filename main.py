@@ -1395,7 +1395,8 @@ def make_thumbnail(title_text, cat, tier):
         "On-Chain": {"bg1": "#8b5cf6", "bg2": "#5b21b6", "acc": "#fde047"},
         "The Daily Catalyst": {"bg1": "#1e293b", "bg2": "#0f172a", "acc": "#b8974d"},
         "Foundation": {"bg1": "#1e3a5f", "bg2": "#0f2040", "acc": "#f59e0b"},
-        "Money Hack": {"bg1": "#f59e0b", "bg2": "#b45309", "acc": "#fef3c7"}
+        "Money Hack": {"bg1": "#f59e0b", "bg2": "#b45309", "acc": "#fef3c7"},
+        "My Numbers": {"bg1": "#b45309", "bg2": "#78350f", "acc": "#fde68a"}
     }
     style = CAT_STYLES.get(cat, CAT_STYLES["Economy"])
 
@@ -1413,7 +1414,8 @@ def make_thumbnail(title_text, cat, tier):
         "On-Chain": f"{base_thumb_prompt} A brightly glowing purple and gold neon 3D BAR GRAPH. 8k resolution.",
         "The Daily Catalyst": f"{base_thumb_prompt} A brightly glowing warm gold neon 3D PIE CHART. 8k resolution.",
         "Foundation": f"{base_thumb_prompt} A brightly glowing vibrant yellow neon 3D ASCENDING ARROW. 8k resolution.",
-        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D CANDLESTICK chart bars. 8k resolution."
+        "Money Hack": f"{base_thumb_prompt} Brightly glowing green and yellow neon 3D CANDLESTICK chart bars. 8k resolution.",
+        "My Numbers": f"{base_thumb_prompt} A brightly glowing warm amber neon 3D OPEN LEDGER/NOTEBOOK shape with a glowing checkmark. 8k resolution."
     }
 
     img = None
@@ -1951,7 +1953,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     cat_id = get_or_create_wp_category(cat)
 
     insight_cat_id = None
-    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack", "My Numbers"]:
+    if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
         insight_cat_id = get_or_create_wp_category("Insight")
 
     if tier == "unified": tag_id = get_or_create_wp_tag("Insight")
@@ -2165,12 +2167,12 @@ def run_my_numbers_pipeline(raw_notes):
     tier = "Premium"
     raw = gem_fb(tier, MY_NUMBERS_PROMPT.replace("{raw_notes}", raw_notes), MY_NUMBERS_SYS_INST)
     if raw:
-        title = xtag(raw, "TITLE")
-        kw = xtag(raw, "SEO_KEYWORD")
-        exc = xtag(raw, "EXCERPT")
+        tf = datetime.datetime.utcnow().strftime("%B %Y")
+        title = xtag(raw, "TITLE") or f"My Real Numbers — {tf}"
+        kw = xtag(raw, "SEO_KEYWORD") or "personal finance monthly update"
+        exc = xtag(raw, "EXCERPT") or f"Jiho Won's real numbers and decisions for {tf}."
         slug = make_slug(kw, title, cat)
         author = AUTHOR_NAME
-        tf = datetime.datetime.utcnow().strftime("%B %Y")
 
         html = build_my_numbers_html(raw, author, tf, title, cat)
         img_bytes = make_thumbnail(title, cat, tier)
