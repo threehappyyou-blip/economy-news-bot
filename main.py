@@ -1223,9 +1223,10 @@ def build_money_hack_html(raw, author, tf, title, cat):
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
-def build_my_numbers_html(raw, author, tf, title, cat):
+def build_my_numbers_html(raw, author, tf, title, cat, raw_notes=""):
     html = f"""<div style="{F}">\n"""
-    html += f"""<p style="font-size:19px; font-style:italic; color:{SLATE};">{xtag(raw, "OPENING")}</p>"""
+    opening = xtag(raw, "OPENING") or f"Here's an honest look at {tf}."
+    html += f"""<p style="font-size:19px; font-style:italic; color:{SLATE};">{opening}</p>"""
 
     numbers_raw = xtag(raw, "THE_NUMBERS")
     if numbers_raw:
@@ -1238,7 +1239,10 @@ def build_my_numbers_html(raw, author, tf, title, cat):
         if rows:
             html += f"""<div style="background:#fffbeb; border:2px solid {GOLD}; border-radius:12px; padding:25px; margin:35px 0;"><h3 style="margin-top:0; color:#92400e; font-size:20px;">📊 The Real Numbers — {tf}</h3><table style="width:100%; border-collapse:collapse; margin-top:10px;">{rows}</table></div>"""
 
-    html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">What Happened</h3><p>{xtag(raw, "WHAT_HAPPENED").replace(chr(10), '<br><br>')}</p></div>"""
+    # 방어 코드: AI가 WHAT_HAPPENED를 못 채우면 로인님이 직접 적은 raw_notes 원문이라도 그대로 보여줌
+    # (빈 글보다는 다듬어지지 않은 원문이 훨씬 낫고, 애초에 raw_notes 자체가 "진짜"이므로 신뢰 원칙에도 어긋나지 않음)
+    what_happened = xtag(raw, "WHAT_HAPPENED") or raw_notes or "Details for this update weren't captured properly — check back for the full write-up."
+    html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">What Happened</h3><p>{what_happened.replace(chr(10), '<br><br>')}</p></div>"""
 
     changed = xtag(raw, "WHAT_I_CHANGED")
     if changed:
@@ -2174,7 +2178,7 @@ def run_my_numbers_pipeline(raw_notes):
         slug = make_slug(kw, title, cat)
         author = AUTHOR_NAME
 
-        html = build_my_numbers_html(raw, author, tf, title, cat)
+        html = build_my_numbers_html(raw, author, tf, title, cat, raw_notes)
         img_bytes = make_thumbnail(title, cat, tier)
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail error. Aborting.")
