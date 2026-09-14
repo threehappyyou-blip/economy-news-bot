@@ -227,7 +227,8 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
 <MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
 PARAGRAPH 1: What's happening — ONE specific number or data point.
-PARAGRAPH 2: WHY it's happening — the cause most people miss. End with your honest one-line take.)</MACRO>
+PARAGRAPH 2: WHY it's happening — one key driver. End with your honest one-line take.)</MACRO>
+<MULTI_FACTOR>(REQUIRED — Real market situations are almost never caused by just one thing, the way rationality itself is an alloy of many traits, not one. Identify 3-4 DISTINCT, SPECIFIC contributing factors behind today's main story — mix different TYPES of factors where the news supports it (e.g. a policy factor, a psychological/herd-behavior factor, a structural/technical factor, a global/external factor). Each factor must be grounded in the News Context above — do NOT invent a factor the news doesn't support; if fewer than 3 distinct factors are genuinely supported, provide only that many. Format EXACTLY on separate lines: Factor Type | 1-sentence specific explanation under 20 words)</MULTI_FACTOR>
 <HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
 <CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
 <QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
@@ -1089,6 +1090,24 @@ def _build_progress_bars(raw_data, title="Sector Risk Heatmap"):
     html += "</div>"
     return html
 
+def _build_multi_factor(raw_data, title="What's Really Behind This"):
+    if not raw_data:
+        return ""
+    lines = [l.strip() for l in raw_data.split('\n') if '|' in l]
+    if not lines:
+        return ""
+    icons = ["🏛️", "🧠", "⚙️", "🌍"]
+    items_html = ""
+    for i, line in enumerate(lines[:4]):
+        parts = [p.strip() for p in line.split('|') if p.strip()]
+        if len(parts) >= 2:
+            factor_type, explanation = parts[0], parts[1]
+            icon = icons[i % len(icons)]
+            items_html += f"""<div style="display:flex; gap:14px; margin-bottom:16px; align-items:flex-start;"><span style="font-size:24px; flex-shrink:0; line-height:1.4;">{icon}</span><div><strong style="color:{DARK}; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">{factor_type}</strong><p style="margin:4px 0 0; color:{SLATE}; font-size:16px; line-height:1.6;">{explanation}</p></div></div>"""
+    if not items_html:
+        return ""
+    return f"""<div style="background:{BG_LIGHT}; border:2px solid {BORDER}; border-radius:12px; padding:28px; margin:40px 0;"><h3 style="margin-top:0; font-size:20px; color:{DARK};">🔬 {title}</h3><p style="font-size:14px; color:{MUTED}; margin-top:-6px; margin-bottom:20px; font-style:italic;">It's rarely just one thing — here's the mix.</p>{items_html}</div>"""
+
 def _build_quick_hits(raw_data):
     if not raw_data: 
         return ""
@@ -1258,7 +1277,9 @@ def build_html(tier, cat, raw, author, tf, title):
     html += f"""<h3 style="font-size:24px; color:{DARK}; margin-top:20px;">{xtag(raw, "HEADLINE")}</h3>"""
     html += f"""<div style="background:#fff; border:1px solid {BORDER}; border-left:5px solid {GOLD}; padding:30px; border-radius:8px; margin:30px 0;">
         <p><strong>🧐 The Big Picture:</strong> {xtag(raw, "MACRO")}</p><hr><p><strong>🐑 What Most People Are Doing:</strong> {xtag(raw, "HERD")}</p><hr><p><strong>🦅 What Smart Money Is Doing:</strong> {xtag(raw, "CONTRARIAN")}</p>
-    </div><div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
+    </div>"""
+    html += _build_multi_factor(xtag(raw, "MULTI_FACTOR"))
+    html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#fffbeb; border:1px solid #fde68a; border-left:5px solid {AMBER}; padding:25px; margin:40px 0;">
         <strong style="color:#92400e; font-size:20px;">🔗 Chain of Events:</strong><br><span style="font-weight:bold; font-size:19px; color:{DARK}; display:inline-block; margin-top:12px;">{xtag(raw, "QUICK_FLOW")}</span>
     </div>"""
