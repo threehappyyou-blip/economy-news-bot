@@ -1,0 +1,72 @@
+name: Warm Insight Daily Short
+
+on:
+  schedule:
+    # 22:00 UTC = 07:00 KST every day
+    - cron: '0 22 * * *'
+  workflow_dispatch: {}  # lets you click "Run workflow" in the GitHub UI to test manually
+
+jobs:
+  build-and-send:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: warminsight-daily-short
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Build today's scene (pick today's hook)
+        run: node build.js
+
+      - name: Record raw video with Playwright
+        run: |
+          rm -rf raw_video
+          mkdir -p raw_video
+          node record.js
+
+      - name: Encode final MP4 (15.0s, 1080x1920, h264, no audio, no watermark)
+        run: |
+          rm -f warminsight_short_*.mp4
+          ffmpeg -y -ss 0.15 -i raw_video/*.webm -t 15.0 -vf "fps=30,format=yuv420p" \
+            -c:v libx264 -profile:v high -crf 17 -preset slow -movflags +faststart -an \
+            warminsight_short_$(date -u +%F).mp4
+
+      - name: Verify video specs
+        run: |
+          ffprobe -v error -show_entries format=duration \
+            -show_entries stream=width,height,codec_name,codec_type \
+            -of default=noprint_wrappers=1 warminsight_short_*.mp4
+
+      - name: Generate captions and tags
+        run: node gen_caption.js
+
+      - name: Send email with video attached
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        run: node send_email.js
+
+      - name: Upload video as workflow artifact (backup/history)
+        uses: actions/upload-artifact@v4
+        with:
+          name: warminsight-short-${{ github.run_id }}
+          path: |
+            warminsight-daily-short/warminsight_short_*.mp4
+            warminsight-daily-short/caption_and_tags.md
+          retention-days: 30
