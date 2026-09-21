@@ -1,0 +1,16 @@
+{
+  "name": "warminsight-daily-short",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generates a daily 15s vertical short for warminsight.com and emails it with captions/tags.",
+  "scripts": {
+    "build": "node build.js",
+    "record": "node record.js",
+    "caption": "node gen_caption.js",
+    "email": "node send_email.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.14",
+    "playwright": "^1.47.0"
+  }
+}

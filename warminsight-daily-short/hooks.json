@@ -1,0 +1,16 @@
+[
+  {"kicker":"REAL TALK","hook_html":"Your <span class=\"accent2\">bank</span> won't teach you this.","hook_plain":"Your bank won't teach you this."},
+  {"kicker":"HEADS UP","hook_html":"This <span class=\"accent2\">mistake</span> is costing you money.","hook_plain":"This mistake is costing you money."},
+  {"kicker":"FINALLY","hook_html":"Nobody explained <span class=\"accent\">interest rates</span> like this.","hook_plain":"Nobody explained interest rates like this."},
+  {"kicker":"RED FLAG","hook_html":"You're paying <span class=\"accent2\">fees</span> you don't even see.","hook_plain":"You're paying fees you don't even see."},
+  {"kicker":"FAIR WARNING","hook_html":"Most people learn this the <span class=\"accent2\">hard way</span>.","hook_plain":"Most people learn this the hard way."},
+  {"kicker":"TRUTH BOMB","hook_html":"Here's what your <span class=\"accent2\">advisor</span> won't say.","hook_plain":"Here's what your advisor won't say."},
+  {"kicker":"QUICK CHECK","hook_html":"Markets moved today. Do you know <span class=\"accent\">why?</span>","hook_plain":"Markets moved today. Do you know why?"},
+  {"kicker":"WORTH IT","hook_html":"This takes 5 minutes. Skipping it <span class=\"accent2\">costs more.</span>","hook_plain":"This takes 5 minutes. Skipping it costs more."},
+  {"kicker":"MYTH BUSTED","hook_html":"<span class=\"accent\">Compound interest</span> is not what you think.","hook_plain":"Compound interest is not what you think."},
+  {"kicker":"NO EXCUSES","hook_html":"You don't need to be rich to <span class=\"accent2\">start.</span>","hook_plain":"You don't need to be rich to start."},
+  {"kicker":"SMALL EDGE","hook_html":"This habit separates <span class=\"accent\">savers</span> from spenders.","hook_plain":"This habit separates savers from spenders."},
+  {"kicker":"PLAIN TRUTH","hook_html":"The <span class=\"accent2\">news</span> won't explain it like this.","hook_plain":"The news won't explain it like this."},
+  {"kicker":"SIMPLE","hook_html":"One email a day. <span class=\"accent\">Zero confusion.</span>","hook_plain":"One email a day. Zero confusion."},
+  {"kicker":"CURIOUS?","hook_html":"What's actually moving <span class=\"accent2\">your money?</span>","hook_plain":"What's actually moving your money?"}
+]
