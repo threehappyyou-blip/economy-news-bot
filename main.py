@@ -6,14 +6,12 @@
 
 import os
 import sys
-import traceback
 import time
 import random
 import re
 import json
 import datetime
 import io
-import math
 import base64
 import urllib.request
 import urllib.parse
@@ -2024,20 +2022,6 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     except Exception as e:
         print(f"   ❌ Network error: {e}")
     return False
-
-def _execute_post_publish_tasks(cat, tier, title, kw, link, raw_for_cards, med_img_bytes, display_title):
-    if raw_for_cards:
-        if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
-            if tier == "Premium" or tier == "unified":
-                img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
-                if video_mp4_bytes:
-                    send_social_style_email(display_title, link, img_list, data_points, cat, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes)
-
-            yt_meta, yt_script = generate_youtube_masterpiece(raw_for_cards, title)
-            if yt_script: send_youtube_script_email(title, yt_meta, yt_script)
-
-        send_medium_draft_email(display_title, link, raw_for_cards, cat, kw, med_img_bytes)
-        send_community_viral_email(display_title, link, raw_for_cards, cat)
 
 def run_foundation_pipeline():
     cat = "Foundation"
