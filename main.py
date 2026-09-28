@@ -1960,13 +1960,11 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
         insight_cat_id = get_or_create_wp_category("Insight")
 
-    if tier == "unified": tag_id = get_or_create_wp_tag("Insight")
-    elif tier == "Premium": tag_id = get_or_create_wp_tag("Pro")
-    else: tag_id = get_or_create_wp_tag("Pro")
+        tag_id = get_or_create_wp_tag("Insight")
 
     author_id = get_wp_author_id(author_name)
-    display_title = title if cat in ["Foundation", "The Daily Catalyst", "Money Hack", "My Numbers"] or tier == "unified" else f"[Pro] {title}"
-
+    display_title = title
+    
     post_data = {
         "title": display_title,
         "content": html,
