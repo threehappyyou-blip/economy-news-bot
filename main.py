@@ -1948,6 +1948,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     cat_id = get_or_create_wp_category(cat)
 
     insight_cat_id = None
+    tag_id = None
     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
         insight_cat_id = get_or_create_wp_category("Insight")
 
