@@ -171,16 +171,29 @@ CAT_ALLOC = {
 # ═══════════════════════════════════════════════
 VERIFIED_FOUNDATION_DATA = """
 [ETF EXPENSE RATIOS — verified 2026]
-- VOO (Vanguard S&P 500 ETF): 0.03% expense ratio, issuer Vanguard, tracks S&P 500 (~500 large-cap US stocks)
-- VTI (Vanguard Total Stock Market ETF): 0.03% expense ratio, issuer Vanguard, tracks CRSP US Total Market Index (~3,500+ US stocks, all cap sizes)
+- VOO (Vanguard S&P 500 ETF): 0.03% expense ratio, issuer Vanguard, tracks S&P 500 (~500 large-cap US stocks). Source: https://investor.vanguard.com/investment-products/etfs/profile/voo
+- VTI (Vanguard Total Stock Market ETF): 0.03% expense ratio, issuer Vanguard, tracks CRSP US Total Market Index (~3,500+ US stocks, all cap sizes). Source: https://investor.vanguard.com/investment-products/etfs/profile/vti
 - SPY (SPDR S&P 500 ETF Trust): 0.0945% expense ratio, issuer State Street, tracks S&P 500
 - QQQ (Invesco QQQ Trust): 0.20% expense ratio, issuer Invesco, tracks Nasdaq-100
 - Average actively-managed mutual fund expense ratio: approximately 0.78% (per Vanguard's published fund-category comparison)
 
 [RETIREMENT ACCOUNT LIMITS — 2026, IRS-confirmed]
-- 401(k) employee contribution limit 2026: $24,500/year (under 50); $32,500/year (50+, incl. $8,000 catch-up); $35,750/year (ages 60-63, super catch-up)
-- IRA contribution limit 2026 (Traditional + Roth combined): $7,500/year (under 50); $8,600/year (50+, incl. $1,100 catch-up)
+- 401(k) employee contribution limit 2026: $24,500/year (under 50); $32,500/year (50+, incl. $8,000 catch-up); $35,750/year (ages 60-63, super catch-up). Source: https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits
+- IRA contribution limit 2026 (Traditional + Roth combined): $7,500/year (under 50); $8,600/year (50+, incl. $1,100 catch-up). Source: https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-ira-contribution-limits
 - Roth IRA 2026 income phase-out: $153,000-$168,000 MAGI (single/head of household); $242,000-$252,000 MAGI (married filing jointly)
+
+[CITATION RULE FOR THE SOURCES ABOVE — READ CAREFULLY]
+Only the facts above that have a "Source:" URL attached may be cited with a link. When you state one of THOSE SPECIFIC facts, you may cite it with a real HTML link using EXACTLY this format: <a href="EXACT_URL_COPIED_FROM_ABOVE" target="_blank" rel="noopener">Vanguard</a> or <a href="EXACT_URL_COPIED_FROM_ABOVE" target="_blank" rel="noopener">IRS.gov</a> — copy the URL character-for-character from above, never modify it. NEVER invent, guess, or shorten a URL. Facts with no "Source:" URL must be stated as plain text with no link at all.
+"""
+
+# ═══════════════════════════════════════════════
+# 🎯 AEO(답변엔진 최적화) 공통 규칙 — 모든 콘텐츠 생성 프롬프트에 삽입
+# ═══════════════════════════════════════════════
+AEO_RULES = """
+═══ 🎯 AEO/ANSWER-ENGINE OPTIMIZATION RULES (CRITICAL) ═══
+- ANSWER-FIRST: The first 1-2 sentences under each major section must directly and completely answer the reader's implicit question in plain, quotable language (40-60 words) — state the conclusion first, THEN explain or add nuance. Never open a section with a rhetorical question, a story, or throat-clearing.
+- NO MARKDOWN LINKS, EVER: If you reference a source, name it as plain text only (e.g., "according to Vanguard's fund data") — NEVER use Markdown link syntax like [text](url) and NEVER write a raw URL from memory. Do not fabricate, guess, or reconstruct a URL under any circumstance — an unrendered or broken link is worse than no link.
+- CONCRETE OVER VAGUE: Prefer a specific number, name, or date over a vague qualifier whenever the data given to you supports it.
 """
 
 # ═══════════════════════════════════════════════
@@ -227,6 +240,7 @@ PARAGRAPH 2: WHY it's happening — one key driver. End with your honest one-lin
 <HERD>(Write 1 paragraph showing what retail/average investors are doing wrong RIGHT NOW. MAX 3 sentences. Be specific.)</HERD>
 <CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
 <QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
+PROMPT_UNIFIED_P1 += AEO_RULES
 
 PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
@@ -255,6 +269,7 @@ A: [answer in 1-2 sentences])
 </FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
+PROMPT_UNIFIED_P2 += AEO_RULES
 
 FOUNDATION_TOPICS = [
     "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
@@ -279,8 +294,8 @@ VERIFIED REFERENCE DATA (use ONLY these numbers for any specific stat/figure you
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clear and specific, NOT clickbait — avoid bracketed superlatives like "[3 Reasons]", "[#1 Mistake]", or "[The Shocking Truth]". State plainly what the reader will learn, e.g. "How to Read an ETF's Expense Ratio Before You Buy".)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
-<DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy.)</DEFINITION>
-<WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use the VERIFIED REFERENCE DATA above for any dollar amounts or percentages — never invented numbers.)</WHY_MATTERS>
+<DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy. The very first sentence must plainly define the term in 40-60 words before the analogy.)</DEFINITION>
+<WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use the VERIFIED REFERENCE DATA above for any dollar amounts or percentages — never invented numbers. Where a fact you use has a "Source:" URL in the VERIFIED REFERENCE DATA, cite it inline using the exact HTML link format described in the CITATION RULE above.)</WHY_MATTERS>
 <HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
 <COMPARISON_TABLE>
 (Create a comparison table directly relevant to this topic, 4-6 rows. Use VERIFIED REFERENCE DATA wherever the row involves a number. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B)
@@ -290,6 +305,7 @@ VERIFIED REFERENCE DATA (use ONLY these numbers for any specific stat/figure you
 A: [answer in 1-2 sentences, using VERIFIED REFERENCE DATA if it involves a number])
 </FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
+FOUNDATION_PROMPT += AEO_RULES
 
 PHILOSOPHY_TOPICS = [
     "Love money through action, not just unrequited longing",
@@ -314,6 +330,7 @@ PHILOSOPHY_PROMPT = """Write a philosophical daily insight based on the followin
 <REFLECTION>(3-4 paragraphs explaining how this principle connects to modern reality. Criticize passive excuses heavily.)</REFLECTION>
 <CATALYST>(A single, highly provocative and specific question that requires the reader to write down an actionable answer immediately.)</CATALYST>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
+PHILOSOPHY_PROMPT += AEO_RULES
 
 MH_NICHES = ["Digital Products & Templates", "E-commerce & Dropshipping", "Freelancing & Agency", "Micro-SaaS & Software", "Affiliate Marketing"]
 MH_PLATFORMS = ["Gumroad", "Shopify", "Canva", "Notion", "Fiverr", "Upwork", "YouTube", "TikTok", "Substack"]
@@ -335,6 +352,7 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 A: [answer in 1-2 sentences])
 </FAQ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
+MONEY_HACK_PROMPT += AEO_RULES
 
 # ═══════════════════════════════════════════════
 # 📓 My Numbers — 월간 실제 숫자 공개 (뉴스 파이프라인과 별개 트랙)
@@ -358,6 +376,8 @@ RAW NOTES (Jiho's own words — may be in Korean or English, may be rough/inform
 <WHAT_I_CHANGED>(1 paragraph: what Jiho did differently this month based on the raw notes, if anything is mentioned. Leave empty if not mentioned.)</WHAT_I_CHANGED>
 <NEXT_MONTH>(1-2 sentences: what's planned or being watched next month, if mentioned in the raw notes. If nothing specific is mentioned, write a brief honest closing instead of inventing a plan.)</NEXT_MONTH>
 <COMMENT_QUESTION>(A genuine question inviting readers to share their own numbers or experience this month. Max 15 words.)</COMMENT_QUESTION>"""
+MY_NUMBERS_PROMPT += """
+- NO MARKDOWN LINKS, EVER: never use [text](url) syntax or a raw URL — it will not render on the site. If a source is worth naming, say it in plain text only."""
 # ═══════════════════════════════════════════════
 YT_META_PROMPT = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 Based on the following newsletter content, generate a YouTube Metadata package in ENGLISH.
@@ -1170,20 +1190,253 @@ def _build_pillar_link(target_cat):
         return ""
     return f"""<div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:20px; margin:40px 0; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);"><p style="margin:0; font-size:16px; color:#1e293b;"><strong style="color:#2563eb;">📚 Deep Dive:</strong> Want to master this topic? Check out our complete guide to <a href="{pillar['url']}" style="color:#2563eb; text-decoration:underline; font-weight:700;">{pillar['anchor']}</a>.</p></div>"""
 
+# ═══════════════════════════════════════════════
+# 🏷️ 톤 이원화 배지 — 자동 파이프라인 글 vs Jiho Won 실제 글 구분
+# ═══════════════════════════════════════════════
+def _build_ai_assist_badge():
+    """자동 파이프라인(Gemini AI 초안)으로 생성된 글 상단에 붙는 공개 배지."""
+    return f"""<div style="background:#f8fafc; border:1px solid {BORDER}; border-left:4px solid #64748b; border-radius:6px; padding:16px 20px; margin:0 0 30px;"><p style="margin:0; font-size:14px; color:#475569; line-height:1.6;">🤖 <strong style="color:#334155;">AI-Assisted Draft:</strong> This article's draft was written by Google Gemini AI using our verified data sources, then reviewed before publishing. Educational content only — not financial advice. AI can occasionally get things wrong, so verify anything important against an official source.</p></div>"""
+
+def _build_human_badge(author):
+    """Jiho Won 실제 1인칭 글(My Numbers 등) 상단에 붙는 진위성 배지."""
+    return f"""<div style="background:#fefce8; border:1px solid #fde047; border-left:4px solid {GOLD}; border-radius:6px; padding:16px 20px; margin:0 0 30px;"><p style="margin:0; font-size:14px; color:#713f12; line-height:1.6;">✍️ <strong style="color:#92400e;">Written by {author}:</strong> This is my own actual experience and decisions — not AI-generated, not a generic educational article. Just one person's honest numbers, for what they're worth.</p></div>"""
+
+# ═══════════════════════════════════════════════
+# 🧮 Financial Calculators — poppopmake.com 계산기 이식 (바닐라 JS, 플러그인 불필요)
+# ═══════════════════════════════════════════════
+CALC_COMPOUND_HTML = """
+<div style="background:#ffffff; border:2px solid #e2e8f0; border-radius:12px; padding:30px; margin:30px auto; max-width:640px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <h3 style="margin-top:0; font-size:22px; color:#1a252c;">💰 Compound Interest Calculator</h3>
+  <p style="color:#64748b; font-size:14px; margin-top:-8px;">See how your money grows with monthly contributions and compound interest.</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0;">
+    <label style="font-size:14px; color:#334155; font-weight:600;">Initial amount ($)
+      <input id="ci_principal" type="number" value="1000" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Monthly contribution ($)
+      <input id="ci_monthly" type="number" value="200" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Annual return (%)
+      <input id="ci_rate" type="number" value="7" step="0.1" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Years
+      <input id="ci_years" type="number" value="20" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+  </div>
+  <button onclick="ciCalc()" style="background:#10b981; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; width:100%;">Calculate</button>
+  <div id="ci_result" style="margin-top:20px; display:none; background:#f0fdf4; border-left:4px solid #10b981; border-radius:0 8px 8px 0; padding:18px;">
+    <p style="margin:0 0 8px; font-size:15px; color:#065f46;">Future value: <strong id="ci_fv" style="font-size:20px;"></strong></p>
+    <p style="margin:0 0 8px; font-size:14px; color:#064e3b;">Total contributed: <strong id="ci_contrib"></strong></p>
+    <p style="margin:0; font-size:14px; color:#064e3b;">Total interest earned: <strong id="ci_interest"></strong></p>
+  </div>
+</div>
+<script>
+function ciFmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+function ciCalc(){
+  var p = parseFloat(document.getElementById('ci_principal').value) || 0;
+  var pmt = parseFloat(document.getElementById('ci_monthly').value) || 0;
+  var rate = (parseFloat(document.getElementById('ci_rate').value) || 0) / 100;
+  var years = parseFloat(document.getElementById('ci_years').value) || 0;
+  var n = 12, r = rate / n, t = years * n;
+  var fvPrincipal = p * Math.pow(1 + r, t);
+  var fvContrib = r === 0 ? pmt * t : pmt * ((Math.pow(1 + r, t) - 1) / r);
+  var fv = fvPrincipal + fvContrib;
+  var contributed = p + pmt * t;
+  var interest = fv - contributed;
+  document.getElementById('ci_fv').textContent = ciFmt(fv);
+  document.getElementById('ci_contrib').textContent = ciFmt(contributed);
+  document.getElementById('ci_interest').textContent = ciFmt(interest);
+  document.getElementById('ci_result').style.display = 'block';
+}
+</script>
+"""
+
+CALC_FIRE_HTML = """
+<div style="background:#ffffff; border:2px solid #e2e8f0; border-radius:12px; padding:30px; margin:30px auto; max-width:640px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <h3 style="margin-top:0; font-size:22px; color:#1a252c;">🔥 FIRE Number Calculator</h3>
+  <p style="color:#64748b; font-size:14px; margin-top:-8px;">Find your FIRE number and roughly how long it'll take to get there.</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0;">
+    <label style="font-size:14px; color:#334155; font-weight:600;">Current savings ($)
+      <input id="fire_savings" type="number" value="20000" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Monthly savings ($)
+      <input id="fire_monthly" type="number" value="1000" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Expected annual return (%)
+      <input id="fire_rate" type="number" value="7" step="0.1" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Annual expenses in retirement ($)
+      <input id="fire_expenses" type="number" value="40000" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600; grid-column:1 / -1;">Safe withdrawal rate (%)
+      <input id="fire_swr" type="number" value="4" step="0.1" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+  </div>
+  <button onclick="fireCalc()" style="background:#f59e0b; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; width:100%;">Calculate</button>
+  <div id="fire_result" style="margin-top:20px; display:none; background:#fffbeb; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:18px;">
+    <p style="margin:0 0 8px; font-size:15px; color:#92400e;">Your FIRE number: <strong id="fire_number" style="font-size:20px;"></strong></p>
+    <p style="margin:0; font-size:14px; color:#7c2d12;" id="fire_eta"></p>
+  </div>
+</div>
+<script>
+function fireFmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+function fireCalc(){
+  var savings = parseFloat(document.getElementById('fire_savings').value) || 0;
+  var monthly = parseFloat(document.getElementById('fire_monthly').value) || 0;
+  var rate = (parseFloat(document.getElementById('fire_rate').value) || 0) / 100;
+  var expenses = parseFloat(document.getElementById('fire_expenses').value) || 0;
+  var swr = (parseFloat(document.getElementById('fire_swr').value) || 4) / 100;
+  var target = swr > 0 ? expenses / swr : 0;
+  var r = rate / 12;
+  var balance = savings;
+  var months = 0;
+  var maxMonths = 1200;
+  while (balance < target && months < maxMonths) {
+    balance = balance * (1 + r) + monthly;
+    months++;
+  }
+  document.getElementById('fire_number').textContent = fireFmt(target);
+  var etaEl = document.getElementById('fire_eta');
+  if (balance >= target) {
+    var y = Math.floor(months / 12), m = months % 12;
+    etaEl.textContent = 'At this pace: about ' + y + ' years' + (m ? ' and ' + m + ' months' : '') + ' to reach it.';
+  } else {
+    etaEl.textContent = "At this pace, it won't happen within 100 years — try increasing your monthly savings or expected return.";
+  }
+  document.getElementById('fire_result').style.display = 'block';
+}
+</script>
+"""
+
+CALC_BUDGET_HTML = """
+<div style="background:#ffffff; border:2px solid #e2e8f0; border-radius:12px; padding:30px; margin:30px auto; max-width:640px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <h3 style="margin-top:0; font-size:22px; color:#1a252c;">📊 50/30/20 Budget Calculator</h3>
+  <p style="color:#64748b; font-size:14px; margin-top:-8px;">Split your take-home pay into needs, wants, and savings.</p>
+  <label style="font-size:14px; color:#334155; font-weight:600; display:block; margin:20px 0;">Monthly take-home income ($)
+    <input id="bud_income" type="number" value="4000" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+  </label>
+  <button onclick="budCalc()" style="background:#3b82f6; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; width:100%;">Calculate</button>
+  <div id="bud_result" style="margin-top:20px; display:none;">
+    <div style="background:#eff6ff; border-left:4px solid #3b82f6; border-radius:0 8px 8px 0; padding:14px 18px; margin-bottom:10px;"><p style="margin:0; font-size:14px; color:#1e3a8a;">Needs (50%): <strong id="bud_needs" style="font-size:17px;"></strong></p></div>
+    <div style="background:#f0fdf4; border-left:4px solid #10b981; border-radius:0 8px 8px 0; padding:14px 18px; margin-bottom:10px;"><p style="margin:0; font-size:14px; color:#065f46;">Wants (30%): <strong id="bud_wants" style="font-size:17px;"></strong></p></div>
+    <div style="background:#fffbeb; border-left:4px solid #f59e0b; border-radius:0 8px 8px 0; padding:14px 18px;"><p style="margin:0; font-size:14px; color:#92400e;">Savings / debt payoff (20%): <strong id="bud_savings" style="font-size:17px;"></strong></p></div>
+  </div>
+</div>
+<script>
+function budFmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+function budCalc(){
+  var income = parseFloat(document.getElementById('bud_income').value) || 0;
+  document.getElementById('bud_needs').textContent = budFmt(income * 0.5);
+  document.getElementById('bud_wants').textContent = budFmt(income * 0.3);
+  document.getElementById('bud_savings').textContent = budFmt(income * 0.2);
+  document.getElementById('bud_result').style.display = 'block';
+}
+</script>
+"""
+
+CALC_FEE_HTML = """
+<div style="background:#ffffff; border:2px solid #e2e8f0; border-radius:12px; padding:30px; margin:30px auto; max-width:640px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <h3 style="margin-top:0; font-size:22px; color:#1a252c;">📉 Investment Fee Calculator</h3>
+  <p style="color:#64748b; font-size:14px; margin-top:-8px;">See how much a fund's expense ratio actually costs you over time.</p>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0;">
+    <label style="font-size:14px; color:#334155; font-weight:600;">Initial investment ($)
+      <input id="fee_principal" type="number" value="10000" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Monthly contribution ($)
+      <input id="fee_monthly" type="number" value="300" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Expected annual return before fees (%)
+      <input id="fee_rate" type="number" value="8" step="0.1" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600;">Years invested
+      <input id="fee_years" type="number" value="30" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+    <label style="font-size:14px; color:#334155; font-weight:600; grid-column:1 / -1;">Expense ratio / annual fee (%)
+      <input id="fee_ratio" type="number" value="1.0" step="0.01" style="width:100%; padding:10px; margin-top:6px; border:1px solid #e2e8f0; border-radius:6px; font-size:15px; box-sizing:border-box;">
+    </label>
+  </div>
+  <button onclick="feeCalc()" style="background:#ef4444; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:15px; font-weight:700; cursor:pointer; width:100%;">Calculate</button>
+  <div id="fee_result" style="margin-top:20px; display:none; background:#fef2f2; border-left:4px solid #ef4444; border-radius:0 8px 8px 0; padding:18px;">
+    <p style="margin:0 0 8px; font-size:14px; color:#7f1d1d;">Value with fees: <strong id="fee_with" style="font-size:17px;"></strong></p>
+    <p style="margin:0 0 8px; font-size:14px; color:#7f1d1d;">Value with no fees: <strong id="fee_without" style="font-size:17px;"></strong></p>
+    <p style="margin:0; font-size:15px; color:#991b1b;">Total lost to fees: <strong id="fee_lost" style="font-size:20px;"></strong></p>
+  </div>
+</div>
+<script>
+function feeFmt(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+function feeFV(p, pmt, annualRate, years){
+  var n = 12, r = annualRate / n, t = years * n;
+  var fvPrincipal = p * Math.pow(1 + r, t);
+  var fvContrib = r === 0 ? pmt * t : pmt * ((Math.pow(1 + r, t) - 1) / r);
+  return fvPrincipal + fvContrib;
+}
+function feeCalc(){
+  var p = parseFloat(document.getElementById('fee_principal').value) || 0;
+  var pmt = parseFloat(document.getElementById('fee_monthly').value) || 0;
+  var grossRate = (parseFloat(document.getElementById('fee_rate').value) || 0) / 100;
+  var years = parseFloat(document.getElementById('fee_years').value) || 0;
+  var feeRatio = (parseFloat(document.getElementById('fee_ratio').value) || 0) / 100;
+  var netRate = Math.max(grossRate - feeRatio, -0.99);
+  var withFees = feeFV(p, pmt, netRate, years);
+  var withoutFees = feeFV(p, pmt, grossRate, years);
+  document.getElementById('fee_with').textContent = feeFmt(withFees);
+  document.getElementById('fee_without').textContent = feeFmt(withoutFees);
+  document.getElementById('fee_lost').textContent = feeFmt(withoutFees - withFees);
+  document.getElementById('fee_result').style.display = 'block';
+}
+</script>
+"""
+
+def build_calculators_page_html():
+    """poppopmake.com 스타일 계산기 4종을 담은 독립 페이지 HTML (플러그인 없이 바닐라 JS)."""
+    inttro = f"""<div style="{F}"><p style="font-size:18px; color:{SLATE};">Four quick calculators for the questions we get asked most — compounding, FIRE, budgeting, and what fees actually cost you. Everything runs right here in your browser; nothing you type is sent anywhere.</p></div>"""
+    outro = f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:30px; text-transform:uppercase; letter-spacing:0.5px;">Educational tools only. Not financial advice. All decisions are your own.</p>"""
+    return inttro + CALC_COMPOUND_HTML + CALC_FIRE_HTML + CALC_BUDGET_HTML + CALC_FEE_HTML + outro
+
+def _build_calculator_cta():
+    return f"""<div style="background:#f0fdf4; border-left:4px solid #10b981; padding:20px; margin:20px 0 40px; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.02);"><p style="margin:0; font-size:16px; color:#1e293b;"><strong style="color:#059669;">🧮 Try it yourself:</strong> Run your own numbers with our free <a href="{SITE_URL}/financial-calculators/" style="color:#059669; text-decoration:underline; font-weight:700;">Financial Calculators</a> — compound interest, FIRE number, budgeting, and fee-drag.</p></div>"""
+
+def publish_calculators_page():
+    """워드프레스에 /financial-calculators/ 고정 페이지를 만들거나 있으면 내용만 갱신 (일간 로테이션과 무관, 수동 실행용)."""
+    slug = "financial-calculators"
+    content = build_calculators_page_html()
+    page_data = {
+        "title": "Financial Calculators — Compound Interest, FIRE, Budget & Fees",
+        "content": content,
+        "status": "publish",
+        "slug": slug,
+    }
+    r = wp_api_call('GET', f'pages?slug={slug}')
+    if r and r.status_code == 200 and len(r.json()) > 0:
+        page_id = r.json()[0]["id"]
+        r2 = wp_api_call('POST', f'pages/{page_id}', json_data=page_data)
+        if r2 and r2.status_code in (200, 201):
+            print(f"   ✅ Updated existing calculators page: {r2.json().get('link')}")
+            return True
+        print(f"   ❌ Failed to update calculators page. Status: {r2.status_code if r2 else 'N/A'}")
+        return False
+    r3 = wp_api_call('POST', 'pages', json_data=page_data)
+    if r3 and r3.status_code in (200, 201):
+        print(f"   ✅ Published new calculators page: {r3.json().get('link')}")
+        return True
+    print(f"   ❌ Failed to publish calculators page. Status: {r3.status_code if r3 else 'N/A'}")
+    return False
+
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
+    html += _build_ai_assist_badge()
     html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it?</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{xtag(raw, "DEFINITION").replace(chr(10), '<br><br>')}</div></div>"""
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Quick Comparison")
     html += _build_faq_section(raw)
-    html += _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
+    html += _build_calculator_cta() + _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_philosophy_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
+    html += _build_ai_assist_badge()
     html += f"""<div style="text-align:center; margin:50px 0;"><span style="font-size:40px; color:{GOLD}; line-height:1;">❝</span><h2 style="font-family:Georgia,serif; font-size:26px; color:{DARK}; margin:10px 0; font-weight:600; line-height:1.4;">{xtag(raw, "ANCHOR")}</h2><span style="font-size:40px; color:{GOLD}; line-height:1;">❞</span></div>"""
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:22px; color:{DARK}; border-left:4px solid {GOLD}; padding-left:12px; margin-bottom:20px;">The Reflection</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "REFLECTION").replace(chr(10), '<br><br>')}</div></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
@@ -1194,18 +1447,20 @@ def build_philosophy_html(raw, author, tf, title, cat):
 
 def build_money_hack_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
+    html += _build_ai_assist_badge()
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3><p>{xtag(raw, "CONCEPT").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
     html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Platform Comparison")
     html += _build_faq_section(raw)
-    html += _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
+    html += _build_calculator_cta() + _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
 def build_my_numbers_html(raw, author, tf, title, cat, raw_notes=""):
     html = f"""<div style="{F}">\n"""
+    html += _build_human_badge(author)
     opening = xtag(raw, "OPENING") or f"Here's an honest look at {tf}."
     html += f"""<p style="font-size:19px; font-style:italic; color:{SLATE};">{opening}</p>"""
 
@@ -1236,7 +1491,9 @@ def build_my_numbers_html(raw, author, tf, title, cat, raw_notes=""):
     return sanitize(html)
 
 def build_html(tier, cat, raw, author, tf, title):
-    html = f"""<div style="{F}">\n{_build_warm_index(raw)}"""
+    html = f"""<div style="{F}">\n"""
+    html += _build_ai_assist_badge()
+    html += _build_warm_index(raw)
     html += f"""<h2 style="font-size:28px; color:{DARK}; border-bottom:3px solid {GOLD}; padding-bottom:10px;">Executive Summary</h2>"""
     html += f"""<p style="font-size:19px; font-weight:500;">{xtag(raw, "EXECUTIVE_SUMMARY")}</p>"""
     html += f"""<div style="background:#fffbeb; border:2px solid #f59e0b; padding:25px; margin:35px 0; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
@@ -1285,7 +1542,7 @@ def build_html(tier, cat, raw, author, tf, title):
     asia_lens = xtag(raw, "ASIA_LENS")
     if asia_lens and asia_lens.strip().upper() != "NONE":
         html += f"""<div style="background:#fdf4ff; border:2px solid #a855f7; padding:25px; margin:40px 0; border-radius:8px;">
-            <p style="font-size:14px; font-weight:800; color:#7e22ce; text-transform:uppercase; letter-spacing:1px; margin:0 0 10px;">🌏 Asia Market Lens — Jiho Won</p>
+            <p style="font-size:14px; font-weight:800; color:#7e22ce; text-transform:uppercase; letter-spacing:1px; margin:0 0 10px;">🌏 Asia Market Lens — Jiho Won's own take, human-written</p>
             <p style="margin:0; color:#3b0764; font-size:16px; line-height:1.7;">{asia_lens}</p>
         </div>"""
     al = CAT_ALLOC.get(cat, CAT_ALLOC["Economy"])
@@ -1300,7 +1557,7 @@ def build_html(tier, cat, raw, author, tf, title):
     <div style="background:{DARK}; padding:30px; border-radius:10px; border-left:5px solid {GOLD}; margin-top:35px;">
         <p style="color:#e2e8f0; font-size:18px; margin:0;"><strong style="color:{GOLD};">P.S.</strong> {xtag(raw, "PS")}</p>
     </div>"""
-    html += _build_pillar_link("Insight") + _build_comment_cta(raw, cat)
+    html += _build_calculator_cta() + _build_pillar_link("Insight") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
@@ -1319,15 +1576,18 @@ def get_font(url, filename):
     return filename
 
 # 🚨 완벽한 직관적 3D 금융 차트/그래프 모형 렌더링 🚨
-def generate_carousel_image(prompt_text):
+# negative_prompt: passed through to Imagen's GenerateImagesConfig (native support) and to
+# Pollinations' "negative" query param on the fallback path — see MASCOT_NEGATIVE_PROMPT above.
+def generate_carousel_image(prompt_text, negative_prompt=None):
     try:
         client = _get_gemini_client()
+        img_config_kwargs = dict(number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg")
+        if negative_prompt:
+            img_config_kwargs["negative_prompt"] = negative_prompt
         result = client.models.generate_images(
             model='imagen-3.0-generate-002',
             prompt=prompt_text,
-            config=types.GenerateImagesConfig(
-                number_of_images=1, aspect_ratio="1:1", output_mime_type="image/jpeg"
-            )
+            config=types.GenerateImagesConfig(**img_config_kwargs)
         )
         img_data = result.generated_images[0].image.image_bytes
         ai_img_raw = Image.open(io.BytesIO(img_data)).convert("RGBA")
@@ -1343,7 +1603,9 @@ def generate_carousel_image(prompt_text):
         print(f"    ⚠️ Gemini Image Gen failed: {e}. Trying Pollinations...")
 
     prompt_encoded = urllib.parse.quote(prompt_text)
-    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&seed={random.randint(1,100000)}"
+    url = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=1080&nologo=true&enhance=true&model=flux&seed={random.randint(1,100000)}"
+    if negative_prompt:
+        url += f"&negative={urllib.parse.quote(negative_prompt)}"
 
     for attempt in range(3):
         try:
@@ -1723,23 +1985,33 @@ def generate_vip_carousel(raw_content, cat):
     random.shuffle(colors_neon)
 
     # 🚨 white blob mascot 스타일 강제 — 캐릭터가 차트를 보고 반응하는 구도 🚨
+    # NOTE: no arms/legs/hands by design. Limbs are the #1 cause of deformed/uncanny
+    # renders on free diffusion backends (Pollinations/Flux) — a limbless "egg" body
+    # that expresses emotion only through tilt + face is far more reliable to render
+    # correctly than a body with thin limbs the model has to improvise anatomy for.
     vp_base = (
-        "A cute, minimalist mascot character: a smooth glossy white blob-shaped body, "
-        "two simple round black dot eyes, a small simple round open mouth, no nose, no ears, no hair, no clothes. "
-        "Simple thin arms and legs, soft 3D render like a friendly app mascot. "
-        "Pitch-black background with vivid floor reflections. "
-        "The mascot is physically and emotionally reacting to a financial chart floating beside it — "
-        "pointing at it, holding it, or gesturing toward it with its whole body. "
-        "Extremely clear, expressive pose. 8k resolution, clean composition, no text."
+        "A single minimalist 3D-rendered mascot character, perfectly centered in frame, facing forward, symmetrical. "
+        "Its entire body is one smooth glossy white egg-shaped blob — no arms, no legs, no hands, no fingers, "
+        "no hair, no clothes, no ears, no nose. Only two small black dot eyes and a simple mouth show its emotion. "
+        "It floats just above a glossy black floor with a soft reflection beneath it, pitch-black background. "
+        "Soft studio lighting, clean simple composition, exactly one character, 8k resolution, no text, no logo, no watermark."
     )
 
-    vp1 = f"{vp_base} The mascot points excitedly upward at a giant glowing {colors_neon[0][0]} arrow shooting up and to the right."
+    vp1 = f"{vp_base} Its eyes are wide and excited, mouth open in a big cheerful smile, body tilted back as if bouncing with joy. Beside it floats a giant glowing {colors_neon[0][0]} arrow shooting up and to the right."
 
-    vp2 = f"{vp_base} The mascot gives a big thumbs-up next to a 3D bar graph with 3 pillars stepping upward, glowing {colors_neon[1][0]}."
+    vp2 = f"{vp_base} Its eyes are happy curved crescents, mouth open in a proud grin, body leaning slightly forward. Beside it floats a 3D bar graph with 3 pillars stepping upward, glowing {colors_neon[1][0]}."
 
-    vp3 = f"{vp_base} The mascot looks shocked, hands on its face, staring at a steep {colors_neon[2][0]} glowing line chart falling downward."
+    vp3 = f"{vp_base} Its eyes are wide with shock, mouth open in a small round 'o' of surprise, body leaning back and tilted away. Beside it floats a steep {colors_neon[2][0]} glowing line chart falling sharply downward."
 
-    vp4 = f"{vp_base} The mascot leans forward curiously, examining a glowing {colors_neon[3][0]} candlestick chart floating in front of it."
+    vp4 = f"{vp_base} Its eyes are narrowed with curiosity, mouth a small flat line, body tilted slightly forward as if peering closer. Beside it floats a glowing {colors_neon[3][0]} candlestick chart."
+
+    # Shared negative prompt: Imagen's GenerateImagesConfig accepts negative_prompt natively;
+    # Pollinations' /prompt endpoint accepts a "negative" query param — both paths use this.
+    MASCOT_NEGATIVE_PROMPT = (
+        "extra limbs, arms, legs, hands, fingers, multiple characters, duplicate, clone, "
+        "deformed, disfigured, mutated, asymmetrical, extra heads, long neck, blurry, "
+        "low quality, bad anatomy, text, watermark, logo, signature, creepy, realistic human skin"
+    )
 
     data_points = []
     for i in range(1, 6):
@@ -1779,13 +2051,13 @@ def generate_vip_carousel(raw_content, cat):
 
     print("    [AI] Requesting 4 unique images for Dynamic Storytelling...")
 
-    img_hook_ai = generate_carousel_image(vp1)
+    img_hook_ai = generate_carousel_image(vp1, negative_prompt=MASCOT_NEGATIVE_PROMPT)
     time.sleep(3)
-    img_stat_ai = generate_carousel_image(vp2)
+    img_stat_ai = generate_carousel_image(vp2, negative_prompt=MASCOT_NEGATIVE_PROMPT)
     time.sleep(3)
-    img_data_ai = generate_carousel_image(vp3)
+    img_data_ai = generate_carousel_image(vp3, negative_prompt=MASCOT_NEGATIVE_PROMPT)
     time.sleep(3)
-    img_out_ai  = generate_carousel_image(vp4)
+    img_out_ai  = generate_carousel_image(vp4, negative_prompt=MASCOT_NEGATIVE_PROMPT)
 
     last_good_img = None
     for img in [img_hook_ai, img_stat_ai, img_data_ai, img_out_ai]:
@@ -2262,5 +2534,10 @@ if __name__ == "__main__":
             base_cats = [c for c in CATEGORIES if c not in ["On-Chain", "Money Hack"]]
             cat = base_cats[day_of_year % len(base_cats)]
             run_news_pipeline(cat)
+        elif arg == "calculators":
+            # 일간 로테이션과 무관한 수동 실행 전용 — /financial-calculators/ 페이지를 만들거나 갱신
+            if not check_env_vars() or not verify_wp_credentials():
+                sys.exit(1)
+            publish_calculators_page()
     else:
         run_news_pipeline()
