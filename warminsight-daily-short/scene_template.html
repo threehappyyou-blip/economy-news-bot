@@ -106,6 +106,29 @@
     position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%);
   }
+
+  /* transparent-capture mode (?transparent=1): used to render just the text/badge/mascot
+     overlay with a see-through backdrop, for compositing onto an AI-generated background
+     clip via ffmpeg. html/body stay opaque black (ffmpeg needs a real color to key against
+     only if we chose chroma-key — instead we rely on page.screenshot({omitBackground:true})
+     which gives the PNG true alpha wherever #stage itself is transparent). */
+  html.transparent-mode, html.transparent-mode body,
+  body.transparent-mode{ background:transparent !important; }
+  body.transparent-mode #stage{ background:transparent !important; }
+  body.transparent-mode .grain,
+  body.transparent-mode .vignette{ display:none !important; }
+  /* scene 1 gets composited onto an unpredictable AI-generated background clip,
+     so give its text/badges a legibility shadow regardless of what's behind them */
+  body.transparent-mode #chip .label,
+  body.transparent-mode #topic-badge .pill,
+  body.transparent-mode #s1 .kicker,
+  body.transparent-mode #s1 .headline{
+    text-shadow:0 2px 10px rgba(0,0,0,.55), 0 0 28px rgba(0,0,0,.35);
+  }
+  body.transparent-mode #topic-badge .pill{
+    background:rgba(18,19,26,.55);
+    border-color:rgba(255,184,77,.6);
+  }
 </style>
 </head>
 <body>
@@ -150,6 +173,15 @@
 </div>
 
 <script>
+// transparent-capture mode: ?transparent=1 strips the opaque background so
+// Playwright's page.screenshot({omitBackground:true}) can grab a true-alpha
+// PNG of just the text/badge/mascot overlay, for compositing onto an
+// AI-generated background clip via ffmpeg.
+if (new URLSearchParams(location.search).get('transparent') === '1') {
+  document.documentElement.classList.add('transparent-mode');
+  document.body.classList.add('transparent-mode');
+}
+
 function splitWords(el){
   const text = el.innerHTML;
   // split on spaces but keep inline tags (accent spans) intact as single units
@@ -204,7 +236,11 @@ function mascotSVG(idx, mood){
   const mouth = openMouth
     ? '<ellipse cx="127" cy="168" rx="15" ry="19" fill="#1b1c26"/>'
     : '<path d="M110,170 Q127,186 144,170" stroke="#1b1c26" stroke-width="9" stroke-linecap="round" fill="none"/>';
-  const glowId = 'mGlow'+idx, gradId = 'mGrad'+idx;
+  const glowId = 'mGlow'+idx, gradId = 'mGrad'+idx, sparkGlowId = 'mSparkGlow'+idx;
+  // "insight spark" accent — a little glowing 4-point sparkle near the head, standing
+  // in for the "aha, now I get it" moment this brand (Warm Insight) is all about.
+  // Bigger, rounder eyes with a tiny highlight dot give the face a brighter,
+  // more alert "I just understood something" look rather than a plain cute blank stare.
   return `<svg width="260" height="320" viewBox="0 0 260 320">
     <defs>
       <radialGradient id="${glowId}" cx="50%" cy="50%" r="50%">
@@ -215,6 +251,10 @@ function mascotSVG(idx, mood){
         <stop offset="0%" stop-color="#fff6ea"/>
         <stop offset="100%" stop-color="#ffcf8a"/>
       </linearGradient>
+      <radialGradient id="${sparkGlowId}" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffd27a" stop-opacity=".9"/>
+        <stop offset="100%" stop-color="#ffd27a" stop-opacity="0"/>
+      </radialGradient>
     </defs>
     <ellipse cx="130" cy="300" rx="95" ry="18" fill="url(#${glowId})"/>
     <rect x="105" y="245" width="16" height="45" rx="8" fill="#e8d9c5"/>
@@ -226,9 +266,15 @@ function mascotSVG(idx, mood){
     <ellipse cx="130" cy="150" rx="80" ry="95" fill="url(#${gradId})"/>
     <ellipse cx="85" cy="158" rx="13" ry="7" fill="#ff7a3d" opacity=".45"/>
     <ellipse cx="170" cy="158" rx="13" ry="7" fill="#ff7a3d" opacity=".45"/>
-    <ellipse cx="100" cy="135" rx="9" ry="13" fill="#1b1c26"/>
-    <ellipse cx="155" cy="135" rx="9" ry="13" fill="#1b1c26"/>
+    <ellipse cx="99" cy="133" rx="11" ry="15" fill="#1b1c26"/>
+    <ellipse cx="156" cy="133" rx="11" ry="15" fill="#1b1c26"/>
+    <circle cx="103" cy="127" r="3.2" fill="#fff6ea"/>
+    <circle cx="160" cy="127" r="3.2" fill="#fff6ea"/>
     ${mouth}
+    <g class="spark" style="transform-box:fill-box;transform-origin:50% 50%;">
+      <circle cx="184" cy="78" r="22" fill="url(#${sparkGlowId})"/>
+      <path d="M184,58 L190,74 L206,80 L190,86 L184,102 L178,86 L162,80 L178,74 Z" fill="#ffd27a"/>
+    </g>
   </svg>`;
 }
 
@@ -259,7 +305,18 @@ scenes.forEach((id, i)=>{
   const mascotSlot = el.querySelector('.mascot-slot');
   if(mascotSlot){
     const mood = MASCOT_MOODS[id] || 'present';
-    mascotSlot.innerHTML = mascotSVG(i+1, mood);
+    // Soul-generated character PNG, when present, takes over from the hand-drawn
+    // SVG automatically (onload hides the SVG). If the asset is missing or fails
+    // to load (onerror, or before Soul assets exist at all), the SVG — already
+    // visible underneath — is the permanent fallback, so this never breaks.
+    // hype/cheer share one pose; "confident" reuses the "present" pose mirrored.
+    const ASSET_BY_MOOD = { hype:'mascot_hype.png', cheer:'mascot_hype.png', present:'mascot_present.png', confident:'mascot_present.png', wave:'mascot_wave.png' };
+    const assetFile = ASSET_BY_MOOD[mood] || 'mascot_present.png';
+    const mirror = (mood === 'confident') ? ' transform:scaleX(-1);' : '';
+    mascotSlot.innerHTML = `<img class="mascot-img" alt="" src="assets/${assetFile}" style="width:260px;display:none;${mirror}"
+        onload="this.style.display='block'; this.parentElement.querySelector('.mascot-svg-fallback').style.display='none';"
+        onerror="this.style.display='none';">
+      <div class="mascot-svg-fallback">${mascotSVG(i+1, mood)}</div>`;
     animateIn(mascotSlot, start+380, 480, 60);
     mascotSlot.animate([
       {transform:'translateX(-50%) translateY(0px)'},
@@ -285,6 +342,16 @@ scenes.forEach((id, i)=>{
       if(armR) armR.animate([{transform:'rotate(0deg)'},{transform:'rotate(-16deg)'},{transform:'rotate(6deg)'},{transform:'rotate(-16deg)'},{transform:'rotate(0deg)'}],
         {duration:1100, delay:start+700, iterations:1, easing:'ease-in-out'});
     }
+
+    // "aha" twinkle on the insight spark — a little pulse so it reads as a spark
+    // of realization rather than a static decal
+    const spark = mascotSlot.querySelector('.spark');
+    if(spark) spark.animate([
+      {transform:'scale(.7) rotate(0deg)', opacity:.5},
+      {transform:'scale(1.15) rotate(12deg)', opacity:1},
+      {transform:'scale(.85) rotate(-6deg)', opacity:.7},
+      {transform:'scale(1) rotate(0deg)', opacity:.9}
+    ], {duration:1400, delay:start+420, iterations:Infinity, easing:'ease-in-out'});
   }
 
   if(id==='s5'){

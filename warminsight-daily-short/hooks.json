@@ -1,9 +1,10 @@
 [
+  {"kicker":"STOP SCROLLING","hook_html":"...if you've never checked your <span class=\"accent2\">interest rate.</span>","hook_plain":"Stop scrolling if you've never checked your interest rate."},
   {"kicker":"REAL TALK","hook_html":"Your <span class=\"accent2\">bank</span> won't teach you this.","hook_plain":"Your bank won't teach you this."},
   {"kicker":"HEADS UP","hook_html":"This <span class=\"accent2\">mistake</span> is costing you money.","hook_plain":"This mistake is costing you money."},
   {"kicker":"FINALLY","hook_html":"Nobody explained <span class=\"accent\">interest rates</span> like this.","hook_plain":"Nobody explained interest rates like this."},
   {"kicker":"RED FLAG","hook_html":"You're paying <span class=\"accent2\">fees</span> you don't even see.","hook_plain":"You're paying fees you don't even see."},
-  {"kicker":"FAIR WARNING","hook_html":"Most people learn this the <span class=\"accent2\">hard way</span>.","hook_plain":"Most people learn this the hard way."},
+  {"kicker":"CONFESSION","hook_html":"Most adults can't explain their own <span class=\"accent2\">paycheck.</span>","hook_plain":"Most adults can't explain their own paycheck."},
   {"kicker":"TRUTH BOMB","hook_html":"Here's what your <span class=\"accent2\">advisor</span> won't say.","hook_plain":"Here's what your advisor won't say."},
   {"kicker":"QUICK CHECK","hook_html":"Markets moved today. Do you know <span class=\"accent\">why?</span>","hook_plain":"Markets moved today. Do you know why?"},
   {"kicker":"WORTH IT","hook_html":"This takes 5 minutes. Skipping it <span class=\"accent2\">costs more.</span>","hook_plain":"This takes 5 minutes. Skipping it costs more."},
@@ -12,5 +13,10 @@
   {"kicker":"SMALL EDGE","hook_html":"This habit separates <span class=\"accent\">savers</span> from spenders.","hook_plain":"This habit separates savers from spenders."},
   {"kicker":"PLAIN TRUTH","hook_html":"The <span class=\"accent2\">news</span> won't explain it like this.","hook_plain":"The news won't explain it like this."},
   {"kicker":"SIMPLE","hook_html":"One email a day. <span class=\"accent\">Zero confusion.</span>","hook_plain":"One email a day. Zero confusion."},
-  {"kicker":"CURIOUS?","hook_html":"What's actually moving <span class=\"accent2\">your money?</span>","hook_plain":"What's actually moving your money?"}
+  {"kicker":"CURIOUS?","hook_html":"What's actually moving <span class=\"accent2\">your money?</span>","hook_plain":"What's actually moving your money?"},
+  {"kicker":"BE HONEST","hook_html":"Do you actually know where your <span class=\"accent2\">money</span> goes?","hook_plain":"Do you actually know where your money goes?"},
+  {"kicker":"BRUTAL TRUTH","hook_html":"You're not bad with money. You were just never <span class=\"accent\">taught.</span>","hook_plain":"You're not bad with money. You were just never taught."},
+  {"kicker":"WAIT, WHAT?","hook_html":"<span class=\"accent2\">Inflation</span> isn't what you were told.","hook_plain":"Inflation isn't what you were told."},
+  {"kicker":"RARE","hook_html":"An honest take on money, with <span class=\"accent\">zero</span> sales pitch.","hook_plain":"An honest take on money, with zero sales pitch."},
+  {"kicker":"ONE QUESTION","hook_html":"If your money disappeared today, would you know <span class=\"accent2\">why?</span>","hook_plain":"If your money disappeared today, would you know why?"}
 ]
