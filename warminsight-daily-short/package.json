@@ -10,7 +10,7 @@
     "email": "node send_email.js"
   },
   "dependencies": {
-    "@higgsfield/client": "^0.2.6",
+    "@fal-ai/client": "^1.10.1",
     "nodemailer": "^6.9.14",
     "playwright": "^1.47.0"
   }
