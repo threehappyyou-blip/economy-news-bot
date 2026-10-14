@@ -33,17 +33,55 @@ jobs:
       - name: Build today's scene (pick today's hook)
         run: node build.js
 
-      - name: Record raw video with Playwright
+      - name: Record raw 5-scene video with Playwright (scenes 2-5 source)
         run: |
           rm -rf raw_video
           mkdir -p raw_video
           node record.js
 
-      - name: Encode final MP4 (15.0s, 1080x1920, h264, no audio, no watermark)
+      - name: Encode full 15s baseline (needed to extract scenes 2-5)
+        run: |
+          ffmpeg -y -ss 0.15 -i raw_video/*.webm -t 15.0 -vf "fps=30,format=yuv420p" \
+            -c:v libx264 -profile:v high -crf 17 -preset slow -pix_fmt yuv420p -an \
+            full_render.mp4
+
+      - name: Extract scenes 2-5 (3.0s-15.0s)
+        run: |
+          ffmpeg -y -ss 3.0 -i full_render.mp4 -t 12.0 \
+            -c:v libx264 -profile:v high -crf 17 -preset slow -pix_fmt yuv420p -an \
+            scenes2to5.mp4
+
+      - name: Generate scene 1 AI background clip via fal.ai (optional)
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+        run: node fal_video.js
+        continue-on-error: true  # never let a fal.ai hiccup block the daily send
+
+      - name: Fallback scene 1 background if AI clip is missing
+        run: |
+          if [ ! -f ai_bg.mp4 ]; then
+            echo "No AI clip available today — using a plain animated gradient instead."
+            ffmpeg -y -f lavfi -i "gradients=size=1080x1920:rate=30:duration=3:speed=0.05" \
+              -c:v libx264 -pix_fmt yuv420p ai_bg.mp4
+          fi
+
+      - name: Record scene 1 transparent text/mascot overlay (PNG sequence)
+        run: node record_scene1_overlay.js
+
+      - name: Composite scene 1 (AI background + text/mascot overlay)
+        run: |
+          ffmpeg -y -i ai_bg.mp4 -framerate 30 -i overlay_frames/frame_%04d.png \
+            -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg];[bg][1:v]overlay=0:0:format=auto[outv]" \
+            -map "[outv]" -t 3 \
+            -c:v libx264 -profile:v high -crf 17 -preset slow -pix_fmt yuv420p -an \
+            scene1_composite.mp4
+
+      - name: Assemble final MP4 (15.0s, 1080x1920, h264, no audio, no watermark)
         run: |
           rm -f warminsight_short_*.mp4
-          ffmpeg -y -ss 0.15 -i raw_video/*.webm -t 15.0 -vf "fps=30,format=yuv420p" \
-            -c:v libx264 -profile:v high -crf 17 -preset slow -movflags +faststart -an \
+          printf "file 'scene1_composite.mp4'\nfile 'scenes2to5.mp4'\n" > concat_list.txt
+          ffmpeg -y -f concat -safe 0 -i concat_list.txt -r 30 -vsync cfr \
+            -c:v libx264 -profile:v high -crf 17 -preset slow -movflags +faststart -pix_fmt yuv420p -an \
             warminsight_short_$(date -u +%F).mp4
 
       - name: Verify video specs
