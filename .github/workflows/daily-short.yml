@@ -70,9 +70,19 @@ jobs:
 
       - name: Composite scene 1 (AI background + text/mascot overlay)
         run: |
-          ffmpeg -y -i ai_bg.mp4 -framerate 30 -i overlay_frames/frame_%04d.png \
-            -filter_complex "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg];[bg][1:v]overlay=0:0:format=auto[outv]" \
-            -map "[outv]" -t 3 \
+          # -t 3 is applied on BOTH inputs (trims each stream to exactly 3s
+          # before it enters the filter graph) AND on the output, as a
+          # belt-and-suspenders guard — a real AI clip (e.g. a 5s Kling
+          # generation) must never be allowed to push this past 3s. fps=30 on
+          # the background normalizes its frame rate before overlay, since an
+          # AI-generated clip's native fps can differ from our 30fps overlay
+          # sequence and cause duration/sync drift otherwise.
+          # -frames:v 90 (= 3s @ 30fps exactly) instead of -t 3: a time-based
+          # cut can round down a fraction of a frame short depending on the
+          # source's native fps, which -frames:v avoids entirely.
+          ffmpeg -y -t 3 -i ai_bg.mp4 -t 3 -framerate 30 -i overlay_frames/frame_%04d.png \
+            -filter_complex "[0:v]fps=30,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1[bg];[bg][1:v]overlay=0:0:format=auto,fps=30[outv]" \
+            -map "[outv]" -frames:v 90 -vsync cfr \
             -c:v libx264 -profile:v high -crf 17 -preset slow -pix_fmt yuv420p -an \
             scene1_composite.mp4
 
@@ -80,7 +90,11 @@ jobs:
         run: |
           rm -f warminsight_short_*.mp4
           printf "file 'scene1_composite.mp4'\nfile 'scenes2to5.mp4'\n" > concat_list.txt
-          ffmpeg -y -f concat -safe 0 -i concat_list.txt -r 30 -vsync cfr \
+          # -frames:v 450 (= 15s @ 30fps exactly) is a hard safety cap: whatever
+          # drift happens upstream, the final shipped video is always exactly
+          # 15.0s, frame-exact (see note on the composite step above re: -t vs
+          # -frames:v).
+          ffmpeg -y -f concat -safe 0 -i concat_list.txt -r 30 -vsync cfr -frames:v 450 \
             -c:v libx264 -profile:v high -crf 17 -preset slow -movflags +faststart -pix_fmt yuv420p -an \
             warminsight_short_$(date -u +%F).mp4
 

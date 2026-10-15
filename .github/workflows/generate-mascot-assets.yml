@@ -1,5 +1,11 @@
 name: Generate Mascot Assets (one-off)
 
+# Manual-only — this is NOT part of the daily pipeline. Run it once (or
+# whenever you want to regenerate the mascot's look) from the Actions tab.
+# It renders the hand-drawn mascot design to a reference image, sends it to
+# fal.ai's Ideogram Character model to produce 3 consistent AI poses, and
+# commits them into warminsight-daily-short/assets/ so the daily workflow
+# picks them up automatically from then on (zero extra daily cost).
 on:
   workflow_dispatch: {}
 
