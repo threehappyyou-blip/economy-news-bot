@@ -13,11 +13,23 @@
 //   model: fal-ai/ideogram/character
 //   input: { prompt, reference_image_urls: [url], image_size }
 //   result: result.data.images[0].url
+//
+// IMPORTANT: Ideogram Character returns a flat opaque (white-background) PNG,
+// not a transparent one, even when the prompt asks for "transparent
+// background" — it's a raster model, not an alpha-aware one. The first real
+// render showed exactly this: an ugly white square around the mascot. So every
+// generated pose is run through a background-removal model (fal-ai/bria/
+// background/remove) before being saved, producing a true alpha-transparent
+// PNG that composites cleanly in scene_template.html.
+//   model: fal-ai/bria/background/remove
+//   input: { image_url }
+//   result: result.data.image.url
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
 const MODEL = 'fal-ai/ideogram/character';
+const BG_REMOVE_MODEL = 'fal-ai/bria/background/remove';
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const REFERENCE_PNG = path.join(__dirname, 'mascot_reference.png');
 
@@ -81,8 +93,26 @@ async function downloadFile(url, destPath) {
       console.error(`No image URL in result for ${pose.file}:`, JSON.stringify(result, null, 2));
       continue;
     }
+
+    console.log(`  Removing background from ${pose.file} ...`);
+    let finalUrl = url;
+    try {
+      const bgResult = await fal.subscribe(BG_REMOVE_MODEL, {
+        input: { image_url: url },
+        logs: true,
+      });
+      const transparentUrl = bgResult?.data?.image?.url;
+      if (transparentUrl) {
+        finalUrl = transparentUrl;
+      } else {
+        console.error(`  Background removal returned no URL for ${pose.file}, saving the opaque version instead:`, JSON.stringify(bgResult, null, 2));
+      }
+    } catch (err) {
+      console.error(`  Background removal failed for ${pose.file}, saving the opaque version instead:`, err.message || err);
+    }
+
     const dest = path.join(ASSETS_DIR, pose.file);
-    await downloadFile(url, dest);
+    await downloadFile(finalUrl, dest);
     console.log(`Saved ${dest}`);
   }
   console.log('Done. Commit the assets/ folder so the daily workflow reuses these images at zero extra cost.');

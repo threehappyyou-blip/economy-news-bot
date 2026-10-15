@@ -42,7 +42,17 @@ const NUM_FRAMES = Math.round(DURATION_MS / 1000 * FPS); // 90
       document.getAnimations().forEach(a => {
         try { a.pause(); a.currentTime = tt; } catch (e) {}
       });
+      // force a synchronous style/layout flush so the seek is fully applied
+      // before we ask the compositor to paint it
+      void document.body.offsetHeight;
     }, t);
+    // Wait two animation frames so the browser has actually painted the
+    // post-seek state before we screenshot. Without this, under slower/busier
+    // CI runners the screenshot can land mid-repaint and capture a blend of
+    // the old and new frame — visible as "ghosted"/doubled text.
+    await page.evaluate(() => new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    }));
     const frameFile = path.join(outDir, `frame_${String(i).padStart(4, '0')}.png`);
     await page.screenshot({ path: frameFile, omitBackground: true });
   }
