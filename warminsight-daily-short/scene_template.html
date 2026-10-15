@@ -117,17 +117,24 @@
   body.transparent-mode #stage{ background:transparent !important; }
   body.transparent-mode .grain,
   body.transparent-mode .vignette{ display:none !important; }
-  /* scene 1 gets composited onto an unpredictable AI-generated background clip,
-     so give its text/badges a legibility shadow regardless of what's behind them */
+  /* every scene now gets composited onto an unpredictable AI-generated
+     background clip (not just scene 1), so give all text/badges a legibility
+     shadow regardless of what's behind them */
   body.transparent-mode #chip .label,
   body.transparent-mode #topic-badge .pill,
-  body.transparent-mode #s1 .kicker,
-  body.transparent-mode #s1 .headline{
+  body.transparent-mode .kicker,
+  body.transparent-mode .headline,
+  body.transparent-mode .sub,
+  body.transparent-mode .url,
+  body.transparent-mode .tag{
     text-shadow:0 2px 10px rgba(0,0,0,.55), 0 0 28px rgba(0,0,0,.35);
   }
   body.transparent-mode #topic-badge .pill{
     background:rgba(18,19,26,.55);
     border-color:rgba(255,184,77,.6);
+  }
+  body.transparent-mode .cta-btn{
+    box-shadow:0 6px 24px rgba(0,0,0,.5);
   }
 </style>
 </head>

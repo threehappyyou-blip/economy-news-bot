@@ -1,6 +1,14 @@
-// Generates today's AI background clip for scene 1 via fal.ai (Kling 2.5
-// Turbo Pro, text-to-video), and saves it as fal_bg.mp4 in this folder.
-// Runs daily as part of the GitHub Actions workflow.
+// Generates today's AI background clip via fal.ai (Kling 2.5 Turbo Pro,
+// text-to-video), and saves it as ai_bg_raw.mp4 in this folder. Runs daily
+// as part of the GitHub Actions workflow.
+//
+// This raw 5s clip is NOT the final background by itself anymore — a later
+// workflow step ("Extend AI background to full 15s") boomerang-loops it
+// (forward + reverse + forward) into a seamless 15s clip that now runs
+// behind the ENTIRE video, not just the opening 3s scene. That's what fixes
+// the old "AI background only in scene 1, flat CSS gradient after that"
+// quality drop. Since it's the same single generated clip just looped, the
+// per-video AI cost is unchanged (~$0.35 for one 5s Kling generation).
 //
 // Requires env var FAL_KEY (set as a GitHub Actions secret), picked up
 // automatically by the @fal-ai/client SDK.
@@ -11,20 +19,21 @@
 //   input: { prompt, duration: "5"|"10", aspect_ratio: "16:9"|"9:16"|"1:1" }
 //   result: result.data.video.url
 // Note: Kling only supports 5s or 10s clips (no 3s option) — we generate a
-// 5s clip and the compositing step (ffmpeg -t 3) trims it to the 3s scene 1
-// slot, so this still fits the per-video cost target (~$0.35 for 5s).
+// 5s clip and loop/extend it to cover the full 15s video (see above).
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
 const MODEL = 'fal-ai/kling-video/v2.5-turbo/pro/text-to-video';
-const OUT_FILE = path.join(__dirname, 'ai_bg.mp4');
+const OUT_FILE = path.join(__dirname, 'ai_bg_raw.mp4');
 
 const today = JSON.parse(fs.readFileSync(path.join(__dirname, 'today.json'), 'utf8'));
 
-// Generic/brand-safe energetic backdrop — this just sits behind the existing
-// text+mascot overlay for 3s, it doesn't need to "mean" anything on its own.
-const PROMPT = `Abstract energetic financial growth motion background, warm amber and deep navy gradient light streaks, soft bokeh particles drifting upward, subtle glowing lines like a stock chart trending up, cinematic, smooth camera drift, no text, no logos, no people`;
+// Generic/brand-safe energetic backdrop that now has to carry the WHOLE
+// video (boomeranged to 15s), so the motion needs to be slow and continuous
+// rather than a one-off camera move — a gentle drift reads fine played
+// forward, backward, then forward again with no visible seam.
+const PROMPT = `Abstract energetic financial growth motion background, warm amber and deep navy gradient light streaks, soft bokeh particles drifting slowly upward, subtle glowing lines like a stock chart trending up, cinematic, slow continuous smooth camera drift with no sudden cuts or fast motion, seamless loopable ambience, no text, no logos, no people`;
 
 async function downloadFile(url, destPath) {
   await new Promise((resolve, reject) => {

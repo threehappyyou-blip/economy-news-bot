@@ -33,10 +33,24 @@ const BG_REMOVE_MODEL = 'fal-ai/bria/background/remove';
 const ASSETS_DIR = path.join(__dirname, 'assets');
 const REFERENCE_PNG = path.join(__dirname, 'mascot_reference.png');
 
+// Style note: the daily video now composites this mascot onto a cinematic
+// AI-generated video background (soft bokeh, gradient light streaks, warm
+// amber/navy palette — see fal_video.js), not a flat CSS color. A flat
+// "minimalist vector illustration" mascot looked jarringly out of place
+// against that — like a sticker pasted on a photo. So every pose prompt now
+// explicitly asks for a soft 3D glossy render (think Pixar-style / Apple
+// emoji 3D icon) with the SAME identity (round egg body, warm cream-peach
+// color, big sparkling eyes, rosy cheeks, glowing insight-spark accent) —
+// Ideogram Character keeps the character's identity from the reference
+// image while still following the prompt's rendering-style instructions, so
+// this keeps the approved look but renders it in a way that blends with a
+// photoreal/cinematic backdrop instead of clashing with it.
+const STYLE = 'rendered in a soft 3D glossy toy-like style (like a Pixar character or a 3D emoji), smooth matte-glossy plastic/clay material, gentle cinematic rim lighting and soft contact shadow, warm cream-to-peach gradient shading on the body, NOT flat, NOT 2D vector, NOT a flat illustration';
+
 const POSES = [
-  { file: 'mascot_hype.png', prompt: 'the same cute round egg-shaped mascot character, both arms raised up excitedly in celebration, open cheerful mouth, sparkling eyes, minimalist flat vector illustration, plain transparent/white background, no text' },
-  { file: 'mascot_present.png', prompt: 'the same cute round egg-shaped mascot character, right arm raised up in a friendly presenting gesture, left arm relaxed down, warm smile, sparkling eyes, minimalist flat vector illustration, plain transparent/white background, no text' },
-  { file: 'mascot_wave.png', prompt: 'the same cute round egg-shaped mascot character, right arm raised waving hello, left arm relaxed down, warm smile, sparkling eyes, minimalist flat vector illustration, plain transparent/white background, no text' },
+  { file: 'mascot_hype.png', prompt: `the same cute round egg-shaped mascot character, big sparkling round eyes with a bright catchlight, rosy cheeks, open cheerful mouth, a small glowing golden spark accent near its head, both arms raised up excitedly in celebration, ${STYLE}, floating against a plain neutral softly-lit background, no text` },
+  { file: 'mascot_present.png', prompt: `the same cute round egg-shaped mascot character, big sparkling round eyes with a bright catchlight, rosy cheeks, warm smile, a small glowing golden spark accent near its head, right arm raised up in a friendly presenting gesture, left arm relaxed down, ${STYLE}, floating against a plain neutral softly-lit background, no text` },
+  { file: 'mascot_wave.png', prompt: `the same cute round egg-shaped mascot character, big sparkling round eyes with a bright catchlight, rosy cheeks, warm smile, a small glowing golden spark accent near its head, right arm raised waving hello, left arm relaxed down, ${STYLE}, floating against a plain neutral softly-lit background, no text` },
 ];
 
 async function downloadFile(url, destPath) {

@@ -5,7 +5,7 @@
   "description": "Generates a daily 15s vertical short for warminsight.com and emails it with captions/tags.",
   "scripts": {
     "build": "node build.js",
-    "record": "node record.js",
+    "record": "node record_overlay.js",
     "caption": "node gen_caption.js",
     "email": "node send_email.js"
   },
