@@ -1,8 +1,8 @@
 # Warm Insight Daily Short — GitHub Actions 자동화
 
 매일 07:00 KST(=22:00 UTC)에 깃허브 서버가 스스로 깨어나서:
-1. 15초 쇼츠 영상을 새로 만들고 (1080x1920, 워터마크 없음, 훅 문구 14개 로테이션)
-2. jh0116jh@gmail.com 으로 영상 파일을 **직접 첨부해서** 이메일을 보냅니다 (캡션·해시태그·유튜브 태그 포함).
+1. 15초 쇼츠 영상을 새로 만들고 (1080x1920, 워터마크 없음) — **배경 영상, 문구, 마스코트 포즈까지 실행할 때마다 랜덤으로 조합돼서 매번 다른 영상이 나옵니다.** 그래서 광고용으로 여러 개 만들고 싶을 때는 Actions 탭에서 "Run workflow"를 여러 번 눌러서 서로 다른 버전을 바로바로 뽑아낼 수 있어요.
+2. jh0116jh@gmail.com 으로 영상 파일을 **직접 첨부해서** 이메일을 보냅니다 (캡션·해시태그·유튜브 태그 포함 — 이것도 그날 뽑힌 문구에 맞춰 같이 바뀝니다).
 
 Claude 세션이 꺼져 있어도, 이 대화가 끝나도 계속 작동합니다. 한 번만 설정하면 됩니다.
 
@@ -11,12 +11,14 @@ Claude 세션이 꺼져 있어도, 이 대화가 끝나도 계속 작동합니�
 이 zip을 풀면 이렇게 생겼습니다 — **이 구조 그대로** 깃허브 저장소에 올리시면 됩니다.
 
 ```
-.github/workflows/daily-short.yml   ← 자동 실행 설정 (건드릴 필요 없음)
+.github/workflows/daily-short.yml   ← 매일 자동 실행 설정 (건드릴 필요 없음)
 warminsight-daily-short/            ← 실제 영상 생성 코드
-  ├─ hooks.json
-  ├─ scene_template.html
-  ├─ build.js
-  ├─ record.js
+  ├─ hooks.json          ← 1번 장면(훅 문구) 뱅크
+  ├─ scene_content.json  ← 2~5번 장면 문구 뱅크 (여기를 늘리면 조합 가짓수가 늘어나요)
+  ├─ scene_template.html ← 디자인 + 마스코트(손그림 SVG)
+  ├─ build.js            ← 매 실행마다 문구를 랜덤으로 조합
+  ├─ fal_video.js         ← fal.ai로 AI 배경 영상 생성 (배경 테마도 랜덤)
+  ├─ record_overlay.js   ← 텍스트/마스코트 투명 오버레이 캡처
   ├─ gen_caption.js
   ├─ send_email.js
   └─ package.json
@@ -52,7 +54,8 @@ Gmail 계정 보안 때문에 일반 비밀번호로는 이메일을 자동 발�
 
 ### 5) 이후에는?
 - 아무것도 안 하셔도 매일 07:00 KST에 자동으로 실행됩니다.
-- 훅 문구를 바꾸거나 디자인을 수정하고 싶으시면 `warminsight-daily-short/hooks.json` 또는 `scene_template.html`을 수정해서 다시 올리시면 됩니다 (또는 Claude에게 수정된 파일을 만들어달라고 요청하시면 됩니다).
+- 광고용으로 서로 다른 버전을 더 뽑고 싶으면 **Actions → Warm Insight Daily Short → Run workflow**를 원하는 만큼 눌러주시면 됩니다. 누를 때마다 문구·배경·마스코트 포즈 조합이 달라집니다.
+- 문구 가짓수를 더 늘리고 싶으시면 `warminsight-daily-short/hooks.json`(1번 장면)이나 `scene_content.json`(2~5번 장면)에 항목을 추가해서 다시 올리시면 됩니다. 디자인을 바꾸고 싶으면 `scene_template.html`을 수정하시면 되고요 (또는 Claude에게 수정된 파일을 만들어달라고 요청하시면 됩니다).
 
 ## 비용
 - 깃허브 Actions는 Public 저장소는 완전 무료, Private 저장소도 매달 일정량(보통 개인 계정 기준 한 달 2,000분) 무료 제공됩니다. 이 작업은 1회 실행에 1~2분 정도만 걸리므로 매일 돌려도 한 달에 60분 이내라 사실상 무료입니다.
