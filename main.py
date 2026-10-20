@@ -43,6 +43,11 @@ EMAIL_RECEIVER = os.environ.get("EMAIL_RECEIVER", "")
 YOUTUBE_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 MEDIUM_EMAIL_RECEIVER = "jh0116jh@gmail.com"
 
+# 🚦 배포용 드래프트 이메일(Reddit/Quora, Medium, YouTube Script, Reels) 발송 스위치
+# False로 두면 해당 콘텐츠 생성 자체를 건너뛰어 이메일도, API 호출 비용도 발생하지 않음.
+# 다시 켜고 싶으면 이 값만 True로 바꾸면 됨 — 아래 로직은 그대로 남아있음.
+ENABLE_DISTRIBUTION_EMAILS = False
+
 EXTERNAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
@@ -267,6 +272,12 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 (Write 3 real questions a reader would search related to today's {cat} news. Format EXACTLY, Q then A on separate lines: Q: [question]
 A: [answer in 1-2 sentences])
 </FAQ>
+<MISSION_QUIZ>
+(Write ONE prediction-style quiz question that tests whether the reader actually absorbed this article's single most important insight — not a trivia fact, the core takeaway. Format EXACTLY, 3 lines:
+Q: [a specific question answerable only by someone who understood the key insight]
+A: [the correct answer, under 12 words]
+WHY: [1-2 sentence explanation reinforcing why that's the answer])
+</MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
 PROMPT_UNIFIED_P2 += AEO_RULES
@@ -304,6 +315,12 @@ VERIFIED REFERENCE DATA (use ONLY these numbers for any specific stat/figure you
 (Write 5-6 real questions a beginner would search for about this exact topic. Format EXACTLY, Q then A on separate lines: Q: [question]
 A: [answer in 1-2 sentences, using VERIFIED REFERENCE DATA if it involves a number])
 </FAQ>
+<MISSION_QUIZ>
+(Write ONE prediction-style quiz question that tests whether the reader actually absorbed this article's single most important insight — not a trivia fact, the core takeaway. Format EXACTLY, 3 lines:
+Q: [a specific question answerable only by someone who understood the key insight]
+A: [the correct answer, under 12 words]
+WHY: [1-2 sentence explanation reinforcing why that's the answer])
+</MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 FOUNDATION_PROMPT += AEO_RULES
 
@@ -351,6 +368,12 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 (Write 4-5 real questions a beginner would search about this exact side hustle. Format EXACTLY, Q then A on separate lines: Q: [question]
 A: [answer in 1-2 sentences])
 </FAQ>
+<MISSION_QUIZ>
+(Write ONE prediction-style quiz question that tests whether the reader actually absorbed this article's single most important insight — not a trivia fact, the core takeaway. Format EXACTLY, 3 lines:
+Q: [a specific question answerable only by someone who understood the key insight]
+A: [the correct answer, under 12 words]
+WHY: [1-2 sentence explanation reinforcing why that's the answer])
+</MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 MONEY_HACK_PROMPT += AEO_RULES
 
@@ -1184,6 +1207,29 @@ def _build_faq_section(raw_data):
 
     return f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">🙋 Frequently Asked Questions</h3><div style="margin-top:20px;">{faq_html}</div></div>{schema_tag}"""
 
+def _build_quiz_section(raw_data):
+    """'오늘의 미션' 퀴즈 블록 — JS 없이 <details>만으로 클릭하면 정답이 열리는 구조."""
+    raw_quiz = xtag(raw_data, "MISSION_QUIZ")
+    if not raw_quiz:
+        return ""
+
+    lines = [l.strip() for l in raw_quiz.split('\n') if l.strip()]
+    q, a, why = None, None, None
+    for line in lines:
+        if line.upper().startswith("Q:"):
+            q = line[2:].strip()
+        elif line.upper().startswith("A:"):
+            a = line[2:].strip()
+        elif line.upper().startswith("WHY:"):
+            why = line[4:].strip()
+
+    if not q or not a:
+        return ""
+
+    why_html = f"""<p style="margin:10px 0 0; color:{SLATE}; font-size:15px; line-height:1.6;">{why}</p>""" if why else ""
+
+    return f"""<div style="background:#eff6ff; border:2px solid #3b82f6; border-radius:12px; padding:25px 28px; margin:40px 0;"><h3 style="margin-top:0; font-size:20px; color:#1e3a8a;">🎯 Quick Check: Did You Catch It?</h3><p style="margin:10px 0 18px; font-size:17px; font-weight:600; color:{DARK};">{q}</p><details style="background:#ffffff; border:1px solid #bfdbfe; border-radius:8px; padding:14px 18px;"><summary style="font-weight:700; color:#1d4ed8; cursor:pointer;">Reveal Answer</summary><p style="margin:10px 0 0; font-size:16px; font-weight:700; color:{DARK};">{a}</p>{why_html}</details></div>"""
+
 def _build_pillar_link(target_cat):
     pillar = PILLAR_PAGES.get(target_cat)
     if not pillar:
@@ -1430,6 +1476,7 @@ def build_foundation_html(raw, author, tf, title, cat):
     html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Quick Comparison")
     html += _build_faq_section(raw)
+    html += _build_quiz_section(raw)
     html += _build_calculator_cta() + _build_pillar_link("Foundation") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
@@ -1454,6 +1501,7 @@ def build_money_hack_html(raw, author, tf, title, cat):
     html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Platform Comparison")
     html += _build_faq_section(raw)
+    html += _build_quiz_section(raw)
     html += _build_calculator_cta() + _build_pillar_link("Money Hack") + _build_comment_cta(raw, cat)
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
@@ -1551,6 +1599,7 @@ def build_html(tier, cat, raw, author, tf, title):
         <p style="margin-top:15px; color:{MUTED}; font-size:14px; text-align:center; font-style:italic;">General guideline based on current {cat} outlook. Not personalized advice.</p>
     </div>"""
     html += _build_faq_section(raw)
+    html += _build_quiz_section(raw)
     html += f"""<hr style="border:0; height:1px; background:{BORDER}; margin:50px 0;">
     <h2 style="font-family:Georgia,serif; font-size:28px; color:{DARK}; margin-bottom:20px;">Today's Warm Insight</h2>
     <p style="{F} font-size:19px; font-style:italic; border-left:3px solid #cbd5e1; padding-left:16px;">"{xtag(raw, "TAKEAWAY")}"</p>
@@ -2273,7 +2322,7 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
             if link:
                 print(f"   ✅ Published: {link}")
 
-                if raw_for_cards:
+                if ENABLE_DISTRIBUTION_EMAILS and raw_for_cards:
                     if cat not in ["Foundation", "The Daily Catalyst", "Money Hack"]:
                         if tier == "Premium" or tier == "unified":
                             img_list, data_points, hook_text, question_text, reels_script, ig_caption, smart_comment, video_mp4_bytes = generate_vip_carousel(raw_for_cards, cat)
