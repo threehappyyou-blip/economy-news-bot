@@ -72,8 +72,13 @@ jobs:
           # more scene1-only composite + concat with a separately-rendered
           # scenes2to5.mp4. -frames:v 450 (=15s@30fps exactly) stays as the
           # hard frame-exact safety cap on the final output.
+          # The overlay PNGs are captured at 2x (2160x3840, see
+          # record_overlay.js) for supersampled anti-aliasing, so scale them
+          # back down to 1080x1920 with a high-quality (lanczos) filter right
+          # before the overlay — this is what makes the text/mascot edges
+          # look crisper in the final 1080x1920 output.
           ffmpeg -y -t 15 -i ai_bg.mp4 -t 15 -framerate 30 -i overlay_frames/frame_%04d.png \
-            -filter_complex "[0:v]fps=30[bg];[bg][1:v]overlay=0:0:format=auto,fps=30[outv]" \
+            -filter_complex "[0:v]fps=30[bg];[1:v]scale=1080:1920:flags=lanczos[ov];[bg][ov]overlay=0:0:format=auto,fps=30[outv]" \
             -map "[outv]" -frames:v 450 -vsync cfr \
             -c:v libx264 -profile:v high -crf 17 -preset slow -movflags +faststart -pix_fmt yuv420p -an \
             warminsight_short_$(date -u +%F).mp4
