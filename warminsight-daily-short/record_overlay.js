@@ -30,6 +30,13 @@ const NUM_FRAMES = Math.round(DURATION_MS / 1000 * FPS); // 450
 
   const context = await browser.newContext({
     viewport: { width: 1080, height: 1920 },
+    // Capture at 2x pixel density (2160x3840 physical pixels, same 1080x1920
+    // CSS layout) — this is pure supersampling: the text and mascot edges
+    // get anti-aliased at a higher resolution, then the compositing step
+    // (daily-short.yml) downsamples back to 1080x1920 with a high-quality
+    // scaler, which is what actually produces the crisper look in the final
+    // video. Zero extra AI cost, just a bit more render/encode time.
+    deviceScaleFactor: 2,
   });
   const page = await context.newPage();
   const filePath = 'file://' + path.resolve(__dirname, 'scene.html') + '?transparent=1';
