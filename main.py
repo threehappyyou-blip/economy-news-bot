@@ -362,8 +362,9 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Same concreteness bar as ONE_ACTION above — name exact buttons/settings/prices, never a vague verb like "consider" or "research".)</STEP_BY_STEP_TOOL>
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
 <COMPARISON_TABLE>
-(Compare 2-3 relevant platforms/tools/approaches from the framework, 4-6 rows. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B. Only state fee/pricing figures you are confident are accurate and stable; otherwise describe qualitatively instead of guessing a number.)
+(Compare 2-3 relevant platforms/tools/approaches from the framework. MUST include these 4 rows FIRST, in this exact order, so every Money Hack article can be compared the same way: "Startup Cost", "Remote-Friendly?", "Technical Difficulty", "Passive Income Potential" — then add up to 2 more rows specific to this framework if useful. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B. Only state fee/pricing figures you are confident are accurate and stable; otherwise describe qualitatively instead of guessing a number.)
 </COMPARISON_TABLE>
+<WHY_THIS_TOOL>(ONE honest, SPECIFIC sentence on why this exact AI tool/platform combo was picked for this niche — name a concrete feature, limitation, or trade-off, not generic praise like "it's great".)</WHY_THIS_TOOL>
 <FAQ>
 (Write 4-5 real questions a beginner would search about this exact side hustle. Format EXACTLY, Q then A on separate lines: Q: [question]
 A: [answer in 1-2 sentences])
@@ -1230,6 +1231,20 @@ def _build_quiz_section(raw_data):
     # 실제 포인트는 한 번 더 클릭해야 열리는 단일 <details> 구조.
     return f"""<div style="background:#eff6ff; border:2px solid #3b82f6; border-left:6px solid #3b82f6; border-radius:8px; padding:18px 24px; margin:40px 0;"><details><summary style="font-weight:800; font-size:13px; color:#1e3a8a; cursor:pointer; text-transform:uppercase; letter-spacing:1.5px;">Key Takeaway — Tap to Reveal</summary><div style="margin-top:14px; padding-top:14px; border-top:1px solid #bfdbfe;"><p style="margin:0; font-size:18px; font-weight:700; color:{DARK}; line-height:1.5;">{remember}</p>{why_html}</div></details></div>"""
 
+MONEY_HACK_AFFILIATE_TOOLS = set()  # 제휴 관계가 생긴 도구/플랫폼 이름을 여기에 추가하면 고지문이 자동으로 바뀜 (현재는 비어있음 = 전부 비제휴로 표기됨)
+
+def _build_tool_transparency_box(raw_data, ai_tool=None, platform=None):
+    """'왜 이걸 추천했는지 + 제휴 여부'를 매번 투명하게 밝히는 박스 — Money Hack 전용."""
+    why = xtag(raw_data, "WHY_THIS_TOOL")
+    if not why:
+        return ""
+    is_affiliate = (ai_tool in MONEY_HACK_AFFILIATE_TOOLS) or (platform in MONEY_HACK_AFFILIATE_TOOLS)
+    if is_affiliate:
+        disclosure = "Heads up: this article may include an affiliate link — if you sign up through it, Warm Insight could earn a small commission at no extra cost to you. That has zero bearing on why it's recommended below."
+    else:
+        disclosure = "No affiliate relationship here — we don't earn anything if you use this tool. It's recommended purely because it fits this use case."
+    return f"""<div style="background:#f8fafc; border:1px solid {BORDER}; border-left:4px solid #64748b; border-radius:6px; padding:16px 20px; margin:0 0 30px;"><p style="margin:0 0 8px; font-size:13px; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:1.5px;">Why We Picked This</p><p style="margin:0 0 10px; font-size:15px; color:{SLATE}; line-height:1.6;">{why}</p><p style="margin:0; font-size:13px; color:{MUTED}; font-style:italic;">{disclosure}</p></div>"""
+
 def _build_one_action_box(raw_data):
     """'일단 이것부터' 박스 — 글 맨 앞에 둬서 끝까지 안 읽어도 '뭘 해야 할지'가 바로 보이게."""
     action = xtag(raw_data, "ONE_ACTION")
@@ -1500,13 +1515,14 @@ def build_philosophy_html(raw, author, tf, title, cat):
     html += f"""<p style="font-size:13px; color:{MUTED}; text-align:center; margin-top:20px; text-transform:uppercase; letter-spacing:0.5px;">Disclaimer: AI-generated educational content. Not financial advice. All decisions are your own.</p></div>"""
     return sanitize(html)
 
-def build_money_hack_html(raw, author, tf, title, cat):
+def build_money_hack_html(raw, author, tf, title, cat, ai_tool=None, platform=None):
     html = f"""<div style="{F}">\n"""
     html += _build_ai_assist_badge()
     html += _build_one_action_box(raw)
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3><p>{xtag(raw, "CONCEPT").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
+    html += _build_tool_transparency_box(raw, ai_tool, platform)
     html += f"""<div style="background:#fffbeb; border-left:5px solid #f59e0b; padding:25px; margin:40px 0; border-radius:0 8px 8px 0;"><p style="margin:0; font-size:18px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🔥 Pro Tip</p><p style="margin:0; color:#92400e; font-style:italic;">{xtag(raw, "PRO_TIP").replace(chr(10), '<br>')}</p></div>"""
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Platform Comparison")
     html += _build_faq_section(raw)
@@ -2451,7 +2467,7 @@ def run_moneyhack_pipeline():
         author = AUTHOR_NAME
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
 
-        html = build_money_hack_html(raw, author, tf, title, cat)
+        html = build_money_hack_html(raw, author, tf, title, cat, ai_tool=ai_tool, platform=platform)
         img_bytes = make_thumbnail(title, cat, tier)
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail error. Aborting.")
