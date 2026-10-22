@@ -201,6 +201,21 @@ AEO_RULES = """
 - CONCRETE OVER VAGUE: Prefer a specific number, name, or date over a vague qualifier whenever the data given to you supports it.
 """
 
+# 2026-10-22: 글쓰기를 더 "세련되게" 만들기 위한 공통 스타일 규칙 — AI체 패턴 금지 + 문장 리듬 + 구체성.
+# PROMPT_UNIFIED_P2 / FOUNDATION_PROMPT / MONEY_HACK_PROMPT 세 파이프라인에 공통으로 추가됨.
+WRITING_STYLE_RULES = """
+═══ ✍️ SOPHISTICATED WRITING STYLE RULES (CRITICAL — this is what separates generic AI writing from something a sharp human analyst would publish) ═══
+1. BANNED AI-TELL PATTERNS — never use these, in any section, for any reason:
+   - The correlative negation construction "It's not just X, it's Y" (or "not only X but also Y") in any form.
+   - Generic time-framing openers: "In today's fast-paced world", "In the ever-evolving landscape of...", "As we navigate...".
+   - Hollow intensifiers used without a concrete fact right next to them: crucial, pivotal, game-changer, cutting-edge, groundbreaking, delve, unleash, robust, leverage (as a verb), underscore, testament, embark.
+   - Rhetorical filler questions aimed at the reader: "Sound familiar?", "Ready to level up?", "Let that sink in."
+   - Default triplets ("fast, efficient, and reliable") — only list three items together when all three genuinely do different work; otherwise use one or two.
+   - A closing sentence in any section that just restates what the section already said ("In summary...", "Overall, this shows..."). End on the last new point instead — don't recap.
+2. SENTENCE RHYTHM — deliberately vary sentence length within every paragraph. Never let three sentences in a row run the same length or structure. Mix in at least one short, blunt sentence (under 8 words) per paragraph where it fits naturally — that variation is what makes prose read like a person thinking, not a template filling in blanks.
+3. CONCRETE OVER ABSTRACT — the same concreteness bar already required in ONE_ACTION applies to the ENTIRE article now, not just that one tag. Every time you're about to write a vague adjective or a generalization, replace it with a specific number, a named example, or a plain-language analogy instead. If a sentence can't be made concrete, cut it rather than leaving it vague.
+"""
+
 # ═══════════════════════════════════════════════
 # 🧠 프롬프트 설정
 # ═══════════════════════════════════════════════
@@ -280,6 +295,7 @@ WHY: [1-2 sentence reinforcement — why this matters or how to apply it, writte
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
 PROMPT_UNIFIED_P2 += AEO_RULES
+PROMPT_UNIFIED_P2 += WRITING_STYLE_RULES
 
 FOUNDATION_TOPICS = [
     "ETF vs Mutual Funds: Which is actually safer for absolute beginners?",
@@ -322,6 +338,7 @@ WHY: [1-2 sentence reinforcement — why this matters or how to apply it, writte
 </MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 FOUNDATION_PROMPT += AEO_RULES
+FOUNDATION_PROMPT += WRITING_STYLE_RULES
 
 PHILOSOPHY_TOPICS = [
     "Love money through action, not just unrequited longing",
@@ -376,6 +393,7 @@ WHY: [1-2 sentence reinforcement — why this matters or how to apply it, writte
 </MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 MONEY_HACK_PROMPT += AEO_RULES
+MONEY_HACK_PROMPT += WRITING_STYLE_RULES
 
 # ═══════════════════════════════════════════════
 # 📓 My Numbers — 월간 실제 숫자 공개 (뉴스 파이프라인과 별개 트랙)
