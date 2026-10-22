@@ -202,7 +202,8 @@ AEO_RULES = """
 """
 
 # 2026-10-22: 글쓰기를 더 "세련되게" 만들기 위한 공통 스타일 규칙 — AI체 패턴 금지 + 문장 리듬 + 구체성.
-# PROMPT_UNIFIED_P2 / FOUNDATION_PROMPT / MONEY_HACK_PROMPT 세 파이프라인에 공통으로 추가됨.
+# PROMPT_UNIFIED_P1 / PROMPT_UNIFIED_P2 / FOUNDATION_PROMPT / MONEY_HACK_PROMPT 에 공통으로 추가됨.
+# 프롬프트 지시만으로는 가끔 놓치므로, 생성 직후 lint_generated()가 한 번 더 검사함 (gem_checked 참고).
 WRITING_STYLE_RULES = """
 ═══ ✍️ SOPHISTICATED WRITING STYLE RULES (CRITICAL — this is what separates generic AI writing from something a sharp human analyst would publish) ═══
 1. BANNED AI-TELL PATTERNS — never use these, in any section, for any reason:
@@ -213,7 +214,7 @@ WRITING_STYLE_RULES = """
    - Default triplets ("fast, efficient, and reliable") — only list three items together when all three genuinely do different work; otherwise use one or two.
    - A closing sentence in any section that just restates what the section already said ("In summary...", "Overall, this shows..."). End on the last new point instead — don't recap.
 2. SENTENCE RHYTHM — deliberately vary sentence length within every paragraph. Never let three sentences in a row run the same length or structure. Mix in at least one short, blunt sentence (under 8 words) per paragraph where it fits naturally — that variation is what makes prose read like a person thinking, not a template filling in blanks.
-3. CONCRETE OVER ABSTRACT — the same concreteness bar already required in ONE_ACTION applies to the ENTIRE article now, not just that one tag. Every time you're about to write a vague adjective or a generalization, replace it with a specific number, a named example, or a plain-language analogy instead. If a sentence can't be made concrete, cut it rather than leaving it vague.
+3. CONCRETE OVER ABSTRACT — apply this to the ENTIRE article, including the explanatory sections, the same way it applies to the action steps. Every time you're about to write a vague adjective or a generalization, replace it with a specific number, a named example, or a plain-language analogy instead. If a sentence can't be made concrete, cut it rather than leaving it vague.
 """
 
 # ═══════════════════════════════════════════════
@@ -250,7 +251,7 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 <HEATMAP>
 (Provide 3-4 sector risk levels 0-100% as your editorial judgment, reasoned directly from the News Context above — not an arbitrary guess. Format exactly: Sector Name | Number)
 </HEATMAP>
-<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Start with "OK so..." or "Here's what's wild:" Use 1 emoji.)</EXECUTIVE_SUMMARY>
+<EXECUTIVE_SUMMARY>(3 sentences capturing your COUNTERINTUITIVE thesis. Each MAX 15 words. Open directly with the counterintuitive claim itself, stated plainly. No setup phrase (no "OK so...", "Here's what's wild:", "Here's the thing") and no emoji. Make the three sentences different lengths.)</EXECUTIVE_SUMMARY>
 <PLAIN_ENGLISH>(3-4 sentences with your ONE specific analogy. Make it vivid. 20+ words developed.)</PLAIN_ENGLISH>
 <HEADLINE>(Analytical headline for drivers section. Include emoji if fits. Sound like inside intel.)</HEADLINE>
 <MACRO>(Write 2 PARAGRAPHS. Each paragraph MAX 2 sentences, each sentence MAX 14 words.
@@ -261,6 +262,7 @@ PARAGRAPH 2: WHY it's happening — one key driver. End with your honest one-lin
 <CONTRARIAN>(Write 1 paragraph showing what smart money is doing differently. MAX 3 sentences. Be specific with ticker AND institution.)</CONTRARIAN>
 <QUICK_FLOW>(Chain of events with arrows ➡️ 5-6 steps. Each step under 8 words.)</QUICK_FLOW>"""
 PROMPT_UNIFIED_P1 += AEO_RULES
+PROMPT_UNIFIED_P1 += WRITING_STYLE_RULES
 
 PROMPT_UNIFIED_P2 = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN.
 You are Warm Insight's lead writer continuing the analysis in ENGLISH. Same friendly + smart tone as Part 1.
@@ -894,6 +896,99 @@ def gem_fb(tier, prompt, sys_inst=None):
         if r:
             return r
     return ""
+
+# ═══════════════════════════════════════════════
+# 🔎 발행 전 품질 검사 (2026-10-22)
+# 프롬프트로 "쓰지 마"라고 부탁만 하면 Gemini가 가끔 놓치기 때문에, 생성 직후 파이썬으로 직접 검사함.
+# 걸리면 문제 목록을 붙여서 딱 1번만 다시 생성 → 두 결과 중 문제가 적은 쪽을 사용.
+# 그래도 남은 문제는 Actions 로그에만 남기고 발행은 그대로 진행 (검사 때문에 발행이 멈추는 일은 없음).
+# 추가 API 비용은 다시 생성할 때만 발생.
+# ═══════════════════════════════════════════════
+QC_BANNED_PATTERNS = [
+    (r"\b(?:it'?s|it is|this is|that'?s|that is)\s+not\s+(?:just|only|simply|merely)\b", "\"It's not just X, it's Y\" construction"),
+    (r"\bnot\s+only\b[^.!?]{0,120}\bbut\s+also\b", "\"not only X but also Y\" construction"),
+    (r"\bin today'?s\s+(?:fast[- ]paced\s+|ever[- ]changing\s+|digital\s+|modern\s+)?(?:world|age|era|landscape)\b", "\"In today's ... world\" opener"),
+    (r"\bever[- ]evolving\b", "\"ever-evolving\""),
+    (r"\bas we navigate\b", "\"As we navigate...\""),
+    (r"\bdelv(?:e|es|ing)\b", "\"delve\""),
+    (r"\bunleash(?:es|ed|ing)?\b", "\"unleash\""),
+    (r"\bgame[- ]chang(?:er|ers|ing)\b", "\"game-changer\""),
+    (r"\bcutting[- ]edge\b", "\"cutting-edge\""),
+    (r"\bgroundbreaking\b", "\"groundbreaking\""),
+    (r"\btestament to\b", "\"a testament to\""),
+    (r"\blet that sink in\b", "\"Let that sink in\""),
+    (r"\bsound familiar\?", "\"Sound familiar?\""),
+    (r"\bready to level up\b", "\"Ready to level up?\""),
+    (r"\bhere'?s the (?:thing|kicker|catch)\b", "\"Here's the thing\" setup phrase"),
+    (r"\bhere'?s what'?s wild\b", "\"Here's what's wild\" setup phrase"),
+    (r"(?:^|[>\n.!?]\s*)ok(?:ay)?,?\s+so\b", "\"OK so...\" opener"),
+    (r"\bin (?:summary|conclusion)\b", "\"In summary / In conclusion\" recap"),
+]
+QC_VAGUE_VERBS = r"\b(?:consider|explore|look into|research|think about)\b"
+
+def lint_generated(raw, required_tags=(), action_tag=None):
+    """생성 결과 검사. [(종류, 메시지), ...] 반환 — 종류는 'structure'(형식/필수 항목) 또는 'style'(AI체 표현).
+    메시지는 재생성 프롬프트에 그대로 들어가므로 영어로 작성."""
+    issues = []
+    for tag in required_tags:
+        if not xtag(raw, tag):
+            issues.append(("structure", f"The <{tag}> section is missing or empty, and it is required."))
+    if "MISSION_QUIZ" in required_tags:
+        quiz = xtag(raw, "MISSION_QUIZ")
+        if quiz and not re.search(r"^\s*REMEMBER:", quiz, re.IGNORECASE | re.MULTILINE):
+            issues.append(("structure", "<MISSION_QUIZ> must contain a line starting with 'REMEMBER:' followed by a line starting with 'WHY:'."))
+    if action_tag:
+        action = xtag(raw, action_tag)
+        if action:
+            if not re.search(r"\d", action):
+                issues.append(("structure", f"<{action_tag}> contains no concrete number (a dollar amount, percentage, count, or time). Add one."))
+            if action_tag == "ONE_ACTION":
+                m = re.search(QC_VAGUE_VERBS, action, re.IGNORECASE)
+                if m:
+                    issues.append(("structure", f"<{action_tag}> uses the banned vague verb \"{m.group(0)}\". Say exactly what to open, click, or do."))
+    text = raw.replace("’", "'").replace("‘", "'")
+    for pattern, name in QC_BANNED_PATTERNS:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            start = max(0, m.start() - 40)
+            snippet = re.sub(r"\s+", " ", text[start:m.end() + 40]).strip()
+            issues.append(("style", f"Banned AI-writing pattern {name} found here: \"...{snippet}...\". Rewrite that sentence without it."))
+    return issues
+
+def _qc_score(issues):
+    return sum(10 if kind == "structure" else 1 for kind, _ in issues)
+
+def gem_checked(tier, prompt, sys_inst=None, label="", required_tags=(), action_tag=None):
+    """gem_fb + 품질 검사 + (필요하면) 1회 재생성."""
+    raw = gem_fb(tier, prompt, sys_inst)
+    if not raw:
+        return raw
+    issues = lint_generated(raw, required_tags, action_tag)
+    if not issues:
+        print(f"   ✅ [Quality Check] {label}: passed")
+        return raw
+    print(f"   🔎 [Quality Check] {label}: {len(issues)} issue(s) → regenerating once")
+    for _, msg in issues:
+        print(f"      - {msg}")
+    revision = (prompt
+                + "\n\n═══ ⚠️ REVISION REQUIRED ═══\n"
+                + "A previous draft of this exact task had the problems listed below. "
+                + "Write a completely fresh, full response in the SAME XML tag format, and make sure none of these problems appear:\n"
+                + "\n".join(f"- {msg}" for _, msg in issues))
+    raw2 = gem_fb(tier, revision, sys_inst)
+    if not raw2:
+        print(f"   ⚠️ [Quality Check] {label}: regeneration failed, keeping the first draft")
+        return raw
+    issues2 = lint_generated(raw2, required_tags, action_tag)
+    if _qc_score(issues2) <= _qc_score(issues):
+        chosen, remaining = raw2, issues2
+        print(f"   ✅ [Quality Check] {label}: using revised draft ({len(issues2)} issue(s) left)")
+    else:
+        chosen, remaining = raw, issues
+        print(f"   ⚠️ [Quality Check] {label}: revised draft was worse, keeping the first draft")
+    for _, msg in remaining:
+        print(f"      - still present: {msg}")
+    return chosen
 
 def xtag(raw, tag):
     m = re.search(rf"<{tag}>(.*?)</{tag}>", raw, re.DOTALL | re.IGNORECASE)
@@ -2405,7 +2500,9 @@ def run_foundation_pipeline():
     print(f"   📝 [Topic Rotation] Day {day_of_year} → Topic #{day_of_year % len(FOUNDATION_TOPICS)}: {theme[:50]}...")
     tier = "Premium"
     prompt_filled = FOUNDATION_PROMPT.replace("{theme}", theme).replace("{verified_data}", VERIFIED_FOUNDATION_DATA)
-    raw = gem_fb(tier, prompt_filled, FOUNDATION_SYS_INST)
+    raw = gem_checked(tier, prompt_filled, FOUNDATION_SYS_INST, label="Foundation",
+                      required_tags=("TITLE", "SEO_KEYWORD", "EXCERPT", "DEFINITION", "ONE_ACTION", "HOW_TO_START", "MISSION_QUIZ"),
+                      action_tag="ONE_ACTION")
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
@@ -2476,7 +2573,9 @@ def run_moneyhack_pipeline():
     print(f"   📝 [Framework Rotation] Day {day_of_year} → {theme}")
 
     tier = "Premium"
-    raw = gem_fb(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST)
+    raw = gem_checked(tier, MONEY_HACK_PROMPT.replace("{theme}", theme), MONEY_HACK_SYS_INST, label="Money Hack",
+                      required_tags=("TITLE", "SEO_KEYWORD", "EXCERPT", "CONCEPT", "ONE_ACTION", "STEP_BY_STEP_TOOL", "WHY_THIS_TOOL", "MISSION_QUIZ"),
+                      action_tag="ONE_ACTION")
     if raw:
         title = xtag(raw, "TITLE")
         kw = xtag(raw, "SEO_KEYWORD")
@@ -2574,13 +2673,16 @@ def run_news_pipeline(forced_cat=None):
     news_str = "\n".join(all_news)
     tier = "unified"
 
-    raw1 = gem_fb(tier, PROMPT_UNIFIED_P1.replace("{cat}", cat).replace("{news}", news_str))
+    raw1 = gem_checked(tier, PROMPT_UNIFIED_P1.replace("{cat}", cat).replace("{news}", news_str), label="Insight Part 1",
+                       required_tags=("TITLE", "SEO_KEYWORD", "EXECUTIVE_SUMMARY", "MACRO"))
     if not raw1:
         print("   ❌ Part 1 generation failed.")
         return
 
     ctx = "Title: " + xtag(raw1, "TITLE") + "\nSummary: " + xtag(raw1, "EXECUTIVE_SUMMARY")
-    raw2 = gem_fb(tier, PROMPT_UNIFIED_P2.replace("{cat}", cat).replace("{ctx}", ctx))
+    raw2 = gem_checked(tier, PROMPT_UNIFIED_P2.replace("{cat}", cat).replace("{ctx}", ctx), label="Insight Part 2",
+                       required_tags=("DO_ACTION", "TAKEAWAY", "MISSION_QUIZ"),
+                       action_tag="DO_ACTION")
     if not raw2:
         print("   ⚠️ Part 2 failed. Using Part 1 only.")
         raw = raw1
