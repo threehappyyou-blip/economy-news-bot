@@ -273,10 +273,9 @@ You MUST wrap your content EXACTLY in the XML tags listed below.
 A: [answer in 1-2 sentences])
 </FAQ>
 <MISSION_QUIZ>
-(Write ONE prediction-style quiz question that tests whether the reader actually absorbed this article's single most important insight — not a trivia fact, the core takeaway. Format EXACTLY, 3 lines:
-Q: [a specific question answerable only by someone who understood the key insight]
-A: [the correct answer, under 12 words]
-WHY: [1-2 sentence explanation reinforcing why that's the answer])
+(Write ONE short, highly memorable "key point to remember" line capturing this article's single most important insight — phrase it so it sticks in the reader's head later, like a quotable one-liner, not a dry summary or a quiz question. Then write a 1-2 sentence reinforcement of that same point — why it matters or how to use it, in plain reinforcing language, NOT phrased as a question or a test. Format EXACTLY, 2 lines:
+REMEMBER: [one memorable, quotable sentence capturing the key insight, under 20 words]
+WHY: [1-2 sentence reinforcement — why this matters or how to apply it, written as a statement, not a question])
 </MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>
 """
@@ -307,7 +306,8 @@ VERIFIED REFERENCE DATA (use ONLY these numbers for any specific stat/figure you
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
 <DEFINITION>(Provide a simple, 2-paragraph definition using an UNEXPECTED everyday analogy. The very first sentence must plainly define the term in 40-60 words before the analogy.)</DEFINITION>
 <WHY_MATTERS>(Explain in 2 paragraphs why a beginner should care. Use the VERIFIED REFERENCE DATA above for any dollar amounts or percentages — never invented numbers. Where a fact you use has a "Source:" URL in the VERIFIED REFERENCE DATA, cite it inline using the exact HTML link format described in the CITATION RULE above.)</WHY_MATTERS>
-<HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Format as a bulleted list.)</HOW_TO_START>
+<ONE_ACTION>(The SINGLE most important thing a reader should do right now, today, after reading this — ONE sentence. Name a specific app/platform/account type and an exact number (a dollar amount, a percentage, or a count) wherever possible. It must be something they can actually do in one sitting, not something to think about. BANNED vague verbs: "consider", "explore", "look into", "research", "think about" — say exactly what to open/click/do.)</ONE_ACTION>
+<HOW_TO_START>(Provide 3 simple, ACTIONABLE steps for a beginner to start using this concept today. Same concreteness bar as ONE_ACTION above — name specific apps/platforms and exact numbers, never a vague verb like "consider" or "research". Format as a bulleted list.)</HOW_TO_START>
 <COMPARISON_TABLE>
 (Create a comparison table directly relevant to this topic, 4-6 rows. Use VERIFIED REFERENCE DATA wherever the row involves a number. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B)
 </COMPARISON_TABLE>
@@ -316,10 +316,9 @@ VERIFIED REFERENCE DATA (use ONLY these numbers for any specific stat/figure you
 A: [answer in 1-2 sentences, using VERIFIED REFERENCE DATA if it involves a number])
 </FAQ>
 <MISSION_QUIZ>
-(Write ONE prediction-style quiz question that tests whether the reader actually absorbed this article's single most important insight — not a trivia fact, the core takeaway. Format EXACTLY, 3 lines:
-Q: [a specific question answerable only by someone who understood the key insight]
-A: [the correct answer, under 12 words]
-WHY: [1-2 sentence explanation reinforcing why that's the answer])
+(Write ONE short, highly memorable "key point to remember" line capturing this article's single most important insight — phrase it so it sticks in the reader's head later, like a quotable one-liner, not a dry summary or a quiz question. Then write a 1-2 sentence reinforcement of that same point — why it matters or how to use it, in plain reinforcing language, NOT phrased as a question or a test. Format EXACTLY, 2 lines:
+REMEMBER: [one memorable, quotable sentence capturing the key insight, under 20 words]
+WHY: [1-2 sentence reinforcement — why this matters or how to apply it, written as a statement, not a question])
 </MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 FOUNDATION_PROMPT += AEO_RULES
@@ -358,8 +357,9 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 <TITLE>(Max 60 chars. MUST include the exact SEO_KEYWORD. Make it clear and specific, NOT clickbait.)</TITLE>
 <SEO_KEYWORD>(Write a highly specific LONG-TAIL focus keyword, 4-6 words, low competition.)</SEO_KEYWORD>
 <EXCERPT>(Max 150 chars. MUST include the SEO_KEYWORD. Write a 'Curiosity Gap' meta description.)</EXCERPT>
-<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Mention real market demand.)</CONCEPT>
-<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Give exact instructions, not vague advice.)</STEP_BY_STEP_TOOL>
+<CONCEPT>(2 paragraphs explaining what this specific side hustle is and why it's profitable right now. Make the AI Automation Tool named in the framework the central hook — the opening sentence should center on using that specific AI tool, not mention it as an afterthought. Mention real market demand.)</CONCEPT>
+<ONE_ACTION>(The SINGLE most important thing a reader should do right now, today, after reading this — ONE sentence. Must name the specific AI tool/platform from the framework and an exact number (price, time, or step count) wherever possible. It must be something they can actually do in one sitting, not something to think about. BANNED vague verbs: "consider", "explore", "look into", "research", "think about" — say exactly what to open/click/do.)</ONE_ACTION>
+<STEP_BY_STEP_TOOL>(Detail the specific platforms or tools from the framework and provide a clear 1-2-3 checklist to execute today. Same concreteness bar as ONE_ACTION above — name exact buttons/settings/prices, never a vague verb like "consider" or "research".)</STEP_BY_STEP_TOOL>
 <PRO_TIP>(1 paragraph revealing a secret tip that top 1% earners use in this hustle to save time or double profits. Must be a counterintuitive hack.)</PRO_TIP>
 <COMPARISON_TABLE>
 (Compare 2-3 relevant platforms/tools/approaches from the framework, 4-6 rows. NO MARKDOWN TABLES, NO '---' lines. Format EXACTLY on separate lines: Row Label | Option A | Option B. Only state fee/pricing figures you are confident are accurate and stable; otherwise describe qualitatively instead of guessing a number.)
@@ -369,10 +369,9 @@ MONEY_HACK_PROMPT = """Write an SEO-optimized, step-by-step side hustle guide ba
 A: [answer in 1-2 sentences])
 </FAQ>
 <MISSION_QUIZ>
-(Write ONE prediction-style quiz question that tests whether the reader actually absorbed this article's single most important insight — not a trivia fact, the core takeaway. Format EXACTLY, 3 lines:
-Q: [a specific question answerable only by someone who understood the key insight]
-A: [the correct answer, under 12 words]
-WHY: [1-2 sentence explanation reinforcing why that's the answer])
+(Write ONE short, highly memorable "key point to remember" line capturing this article's single most important insight — phrase it so it sticks in the reader's head later, like a quotable one-liner, not a dry summary or a quiz question. Then write a 1-2 sentence reinforcement of that same point — why it matters or how to use it, in plain reinforcing language, NOT phrased as a question or a test. Format EXACTLY, 2 lines:
+REMEMBER: [one memorable, quotable sentence capturing the key insight, under 20 words]
+WHY: [1-2 sentence reinforcement — why this matters or how to apply it, written as a statement, not a question])
 </MISSION_QUIZ>
 <COMMENT_QUESTION>(A highly provocative and engaging question related to today's topic to encourage readers to leave a comment. Max 15 words.)</COMMENT_QUESTION>"""
 MONEY_HACK_PROMPT += AEO_RULES
@@ -1208,27 +1207,35 @@ def _build_faq_section(raw_data):
     return f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">🙋 Frequently Asked Questions</h3><div style="margin-top:20px;">{faq_html}</div></div>{schema_tag}"""
 
 def _build_quiz_section(raw_data):
-    """'오늘의 미션' 퀴즈 블록 — JS 없이 <details>만으로 클릭하면 정답이 열리는 구조."""
+    """'한 번 더 짚어주는' 핵심 포인트 블록 — 퀴즈 형식 아님. 제목만 보이고
+    클릭해야 REMEMBER/WHY 내용이 열리는 단일 <details> 구조 (JS 없음)."""
     raw_quiz = xtag(raw_data, "MISSION_QUIZ")
     if not raw_quiz:
         return ""
 
     lines = [l.strip() for l in raw_quiz.split('\n') if l.strip()]
-    q, a, why = None, None, None
+    remember, why = None, None
     for line in lines:
-        if line.upper().startswith("Q:"):
-            q = line[2:].strip()
-        elif line.upper().startswith("A:"):
-            a = line[2:].strip()
+        if line.upper().startswith("REMEMBER:"):
+            remember = line[9:].strip()
         elif line.upper().startswith("WHY:"):
             why = line[4:].strip()
 
-    if not q or not a:
+    if not remember:
         return ""
 
     why_html = f"""<p style="margin:10px 0 0; color:{SLATE}; font-size:15px; line-height:1.6;">{why}</p>""" if why else ""
 
-    return f"""<div style="background:#eff6ff; border:2px solid #3b82f6; border-radius:12px; padding:25px 28px; margin:40px 0;"><h3 style="margin-top:0; font-size:20px; color:#1e3a8a;">🎯 Quick Check: Did You Catch It?</h3><p style="margin:10px 0 18px; font-size:17px; font-weight:600; color:{DARK};">{q}</p><details style="background:#ffffff; border:1px solid #bfdbfe; border-radius:8px; padding:14px 18px;"><summary style="font-weight:700; color:#1d4ed8; cursor:pointer;">Reveal Answer</summary><p style="margin:10px 0 0; font-size:16px; font-weight:700; color:{DARK};">{a}</p>{why_html}</details></div>"""
+    # 퀴즈 느낌(질문/정답)을 완전히 빼고, "한 번 더 짚어주는" 느낌으로 — 제목만 보이고
+    # 실제 포인트는 한 번 더 클릭해야 열리는 단일 <details> 구조.
+    return f"""<div style="background:#eff6ff; border:2px solid #3b82f6; border-left:6px solid #3b82f6; border-radius:8px; padding:18px 24px; margin:40px 0;"><details><summary style="font-weight:800; font-size:13px; color:#1e3a8a; cursor:pointer; text-transform:uppercase; letter-spacing:1.5px;">Key Takeaway — Tap to Reveal</summary><div style="margin-top:14px; padding-top:14px; border-top:1px solid #bfdbfe;"><p style="margin:0; font-size:18px; font-weight:700; color:{DARK}; line-height:1.5;">{remember}</p>{why_html}</div></details></div>"""
+
+def _build_one_action_box(raw_data):
+    """'일단 이것부터' 박스 — 글 맨 앞에 둬서 끝까지 안 읽어도 '뭘 해야 할지'가 바로 보이게."""
+    action = xtag(raw_data, "ONE_ACTION")
+    if not action:
+        return ""
+    return f"""<div style="background:#fffbeb; border:2px solid #f59e0b; border-left:6px solid #f59e0b; padding:20px 26px; margin:0 0 35px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.05);"><p style="margin:0 0 8px; color:#b45309; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px;">Do This Right Now</p><p style="margin:0; color:#78350f; font-size:19px; font-weight:700; line-height:1.6;">{action}</p></div>"""
 
 def _build_pillar_link(target_cat):
     pillar = PILLAR_PAGES.get(target_cat)
@@ -1470,6 +1477,7 @@ def publish_calculators_page():
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     html += _build_ai_assist_badge()
+    html += _build_one_action_box(raw)
     html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it?</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{xtag(raw, "DEFINITION").replace(chr(10), '<br><br>')}</div></div>"""
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
@@ -1495,6 +1503,7 @@ def build_philosophy_html(raw, author, tf, title, cat):
 def build_money_hack_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     html += _build_ai_assist_badge()
+    html += _build_one_action_box(raw)
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 The Concept</h3><p>{xtag(raw, "CONCEPT").replace(chr(10), '<br><br>')}</p></div>"""
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#f0fdf4; border:2px solid #10b981; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#065f46; font-size:24px; display:flex; align-items:center; gap:8px;">🛠️ Step-by-Step Execution</h3><div style="color:#064e3b; font-size:17px; line-height:1.8;">{xtag(raw, "STEP_BY_STEP_TOOL").replace(chr(10), '<br><br>')}</div></div>"""
