@@ -1,36 +1,106 @@
 {
   "s2": [
-    {"headline_html": "Markets, explained in <span class=\"accent\">5 minutes.</span>", "sub": "Every morning. Straight to your inbox."},
-    {"headline_html": "Your daily market recap. <span class=\"accent\">Done in 5.</span>", "sub": "No scrolling. No guessing. Just clarity."},
-    {"headline_html": "<span class=\"accent\">5 minutes</span> a day keeps confusion away.", "sub": "One short email. Every single morning."},
-    {"headline_html": "Skip the noise. Get the <span class=\"accent\">signal.</span>", "sub": "A 5-minute market recap, every morning."},
-    {"headline_html": "What moved today — in <span class=\"accent\">plain English.</span>", "sub": "Delivered free, every morning at 7am."},
-    {"headline_html": "Stay informed without the <span class=\"accent2\">time sink.</span>", "sub": "5 minutes. One email. That's it."},
-    {"headline_html": "The market update that actually <span class=\"accent\">respects your time.</span>", "sub": "Short, clear, and free — every morning."}
+    {
+      "headline_html": "Markets, explained in <span class=\"accent\">5 minutes.</span>",
+      "sub": "Every morning. Straight to your inbox."
+    },
+    {
+      "headline_html": "Your daily market recap. <span class=\"accent\">Done in 5.</span>",
+      "sub": "No scrolling. No guessing. Just clarity."
+    },
+    {
+      "headline_html": "<span class=\"accent\">5 minutes</span> a day keeps confusion away.",
+      "sub": "One short email. Every single morning."
+    },
+    {
+      "headline_html": "Skip the noise. Get the <span class=\"accent\">signal.</span>",
+      "sub": "A 5-minute market recap, every morning."
+    },
+    {
+      "headline_html": "What moved today — in <span class=\"accent\">plain English.</span>",
+      "sub": "Delivered free, every morning at 7am."
+    },
+    {
+      "headline_html": "Stay informed without the <span class=\"accent2\">time sink.</span>",
+      "sub": "5 minutes. One email. That's it."
+    },
+    {
+      "headline_html": "The market update that actually <span class=\"accent\">respects your time.</span>",
+      "sub": "Short, clear, and free — every morning."
+    }
   ],
   "s3": [
-    {"headline_html": "<span class=\"accent\">No jargon.</span> Ever.", "sub": "Just plain English that actually clicks."},
-    {"headline_html": "Written like a <span class=\"accent\">human</span> wrote it.", "sub": "Because finance shouldn't need a dictionary."},
-    {"headline_html": "No <span class=\"accent2\">buzzwords.</span> No fluff.", "sub": "Just what you actually need to know."},
-    {"headline_html": "Finance, finally <span class=\"accent\">explained simply.</span>", "sub": "No finance degree required."},
-    {"headline_html": "We translate <span class=\"accent2\">Wall Street</span> into real talk.", "sub": "Clear enough to actually remember."},
-    {"headline_html": "Zero jargon. <span class=\"accent\">Zero confusion.</span>", "sub": "Just the facts, explained like a friend would."},
-    {"headline_html": "If you can read a text, you can <span class=\"accent\">read this.</span>", "sub": "That's how simple we keep it."}
+    {
+      "headline_html": "<span class=\"accent\">No jargon.</span> Ever.",
+      "sub": "Just plain English that actually clicks."
+    },
+    {
+      "headline_html": "Written like a <span class=\"accent\">human</span> wrote it.",
+      "sub": "Because finance shouldn't need a dictionary."
+    },
+    {
+      "headline_html": "No <span class=\"accent2\">buzzwords.</span> No fluff.",
+      "sub": "Just what you actually need to know."
+    },
+    {
+      "headline_html": "Finance, finally <span class=\"accent\">explained simply.</span>",
+      "sub": "No finance degree required."
+    },
+    {
+      "headline_html": "We translate <span class=\"accent2\">Wall Street</span> into real talk.",
+      "sub": "Clear enough to actually remember."
+    },
+    {
+      "headline_html": "Zero jargon. <span class=\"accent\">Zero confusion.</span>",
+      "sub": "Just the facts, explained like a friend would."
+    },
+    {
+      "headline_html": "If you can read a text, you can <span class=\"accent\">read this.</span>",
+      "sub": "That's how simple we keep it."
+    }
   ],
   "s4": [
-    {"headline_html": "The smart friend who explains <span class=\"accent2\">money.</span>", "sub": "Free. Beginner-friendly. No fluff."},
-    {"headline_html": "Like having a <span class=\"accent\">finance-savvy friend</span> on speed dial.", "sub": "Totally free. Zero pressure."},
-    {"headline_html": "Built for people who feel <span class=\"accent2\">behind</span> on money.", "sub": "No judgment. Just clarity, every morning."},
-    {"headline_html": "You don't need an MBA. You need <span class=\"accent\">5 minutes.</span>", "sub": "Free daily newsletter, built for beginners."},
-    {"headline_html": "The newsletter that meets you where you <span class=\"accent2\">are.</span>", "sub": "Beginner-friendly. Always free."},
-    {"headline_html": "Financial news that doesn't talk <span class=\"accent2\">down</span> to you.", "sub": "Free, friendly, and actually useful."},
-    {"headline_html": "We explain it once, so you <span class=\"accent\">never</span> have to Google it again.", "sub": "Free. No fluff. No catch."}
+    {
+      "headline_html": "The smart friend who explains <span class=\"accent2\">money.</span>",
+      "sub": "Free. Beginner-friendly. No fluff."
+    },
+    {
+      "headline_html": "Like having a <span class=\"accent\">finance-savvy friend</span> on speed dial.",
+      "sub": "Totally free. Zero pressure."
+    },
+    {
+      "headline_html": "Built for people who feel <span class=\"accent2\">behind</span> on money.",
+      "sub": "No judgment. Just clarity, every morning."
+    },
+    {
+      "headline_html": "You don't need an MBA. You need <span class=\"accent\">5 minutes.</span>",
+      "sub": "Free daily newsletter, built for beginners."
+    },
+    {
+      "headline_html": "The newsletter that meets you where you <span class=\"accent2\">are.</span>",
+      "sub": "Beginner-friendly. Always free."
+    },
+    {
+      "headline_html": "Financial news that doesn't talk <span class=\"accent2\">down</span> to you.",
+      "sub": "Free, friendly, and actually useful."
+    },
+    {
+      "headline_html": "We explain it once, so you <span class=\"accent\">never</span> have to Google it again.",
+      "sub": "Free. No fluff. No catch."
+    }
   ],
   "s5_kicker": [
     "Join free today",
     "Start your free streak",
-    "Join thousands reading daily",
+    "Get tomorrow's recap free",
     "Free. Forever. No catch.",
     "Your first email is tomorrow"
+  ],
+  "teaser": [
+    "🎁 Free link at the end",
+    "🎁 Stay for the free link",
+    "👀 Free signup link at the end",
+    "⏳ Free link coming up",
+    "🎁 Don't skip — free link at the end"
   ]
 }

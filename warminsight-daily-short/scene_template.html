@@ -147,6 +147,27 @@
   body.transparent-mode .mascot-visual{
     filter: drop-shadow(0 16px 28px rgba(0,0,0,.5)) drop-shadow(0 0 38px rgba(255,184,77,.4));
   }
+  /* retention teaser: an honest open loop ("free link at the end") plus a live
+     countdown, visible from frame 0 — tells the viewer there's a payoff and
+     exactly how long until it arrives. Hidden when the CTA scene shows the link. */
+  #teaser{
+    position:absolute;top:270px;left:64px;right:64px;
+    display:flex;justify-content:center;
+  }
+  #teaser .pill{
+    display:inline-flex;align-items:center;gap:16px;
+    padding:12px 14px 12px 28px;border-radius:44px;
+    background:linear-gradient(90deg,rgba(255,122,61,.95),rgba(255,184,77,.95));
+    color:#1b1200;font-size:31px;font-weight:800;letter-spacing:.2px;white-space:nowrap;
+    box-shadow:0 6px 22px rgba(0,0,0,.4);
+  }
+  #teaser .t-count{
+    display:inline-grid;justify-items:center;min-width:76px;
+    padding:4px 12px;border-radius:30px;background:rgba(27,18,0,.85);color:#fff6ea;
+    font-variant-numeric:tabular-nums;
+  }
+  #teaser .t-count span{grid-area:1/1;opacity:0;}
+  #teaser .t-count span:first-child{opacity:1;}
 </style>
 </head>
 <body>
@@ -154,6 +175,7 @@
   <div id="progress-track"><div id="progress-fill"></div></div>
   <div id="chip"><div class="dot"></div><div class="label">WARM INSIGHT</div></div>
   <div id="topic-badge"><div class="pill">⚡ 5-MIN DAILY MARKET RECAP · FREE</div></div>
+  <div id="teaser"><div class="pill"><span class="t-text">__TEASER__</span><span class="t-count"></span></div></div>
 
   <div class="scene" id="s1">
     <div class="kicker">__S1_KICKER__</div>
@@ -300,21 +322,64 @@ const SCENE_MS = 3000;
 const scenes = ['s1','s2','s3','s4','s5'];
 
 // chip + persistent topic badge fade in at start, stay for the whole video
-animateIn(document.getElementById('chip'), 150, 500, 0);
-animateIn(document.getElementById('topic-badge'), 260, 500, 0);
+// Frame 0 must already be a complete, readable frame: it's what the viewer sees
+// the instant the short starts (and what Shorts/Reels pick as the default
+// cover). So the chip, badge, teaser and the whole scene-1 hook are visible
+// from t=0 — scene 1 only gets a quick "punch" motion, never a fade-in from
+// empty. (Previously the hook took ~1s to type in over a bare background.)
+document.getElementById('chip').style.opacity = '1';
+document.getElementById('topic-badge').style.opacity = '1';
+
+// countdown inside the teaser pill: 15s, 14s, ... one number per second
+(function(){
+  const teaser = document.getElementById('teaser');
+  const box = teaser.querySelector('.t-count');
+  for(let n=15; n>=1; n--){
+    const k = 15 - n;
+    const s = document.createElement('span');
+    s.textContent = n + 's';
+    box.appendChild(s);
+    if(k>0) s.animate([{opacity:1},{opacity:1}], {delay:k*1000, duration:1, fill:'forwards'});
+    s.animate([{opacity:0},{opacity:0}], {delay:(k+1)*1000, duration:1, fill:'forwards'});
+  }
+  // little attention pulse right at the start, then hide when the CTA (with the
+  // actual link) takes over in the last scene
+  teaser.querySelector('.pill').animate(
+    [{transform:'scale(1)'},{transform:'scale(1.07)'},{transform:'scale(1)'}],
+    {delay:300, duration:500, iterations:2, easing:'ease-in-out'});
+  teaser.animate([{opacity:1},{opacity:0}], {delay:11700, duration:300, fill:'forwards'});
+})();
 
 scenes.forEach((id, i)=>{
   const start = i*SCENE_MS;
   const el = document.getElementById(id);
-  fadeScene(el, start+20, start+SCENE_MS-260, 260);
+  const instant = (i === 0); // scene 1 = the hook: fully visible on frame 0
+  if(instant){
+    el.style.opacity = '1';
+    el.animate([{opacity:1},{opacity:0}], {duration:260, delay:start+SCENE_MS-260, fill:'forwards', easing:'ease-in'});
+  } else {
+    fadeScene(el, start+20, start+SCENE_MS-260, 260);
+  }
 
   const kicker = el.querySelector('.kicker');
-  if(kicker) animateIn(kicker, start+60, 380, 24);
+  if(kicker){
+    if(instant){
+      kicker.style.opacity = '1';
+      kicker.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],
+        {duration:420, delay:0, easing:'ease-out'});
+    } else animateIn(kicker, start+60, 380, 24);
+  }
 
   const headline = el.querySelector('.headline');
   const words = headline ? splitWords(headline) : [];
   words.forEach((w, wi)=>{
-    animateIn(w, start + 140 + wi*70, 480, 46);
+    if(instant){
+      // already readable at t=0; just a quick staggered "punch" for motion
+      w.style.opacity = '1';
+      w.style.transform = 'none';
+      w.animate([{transform:'translateY(0) scale(1)'},{transform:'translateY(-10px) scale(1.08)'},{transform:'translateY(0) scale(1)'}],
+        {duration:380, delay:wi*60, easing:'ease-out'});
+    } else animateIn(w, start + 140 + wi*70, 480, 46);
   });
 
   const sub = el.querySelector('.sub');
@@ -335,7 +400,8 @@ scenes.forEach((id, i)=>{
     // make the mascot itself look photoreal.
     const mirror = (mood === 'confident') ? ' style="transform:scaleX(-1);"' : '';
     mascotSlot.innerHTML = `<div class="mascot-visual"${mirror}>${mascotSVG(i+1, mood)}</div>`;
-    animateIn(mascotSlot, start+380, 480, 60);
+    if(instant) mascotSlot.style.opacity = '1';
+    else animateIn(mascotSlot, start+380, 480, 60);
     mascotSlot.animate([
       {transform:'translateX(-50%) translateY(0px)'},
       {transform:'translateX(-50%) translateY(-16px)'},

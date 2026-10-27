@@ -18,6 +18,7 @@ const s2 = pick(content.s2);
 const s3 = pick(content.s3);
 const s4 = pick(content.s4);
 const s5Kicker = pick(content.s5_kicker);
+const teaser = pick(content.teaser);
 
 let tpl = fs.readFileSync(path.join(__dirname, 'scene_template.html'), 'utf8');
 tpl = tpl
@@ -29,7 +30,8 @@ tpl = tpl
   .replace('__S3_SUB__', s3.sub)
   .replace('__S4_HEADLINE__', s4.headline_html)
   .replace('__S4_SUB__', s4.sub)
-  .replace('__S5_KICKER__', s5Kicker);
+  .replace('__S5_KICKER__', s5Kicker)
+  .replace('__TEASER__', teaser);
 fs.writeFileSync(path.join(__dirname, 'scene.html'), tpl);
 
 // today.json carries everything downstream steps need: fal_video.js logs the
@@ -45,6 +47,7 @@ const today = {
   s3_sub: s3.sub,
   s4_sub: s4.sub,
   s5_kicker: s5Kicker,
+  teaser,
 };
 fs.writeFileSync(path.join(__dirname, 'today.json'), JSON.stringify(today));
 console.log(`Hook: "${s1.hook_plain}"`);
@@ -52,3 +55,4 @@ console.log(`Scene 2: "${s2.sub}"`);
 console.log(`Scene 3: "${s3.sub}"`);
 console.log(`Scene 4: "${s4.sub}"`);
 console.log(`Scene 5 kicker: "${s5Kicker}"`);
+console.log(`Teaser: "${teaser}"`);
