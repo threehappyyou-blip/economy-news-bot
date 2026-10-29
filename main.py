@@ -27,6 +27,7 @@ from email.mime.image import MIMEImage
 from email.mime.base import MIMEBase
 from email import encoders
 import tempfile
+from html import escape as _html_escape, unescape as _html_unescape
 
 # ═══════════════════════════════════════════════
 # CONFIG & 전역 변수 설정
@@ -313,6 +314,107 @@ FOUNDATION_TOPICS = [
     "Dividend ETFs explained: income now vs growth later",
     "Index fund vs ETF: is there really a difference for beginners",
 ]
+
+# ═══════════════════════════════════════════════
+# 🔗 대표 글(Cornerstone) 설정 — Search Console 실제 검색어 기반 (2026-10-29 기준 최근 28일)
+# 1) 이 주제가 Foundation 로테이션에 다시 걸리면 새 글을 만들지 않고 기존 글을 같은 URL로 갱신 (중복 URL 방지)
+# 2) 제목은 사람들이 실제로 친 검색어로 시작, 설명(검색 결과 문구)은 첫 문장에 답 + 클릭할 이유
+# 3) Insight/Foundation/Money Hack 글에 관련 표현이 나오면 대표 글로 자동 링크 + 글 끝 "Read Next" 카드
+# 새 검색어 묶음이 생기면 이 리스트에 항목만 추가하면 됨. 순서 = 링크 우선순위.
+# 대표 글을 직접 지정하고 싶으면 "slug"에 그 글의 슬러그를 넣으면 됨 (None이면 같은 주제 글 중 가장 오래된 글).
+# ═══════════════════════════════════════════════
+FOUNDATION_UPDATE_EXISTING = True  # False로 바꾸면 예전처럼 매번 새 글로 발행
+
+CORNERSTONE_TOPICS = [
+    {
+        "key": "etf-vs-index-fund",
+        "theme": FOUNDATION_TOPICS[11],
+        "primary_query": "ETF vs Index Fund",
+        "focus_keyword": "etf vs index fund",
+        "search_queries": [
+            "etf vs index fund", "index fund vs etf", "index funds vs etfs",
+            "what's the difference between an etf and an index fund", "exchange traded funds vs index funds",
+            "index etf vs index fund", "etf or index fund", "etf funds vs index funds",
+            "what are etfs and index funds", "are etfs index funds", "difference between etf and index fund",
+        ],
+        "title_example": "ETF vs Index Fund: The Real Difference Is the Wrapper",
+        "angle": "Many ETFs, including the biggest ones like VOO and SPY, ARE index funds. The real choice is usually the same index in two different wrappers: an index ETF or an index mutual fund. Clear up this confusion in the first two sentences, then compare the wrappers (trading, minimums, taxes, fees).",
+        "title_must_have": [["index fund"], ["etf"]],
+        "title_exclude": [],
+        "link_patterns": [r"\bETFs?\s+(?:vs\.?|versus|or)\s+index\s+funds?\b", r"\bindex\s+funds?\s+(?:vs\.?|versus|or)\s+ETFs?\b", r"\bindex\s+funds?\b"],
+        "read_next_blurb": "Many ETFs already are index funds. Here's what actually differs and which one fits a beginner.",
+        "slug": None,
+    },
+    {
+        "key": "etf-vs-mutual-fund-safety",
+        "theme": FOUNDATION_TOPICS[0],
+        "primary_query": "Are Mutual Funds Safer Than ETFs?",
+        "focus_keyword": "are mutual funds safer than etfs",
+        "search_queries": ["are mutual funds safer than etfs", "why choose an etf over a mutual fund"],
+        "title_example": "Are Mutual Funds Safer Than ETFs? What Actually Matters",
+        "angle": "Neither wrapper is automatically safer: risk comes from what the fund holds, not from whether it is an ETF or a mutual fund. Say that plainly first, then explain where they really differ.",
+        "title_must_have": [["mutual fund"], ["etf"]],
+        "title_exclude": ["index fund"],
+        "link_patterns": [r"\bETFs?\s+(?:vs\.?|versus|or)\s+mutual\s+funds?\b", r"\bmutual\s+funds?\s+(?:vs\.?|versus|or)\s+ETFs?\b", r"\bmutual\s+funds?\b"],
+        "read_next_blurb": "Neither one is automatically safer. Here's what actually decides your risk.",
+        "slug": None,
+    },
+    {
+        "key": "etf-liquidation",
+        "theme": FOUNDATION_TOPICS[9],
+        "primary_query": "ETF Liquidation",
+        "focus_keyword": "etf liquidation",
+        "search_queries": ["etf liquidation"],
+        "title_example": "ETF Liquidation: What Happens to Your Shares and Cash",
+        "angle": "When an ETF closes, shareholders are normally paid the cash value of their shares; the money does not vanish. Lead with that, then cover the real costs: a possible taxable gain, the choice to sell before the closing date, and picking a replacement fund.",
+        "title_must_have": [["etf", "fund"], ["close", "closes", "closing", "closure", "liquidat", "shut"]],
+        "title_exclude": [],
+        "link_patterns": [r"\bETF\s+(?:liquidation|closure|closes|closing)\b", r"\bfund\s+(?:liquidation|closure|closes|shuts\s+down)\b"],
+        "read_next_blurb": "What happens to your money if a fund you own shuts down, and what to do next.",
+        "slug": None,
+    },
+    {
+        "key": "how-to-invest-in-sp-500",
+        "theme": FOUNDATION_TOPICS[1],
+        "primary_query": "How to Invest in S&P 500",
+        "focus_keyword": "how to invest in s&p 500",
+        "search_queries": ["how to invest in s&p 500", "how to buy s&p 500"],
+        "title_example": "How to Invest in S&P 500 With Just $100, Step by Step",
+        "angle": "Lead with the actual steps: open a brokerage account, pick a low-cost S&P 500 ETF, and buy (many brokers allow fractional shares, so $100 is enough). Then the beginner mistakes to avoid.",
+        "title_must_have": [["s&p 500", "s&p500"], ["100", "invest", "buy"]],
+        "title_exclude": [],
+        "link_patterns": [r"\bS&(?:amp;)?P\s?500\s+(?:ETFs?|index\s+funds?)\b", r"\bS&(?:amp;)?P\s?500\b"],
+        "read_next_blurb": "The exact steps to own the S&P 500, starting with $100.",
+        "slug": None,
+    },
+]
+
+def _cornerstone_prompt_block(cfg):
+    """대표 글 주제일 때 Foundation 프롬프트 뒤에 붙는 '실제 검색어 기반' 제목/설명/FAQ 규칙."""
+    queries = "\n".join(f'- "{q}"' for q in cfg["search_queries"])
+    return f"""
+
+═══ 🔍 REAL GOOGLE SEARCH DATA FOR THIS TOPIC (overrides the earlier TITLE, SEO_KEYWORD and EXCERPT instructions) ═══
+Real people reach this topic by typing these exact searches (most frequent first):
+{queries}
+
+- TITLE: Must START with exactly "{cfg['primary_query']}", followed by a colon or question mark and a short, specific, TRUE hook that gives a searcher a reason to pick this result over the others. Max 60 characters in total. No year, no brackets, no hype words, no clickbait. Shape example (do not copy word for word): "{cfg['title_example']}"
+- SEO_KEYWORD: Output exactly: {cfg['focus_keyword']}
+- EXCERPT (this becomes the Google search snippet, max 150 characters): The FIRST sentence directly answers the searcher's question in plain words. Then add one short clause naming something concrete the article shows that the snippet can't (a comparison table, a dollar example, a checklist), so they still have a reason to click.
+- ANGLE: {cfg['angle']}
+- FAQ: Turn the searches above into the FAQ questions (natural phrasing, merge near-duplicates) so every search intent above gets a direct answer on the page.
+
+This is the site's MAIN page for this search, so it must be the most complete answer on Google for it. Add these two extra tags as well:
+<KEY_FACTS>
+(3 short facts a skimmer needs, one per line, each starting with "- ", each under 20 words. Any number must come from the VERIFIED REFERENCE DATA.)
+</KEY_FACTS>
+<DEEP_DIVE>
+(3-4 short sections, each answering one of the searches above that the other sections don't already fully cover. Use the searcher's own wording for each heading, e.g. as a question. Format EXACTLY, repeating for each section:
+H: [heading in the searcher's own words]
+P: [2-4 sentence answer, concrete; any number must come from the VERIFIED REFERENCE DATA]
+)
+</DEEP_DIVE>
+"""
 FOUNDATION_SYS_INST = """CRITICAL RULE: ALL OUTPUT MUST BE IN 100% NATIVE ENGLISH. NO KOREAN. You are the "smart friend" who explains money to absolute beginners. Use counterintuitive angles. Wrap your content EXACTLY in the XML tags requested."""
 FOUNDATION_PROMPT = """Write an SEO-optimized beginner's guide on the following topic in English: TOPIC: {theme}
 
@@ -926,10 +1028,19 @@ QC_BANNED_PATTERNS = [
 ]
 QC_VAGUE_VERBS = r"\b(?:consider|explore|look into|research|think about)\b"
 
-def lint_generated(raw, required_tags=(), action_tag=None):
+def _norm_title(s):
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9&$? ]", "", (s or "").lower())).strip()
+
+def lint_generated(raw, required_tags=(), action_tag=None, title_prefix=None):
     """생성 결과 검사. [(종류, 메시지), ...] 반환 — 종류는 'structure'(형식/필수 항목) 또는 'style'(AI체 표현).
     메시지는 재생성 프롬프트에 그대로 들어가므로 영어로 작성."""
     issues = []
+    if title_prefix:
+        t = xtag(raw, "TITLE")
+        if t and not _norm_title(t).startswith(_norm_title(title_prefix)):
+            issues.append(("structure", f"<TITLE> must start with exactly \"{title_prefix}\". It currently reads: \"{t}\"."))
+        if t and len(t) > 60:
+            issues.append(("style", f"<TITLE> is {len(t)} characters; keep it at 60 or fewer so Google doesn't cut it off."))
     for tag in required_tags:
         if not xtag(raw, tag):
             issues.append(("structure", f"The <{tag}> section is missing or empty, and it is required."))
@@ -958,12 +1069,12 @@ def lint_generated(raw, required_tags=(), action_tag=None):
 def _qc_score(issues):
     return sum(10 if kind == "structure" else 1 for kind, _ in issues)
 
-def gem_checked(tier, prompt, sys_inst=None, label="", required_tags=(), action_tag=None):
+def gem_checked(tier, prompt, sys_inst=None, label="", required_tags=(), action_tag=None, title_prefix=None):
     """gem_fb + 품질 검사 + (필요하면) 1회 재생성."""
     raw = gem_fb(tier, prompt, sys_inst)
     if not raw:
         return raw
-    issues = lint_generated(raw, required_tags, action_tag)
+    issues = lint_generated(raw, required_tags, action_tag, title_prefix)
     if not issues:
         print(f"   ✅ [Quality Check] {label}: passed")
         return raw
@@ -979,7 +1090,7 @@ def gem_checked(tier, prompt, sys_inst=None, label="", required_tags=(), action_
     if not raw2:
         print(f"   ⚠️ [Quality Check] {label}: regeneration failed, keeping the first draft")
         return raw
-    issues2 = lint_generated(raw2, required_tags, action_tag)
+    issues2 = lint_generated(raw2, required_tags, action_tag, title_prefix)
     if _qc_score(issues2) <= _qc_score(issues):
         chosen, remaining = raw2, issues2
         print(f"   ✅ [Quality Check] {label}: using revised draft ({len(issues2)} issue(s) left)")
@@ -1602,12 +1713,48 @@ def publish_calculators_page():
     print(f"   ❌ Failed to publish calculators page. Status: {r3.status_code if r3 else 'N/A'}")
     return False
 
+def _build_key_facts(raw_data):
+    """대표 글 전용 — 첫머리 아래 핵심 요약 박스 (훑어보는 독자 + AI 검색 인용용)."""
+    raw_kf = xtag(raw_data, "KEY_FACTS")
+    if not raw_kf:
+        return ""
+    items = [re.sub(r"^[-•*]\s*", "", l.strip()) for l in raw_kf.split("\n") if l.strip()]
+    items = [i for i in items if i][:5]
+    if not items:
+        return ""
+    lis = "".join(f'<li style="margin:0 0 8px;">{i}</li>' for i in items)
+    return f"""<div style="background:{BG_LIGHT}; border:1px solid {BORDER}; border-left:4px solid {DARK}; border-radius:6px; padding:18px 24px; margin:30px 0;"><p style="margin:0 0 10px; font-size:13px; font-weight:800; color:{DARK}; text-transform:uppercase; letter-spacing:1.5px;">Key Facts</p><ul style="margin:0; padding-left:20px; color:{SLATE}; font-size:16px; line-height:1.6;">{lis}</ul></div>"""
+
+def _build_deep_dive(raw_data):
+    """대표 글 전용 — 실제 검색어를 소제목(h2)으로 쓴 추가 섹션들."""
+    raw_dd = xtag(raw_data, "DEEP_DIVE")
+    if not raw_dd:
+        return ""
+    sections, cur = [], None
+    for line in raw_dd.split("\n"):
+        line = line.strip()
+        if line.upper().startswith("H:"):
+            cur = {"h": line[2:].strip(), "p": []}
+            sections.append(cur)
+        elif line.upper().startswith("P:") and cur is not None:
+            cur["p"].append(line[2:].strip())
+        elif line and cur is not None and cur["p"]:
+            cur["p"][-1] += " " + line
+    out = ""
+    for s in sections:
+        if s["h"] and s["p"]:
+            paras = "".join(f"<p>{p}</p>" for p in s["p"] if p)
+            out += f"""<h2 style="font-size:24px; color:{DARK}; margin:40px 0 12px; line-height:1.35;">{s['h']}</h2>{paras}"""
+    return f"""<div style="margin:40px 0;">{out}</div>""" if out else ""
+
 def build_foundation_html(raw, author, tf, title, cat):
     html = f"""<div style="{F}">\n"""
     html += _build_ai_assist_badge()
     html += _build_one_action_box(raw)
     html += f"""<div style="background:#f0fdf4; border-left:5px solid #10b981; padding:25px; margin:30px 0; border-radius:0 8px 8px 0;"><h3 style="margin-top:0; font-size:22px; color:#065f46;">📖 What is it?</h3><div style="color:#064e3b; font-size:18px; line-height:1.8;">{xtag(raw, "DEFINITION").replace(chr(10), '<br><br>')}</div></div>"""
+    html += _build_key_facts(raw)
     html += f"""<div style="margin:40px 0;"><h3 style="font-size:24px; color:{DARK}; border-bottom:2px solid {BORDER}; padding-bottom:10px;">💡 Why It Matters</h3><p>{xtag(raw, "WHY_MATTERS").replace(chr(10), '<br><br>')}</p></div>"""
+    html += _build_deep_dive(raw)
     html += """<div id="warm-ad-middle" style="margin: 40px 0; text-align: center;"></div>"""
     html += f"""<div style="background:#ffffff; border:2px solid #3b82f6; padding:30px; border-radius:12px; margin:40px 0;"><h3 style="margin-top:0; color:#1e40af; font-size:24px;">🚀 How to Start Today</h3><div style="color:{SLATE}; font-size:18px; line-height:1.8;">{xtag(raw, "HOW_TO_START").replace(chr(10), '<br><br>')}</div></div>"""
     html += _build_comparison_table(xtag(raw, "COMPARISON_TABLE"), "Quick Comparison")
@@ -2402,6 +2549,183 @@ def _upload_image(img_bytes, filename):
     except: pass
     return None
 
+def _trim_words(text, limit):
+    """글자 수 제한에 맞추되 단어 중간에서 자르지 않음 (검색 결과에 'inv' 같은 잘린 단어가 안 보이게)."""
+    text = re.sub(r"\s+", " ", (text or "")).strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0].rstrip(",;:-—")
+
+def _rank_math_meta(title, exc, kw, tier):
+    seo_title = _clean_seo_title(title)
+    rm_title = seo_title if len(seo_title) > 50 else f"{seo_title} | Warm Insight"
+    return {
+        "rank_math_title": _trim_words(rm_title, 60),
+        "rank_math_description": _trim_words(exc, 158),
+        "rank_math_focus_keyword": kw.lower() if kw else "",
+        "is_premium": "no",
+        "pms_content_restrict": "0",
+        "post_tier": tier.upper(),
+    }
+
+# ═══════════════════════════════════════════════
+# 🔗 대표 글 찾기 · 자동 내부 링크 · Read Next 카드 · 같은 URL로 갱신
+# ═══════════════════════════════════════════════
+_CORNERSTONE_CACHE = None
+_LINK_SKIP_TAGS = {"a", "h1", "h2", "h3", "h4", "h5", "h6", "script", "style", "summary", "button"}
+
+def _plain_title(post):
+    t = post.get("title", "")
+    t = t.get("rendered", "") if isinstance(t, dict) else str(t)
+    return _html_unescape(re.sub(r"<[^>]+>", "", t)).strip()
+
+def _title_matches(title, must_have, exclude):
+    low = title.lower()
+    if any(x in low for x in exclude):
+        return False
+    return all(any(opt in low for opt in group) for group in must_have)
+
+def _fetch_category_posts(cat_name):
+    """카테고리 글 전체를 오래된 순으로 (최대 500개)."""
+    cat_id = get_or_create_wp_category(cat_name)
+    posts = []
+    if not cat_id:
+        return posts
+    for page in range(1, 6):
+        r = wp_api_call('GET', f'posts?categories={cat_id}&per_page=100&page={page}&status=publish&orderby=date&order=asc&_fields=id,link,title,date,slug')
+        if r is None or r.status_code != 200:
+            break
+        try:
+            batch = r.json()
+        except Exception:
+            break
+        if not isinstance(batch, list) or not batch:
+            break
+        posts.extend(batch)
+        if len(batch) < 100:
+            break
+    return posts
+
+def resolve_cornerstones():
+    """CORNERSTONE_TOPICS 각각에 해당하는 실제 워드프레스 글(id·url·제목)을 찾음. 한 번 실행에 한 번만 조회."""
+    global _CORNERSTONE_CACHE
+    if _CORNERSTONE_CACHE is not None:
+        return _CORNERSTONE_CACHE
+    resolved, posts = {}, None
+    for cfg in CORNERSTONE_TOPICS:
+        key = cfg["key"]
+        if cfg.get("slug"):
+            r = wp_api_call('GET', f'posts?slug={cfg["slug"]}&_fields=id,link,title,date,slug')
+            try:
+                found = r.json() if r is not None and r.status_code == 200 else []
+            except Exception:
+                found = []
+            if found:
+                p = found[0]
+                resolved[key] = {"id": p["id"], "url": p["link"], "title": _plain_title(p)}
+                continue
+            print(f"   ⚠️ [Cornerstone] '{key}': slug '{cfg['slug']}' not found, falling back to title matching")
+        if posts is None:
+            posts = _fetch_category_posts("Foundation")
+        matches = [p for p in posts if _title_matches(_plain_title(p), cfg["title_must_have"], cfg["title_exclude"])]
+        if not matches:
+            continue
+        p = matches[0]
+        resolved[key] = {"id": p["id"], "url": p["link"], "title": _plain_title(p)}
+        if len(matches) > 1:
+            print(f"   ⚠️ [Cornerstone] '{key}': {len(matches)} posts on the same topic. Using the oldest: {p['link']}")
+            for d in matches[1:]:
+                print(f"      - duplicate (consider a 301 redirect to the one above): {d.get('link')}")
+    _CORNERSTONE_CACHE = resolved
+    return resolved
+
+def _link_first_match(html_str, patterns, url):
+    """본문 텍스트에서 패턴이 처음 나오는 곳 1군데만 링크로 감쌈.
+    이미 링크인 곳·제목(h1~h6)·스크립트(FAQ 스키마 JSON)·접힌 블록 제목은 건드리지 않음."""
+    parts = re.split(r"(<[^>]+>)", html_str)
+    allowed, depth = [], 0
+    for part in parts:
+        if part.startswith("<"):
+            m = re.match(r"<\s*(/?)\s*([a-zA-Z][a-zA-Z0-9]*)", part)
+            if m and m.group(2).lower() in _LINK_SKIP_TAGS and not part.rstrip().endswith("/>"):
+                depth = max(0, depth - 1) if m.group(1) else depth + 1
+            allowed.append(False)
+        else:
+            allowed.append(depth == 0 and bool(part.strip()))
+    for pat in patterns:
+        rx = re.compile(pat, re.IGNORECASE)
+        for i, part in enumerate(parts):
+            if not allowed[i]:
+                continue
+            m = rx.search(part)
+            if m:
+                parts[i] = (part[:m.start()]
+                            + f'<a href="{url}" style="color:#2563eb; text-decoration:underline;">{m.group(0)}</a>'
+                            + part[m.end():])
+                return "".join(parts), True
+    return html_str, False
+
+def _build_read_next(cfg, target):
+    return f"""<div style="background:#ffffff; border:1px solid {BORDER}; border-left:4px solid #2563eb; border-radius:6px; padding:18px 22px; margin:40px 0;"><p style="margin:0 0 6px; font-size:13px; font-weight:800; color:#1e40af; text-transform:uppercase; letter-spacing:1.5px;">Read Next</p><p style="margin:0 0 6px; font-size:18px; font-weight:700; line-height:1.4;"><a href="{target['url']}" style="color:{DARK}; text-decoration:none;">{_html_escape(target['title'])} →</a></p><p style="margin:0; font-size:15px; color:{SLATE}; line-height:1.6;">{cfg['read_next_blurb']}</p></div>"""
+
+def _insert_read_next(html_str, cfg, target):
+    """기존 'Deep Dive'(카테고리 링크) 박스를 구체적인 대표 글 카드로 교체. 없으면 면책 문구 바로 앞에 삽입."""
+    box = _build_read_next(cfg, target)
+    i = html_str.find("📚 Deep Dive:")
+    if i != -1:
+        start, end = html_str.rfind("<div", 0, i), html_str.find("</div>", i)
+        if start != -1 and end != -1:
+            return html_str[:start] + box + html_str[end + len("</div>"):]
+    j = html_str.rfind("Disclaimer:")
+    if j != -1:
+        start = html_str.rfind("<p", 0, j)
+        if start != -1:
+            return html_str[:start] + box + html_str[start:]
+    return html_str + box
+
+def add_cornerstone_links(html_str, exclude_keys=(), max_links=3):
+    """글 본문에서 대표 글 주제 표현을 찾아 자동 링크(최대 3개) + 첫 번째 대표 글을 Read Next 카드로."""
+    try:
+        resolved = resolve_cornerstones()
+    except Exception as e:
+        print(f"   ⚠️ [Internal Links] skipped ({e})")
+        return html_str
+    linked = []
+    for cfg in CORNERSTONE_TOPICS:
+        if len(linked) >= max_links:
+            break
+        target = resolved.get(cfg["key"])
+        if cfg["key"] in exclude_keys or not target:
+            continue
+        html_str, ok = _link_first_match(html_str, cfg["link_patterns"], target["url"])
+        if ok:
+            linked.append((cfg, target))
+    if linked:
+        print(f"   🔗 [Internal Links] linked to: {', '.join(c['key'] for c, _ in linked)}")
+        html_str = _insert_read_next(html_str, linked[0][0], linked[0][1])
+    return html_str
+
+def update_existing_post(post_id, title, html, exc, kw, tier, img_bytes, author_name):
+    """기존 글을 같은 URL 그대로 갱신 (슬러그·카테고리·발행일 유지, 수정일만 바뀜)."""
+    post_data = {"title": title, "content": html, "excerpt": exc or "", "meta": _rank_math_meta(title, exc, kw, tier)}
+    author_id = get_wp_author_id(author_name)
+    if author_id:
+        post_data["author"] = author_id
+    if img_bytes:
+        media_id = _upload_image(img_bytes, f"cornerstone-{post_id}.jpg")
+        if media_id:
+            post_data["featured_media"] = media_id
+    r = wp_api_call('POST', f'posts/{post_id}', json_data=post_data)
+    if r is not None and r.status_code in (200, 201):
+        try:
+            link = r.json().get("link")
+        except Exception:
+            link = None
+        print(f"   ✅ Updated existing post in place: {link}")
+        return True
+    print(f"   ❌ Update failed for post {post_id}. Status: {r.status_code if r is not None else 'N/A'}")
+    return False
+
 def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_for_cards=None, med_img_bytes=None):
     media_id = _upload_image(img_bytes, f"{slug[:20]}.jpg") if img_bytes else None
     cat_id = get_or_create_wp_category(cat)
@@ -2433,17 +2757,9 @@ def publish(title, html, exc, kw, cat, slug, tier, img_bytes, author_name, raw_f
     if cats: post_data["categories"] = cats
     if tag_id: post_data["tags"] = [tag_id]
 
-    seo_title = _clean_seo_title(title)
-    rm_title = seo_title if len(seo_title) > 50 else f"{seo_title} | Warm Insight"
-
-    post_data["meta"] = {
-        "rank_math_title": rm_title[:60],
-        "rank_math_description": (exc or "")[:160],
-        "rank_math_focus_keyword": kw.lower() if kw else "",
-        "is_premium": "no",
-        "pms_content_restrict": "0",
-        "post_tier": tier.upper(),
-    }
+    # WP 요약문: 비워두면 카테고리 목록·RSS에서 모든 글 요약이 본문 첫머리(AI 배지 문구)로 똑같이 보임
+    post_data["excerpt"] = exc or ""
+    post_data["meta"] = _rank_math_meta(title, exc, kw, tier)
 
     try:
         r = scraper.post(
@@ -2500,21 +2816,41 @@ def run_foundation_pipeline():
     print(f"   📝 [Topic Rotation] Day {day_of_year} → Topic #{day_of_year % len(FOUNDATION_TOPICS)}: {theme[:50]}...")
     tier = "Premium"
     prompt_filled = FOUNDATION_PROMPT.replace("{theme}", theme).replace("{verified_data}", VERIFIED_FOUNDATION_DATA)
+
+    # 🔗 대표 글 주제면: 실제 검색어 기반 규칙을 붙이고, 이미 글이 있으면 새로 만들지 않고 그 글을 갱신
+    cs_cfg = next((c for c in CORNERSTONE_TOPICS if c["theme"] == theme), None)
+    existing = None
+    required = ["TITLE", "SEO_KEYWORD", "EXCERPT", "DEFINITION", "ONE_ACTION", "HOW_TO_START", "MISSION_QUIZ"]
+    if cs_cfg:
+        prompt_filled += _cornerstone_prompt_block(cs_cfg)
+        required += ["KEY_FACTS", "DEEP_DIVE"]
+        if FOUNDATION_UPDATE_EXISTING:
+            existing = resolve_cornerstones().get(cs_cfg["key"])
+        print(f"   🎯 [Cornerstone] '{cs_cfg['key']}' → " + (f"will update existing post: {existing['url']}" if existing else "no existing post found, will publish new"))
+
     raw = gem_checked(tier, prompt_filled, FOUNDATION_SYS_INST, label="Foundation",
-                      required_tags=("TITLE", "SEO_KEYWORD", "EXCERPT", "DEFINITION", "ONE_ACTION", "HOW_TO_START", "MISSION_QUIZ"),
-                      action_tag="ONE_ACTION")
+                      required_tags=tuple(required), action_tag="ONE_ACTION",
+                      title_prefix=cs_cfg["primary_query"] if cs_cfg else None)
     if raw:
         title = xtag(raw, "TITLE")
-        kw = xtag(raw, "SEO_KEYWORD")
+        kw = cs_cfg["focus_keyword"] if cs_cfg else xtag(raw, "SEO_KEYWORD")
         exc = xtag(raw, "EXCERPT")
-        slug = make_slug(kw, title, cat)
+        slug = cs_cfg["key"] if cs_cfg else make_slug(kw, title, cat)
         author = AUTHOR_NAME
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
 
         html = build_foundation_html(raw, author, tf, title, cat)
+        html = add_cornerstone_links(html, exclude_keys={cs_cfg["key"]} if cs_cfg else ())
         img_bytes = make_thumbnail(title, cat, tier)
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail error. Aborting.")
+            return
+
+        if existing:
+            opener = f'<div style="{F}">\n'
+            updated_line = f"""<p style="margin:0 0 20px; font-size:14px; color:{MUTED};">Updated {tf}</p>"""
+            html = html.replace(opener, opener + updated_line, 1)
+            update_existing_post(existing["id"], title, html, exc, kw, tier, img_bytes, author)
             return
 
         med_img_bytes = make_medium_thumbnail(cat)
@@ -2585,6 +2921,7 @@ def run_moneyhack_pipeline():
         tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
 
         html = build_money_hack_html(raw, author, tf, title, cat, ai_tool=ai_tool, platform=platform)
+        html = add_cornerstone_links(html)
         img_bytes = make_thumbnail(title, cat, tier)
         if not img_bytes or len(img_bytes) < 1000:
             print(f"   ❌ Thumbnail error. Aborting.")
@@ -2697,6 +3034,7 @@ def run_news_pipeline(forced_cat=None):
     tf = datetime.datetime.utcnow().strftime("%B %d, %Y")
 
     html = build_html(tier, cat, raw, author, tf, title)
+    html = add_cornerstone_links(html)
 
     img_bytes = make_thumbnail(title, cat, tier)
     if not img_bytes or len(img_bytes) < 1000:
